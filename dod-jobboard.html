@@ -414,9 +414,57 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 </div>
 
 <div class="toast" id="toast"></div>
-</body>
-</html>
+
 <script>
+
+
+
+// ══════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════
+const SUPA_URL = 'https://nsvhdilgrurpbjlsyviv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdmhkaWxncnVycGJqbHN5dml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Nzk4NjYsImV4cCI6MjA5MjE1NTg2Nn0.XKT6hZd2RGB7c-61aq5QDoZaYfIOgfkyTJ0bsiuqPOo';
+
+async function supaFetch(path, opts={}) {
+  const res = await fetch(SUPA_URL + path, {
+    ...opts,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || '',
+      ...(opts.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(res.status + ': ' + txt.slice(0,100));
+  }
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+async function supaUpsert(table, data) {
+  return supaFetch('/rest/v1/' + table, {
+    method: 'POST', prefer: 'resolution=merge-duplicates',
+    body: JSON.stringify(Array.isArray(data) ? data : [data]),
+  });
+}
+
+async function supaPatch(table, filter, data) {
+  return supaFetch('/rest/v1/' + table + '?' + filter, {
+    method: 'PATCH', body: JSON.stringify(data),
+  });
+}
+
+async function supaDeleteRow(table, filter) {
+  return supaFetch('/rest/v1/' + table + '?' + filter, { method: 'DELETE' });
+}
+
+async function supaGet(table, params) {
+  return supaFetch('/rest/v1/' + table + '?' + params + '&limit=2000');
+}
+
 // ══════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════
@@ -499,21 +547,22 @@ function doLogout() {
 // ══════════════════════════════════════
 // DATA LAYER
 // ══════════════════════════════════════
-const DBS = { design: null, content: null };
-
 function loadDB(board) {
-  if (DBS[board]) return DBS[board];
+  if (CARD_CACHE[board]) return CARD_CACHE[board];
   try {
-    const raw = localStorage.getItem(BOARD_TYPES[board].storage);
-    if (raw) { DBS[board] = JSON.parse(raw); return DBS[board]; }
+    const storageKey = board === 'design' ? 'dod_board_design_v1' : 'dod_board_content_v1';
+    const raw = localStorage.getItem(storageKey);
+    if (raw) { CARD_CACHE[board] = JSON.parse(raw); return CARD_CACHE[board]; }
   } catch(e) {}
-  DBS[board] = { cards: [] };
-  return DBS[board];
+  CARD_CACHE[board] = { cards: [] };
+  return CARD_CACHE[board];
 }
 
 function saveDB(board) {
-  try { localStorage.setItem(BOARD_TYPES[board].storage, JSON.stringify(DBS[board])); }
-  catch(e) { showToast('Gagal simpan!','err'); }
+  try {
+    const key = board === 'design' ? 'dod_board_design_v1' : 'dod_board_content_v1';
+    localStorage.setItem(key, JSON.stringify(CARD_CACHE[board]));
+  } catch(e) {}
 }
 
 function getCard(board, id) {
@@ -1300,8 +1349,9 @@ function switchBoard(board) {
   document.getElementById('tabKpi').classList.toggle('active',     board === 'kpi');
   document.getElementById('btnAddCard').style.display =
     (board === 'kpi' || currentUser.role === 'designer') ? 'none' : 'block';
-  if (board === 'kpi') renderKpi();
-  else renderBoard(board);
+  if (board === 'kpi') { renderKpi(); return; }
+  // Load fresh from Supabase then render
+  loadBoardFromSupabase(board).then(() => renderBoard(board));
 }
 
 // ══════════════════════════════════════
@@ -1350,21 +1400,206 @@ setInterval(() => { if (currentBoard !== 'kpi') renderBoard(currentBoard); }, 5 
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   if (!initAuth()) return;
   updateNavDate();
-  // Check if opened from KPI link
   const params = new URLSearchParams(window.location.search);
   if (params.get('kpi') === '1') {
+    // Load both boards data then show KPI
+    await Promise.all([
+      loadBoardFromSupabase('design'),
+      loadBoardFromSupabase('content'),
+    ]).catch(() => {});
     switchBoard('kpi');
     return;
   }
   // Designer defaults to their primary board
-  if (currentUser.role === 'designer') {
-    if (currentUser.name === 'AIDI') switchBoard('content');
-    else switchBoard('design');
-  } else {
-    switchBoard('design');
-  }
+  const defaultBoard = (currentUser.role === 'designer' && currentUser.name === 'AIDI') ? 'content' : 'design';
+  await loadBoardFromSupabase(defaultBoard).catch(() => {});
+  switchBoard(defaultBoard);
 });
+
+// ══════════════════════════════════════
+// DATA LAYER — Supabase + localStorage fallback
+// ══════════════════════════════════════
+const STORAGE_KEY_DESIGN  = 'dod_board_design_v1';
+const STORAGE_KEY_CONTENT = 'dod_board_content_v1';
+
+// In-memory cache
+const CARD_CACHE = { design: null, content: null };
+
+function getCacheKey(board) {
+  return board === 'design' ? STORAGE_KEY_DESIGN : STORAGE_KEY_CONTENT;
+}
+
+// Load cards from Supabase (with localStorage fallback)
+async function loadBoardFromSupabase(board) {
+  try {
+    const cards = await supaGet('jobboard_cards', 'board=eq.' + board + '&select=*&order=created_at.asc');
+    const activity = await supaGet('jobboard_activity', 'select=*&order=created_at.asc&limit=5000');
+
+    // Group activity by card_id
+    const actMap = {};
+    (activity||[]).forEach(a => {
+      if (!actMap[a.card_id]) actMap[a.card_id] = [];
+      actMap[a.card_id].push({
+        type: a.type, user: a.user_name, from: a.from_col,
+        to: a.to_col, ts: a.created_at, note: a.note,
+      });
+    });
+
+    // Map to app format
+    const mapped = (cards||[]).map(c => ({
+      id: c.id, board: c.board, title: c.title,
+      assignee: c.assignee || '',
+      col: c.col || 'job-list',
+      due: c.due_date || '',
+      labels: c.labels || [],
+      desc: c.description || '',
+      col_entered_at: c.col_entered_at || c.created_at,
+      created_at: c.created_at,
+      updated_at: c.updated_at,
+      comments: (actMap[c.id]||[]).filter(a => a.type === 'comment').map(a => ({
+        user: a.user, text: a.note, ts: a.ts,
+      })),
+      history: actMap[c.id] || [],
+    }));
+
+    CARD_CACHE[board] = { cards: mapped };
+    localStorage.setItem(getCacheKey(board), JSON.stringify(CARD_CACHE[board]));
+    return CARD_CACHE[board];
+  } catch(e) {
+    console.warn('Jobboard: using local fallback for', board, e);
+    return loadDB(board);
+  }
+}
+
+function loadDB(board) {
+  if (CARD_CACHE[board]) return CARD_CACHE[board];
+  try {
+    const raw = localStorage.getItem(getCacheKey(board));
+    if (raw) { CARD_CACHE[board] = JSON.parse(raw); return CARD_CACHE[board]; }
+  } catch(e) {}
+  CARD_CACHE[board] = { cards: [] };
+  return CARD_CACHE[board];
+}
+
+function saveDB(board) {
+  try { localStorage.setItem(getCacheKey(board), JSON.stringify(CARD_CACHE[board])); }
+  catch(e) {}
+}
+
+function getCard(board, id) {
+  return loadDB(board).cards.find(c => c.id === id);
+}
+
+function createCard(board, { title, assignee, col, due, labels, desc }) {
+  const now = new Date().toISOString();
+  const card = {
+    id: 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    board, title, assignee: assignee || '',
+    col: col || 'job-list', due: due || '',
+    labels: labels || [], desc: desc || '',
+    created_at: now, updated_at: now, col_entered_at: now,
+    comments: [],
+    history: [{ type:'created', user:currentUser.name, from:null, to:col||'job-list', ts:now, note:'Kad dicipta' }]
+  };
+  loadDB(board).cards.unshift(card);
+  saveDB(board);
+
+  // Sync to Supabase
+  const supaCard = {
+    id: card.id, board: card.board, title: card.title,
+    assignee: card.assignee, col: card.col,
+    due_date: card.due || null,
+    labels: card.labels, description: card.desc,
+    col_entered_at: card.col_entered_at,
+  };
+  supaUpsert('jobboard_cards', supaCard).catch(e => console.warn('Card sync failed:', e));
+  supaUpsert('jobboard_activity', [{
+    card_id: card.id, type:'created', user_name: currentUser.name,
+    to_col: col||'job-list', note:'Kad dicipta',
+  }]).catch(() => {});
+  return card;
+}
+
+function updateCard(board, id, changes) {
+  const card = getCard(board, id);
+  if (!card) return;
+  Object.assign(card, changes, { updated_at: new Date().toISOString() });
+  saveDB(board);
+  // Sync to Supabase
+  const patch = {};
+  if (changes.assignee !== undefined) patch.assignee = changes.assignee;
+  if (changes.due !== undefined) patch.due_date = changes.due || null;
+  if (changes.title !== undefined) patch.title = changes.title;
+  if (changes.desc !== undefined) patch.description = changes.desc;
+  if (changes.labels !== undefined) patch.labels = changes.labels;
+  if (Object.keys(patch).length) {
+    supaPatch('jobboard_cards', 'id=eq.' + encodeURIComponent(id), patch)
+      .catch(e => console.warn('Card update sync failed:', e));
+  }
+}
+
+function moveCard(board, id, toCol) {
+  const card = getCard(board, id);
+  if (!card || card.col === toCol) return;
+  const now = new Date().toISOString();
+  const from = card.col;
+  card.col = toCol; card.col_entered_at = now; card.updated_at = now;
+  card.history = card.history || [];
+  const histEntry = {
+    type:'moved', user:currentUser.name, from, to:toCol, ts:now,
+    note:`${currentUser.name} pindah dari ${COL_MAP[from]?.label} → ${COL_MAP[toCol]?.label}`
+  };
+  card.history.push(histEntry);
+  saveDB(board);
+  // Sync to Supabase
+  supaPatch('jobboard_cards', 'id=eq.' + encodeURIComponent(id), {
+    col: toCol, col_entered_at: now, updated_at: now,
+  }).catch(e => console.warn('Move sync failed:', e));
+  supaUpsert('jobboard_activity', [{
+    card_id: id, type:'moved', user_name:currentUser.name,
+    from_col: from, to_col: toCol, note: histEntry.note,
+  }]).catch(() => {});
+}
+
+function addComment(board, id, text) {
+  const card = getCard(board, id);
+  if (!card) return;
+  const now = new Date().toISOString();
+  card.comments = card.comments || [];
+  card.comments.push({ user:currentUser.name, text, ts:now });
+  card.history = card.history || [];
+  card.history.push({ type:'comment', user:currentUser.name, ts:now, note:text });
+  card.updated_at = now;
+  saveDB(board);
+  // Sync to Supabase
+  supaUpsert('jobboard_activity', [{
+    card_id: id, type:'comment', user_name:currentUser.name, note:text,
+  }]).catch(e => console.warn('Comment sync failed:', e));
+}
+
+function deleteCard(board, id) {
+  const db = loadDB(board);
+  db.cards = db.cards.filter(c => c.id !== id);
+  saveDB(board);
+  supaDeleteRow('jobboard_cards', 'id=eq.' + encodeURIComponent(id))
+    .catch(e => console.warn('Delete sync failed:', e));
+}
+
+// ══════════════════════════════════════
+// STUCK
+// ══════════════════════════════════════
+function getStuckHrs(card) {
+  if (card.col === 'complete') return 0;
+  return (new Date() - new Date(card.col_entered_at || card.created_at)) / 3600000;
+}
+function stuckLevel(card) {
+  const h = getStuckHrs(card);
+  return h >= STUCK_ALERT ? 'alert' : h >= STUCK_WARN ? 'warn' : 'ok';
+}
+
 </script>
+</body>
+</html>

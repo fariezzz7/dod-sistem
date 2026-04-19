@@ -229,25 +229,103 @@ const USER_PROFILES = {
   'aidi':    { name:'AIDI',    role:'designer', color:'#0E7A7A', bg:'#EDFAFA' },
 };
 
-function doLogin() {
+// ── Supabase config ──────────────────────────────────────────
+const SUPA_URL = 'https://nsvhdilgrurpbjlsyviv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdmhkaWxncnVycGJqbHN5dml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Nzk4NjYsImV4cCI6MjA5MjE1NTg2Nn0.XKT6hZd2RGB7c-61aq5QDoZaYfIOgfkyTJ0bsiuqPOo';
+
+async function supaFetch(path, opts={}) {
+  const res = await fetch(SUPA_URL + path, {
+    ...opts,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      ...(opts.headers || {}),
+    },
+  });
+  if (!res.ok) throw new Error('Supabase error: ' + res.status);
+  return res.json();
+}
+
+async function doLogin() {
   const userId = document.getElementById('inp-user').value.trim().replace(/^@/, '').toLowerCase();
   const pass   = document.getElementById('inp-pass').value;
   const err    = document.getElementById('err-msg');
+  const btn    = document.querySelector('.btn-login');
 
-  if (USERS[userId] && USERS[userId] === pass) {
-    err.classList.remove('show');
-    // Save full session to localStorage so masterlist & jobboard auto-login
-    const profile = USER_PROFILES[userId];
-    if (profile) {
-      localStorage.setItem('dod_session', JSON.stringify({ ...profile, id: userId }));
+  if (!userId || !pass) { err.classList.add('show'); return; }
+
+  btn.textContent = 'Mengesahkan...';
+  btn.style.opacity = '0.7';
+
+  try {
+    // Fetch user from Supabase
+    const users = await supaFetch('/rest/v1/users?id=eq.' + encodeURIComponent(userId) + '&select=*');
+    
+    if (!users || users.length === 0) {
+      err.classList.add('show');
+      btn.textContent = 'Log Masuk';
+      btn.style.opacity = '1';
+      document.getElementById('inp-pass').value = '';
+      return;
     }
-    document.querySelector('.btn-login').textContent = '✓ Berjaya — Memuatkan...';
-    document.querySelector('.btn-login').style.background = '#0F7A48';
+
+    const user = users[0];
+
+    if (!user.active) {
+      err.classList.add('show');
+      btn.textContent = 'Log Masuk';
+      btn.style.opacity = '1';
+      return;
+    }
+
+    const savedPw = user.password || 'DOD2026';
+    if (pass !== savedPw) {
+      err.classList.add('show');
+      btn.textContent = 'Log Masuk';
+      btn.style.opacity = '1';
+      document.getElementById('inp-pass').value = '';
+      document.getElementById('inp-pass').focus();
+      return;
+    }
+
+    // Auth success
+    err.classList.remove('show');
+    const session = {
+      id: userId, name: user.name, role: user.role,
+      color: user.color || '#1A5CC8', bg: user.bg || '#EEF4FF',
+    };
+    localStorage.setItem('dod_session', JSON.stringify(session));
+
+    // Update last_login
+    await supaFetch('/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
+      method: 'PATCH',
+      body: JSON.stringify({ last_login: new Date().toISOString() }),
+    }).catch(() => {});
+
+    btn.textContent = '✓ Berjaya — Memuatkan...';
+    btn.style.background = '#0F7A48';
     setTimeout(() => { window.location.href = 'dod-masterlist-system-v3.html'; }, 400);
-  } else {
+
+  } catch(e) {
+    console.error(e);
+    // Fallback to localStorage if Supabase unreachable
+    const stored = localStorage.getItem('dod_user_store_v1');
+    if (stored) {
+      const store = JSON.parse(stored);
+      const u = store[userId];
+      if (u && u.active && pass === (u.password || 'DOD2026')) {
+        const session = { id:userId, name:u.name, role:u.role, color:u.color||'#1A5CC8', bg:u.bg||'#EEF4FF' };
+        localStorage.setItem('dod_session', JSON.stringify(session));
+        btn.textContent = '✓ Berjaya — Memuatkan...';
+        btn.style.background = '#0F7A48';
+        setTimeout(() => { window.location.href = 'dod-masterlist-system-v3.html'; }, 400);
+        return;
+      }
+    }
     err.classList.add('show');
-    document.getElementById('inp-pass').value = '';
-    document.getElementById('inp-pass').focus();
+    btn.textContent = 'Log Masuk';
+    btn.style.opacity = '1';
   }
 }
 
