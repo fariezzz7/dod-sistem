@@ -124,14 +124,13 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .stuck-alert-badge{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
 
 /* Label definitions */
+.lbl-newjob{background:rgba(26,92,200,0.12);color:#1A5CC8;border:1px solid rgba(26,92,200,0.3);}
 .lbl-urgent{background:rgba(192,40,64,0.12);color:var(--red);border:1px solid var(--redb);}
-.lbl-revision{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);}
-.lbl-approved{background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);}
-.lbl-pending{background:var(--purplebg);color:var(--purple);border:1px solid var(--purpleb);}
-.lbl-onhold{background:var(--bg3);color:var(--textd);border:1px solid var(--line);}
-.lbl-info{background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);}
-.lbl-content{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb);}
-.lbl-ads{background:var(--orangebg);color:var(--orange);border:1px solid var(--orangeb);}
+.lbl-amend{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);}
+.lbl-mockup{background:var(--purplebg);color:var(--purple);border:1px solid var(--purpleb);}
+.lbl-jobcomplete{background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);}
+.lbl-custclosed{background:var(--tealbg);color:var(--teal);border:1px solid var(--tealb);}
+.lbl-pendingclosed{background:var(--orangebg);color:var(--orange);border:1px solid var(--orangeb);}
 
 /* ── DETAIL OVERLAY ── */
 .detail-overlay{position:fixed;inset:0;background:rgba(26,32,64,0.45);backdrop-filter:blur(4px);z-index:400;display:none;align-items:flex-start;justify-content:center;padding:32px 20px;overflow-y:auto;}
@@ -393,14 +392,13 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
         <div class="fld"><label>Label</label>
           <select id="f_label">
             <option value="">— Tiada —</option>
+            <option value="newjob">NEW JOB</option>
             <option value="urgent">URGENT</option>
-            <option value="revision">REVISION</option>
-            <option value="approved">APPROVED</option>
-            <option value="pending">PENDING INFO</option>
-            <option value="onhold">ON HOLD</option>
-            <option value="info">INFO</option>
-            <option value="content">CONTENT</option>
-            <option value="ads">ADS</option>
+            <option value="amend">AMEND</option>
+            <option value="mockup">MOCK UP</option>
+            <option value="jobcomplete">JOB COMPLETE</option>
+            <option value="custclosed">CUSTOMER CLOSED</option>
+            <option value="pendingclosed">PENDING CLOSED</option>
           </select>
         </div>
       </div>
@@ -498,14 +496,13 @@ const USER_COLORS = {
 };
 
 const LABEL_DEFS = {
-  urgent:  { name:'URGENT',       cls:'lbl-urgent',   color:'#C02840' },
-  revision:{ name:'REVISION',     cls:'lbl-revision', color:'#B8720A' },
-  approved:{ name:'APPROVED',     cls:'lbl-approved', color:'#0F7A48' },
-  pending: { name:'PENDING INFO', cls:'lbl-pending',  color:'#6E30C8' },
-  onhold:  { name:'ON HOLD',      cls:'lbl-onhold',   color:'#9AA0B8' },
-  info:    { name:'INFO',         cls:'lbl-info',     color:'#1A5CC8' },
-  content: { name:'CONTENT',      cls:'lbl-content',  color:'#0E7A7A' },
-  ads:     { name:'ADS',          cls:'lbl-ads',      color:'#C05800' },
+  newjob:         { name:'NEW JOB',          cls:'lbl-newjob',         color:'#1A5CC8' },
+  urgent:         { name:'URGENT',           cls:'lbl-urgent',         color:'#C02840' },
+  amend:          { name:'AMEND',            cls:'lbl-amend',          color:'#B8720A' },
+  mockup:         { name:'MOCK UP',          cls:'lbl-mockup',         color:'#6E30C8' },
+  jobcomplete:    { name:'JOB COMPLETE',     cls:'lbl-jobcomplete',    color:'#0F7A48' },
+  custclosed:     { name:'CUSTOMER CLOSED',  cls:'lbl-custclosed',     color:'#0E7A7A' },
+  pendingclosed:  { name:'PENDING CLOSED',   cls:'lbl-pendingclosed',  color:'#C05800' },
 };
 
 const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', designer:'Designer' };
