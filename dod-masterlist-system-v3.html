@@ -1207,18 +1207,24 @@ tr:hover .row-actions{opacity:1;}
 
 
 <datalist id="itemTypesList">
-  <option value="Sublimation Jersey">
-  <option value="Jersey Goalkeeper">
-  <option value="Polo Shirt">
-  <option value="T-Shirt">
-  <option value="Baju Koko">
-  <option value="Seluar Sukan">
-  <option value="Baju Rasmi">
-  <option value="Corporate Wear">
-  <option value="Jaket">
-  <option value="Stokin">
-  <option value="Topi">
-  <option value="Beg">
+  <option value="Sublimation Adult Short Sleeve">
+  <option value="Sublimation Adult Long Sleeve">
+  <option value="Customade Adult Short Sleeve Corporate">
+  <option value="Customade Adult Long Sleeve Corporate">
+  <option value="Add On Big Size (3XL - 5XL)">
+  <option value="Add On Big Size (6XL - 8XL)">
+  <option value="Sublimation Adult Muslimah">
+  <option value="Sublimation Kids Short Sleeve">
+  <option value="Sublimation Kids Long Sleeve">
+  <option value="Customade Adult Muslimah Corporate">
+  <option value="Postage">
+  <option value="Add Collar">
+  <option value="Backtape Custom">
+  <option value="Add On Material (Diamond V2)">
+  <option value="Label Tag">
+  <option value="Block Sulam">
+  <option value="Sulam">
+  <option value="Urgent Charge (1-3 Days)">
   <option value="Lain-lain">
 </datalist>
 <div class="toast" id="toast"></div>
@@ -3987,11 +3993,29 @@ function submitChpw() {
 let itemRows = [];
 let itemRowId = 0;
 
-const ITEM_TYPES = [
-  'Sublimation Jersey', 'Jersey Goalkeeper', 'Polo Shirt', 'T-Shirt',
-  'Baju Koko', 'Seluar Sukan', 'Baju Rasmi', 'Corporate Wear',
-  'Jaket', 'Stokin', 'Topi', 'Beg', 'Lain-lain'
+// Item catalogue {sku: description} — SKU hidden, description shown to user
+const ITEM_CATALOGUE = [
+  { sku:'SUB A SS COL',   desc:'Sublimation Adult Short Sleeve' },
+  { sku:'SUBLIMATION LS', desc:'Sublimation Adult Long Sleeve' },
+  { sku:'CUS: SS A CO',   desc:'Customade Adult Short Sleeve Corporate' },
+  { sku:'CUS:LS A COR',   desc:'Customade Adult Long Sleeve Corporate' },
+  { sku:'ADD ON BIG 3X',  desc:'Add On Big Size (3XL - 5XL)' },
+  { sku:'ADD ON BIG 6X',  desc:'Add On Big Size (6XL - 8XL)' },
+  { sku:'SUB A MUSLI',    desc:'Sublimation Adult Muslimah' },
+  { sku:'SUB SS KIDS',    desc:'Sublimation Kids Short Sleeve' },
+  { sku:'SUB LS KIDS',    desc:'Sublimation Kids Long Sleeve' },
+  { sku:'CUS:LS MUSL',    desc:'Customade Adult Muslimah Corporate' },
+  { sku:'POSTAGE',        desc:'Postage' },
+  { sku:'COLLAR',         desc:'Add Collar' },
+  { sku:'BACKTAPE',       desc:'Backtape Custom' },
+  { sku:'DIAMOND V2',     desc:'Add On Material (Diamond V2)' },
+  { sku:'LABEL',          desc:'Label Tag' },
+  { sku:'BLOCK SULAM',    desc:'Block Sulam' },
+  { sku:'SULAM',          desc:'Sulam' },
+  { sku:'URGNT',          desc:'Urgent Charge (1-3 Days)' },
+  { sku:'LAIN-LAIN',      desc:'Lain-lain' },
 ];
+const ITEM_TYPES = ITEM_CATALOGUE.map(i => i.desc);
 
 function addItemRow(desc='', qty=0, price=0) {
   const id = 'ir_' + (++itemRowId);
@@ -4049,7 +4073,14 @@ function updateItemField(id, field, val) {
   const row = itemRows.find(r => r.id === id);
   if (!row) return;
   if (field === 'qty' || field === 'price') row[field] = parseFloat(val)||0;
-  else row[field] = val;
+  else {
+    row[field] = val;
+    // Auto-store SKU when description matches catalogue (hidden)
+    if (field === 'desc') {
+      const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === val.toLowerCase());
+      row.sku = cat ? cat.sku : '';
+    }
+  }
   // Update total cell
   const totalEl = document.getElementById('it_' + id);
   if (totalEl && row.qty && row.price) {
@@ -4092,12 +4123,17 @@ function clearItemRows() {
 }
 
 function getItemsData() {
-  return itemRows.filter(r => r.desc || r.qty || r.price).map(r => ({
-    desc: r.desc || '',
-    qty: parseFloat(r.qty)||0,
-    price: parseFloat(r.price)||0,
-    total: (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
-  }));
+  return itemRows.filter(r => r.desc || r.qty || r.price).map(r => {
+    // Lookup SKU from catalogue if not already stored
+    const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === (r.desc||'').toLowerCase());
+    return {
+      sku:   r.sku || (cat ? cat.sku : ''),
+      desc:  r.desc || '',
+      qty:   parseFloat(r.qty)||0,
+      price: parseFloat(r.price)||0,
+      total: (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
+    };
+  });
 }
 
 function loadItemsData(items) {
