@@ -606,6 +606,8 @@ tr:hover .row-actions{opacity:1;}
       <div class="nav-date" id="navDate"></div>
       <button class="btn-secondary" id="btnHome" onclick="showHomeView()" style="font-size:11px;padding:6px 12px;">🏠 Home</button>
       <button class="btn-secondary" id="btnDashboard" onclick="showDashboardView()" style="display:none;font-size:11px;padding:6px 12px;">📈 Dashboard</button>
+      <button class="btn-secondary" id="btnSupplierDir" onclick="showSupplierDirView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--teal);color:#fff;border-color:var(--teal);">🏭 Supplier</button>
+      <button class="btn-secondary" id="btnSupplierOS" onclick="showSupplierOSView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--amber);color:#fff;border-color:var(--amber);">💸 Supplier OS</button>
       <button class="btn-secondary" id="btnUserMgmt" onclick="showUserMgmtView()" style="display:none;font-size:11px;padding:6px 12px;">👤 Pengguna</button>
       <button class="btn-secondary" id="btnChgPw" onclick="openChpwModal(false)" style="font-size:11px;padding:6px 12px;">🔒 Password</button>
       <button class="btn-month" id="btnAddMonth" onclick="openAddMonthModal()" style="display:none;">＋ Bulan Baru</button>
@@ -800,6 +802,16 @@ tr:hover .row-actions{opacity:1;}
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- SUPPLIER DIRECTORY -->
+  <div id="supplierDirView" style="display:none;padding:24px 28px;">
+    <div id="supplierDirContent"></div>
+  </div>
+
+  <!-- SUPPLIER OUTSTANDING -->
+  <div id="supplierOSView" style="display:none;padding:24px 28px;">
+    <div id="supplierOSContent"></div>
   </div>
 
   <!-- CUSTOMER VIEW -->
@@ -1055,6 +1067,15 @@ tr:hover .row-actions{opacity:1;}
       <div class="modal-section">
         <div class="modal-section-title">🏭 Kos Supplier</div>
         <div class="form-grid">
+          <div class="form-field full">
+            <label class="fl">Nama Supplier</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;">
+              <button type="button" onclick="setSupplier('NOHAD SDN BHD')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Nohad</button>
+              <button type="button" onclick="setSupplier('IKHTIAR JAYA')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Ikhtiar Jaya</button>
+              <button type="button" onclick="setSupplier('BROTHER TRADING')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Brother Trading</button>
+            </div>
+          </div>
           <div class="form-field">
             <label class="fl">Kos Supplier — Jumlah (RM)</label>
             <input class="fi" type="number" id="f_nohad_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
@@ -1206,6 +1227,11 @@ tr:hover .row-actions{opacity:1;}
 </div>
 
 
+<datalist id="supplierList">
+  <option value="NOHAD SDN BHD">
+  <option value="IKHTIAR JAYA">
+  <option value="BROTHER TRADING">
+</datalist>
 <datalist id="itemTypesList">
   <option value="Sublimation Adult Short Sleeve">
   <option value="Sublimation Adult Long Sleeve">
@@ -1278,7 +1304,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items'];
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -1426,8 +1452,8 @@ function doLogout() {
   document.getElementById('ls-user').value = '';
 }
 
-function openJobBoard() {
-  window.open('dod-jobboard.html', '_blank');
+function openJobBoard(params) {
+  window.open('dod-jobboard.html' + (params||''), '_blank');
 }
 
 document.addEventListener('keydown', e => {
@@ -1441,6 +1467,11 @@ document.addEventListener('keydown', e => {
 function initApp() {
   setupNavForRole();
   updateNavDate();
+  // Designer goes straight to jobboard
+  if (currentUser.role === 'designer') {
+    openJobBoard();
+    return;
+  }
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
@@ -1498,7 +1529,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1560,6 +1591,10 @@ function setupNavForRole() {
     btnKpi.style.display = 'none';
     document.getElementById('btnDashboard').style.display = 'block';
     document.getElementById('btnUserMgmt').style.display = 'block';
+    document.getElementById('btnSupplierDir').style.display = 'block';
+    document.getElementById('btnSupplierOS').style.display = 'block';
+    document.getElementById('btnSupplierDir').style.display = 'block';
+    document.getElementById('btnSupplierOS').style.display = 'block';
   } else if (role === 'sales') {
     btnAdd.style.display = 'block';
     btnMonth.style.display = 'none';
@@ -2066,6 +2101,7 @@ function openEditModalById(id) {
   document.getElementById('f_luar_amt').value = r.luar_amount || '';
   document.getElementById('f_luar_paid').value = r.luar_paid || '';
   document.getElementById('f_sup_status').value = r.supplier_payment_status || 'PAYMENT DONE';
+  document.getElementById('f_supplier_name').value = r.supplier_name || 'NOHAD SDN BHD';
   document.getElementById('f_inv_cust').value = r.total_customer || '';
   document.getElementById('f_pay1').value = r.first_payment || '';
   // Calculate deposit pct from existing data
@@ -2092,7 +2128,7 @@ function openEditModal(safeR) {
 
 function clearForm() {
   ['f_order_date','f_pic','f_source','f_name','f_inv','f_inv_supplier','f_pcs','f_invdate','f_duedate',
-   'f_cust_name','f_cust_tel','f_cust_email','f_cust_addr','f_color',
+   'f_cust_name','f_cust_tel','f_cust_email','f_cust_addr','f_supplier_name','f_color',
    'f_sizes','f_design_notes','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_inv_cust','f_pay1'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   recalc();
@@ -2163,6 +2199,7 @@ function saveOrder() {
   const rev        = parseFloat(document.getElementById('f_inv_cust').value)||0;
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
   const supStatus  = document.getElementById('f_sup_status').value;
+  const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
 
   if (!name) { showToast('Sila isi Nama Job', true); return; }
 
@@ -2182,7 +2219,7 @@ function saveOrder() {
           order_date:orderDate, inv_date:invdate, due_date:duedate,
           cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
           product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
-          supplier_payment_status:supStatus, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
+          supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
           luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
           total_customer:rev, first_payment:pay1, balance_customer:custOS,
           supplier_outstanding:supOS, profit, items:editItems };
@@ -2208,7 +2245,7 @@ function saveOrder() {
       order_date:orderDate, inv_date:invdate, due_date:duedate,
       cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
       product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
-      supplier_payment_status:supStatus, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
+      supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
       luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems
@@ -2783,7 +2820,7 @@ function renderHomeNav(role) {
     designer: [
       { icon:'🎨', title:'Design Customer Board',desc:'Tracking semua job design customer — ZUL (utama).',  color:'var(--purple)', badge:'Utama', url:'dod-jobboard.html' },
       { icon:'📱', title:'Content Board',        desc:'Tracking content harian — AIDI (utama).',            color:'var(--teal)',   badge:'Utama', url:'dod-jobboard.html' },
-      { icon:'📊', title:'KPI Saya',             desc:'Dashboard prestasi dan tracking kerja anda.',         color:'var(--green)',  badge:'', url:'dod-jobboard.html?kpi=1' },
+      { icon:'📊', title:'KPI Saya',             desc:'Dashboard prestasi dan tracking kerja anda.',         color:'var(--green)',  badge:'', fn:'openJobBoard("?kpi=1")' },
     ],
   };
 
@@ -2954,7 +2991,23 @@ function openCustDetail(idx) {
     ${totalOS > 0 ? `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:14px;">⚠ Outstanding: ${fmt(totalOS)}</div>` : ''}
     <div style="margin-bottom:14px;">
       <button class="btn-new" style="font-size:11px;padding:6px 12px;background:var(--green);box-shadow:0 2px 6px rgba(15,122,72,0.25);" onclick="openDocFromCust()">📄 Jana Quotation</button>
+    ${totalOS > 0 ? `<button style="font-size:11px;padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSReminder()">🔔 OS Reminder (${fmt(totalOS)})</button>` : ''}
     </div>
+
+    ${totalOS > 0 ? `
+    <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:12px 14px;margin:12px 20px;">
+      <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;">⚠ Outstanding Belum Dijelaskan</div>
+      ${osOrders.map(o => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);font-size:11px;">
+        <span style="color:var(--textd);">${o.inv_number_supplier||o.inv_number||o.name_job||'—'}</span>
+        <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--red);">${fmt(o.balance_customer||0)}</span>
+      </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;">
+        <span style="color:var(--text);">Jumlah OS</span>
+        <span style="font-family:'Fira Code',monospace;color:var(--red);">${fmt(totalOS)}</span>
+      </div>
+    </div>` : ''}
+
     <div class="cust-section-label">Senarai Order (${c.orders.length})</div>
     ${jobsHTML}
   `;
@@ -4170,15 +4223,22 @@ function openDocFromOrder(id, month) {
   const payload = {
     from: 'masterlist',
     type: 'invoice',
-    inv_number: r.inv_number || '',
+    inv_number: r.inv_number_supplier || r.inv_number || '',
     inv_date: r.inv_date || r.order_date || '',
     due_date: r.due_date || '',
     cust_name: r.cust_name || '',
     cust_tel: r.cust_tel || '',
     cust_email: r.cust_email || '',
     cust_addr: r.cust_addr || '',
-    items: r.items && r.items.length ? r.items : [
-      { desc: r.name_job || '', qty: r.pcs || 0, price: r.pcs > 0 ? (r.total_customer/r.pcs).toFixed(2) : 0, total: r.total_customer || 0 }
+    name_job: r.name_job || '',
+    items: (r.items && r.items.length) ? r.items.map(it => ({
+      sku: it.sku || '',
+      desc: it.desc || '',
+      qty: parseFloat(it.qty) || 0,
+      price: parseFloat(it.price) || 0,
+      total: (parseFloat(it.qty)||0) * (parseFloat(it.price)||0),
+    })) : [
+      { desc: r.name_job || '', qty: r.pcs || 0, price: r.pcs > 0 ? parseFloat((r.total_customer/r.pcs).toFixed(2)) : 0, total: r.total_customer || 0 }
     ],
     total: r.total_customer || 0,
     paid: r.first_payment || 0,
@@ -4221,6 +4281,255 @@ function recalcDeposit() {
   const osEl = document.getElementById('f_cust_os_display');
   if (osEl) osEl.value = total > 0 ? 'RM ' + custOs.toFixed(2) : '—';
   recalc();
+}
+
+
+function setSupplier(name) {
+  const el = document.getElementById('f_supplier_name');
+  if (el) el.value = name;
+}
+
+
+const SUPPLIERS = [
+  {
+    id: 'nohad',
+    name: 'NOHAD SDN BHD',
+    short: 'Nohad',
+    color: '#1A5CC8',
+    contact: 'En. Nohad',
+    tel: '',
+    email: '',
+    addr: '',
+    bank: [
+      { bank: 'Maybank', acc: '', holder: 'NOHAD SDN BHD' },
+    ],
+    products: [
+      'Sublimation Adult Short Sleeve',
+      'Sublimation Adult Long Sleeve',
+      'Customade Adult Short Sleeve Corporate',
+      'Customade Adult Long Sleeve Corporate',
+      'Add On Big Size (3XL-5XL)',
+      'Add On Big Size (6XL-8XL)',
+      'Sublimation Adult Muslimah',
+      'Sublimation Kids Short Sleeve',
+      'Sublimation Kids Long Sleeve',
+      'Customade Adult Muslimah Corporate',
+      'Add Collar', 'Backtape Custom',
+      'Add On Material (Diamond V2)',
+      'Label Tag', 'Block Sulam', 'Sulam',
+      'Urgent Charge (1-3 Days)',
+    ],
+  },
+  {
+    id: 'ikhtiar',
+    name: 'IKHTIAR JAYA',
+    short: 'Ikhtiar Jaya',
+    color: '#0F7A48',
+    contact: '',
+    tel: '',
+    email: '',
+    addr: '',
+    bank: [
+      { bank: 'Maybank', acc: '', holder: 'IKHTIAR JAYA' },
+    ],
+    products: ['Postage', 'Penghantaran'],
+  },
+  {
+    id: 'brother',
+    name: 'BROTHER TRADING',
+    short: 'Brother Trading',
+    color: '#B8720A',
+    contact: '',
+    tel: '',
+    email: '',
+    addr: '',
+    bank: [
+      { bank: 'Maybank', acc: '', holder: 'BROTHER TRADING' },
+    ],
+    products: ['Bahan Mentah', 'Aksesori'],
+  },
+];
+
+function showSupplierDirView() {
+  setAllViewsHidden();
+  document.getElementById('supplierDirView').style.display = 'block';
+  renderSupplierDir();
+}
+
+function renderSupplierDir() {
+  const el = document.getElementById('supplierDirContent');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:var(--text);">🏭 Supplier Directory</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Maklumat & produk semua supplier DOD</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
+      ${SUPPLIERS.map(s => {
+        // Calculate total OS to this supplier
+        const allOrders = Object.values(sessionData).flat();
+        const supOrders = allOrders.filter(r =>
+          (r.supplier_name||'NOHAD SDN BHD').toUpperCase().includes(s.short.toUpperCase()) ||
+          (r.supplier_name||'').toUpperCase() === s.name.toUpperCase()
+        );
+        const totalOS = supOrders
+          .filter(r => r.supplier_payment_status !== 'PAYMENT DONE')
+          .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0);
+        const totalOrders = supOrders.length;
+
+        return `
+        <div style="background:var(--bg2);border:1px solid var(--line);border-top:3px solid ${s.color};border-radius:12px;padding:20px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);">
+            <div style="width:42px;height:42px;border-radius:10px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:18px;">🏭</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:700;color:var(--text);">${s.name}</div>
+              ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:var(--textm);">${totalOrders} order</div>
+              <div style="font-size:12px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS)+' OS':'✓ Clear'}</div>
+            </div>
+          </div>
+
+          ${s.tel || s.email ? `
+          <div style="margin-bottom:10px;font-size:12px;color:var(--textd);">
+            ${s.tel ? `📞 ${s.tel}` : ''} ${s.email ? `&nbsp;·&nbsp; ✉️ ${s.email}` : ''}
+          </div>` : ''}
+
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Akaun Bank</div>
+            ${s.bank.map(b => `
+            <div style="background:var(--bg3);border-radius:6px;padding:8px 10px;font-size:11px;margin-bottom:4px;">
+              <span style="color:var(--textd);">${b.bank}</span>
+              ${b.acc ? `<span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;margin-left:8px;">${b.acc}</span>` : '<span style="color:var(--textm);margin-left:8px;font-style:italic;">— belum dikemaskini</span>'}
+              <br><span style="color:var(--textm);font-size:10px;">${b.holder}</span>
+            </div>`).join('')}
+          </div>
+
+          <div>
+            <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Produk Dibekal</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              ${s.products.map(p => `<span style="font-size:10px;padding:2px 7px;background:${s.color}14;color:${s.color};border:1px solid ${s.color}33;border-radius:4px;">${p}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function showSupplierOSView() {
+  setAllViewsHidden();
+  document.getElementById('supplierOSView').style.display = 'block';
+  renderSupplierOS();
+}
+
+function renderSupplierOS() {
+  const el = document.getElementById('supplierOSContent');
+  const allOrders = Object.values(sessionData).flat()
+    .filter(r => r.supplier_payment_status !== 'PAYMENT DONE' && (r.supplier_outstanding||0) > 0)
+    .sort((a,b) => new Date(b.inv_date||b.order_date||0) - new Date(a.inv_date||a.order_date||0));
+
+  const totalOS = allOrders.reduce((s,r) => s + (r.supplier_outstanding||0), 0);
+
+  // Group by supplier
+  const bySupplier = {};
+  allOrders.forEach(r => {
+    const sup = r.supplier_name || 'NOHAD SDN BHD';
+    if (!bySupplier[sup]) bySupplier[sup] = [];
+    bySupplier[sup].push(r);
+  });
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:var(--text);">💸 Supplier Outstanding</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">${allOrders.length} invois belum diselesaikan</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--textm);">Jumlah OS</div>
+        <div style="font-size:22px;font-weight:700;font-family:'Fira Code',monospace;color:var(--red);">${fmt(totalOS)}</div>
+      </div>
+    </div>
+
+    ${allOrders.length === 0 ? `
+    <div style="text-align:center;padding:60px;color:var(--textm);">
+      <div style="font-size:32px;margin-bottom:12px;">✓</div>
+      <div style="font-size:14px;font-weight:600;color:var(--green);">Tiada supplier outstanding</div>
+      <div style="font-size:12px;margin-top:4px;">Semua invois supplier dah diselesaikan</div>
+    </div>` : `
+
+    ${Object.entries(bySupplier).map(([supName, orders]) => {
+      const supOS = orders.reduce((s,r) => s + (r.supplier_outstanding||0), 0);
+      const supInfo = SUPPLIERS.find(s => s.name === supName || supName.toUpperCase().includes(s.short.toUpperCase()));
+      const color = supInfo ? supInfo.color : '#9AA0B8';
+      return `
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:${color}14;border:1px solid ${color}33;border-radius:10px 10px 0 0;margin-bottom:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--text);">🏭 ${supName}</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--red);">${fmt(supOS)}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
+          <thead>
+            <tr style="background:var(--bg3);">
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:left;">No. Invois</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:left;">Nama Job</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:left;">PIC</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:left;">Tarikh</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">Jumlah (RM)</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">Dah Bayar</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">OS</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map((r,i) => `
+            <tr style="border-bottom:1px solid var(--line);${i%2===0?'':'background:var(--bg3);'}">
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--blue);">${r.inv_number||'—'}</td>
+              <td style="padding:9px 12px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name_job||'—'}</td>
+              <td style="padding:9px 12px;font-size:11px;color:var(--textd);">${r.pic||'—'}</td>
+              <td style="padding:9px 12px;font-size:11px;color:var(--textd);">${r.inv_date||r.order_date||'—'}</td>
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(r.nohad_amount||r.total_supplier||0)}</td>
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--green);text-align:right;">${fmt(r.nohad_paid||0)}</td>
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--red);text-align:right;">${fmt(r.supplier_outstanding||0)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }).join('')}
+    `}
+  `;
+}
+
+
+function generateOSReminder(custIndex) {
+  const c = window._custFiltered?.[custIndex !== undefined ? custIndex : custDetailOpen];
+  if (!c) return;
+  const osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
+  if (!osOrders.length) { showToast('Customer tiada outstanding', true); return; }
+  const totalOS = osOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
+  const items = osOrders.map(o => ({
+    desc: 'Baki Tertunggak — ' + (o.inv_number_supplier || o.inv_number || o.name_job || 'Invoice'),
+    qty: 1,
+    price: parseFloat(o.balance_customer)||0,
+    total: parseFloat(o.balance_customer)||0,
+  }));
+  const today = new Date().toISOString().slice(0,10);
+  const payload = {
+    type: 'invoice',
+    inv_number: 'OS-REMINDER-' + today,
+    inv_date: today,
+    due_date: today,
+    cust_name: c.name,
+    cust_tel: c.tel,
+    cust_addr: c.addr || '',
+    items,
+    total: totalOS,
+    paid: 0,
+    balance: totalOS,
+  };
+  localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+  window.open('dod-document-generator.html', '_blank');
 }
 
 </script>
