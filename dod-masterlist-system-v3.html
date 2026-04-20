@@ -2347,41 +2347,69 @@ function confirmAddMonth() {
 // ══════════════════════════════════════
 function openDoc(docType) {
   if (!currentDetailRow) return;
-  const r = currentDetailRow;
+  const targetId = currentDetailRow.id;
+  // Get FRESH data from sessionData
+  let r = null;
+  for (const m of Object.keys(sessionData)) {
+    const found = sessionData[m].find(o => o.id === targetId);
+    if (found) { r = found; break; }
+  }
+  if (!r) return;
+
   const isSupplier = docType === 'po';
-  const itemDesc = r.name_job || '';
-  const itemQty  = r.pcs || 1;
-  let itemPrice=0, toName='', toRef='', docNum='', amount=0, paid=0;
 
   if (isSupplier) {
-    itemPrice = r.nohad_amount > 0 ? r.nohad_amount : 0;
-    toName    = 'NOHAD SDN BHD';
-    toRef     = r.name_job;
-    docNum    = r.inv_number || ('PO-' + (r.inv_number_supplier||'').replace(/^[A-Z]+-/,''));
-    amount    = r.nohad_amount || 0;
-    paid      = r.nohad_paid || 0;
+    // PO to supplier — use supplier items
+    const supItems = (r.items && r.items.length) ? r.items : [
+      { desc: r.name_job || '', qty: r.pcs || 1, price: r.nohad_amount > 0 ? parseFloat((r.nohad_amount/(r.pcs||1)).toFixed(2)) : 0 }
+    ];
+    const payload = {
+      type: 'po',
+      inv_number: 'PO-' + (r.inv_number || r.inv_number_supplier || ''),
+      inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+      due_date: r.due_date || '',
+      cust_name: r.supplier_name || 'NOHAD SDN BHD',
+      cust_tel: '',
+      cust_addr: '',
+      name_job: r.name_job || '',
+      items: supItems,
+      total: r.nohad_amount || 0,
+      paid: r.nohad_paid || 0,
+      balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
+    };
+    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+    window.open('dod-document-generator.html', '_blank');
   } else {
-    itemPrice = r.pcs > 0 && r.total_customer > 0 ? (r.total_customer/r.pcs) : r.total_customer;
-    toName    = r.cust_name || '';
-    toRef     = r.name_job;
-    docNum    = r.inv_number_supplier || '';
-    amount    = r.total_customer || 0;
-    paid      = r.first_payment || 0;
+    // Invoice / Quotation / Receipt — use customer items
+    const custItems = (r.items && r.items.length) ? r.items.map(it => ({
+      sku: it.sku || '',
+      desc: it.desc || '',
+      qty: parseFloat(it.qty) || 0,
+      price: parseFloat(it.price) || 0,
+      total: (parseFloat(it.qty)||0) * (parseFloat(it.price)||0),
+    })) : [
+      { desc: r.name_job || '', qty: r.pcs || 0,
+        price: r.pcs > 0 ? parseFloat((r.total_customer/r.pcs).toFixed(2)) : 0,
+        total: r.total_customer || 0 }
+    ];
+    const payload = {
+      type: docType,
+      inv_number: r.inv_number_supplier || r.inv_number || '',
+      inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+      due_date: r.due_date || '',
+      cust_name: r.cust_name || '',
+      cust_tel: r.cust_tel || '',
+      cust_email: r.cust_email || '',
+      cust_addr: r.cust_addr || '',
+      name_job: r.name_job || '',
+      items: custItems,
+      total: r.total_customer || 0,
+      paid: docType === 'receipt' ? (r.first_payment || 0) : (r.first_payment || 0),
+      balance: r.balance_customer || 0,
+    };
+    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+    window.open('dod-document-generator.html', '_blank');
   }
-
-  const payload = {
-    type: docType, num: docNum,
-    date: r.inv_date || r.order_date || new Date().toISOString().split('T')[0],
-    due:  r.due_date || '',
-    toName, toTel: r.cust_tel || '', ref: toRef,
-    items: [{ desc:itemDesc, qty:itemQty, price: itemQty>0 ? parseFloat((amount/itemQty).toFixed(2)) : amount }],
-    payAmt: docType==='receipt' ? paid : 0,
-    supName: isSupplier ? 'NOHAD SDN BHD' : '',
-    toAddr: r.cust_addr || '',
-    toEmail: r.cust_email || '',
-  };
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  window.open('dod-document-generator.html#' + encoded, '_blank');
 }
 
 // ══════════════════════════════════════
