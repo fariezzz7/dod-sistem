@@ -2643,10 +2643,20 @@ function startAutoRefresh() {
         if (!o.board_col) o.board_col = 'job-list';
         grouped[m].push(o);
       });
-      // Only update if data changed
-      const newKeys = Object.keys(grouped).sort().join(',');
-      const curKeys = Object.keys(sessionData).filter(k => grouped[k]).sort().join(',');
-      Object.keys(grouped).forEach(m => { sessionData[m] = grouped[m]; });
+      // Merge: preserve locally-edited items that may not yet be in Supabase
+      Object.keys(grouped).forEach(m => {
+        const incoming = grouped[m];
+        const existing = sessionData[m] || [];
+        // For each incoming order, if local has items but Supabase doesn't, keep local items
+        sessionData[m] = incoming.map(incomingOrder => {
+          const localOrder = existing.find(e => e.id === incomingOrder.id);
+          if (localOrder && localOrder.items && localOrder.items.length &&
+              (!incomingOrder.items || !incomingOrder.items.length)) {
+            return { ...incomingOrder, items: localOrder.items };
+          }
+          return incomingOrder;
+        });
+      });
       renderAll();
     } catch(e) {} // silent fail
   }, 60000); // every 60 seconds
@@ -4217,19 +4227,30 @@ function escHtmlForm(s) {
 
 function openDocFromDetail() {
   if (!currentDetailRow) return;
-  // Find month for this order
-  let month = currentMonth;
+  const targetId = currentDetailRow.id;
+  // Find FRESH data from sessionData by ID (not cached reference)
+  let foundOrder = null, foundMonth = null;
   for (const m of Object.keys(sessionData)) {
-    if (sessionData[m].find(r => r.id === currentDetailRow.id)) {
-      month = m; break;
-    }
+    const o = sessionData[m].find(r => r.id === targetId);
+    if (o) { foundOrder = o; foundMonth = m; break; }
   }
-  openDocFromOrder(currentDetailRow.id, month);
+  if (!foundOrder || !foundMonth) return;
+  // Build payload directly from fresh data
+  openDocFromOrderData(foundOrder, foundMonth);
+}
+
+function openDocFromOrderData(r, month) {
+  if (!r) return;
+  _buildAndOpenDoc(r, month);
 }
 
 function openDocFromOrder(id, month) {
   const r = (sessionData[month]||[]).find(o => o.id === id);
   if (!r) return;
+  _buildAndOpenDoc(r, month);
+}
+
+function _buildAndOpenDoc(r, month) {
   // Build payload for document generator
   const payload = {
     from: 'masterlist',
@@ -4259,6 +4280,8 @@ function openDocFromOrder(id, month) {
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
 }
+
+
 
 
 function setDepositPct(pct) {
