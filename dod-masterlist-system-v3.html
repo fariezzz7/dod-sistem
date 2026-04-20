@@ -4209,11 +4209,15 @@ function escHtmlForm(s) {
 
 
 function openDocFromDetail() {
-  // Find current order from detail panel
-  const id    = deleteTargetId; // reuse same tracking var
-  const month = deleteTargetMonth;
-  if (!id || !month) return;
-  openDocFromOrder(id, month);
+  if (!currentDetailRow) return;
+  // Find month for this order
+  let month = currentMonth;
+  for (const m of Object.keys(sessionData)) {
+    if (sessionData[m].find(r => r.id === currentDetailRow.id)) {
+      month = m; break;
+    }
+  }
+  openDocFromOrder(currentDetailRow.id, month);
 }
 
 function openDocFromOrder(id, month) {

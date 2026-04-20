@@ -319,7 +319,7 @@ window.addEventListener("load", () => {
         toName: p.cust_name || "",
         toTel:  p.cust_tel || "",
         toAddr: p.cust_addr || "",
-        ref:    p.inv_number || "",
+        ref:    p.name_job || p.inv_number || "",
         items:  p.items || [],
         payAmt: p.paid || 0,
       };
@@ -379,13 +379,15 @@ function autoFillFromMasterlist(d) {
   // Supplier (PO)
   if(d.supName) document.getElementById("f_sup").value = d.supName;
 
-  // Payment received (Receipt)
+  // Payment / Deposit amount
   if(d.payAmt && d.payAmt > 0) {
     document.getElementById("f_payamt").value = d.payAmt;
-    // set paydate to today if not set
     if(!document.getElementById("f_paydate").value)
       document.getElementById("f_paydate").value = new Date().toISOString().split("T")[0];
   }
+  // Store balance for invoice display
+  if(d.balance !== undefined) window._docBalance = d.balance;
+  if(d.total !== undefined)   window._docTotal   = d.total;
 
   // Line items
   items = []; itemCtr = 0;
@@ -545,6 +547,9 @@ function buildDocHTML() {
     rcvdHTML=`<div class="d-rcvd"><span class="d-rcvd-lbl">Amount Received</span><span class="d-rcvd-val">${fmtRM(dispAmt)}</span></div>`;
     if(pamt>0 && pamt<total)
       rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Outstanding Balance</span><span class="d-os-val">${fmtRM(total-pamt)}</span></div>`;
+  } else if(docType==="invoice" && pamt>0 && pamt<total) {
+    rcvdHTML=`<div class="d-rcvd" style="background:#e8f4ed;"><span class="d-rcvd-lbl">Deposit Received (${Math.round(pamt/total*100)}%)</span><span class="d-rcvd-val" style="color:#0F7A48;">${fmtRM(pamt)}</span></div>`;
+    rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Balance Due</span><span class="d-os-val">${fmtRM(total-pamt)}</span></div>`;
   }
 
   const stamp = docType==="receipt"?`<div class="d-stamp"><div class="d-stamp-txt">PAID</div></div>`:"";
@@ -612,7 +617,7 @@ function buildDocHTML() {
     </div>
   </div>
 
-  <div class="d-words">${n2w(docType==="receipt"&&pamt>0?pamt:total)}</div>
+  <div class="d-words">${n2w(docType==="receipt"&&pamt>0?pamt:(docType==="invoice"&&pamt>0&&pamt<total?(total-pamt):total))}</div>
   ${payHTML}
   ${notesHTML}
   ${sigsHTML}
