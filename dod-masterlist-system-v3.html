@@ -2338,117 +2338,157 @@ function openDoc(docType) {
 // KPI DASHBOARD (Sales Admin)
 // ══════════════════════════════════════
 function renderKpiDashboard() {
-  const myName = currentUser.name;
-  const allMonths = Object.keys(sessionData);
+  const isAdmin  = currentUser.role === 'admin';
+  const myName   = currentUser.name;
   const curMonthData = sessionData[currentMonth] || [];
-  const myOrders = curMonthData.filter(r => r.pic === myName);
 
-  const myPCS        = myOrders.reduce((s,r)=>s+(r.pcs||0),0);
-  const myRevenue    = myOrders.reduce((s,r)=>s+(r.total_customer||0),0);
-  const myOrders_cnt = myOrders.length;
-  const myCustOS     = myOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-
-  // Komisyen calculation (per notis DOD/HR/2026/04)
-  const sekolahOrders   = myOrders.filter(r => r.source === 'SEKOLAH');
-  const bukanSekolah    = myOrders.filter(r => r.source !== 'SEKOLAH');
-  const revSekolah      = sekolahOrders.reduce((s,r)=>s+(r.total_customer||0),0);
-  const revBukanSekolah = bukanSekolah.reduce((s,r)=>s+(r.total_customer||0),0);
-  const komisyenSekolah      = revSekolah * KOMISYEN_RATE_SEKOLAH;
-  const komisyenBukanSekolah = revBukanSekolah * KOMISYEN_RATE_BUKAN_SEKOLAH;
-  const totalKomisyen        = myPCS >= KOMISYEN_MIN_PCS ? (komisyenSekolah + komisyenBukanSekolah) : 0;
-  const pcsProgress          = Math.min((myPCS / KOMISYEN_MIN_PCS) * 100, 100);
+  // Sales staff list — for admin show all, for sales show self only
+  const SALES_STAFF = isAdmin
+    ? [...new Set(Object.values(sessionData).flatMap(orders =>
+        orders.map(r => r.pic).filter(p => p && p !== 'FATHI' && p !== 'FARIZ')
+      ))].sort()
+    : [myName];
 
   const el = document.getElementById('kpiDashContent');
-  el.innerHTML = `
-    <button onclick="showMasterlistView()" style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:20px;">← Kembali ke Sales List</button>
-    <div class="kpi-dash-title">Dashboard KPI Saya</div>
-    <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} &middot; PIC: ${myName}</div>
 
-    <div class="kpi-cards-grid">
-      <div class="kpi-card">
-        <div class="kpi-card-label">Total Order</div>
-        <div class="kpi-card-val" style="color:var(--blue)">${myOrders_cnt}</div>
-        <div class="kpi-card-sub">order bulan ini</div>
+  // ── Per-staff KPI builder ──────────────────────────────────
+  function buildStaffKpi(picName) {
+    const orders       = curMonthData.filter(r => r.pic === picName);
+    const pcs          = orders.reduce((s,r)=>s+(r.pcs||0),0);
+    const revenue      = orders.reduce((s,r)=>s+(r.total_customer||0),0);
+    const orderCount   = orders.length;
+    const custOS       = orders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+    const sekolah      = orders.filter(r=>r.source==='SEKOLAH');
+    const bukanSekolah = orders.filter(r=>r.source!=='SEKOLAH');
+    const revSek       = sekolah.reduce((s,r)=>s+(r.total_customer||0),0);
+    const revBukan     = bukanSekolah.reduce((s,r)=>s+(r.total_customer||0),0);
+    const komSek       = revSek * KOMISYEN_RATE_SEKOLAH;
+    const komBukan     = revBukan * KOMISYEN_RATE_BUKAN_SEKOLAH;
+    const totalKom     = pcs >= KOMISYEN_MIN_PCS ? (komSek + komBukan) : 0;
+    const pcsProgress  = Math.min((pcs / KOMISYEN_MIN_PCS) * 100, 100);
+    const layak        = pcs >= KOMISYEN_MIN_PCS;
+
+    // Color for avatar
+    const STAFF_COLORS = { ANIS:'#2470F0', HAKIMAH:'#B8720A', DANIEL:'#C02840', FATHI:'#0F7A48', FARIZ:'#1A5CC8' };
+    const avatarColor  = STAFF_COLORS[picName] || '#1A5CC8';
+
+    return `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line);">
+        <div style="width:40px;height:40px;border-radius:50%;background:${avatarColor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;">${picName.slice(0,2)}</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;color:var(--text);">${picName}</div>
+          <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:${layak?'var(--green)':'var(--red)'};">${fmt(totalKom)}</div>
+          <div style="font-size:10px;color:var(--textm);">unjuran komisyen</div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-card-label">PCS (Individu)</div>
-        <div class="kpi-card-val" style="color:${myPCS>=1000?'var(--green)':'var(--red)'}">${myPCS.toLocaleString()}</div>
-        <div class="kpi-card-sub">sasaran: 1,000 PCS</div>
+
+      <!-- KPI Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div class="kpi-card">
+          <div class="kpi-card-label">Order</div>
+          <div class="kpi-card-val" style="color:var(--blue)">${orderCount}</div>
+          <div class="kpi-card-sub">bulan ini</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">PCS</div>
+          <div class="kpi-card-val" style="color:${pcs>=1000?'var(--green)':'var(--red)'}">${pcs.toLocaleString()}</div>
+          <div class="kpi-card-sub">sasaran 1,000</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Revenue</div>
+          <div class="kpi-card-val" style="color:var(--amber);font-size:14px;">${fmt(revenue)}</div>
+          <div class="kpi-card-sub">jumlah sales</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Customer OS</div>
+          <div class="kpi-card-val" style="color:${custOS>0?'var(--red)':'var(--green)'};">${custOS>0?fmt(custOS):'✓'}</div>
+          <div class="kpi-card-sub">${custOS>0?'belum collect':'clear'}</div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-card-label">Revenue</div>
-        <div class="kpi-card-val" style="color:var(--amber)">${fmt(myRevenue)}</div>
-        <div class="kpi-card-sub">jumlah sales</div>
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--textm);margin-bottom:5px;">
+          <span>Progress PCS ke 1,000</span>
+          <span style="font-weight:600;color:${layak?'var(--green)':'var(--red)'};">${pcs.toLocaleString()} / 1,000 (${pcsProgress.toFixed(0)}%)</span>
+        </div>
+        <div style="height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${pcsProgress}%;background:${layak?'var(--green)':'var(--red)'};border-radius:4px;transition:width .6s ease;"></div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-card-label">Customer OS</div>
-        <div class="kpi-card-val" style="color:${myCustOS>0?'var(--red)':'var(--green)'}">${myCustOS>0?fmt(myCustOS):'✓ Clear'}</div>
+
+      <!-- Komisyen breakdown -->
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
+          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
+          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
+        </div>
+        <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
+          <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
+          <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── Summary row for admin ──────────────────────────────────
+  function buildAdminSummary() {
+    const allSalesOrders = curMonthData.filter(r =>
+      r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
+    );
+    const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
+    const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
+    const totalOS   = allSalesOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+    const totalOrds = allSalesOrders.length;
+
+    return `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+      <div class="kpi-card" style="border-top:3px solid var(--blue);">
+        <div class="kpi-card-label">Total Order (Team)</div>
+        <div class="kpi-card-val" style="color:var(--blue)">${totalOrds}</div>
+        <div class="kpi-card-sub">${MONTH_LABELS[currentMonth]||currentMonth}</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--blue);">
+        <div class="kpi-card-label">Total PCS (Team)</div>
+        <div class="kpi-card-val" style="color:var(--blue)">${totalPCS.toLocaleString()}</div>
+        <div class="kpi-card-sub">keseluruhan</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--amber);">
+        <div class="kpi-card-label">Total Revenue</div>
+        <div class="kpi-card-val" style="color:var(--amber);font-size:14px;">${fmt(totalRev)}</div>
+        <div class="kpi-card-sub">semua sales staff</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--red);">
+        <div class="kpi-card-label">Total Customer OS</div>
+        <div class="kpi-card-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
         <div class="kpi-card-sub">belum collect</div>
       </div>
-    </div>
+    </div>`;
+  }
 
-    <div class="pcs-progress">
-      <div class="pcs-prog-label">Progress PCS — Ambang Minimum Komisyen</div>
-      <div class="pcs-prog-bar-wrap">
-        <div class="pcs-prog-bar-fill" style="width:${pcsProgress}%"></div>
-      </div>
-      <div class="pcs-prog-row">
-        <div class="pcs-prog-nums">${myPCS.toLocaleString()} / 1,000 PCS</div>
-        <div class="pcs-prog-target">${pcsProgress.toFixed(0)}% tercapai</div>
-      </div>
-    </div>
+  // ── Render ─────────────────────────────────────────────────
+  const backBtn = `<button onclick="showMasterlistView()" style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:20px;">← Kembali ke Sales List</button>`;
 
-    ${myPCS < KOMISYEN_MIN_PCS ? `
-    <div class="komisyen-warning">
-      ⚠ <strong>Belum layak komisyen.</strong> PCS individu anda bulan ini: <strong>${myPCS} PCS</strong>. 
-      Perlu tambah lagi <strong>${(KOMISYEN_MIN_PCS - myPCS).toLocaleString()} PCS</strong> untuk mencapai ambang minimum 1,000 PCS.
-      Tanpa mencapai 1,000 PCS, tiada komisyen akan dibayar walaupun ada job yang complete dan full payment.
-    </div>` : `
-    <div class="komisyen-ok">
-      ✓ <strong>Layak komisyen!</strong> Anda telah mencapai ${myPCS.toLocaleString()} PCS melebihi ambang minimum 1,000 PCS.
-    </div>`}
+  const title = isAdmin
+    ? `<div class="kpi-dash-title">Dashboard KPI Sales Team</div>
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · Semua Sales Admin</div>`
+    : `<div class="kpi-dash-title">Dashboard KPI Saya</div>
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · PIC: ${myName}</div>`;
 
-    <div class="komisyen-box">
-      <div class="komisyen-title">Unjuran Komisyen Bulan Ini</div>
-      <div class="komisyen-amount">${fmt(totalKomisyen)}</div>
-      <div class="komisyen-sub">dibayar pada 15 ${(MONTH_LABELS[currentMonth]||currentMonth).split(' ')[0]} &middot; ${myPCS>=KOMISYEN_MIN_PCS?'layak':'TIDAK layak — belum capai 1,000 PCS'}</div>
-      <div class="komisyen-breakdown">
-        <div class="kb-item">
-          <div class="kb-label">Bukan Sekolah (1%)</div>
-          <div class="kb-val">${fmt(komisyenBukanSekolah)}</div>
-        </div>
-        <div class="kb-item">
-          <div class="kb-label">Sekolah (0.5%)</div>
-          <div class="kb-val">${fmt(komisyenSekolah)}</div>
-        </div>
-        <div class="kb-item">
-          <div class="kb-label">Gaji Pokok + Elaun</div>
-          <div class="kb-val" style="font-size:11px;opacity:0.7">Hujung bulan</div>
-        </div>
-      </div>
-      <div class="komisyen-note">
-        Revenue bukan sekolah: ${fmt(revBukanSekolah)} × 1% = ${fmt(komisyenBukanSekolah)}<br>
-        Revenue sekolah: ${fmt(revSekolah)} × 0.5% = ${fmt(komisyenSekolah)}<br>
-        Komisyen tiada had atas — semakin tinggi sales, semakin besar komisyen anda.
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-title">Breakdown Sales Bulan Ini</div>
-      <div class="mini-bar-chart">
-        ${[...new Set(myOrders.map(r=>r.source))].map(src => {
-          const rev = myOrders.filter(r=>r.source===src).reduce((s,r)=>s+(r.total_customer||0),0);
-          const pct = myRevenue>0?(rev/myRevenue*100).toFixed(0):0;
-          return `<div class="mb-row">
-            <div class="mb-label" style="font-size:10px">${src}</div>
-            <div class="mb-bar-wrap"><div class="mb-bar-fill" style="width:${pct}%;background:var(--blue)">${pct}%</div></div>
-            <div class="mb-val">${fmt(rev)}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-  `;
+  el.innerHTML = backBtn + title +
+    (isAdmin ? buildAdminSummary() : '') +
+    SALES_STAFF.map(buildStaffKpi).join('');
 }
+
 
 // ══════════════════════════════════════
 // DESIGNER BOARD
