@@ -536,6 +536,23 @@ tr:hover .row-actions{opacity:1;}
 .item-add-btn:hover{background:var(--blue);color:#fff;}
 .item-summary{display:flex;gap:16px;align-items:center;padding:8px 10px;background:var(--bg3);border-radius:7px;font-size:12px;}
 .item-summary-val{font-family:'Fira Code',monospace;font-weight:600;color:var(--text);}
+
+/* ── SUPPLIER MODAL ── */
+.sup-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;}
+.sup-modal-bg.open{display:flex;}
+.sup-modal{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:28px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.sup-modal h3{font-size:18px;font-weight:700;color:var(--text);margin-bottom:20px;}
+.sup-modal .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.sup-modal .form-field{display:flex;flex-direction:column;gap:5px;}
+.sup-modal .form-field.full{grid-column:1/-1;}
+.sup-modal .fl{font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);}
+.sup-modal .fi{background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;outline:none;}
+.sup-modal .fi:focus{border-color:var(--blue);}
+.sup-modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);}
+/* ── PAYMENT MODAL ── */
+.pay-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;}
+.pay-modal-bg.open{display:flex;}
+.pay-modal{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:28px;width:440px;max-width:95vw;}
 </style>
 </head>
 <body>
@@ -1256,6 +1273,97 @@ tr:hover .row-actions{opacity:1;}
 <div class="toast" id="toast"></div>
 
 </div><!-- /mainApp -->
+
+<!-- SUPPLIER EDIT MODAL -->
+<div class="sup-modal-bg" id="supModalBg">
+  <div class="sup-modal">
+    <h3 id="supModalTitle">Edit Supplier</h3>
+    <input type="hidden" id="sup_edit_id">
+    <div class="form-grid">
+      <div class="form-field full">
+        <label class="fl">Nama Syarikat</label>
+        <input class="fi" type="text" id="sup_name" placeholder="Nama penuh syarikat">
+      </div>
+      <div class="form-field">
+        <label class="fl">Nama Pendek</label>
+        <input class="fi" type="text" id="sup_short" placeholder="cth: Nohad">
+      </div>
+      <div class="form-field">
+        <label class="fl">Warna</label>
+        <input class="fi" type="color" id="sup_color" value="#1A5CC8">
+      </div>
+      <div class="form-field">
+        <label class="fl">Nama Pegawai / PIC</label>
+        <input class="fi" type="text" id="sup_contact" placeholder="cth: En. Ahmad">
+      </div>
+      <div class="form-field">
+        <label class="fl">No. Telefon</label>
+        <input class="fi" type="text" id="sup_tel" placeholder="01x-xxxxxxxx">
+      </div>
+      <div class="form-field full">
+        <label class="fl">Alamat</label>
+        <input class="fi" type="text" id="sup_addr" placeholder="Alamat syarikat">
+      </div>
+      <div class="form-field">
+        <label class="fl">Bank</label>
+        <input class="fi" type="text" id="sup_bank" placeholder="cth: Maybank">
+      </div>
+      <div class="form-field">
+        <label class="fl">No. Akaun</label>
+        <input class="fi" type="text" id="sup_acc" placeholder="cth: 1234567890">
+      </div>
+      <div class="form-field full">
+        <label class="fl">Nama Akaun</label>
+        <input class="fi" type="text" id="sup_holder" placeholder="Nama pemilik akaun">
+      </div>
+      <div class="form-field full">
+        <label class="fl">Produk Dibekal (pisah dengan koma)</label>
+        <textarea class="fi" id="sup_products" rows="3" placeholder="cth: Sublimation Jersey, Polo Shirt, T-Shirt"></textarea>
+      </div>
+    </div>
+    <div class="sup-modal-footer">
+      <button class="btn-secondary" onclick="closeSupModal()">Batal</button>
+      <button class="btn-primary" onclick="saveSupplier()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPLIER PAYMENT MODAL -->
+<div class="pay-modal-bg" id="payModalBg">
+  <div class="pay-modal">
+    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;" id="payModalTitle">Rekod Pembayaran Supplier</h3>
+    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;" id="payModalSub"></div>
+    <input type="hidden" id="pay_order_id">
+    <input type="hidden" id="pay_order_month">
+    <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+        <span style="color:var(--textd);">Jumlah Kos Supplier</span>
+        <span style="font-family:'Fira Code',monospace;font-weight:600;color:var(--text);" id="pay_total_display">RM 0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+        <span style="color:var(--textd);">Dah Bayar</span>
+        <span style="font-family:'Fira Code',monospace;font-weight:600;color:var(--green);" id="pay_paid_display">RM 0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;border-top:1px solid var(--line);padding-top:6px;">
+        <span style="color:var(--text);">Outstanding</span>
+        <span style="font-family:'Fira Code',monospace;color:var(--red);" id="pay_os_display">RM 0.00</span>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);display:block;margin-bottom:5px;">Amaun Bayaran (RM)</label>
+      <input class="fi" type="number" id="pay_amount" placeholder="0.00" step="0.01" min="0"
+        style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:9px 12px;border-radius:8px;font-size:14px;outline:none;">
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button type="button" onclick="setPayFull()" style="flex:1;font-size:11px;padding:7px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:6px;cursor:pointer;font-weight:600;">✓ Full Payment</button>
+      <button type="button" onclick="setPayHalf()" style="flex:1;font-size:11px;padding:7px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:6px;cursor:pointer;">50% Payment</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--line);">
+      <button class="btn-secondary" onclick="closePayModal()">Batal</button>
+      <button class="btn-primary" onclick="confirmSupPayment()">💳 Rekod Pembayaran</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 
@@ -1568,6 +1676,9 @@ function showCustomerView() {
   document.getElementById('customerView').style.display = 'block';
   renderCustomers();
 }
+
+// Load saved supplier edits on startup
+loadSuppliers();
 
 function setupNavForRole() {
   const role = currentUser.role;
@@ -4348,7 +4459,7 @@ function setSupplier(name) {
 }
 
 
-const SUPPLIERS = [
+let SUPPLIERS = [
   {
     id: 'nohad',
     name: 'NOHAD SDN BHD',
@@ -4422,6 +4533,7 @@ function renderSupplierDir() {
         <div style="font-size:20px;font-weight:700;color:var(--text);">🏭 Supplier Directory</div>
         <div style="font-size:12px;color:var(--textm);margin-top:2px;">Maklumat & produk semua supplier DOD</div>
       </div>
+      <button onclick="openSupModal()" style="background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">＋ Tambah Supplier</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
       ${SUPPLIERS.map(s => {
@@ -4444,6 +4556,7 @@ function renderSupplierDir() {
               <div style="font-size:14px;font-weight:700;color:var(--text);">${s.name}</div>
               ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
             </div>
+            <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);white-space:nowrap;">✏️ Edit</button>
             <div style="text-align:right;">
               <div style="font-size:11px;color:var(--textm);">${totalOrders} order</div>
               <div style="font-size:12px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS)+' OS':'✓ Clear'}</div>
@@ -4524,9 +4637,21 @@ function renderSupplierOS() {
       const color = supInfo ? supInfo.color : '#9AA0B8';
       return `
       <div style="margin-bottom:24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:${color}14;border:1px solid ${color}33;border-radius:10px 10px 0 0;margin-bottom:0;">
-          <div style="font-size:14px;font-weight:700;color:var(--text);">🏭 ${supName}</div>
-          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--red);">${fmt(supOS)}</div>
+        <div style="padding:14px 16px;background:${color}14;border:1px solid ${color}33;border-radius:10px 10px 0 0;margin-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:14px;font-weight:700;color:var(--text);">🏭 ${supName}</div>
+            <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--red);">${fmt(supOS)}</div>
+          </div>
+          ${(() => {
+            const si = SUPPLIERS.find(s => s.name === supName || supName.toUpperCase().includes(s.short.toUpperCase()));
+            if (!si || !si.bank[0]) return '';
+            const b = si.bank[0];
+            return `<div style="display:flex;align-items:center;gap:12px;font-size:11px;">
+              <span style="background:var(--bg2);border:1px solid var(--line);border-radius:5px;padding:4px 10px;color:var(--textd);">🏦 ${b.bank}</span>
+              <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--text);">${b.acc || '— belum dikemaskini'}</span>
+              <span style="color:var(--textm);">${b.holder}</span>
+            </div>`;
+          })()}
         </div>
         <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;">
           <thead>
@@ -4538,6 +4663,7 @@ function renderSupplierOS() {
               <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">Jumlah (RM)</th>
               <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">Dah Bayar</th>
               <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:right;">OS</th>
+              <th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:8px 12px;text-align:center;">Bayar</th>
             </tr>
           </thead>
           <tbody>
@@ -4550,6 +4676,12 @@ function renderSupplierOS() {
               <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(r.nohad_amount||r.total_supplier||0)}</td>
               <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--green);text-align:right;">${fmt(r.nohad_paid||0)}</td>
               <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--red);text-align:right;">${fmt(r.supplier_outstanding||0)}</td>
+              <td style="padding:9px 12px;text-align:center;">
+                <button onclick="openPayModal('${r.id}','${Object.keys(sessionData).find(m=>(sessionData[m]||[]).find(o=>o.id===r.id))||''}')"
+                  style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">
+                  💳 Bayar
+                </button>
+              </td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -4588,6 +4720,151 @@ function generateOSReminder(custIndex) {
   };
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
+}
+
+
+// ══════════════════════════════════════
+// SUPPLIER MANAGEMENT
+// ══════════════════════════════════════
+
+// Load suppliers from localStorage (persists edits)
+function loadSuppliers() {
+  try {
+    const raw = localStorage.getItem('dod_suppliers_v1');
+    if (raw) SUPPLIERS = JSON.parse(raw);
+  } catch(e) {}
+}
+
+function saveSuppliers() {
+  localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
+}
+
+function openSupModal(supId) {
+  const s = supId ? SUPPLIERS.find(x => x.id === supId) : null;
+  document.getElementById('supModalTitle').textContent = s ? 'Edit Supplier' : '＋ Tambah Supplier Baru';
+  document.getElementById('sup_edit_id').value = supId || '';
+  document.getElementById('sup_name').value    = s ? s.name : '';
+  document.getElementById('sup_short').value   = s ? s.short : '';
+  document.getElementById('sup_color').value   = s ? s.color : '#1A5CC8';
+  document.getElementById('sup_contact').value = s ? (s.contact||'') : '';
+  document.getElementById('sup_tel').value     = s ? (s.tel||'') : '';
+  document.getElementById('sup_addr').value    = s ? (s.addr||'') : '';
+  document.getElementById('sup_bank').value    = s ? (s.bank[0]?.bank||'') : '';
+  document.getElementById('sup_acc').value     = s ? (s.bank[0]?.acc||'') : '';
+  document.getElementById('sup_holder').value  = s ? (s.bank[0]?.holder||'') : '';
+  document.getElementById('sup_products').value = s ? (s.products||[]).join(', ') : '';
+  document.getElementById('supModalBg').classList.add('open');
+}
+
+function closeSupModal() {
+  document.getElementById('supModalBg').classList.remove('open');
+}
+
+function saveSupplier() {
+  const id      = document.getElementById('sup_edit_id').value;
+  const name    = document.getElementById('sup_name').value.trim();
+  const short   = document.getElementById('sup_short').value.trim();
+  const color   = document.getElementById('sup_color').value;
+  const contact = document.getElementById('sup_contact').value.trim();
+  const tel     = document.getElementById('sup_tel').value.trim();
+  const addr    = document.getElementById('sup_addr').value.trim();
+  const bank    = document.getElementById('sup_bank').value.trim();
+  const acc     = document.getElementById('sup_acc').value.trim();
+  const holder  = document.getElementById('sup_holder').value.trim();
+  const prods   = document.getElementById('sup_products').value.split(',').map(p=>p.trim()).filter(Boolean);
+
+  if (!name) { showToast('Sila isi nama syarikat', true); return; }
+
+  const supObj = { id: id || 'sup_'+Date.now(), name, short: short||name, color,
+    contact, tel, email:'', addr, bank:[{bank, acc, holder}], products: prods };
+
+  if (id) {
+    const idx = SUPPLIERS.findIndex(x => x.id === id);
+    if (idx >= 0) SUPPLIERS[idx] = supObj;
+  } else {
+    SUPPLIERS.push(supObj);
+  }
+  saveSuppliers();
+  closeSupModal();
+  renderSupplierDir();
+  showToast('Supplier dikemaskini ✓');
+}
+
+// ── PAYMENT FUNCTIONS ─────────────────────────────────────────
+let _payTarget = null; // { orderId, month }
+
+function openPayModal(orderId, month) {
+  const r = (sessionData[month]||[]).find(o => o.id === orderId);
+  if (!r) return;
+  _payTarget = { orderId, month };
+  const total = r.nohad_amount || r.total_supplier || 0;
+  const paid  = r.nohad_paid || 0;
+  const os    = Math.max(0, total - paid);
+  const supName = r.supplier_name || 'NOHAD SDN BHD';
+  // Find supplier bank info
+  const sup = SUPPLIERS.find(s => s.name === supName || supName.toUpperCase().includes(s.short.toUpperCase()));
+
+  document.getElementById('payModalTitle').textContent = 'Rekod Pembayaran — ' + supName;
+  document.getElementById('payModalSub').textContent   = r.name_job || r.inv_number || '';
+  document.getElementById('pay_order_id').value    = orderId;
+  document.getElementById('pay_order_month').value = month;
+  document.getElementById('pay_total_display').textContent = fmt(total);
+  document.getElementById('pay_paid_display').textContent  = fmt(paid);
+  document.getElementById('pay_os_display').textContent    = fmt(os);
+  document.getElementById('pay_amount').value = os.toFixed(2);
+  document.getElementById('payModalBg').classList.add('open');
+}
+
+function closePayModal() {
+  document.getElementById('payModalBg').classList.remove('open');
+  _payTarget = null;
+}
+
+function setPayFull() {
+  if (!_payTarget) return;
+  const r = (sessionData[_payTarget.month]||[]).find(o => o.id === _payTarget.orderId);
+  if (!r) return;
+  const os = Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0));
+  document.getElementById('pay_amount').value = os.toFixed(2);
+}
+
+function setPayHalf() {
+  if (!_payTarget) return;
+  const r = (sessionData[_payTarget.month]||[]).find(o => o.id === _payTarget.orderId);
+  if (!r) return;
+  const os = Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0));
+  document.getElementById('pay_amount').value = (os/2).toFixed(2);
+}
+
+async function confirmSupPayment() {
+  if (!_payTarget) return;
+  const { orderId, month } = _payTarget;
+  const payAmt = parseFloat(document.getElementById('pay_amount').value) || 0;
+  if (payAmt <= 0) { showToast('Sila masukkan amaun bayaran', true); return; }
+
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  const r = sessionData[month][idx];
+
+  const newPaid = (r.nohad_paid || 0) + payAmt;
+  const newOS   = Math.max(0, (r.nohad_amount || 0) - newPaid);
+  const fullPay = newOS <= 0;
+
+  sessionData[month][idx] = {
+    ...r,
+    nohad_paid: newPaid,
+    supplier_outstanding: newOS,
+    supplier_payment_status: fullPay ? 'PAYMENT DONE' : 'OUTSTANDING',
+  };
+
+  // Sync to Supabase
+  const updated = sessionData[month][idx];
+  supaUpsert('orders', { ...updated, month }).catch(e => console.warn('Pay sync failed:', e));
+
+  closePayModal();
+  renderSupplierOS();
+  renderAll();
+  showToast(fullPay ? '✓ Full payment selesai!' : fmt(payAmt) + ' direkod ✓');
 }
 
 </script>
