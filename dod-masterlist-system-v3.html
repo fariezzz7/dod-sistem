@@ -2358,41 +2358,36 @@ function openDoc(docType) {
 
   const isSupplier = docType === 'po';
 
+  // Build items list
+  const custItems = (r.items && r.items.length) ? r.items.map(it => ({
+    sku:   it.sku || '',
+    desc:  it.desc || '',
+    qty:   parseFloat(it.qty) || 0,
+    price: parseFloat(it.price) || 0,
+    total: (parseFloat(it.qty)||0) * (parseFloat(it.price)||0),
+  })) : [
+    { desc: r.name_job || '', qty: r.pcs || 0,
+      price: r.pcs > 0 ? parseFloat((r.total_customer/r.pcs).toFixed(2)) : 0,
+      total: r.total_customer || 0 }
+  ];
+
+  let payload;
   if (isSupplier) {
-    // PO to supplier — use supplier items
-    const supItems = (r.items && r.items.length) ? r.items : [
-      { desc: r.name_job || '', qty: r.pcs || 1, price: r.nohad_amount > 0 ? parseFloat((r.nohad_amount/(r.pcs||1)).toFixed(2)) : 0 }
-    ];
-    const payload = {
+    payload = {
       type: 'po',
-      inv_number: 'PO-' + (r.inv_number || r.inv_number_supplier || ''),
+      inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
       inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
       due_date: r.due_date || '',
       cust_name: r.supplier_name || 'NOHAD SDN BHD',
-      cust_tel: '',
-      cust_addr: '',
+      cust_tel: '', cust_addr: '',
       name_job: r.name_job || '',
-      items: supItems,
+      items: custItems,
       total: r.nohad_amount || 0,
       paid: r.nohad_paid || 0,
       balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
     };
-    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
-    window.open('dod-document-generator.html', '_blank');
   } else {
-    // Invoice / Quotation / Receipt — use customer items
-    const custItems = (r.items && r.items.length) ? r.items.map(it => ({
-      sku: it.sku || '',
-      desc: it.desc || '',
-      qty: parseFloat(it.qty) || 0,
-      price: parseFloat(it.price) || 0,
-      total: (parseFloat(it.qty)||0) * (parseFloat(it.price)||0),
-    })) : [
-      { desc: r.name_job || '', qty: r.pcs || 0,
-        price: r.pcs > 0 ? parseFloat((r.total_customer/r.pcs).toFixed(2)) : 0,
-        total: r.total_customer || 0 }
-    ];
-    const payload = {
+    payload = {
       type: docType,
       inv_number: r.inv_number_supplier || r.inv_number || '',
       inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
@@ -2404,12 +2399,13 @@ function openDoc(docType) {
       name_job: r.name_job || '',
       items: custItems,
       total: r.total_customer || 0,
-      paid: docType === 'receipt' ? (r.first_payment || 0) : (r.first_payment || 0),
+      paid: r.first_payment || 0,
       balance: r.balance_customer || 0,
     };
-    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
-    window.open('dod-document-generator.html', '_blank');
   }
+
+  localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+  window.open('dod-document-generator.html', '_blank');
 }
 
 // ══════════════════════════════════════
