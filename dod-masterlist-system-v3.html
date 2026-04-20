@@ -2227,6 +2227,13 @@ function saveOrder() {
       }
     }
     showToast('Order dikemaskini ✓');
+    // Update currentDetailRow to reflect edited data
+    if (currentDetailRow && currentDetailRow.id === editingId) {
+      for (const m of Object.keys(sessionData)) {
+        const found = sessionData[m].find(r => r.id === editingId);
+        if (found) { currentDetailRow = found; break; }
+      }
+    }
     // Sync edit to Supabase
     (() => {
       const months2 = Object.keys(sessionData);
