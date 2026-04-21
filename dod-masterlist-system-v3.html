@@ -1055,6 +1055,15 @@ tr:hover .row-actions{opacity:1;}
               <option value="complete">✅ Complete</option>
             </select>
           </div>
+          <div class="form-field">
+            <label class="fl">Pipeline Status</label>
+            <select class="fi" id="f_pipeline_status">
+              <option value="quotation">📋 Quotation</option>
+              <option value="confirmed" selected>✅ Confirmed</option>
+              <option value="in_production">🏭 In Production</option>
+              <option value="completed">✔ Completed</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -1452,7 +1461,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes'];
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -1952,10 +1961,19 @@ function sourceBadge(src) {
 // ══════════════════════════════════════
 // RENDER KPIs
 // ══════════════════════════════════════
+
+// Pipeline: only these statuses count as actual sales
+function isPipelineSales(o) {
+  const s = o.pipeline_status || 'confirmed';
+  return s === 'confirmed' || s === 'in_production' || s === 'completed';
+}
 function renderKPIs(rows) {
-  const totalRev  = rows.reduce((s,r)=>s+(r.total_customer||0),0);
-  const totalProf = rows.reduce((s,r)=>s+(r.profit||0),0);
-  const totalPCS  = rows.reduce((s,r)=>s+(r.pcs||0),0);
+  const salesRows = rows.filter(isPipelineSales);
+  const quotRows  = rows.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
+  const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
+  const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
+  const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
+  const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
   const totalCost = rows.reduce((s,r)=>s+(r.total_supplier||0),0);
   const custOS    = rows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
   const supOS     = rows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
@@ -2003,6 +2021,10 @@ function renderTable(rows) {
     const margin   = r.total_customer > 0 ? (r.profit/r.total_customer*100).toFixed(0) : 0;
     const mColor   = margin >= 30 ? 'var(--green)' : margin >= 20 ? 'var(--amber)' : 'var(--red)';
     const picColor = PIC_COLORS[r.pic] || '#9AA0B8';
+    const plStatus = r.pipeline_status || 'confirmed';
+    const plBadge = plStatus === 'quotation'
+      ? '<span style="font-size:9px;padding:1px 6px;background:#FEF3C7;color:#B8720A;border:1px solid #FDE68A;border-radius:8px;font-weight:600;margin-left:4px;">📋 QUOTATION</span>'
+      : '';
     const picBg    = PIC_BG[r.pic] || '#F4F6FA';
     const custOSCell = isCustOS ? `<span class="os-badge cust">⚠ ${fmt(r.balance_customer)}</span>` : `<span class="os-badge clear">✓</span>`;
     const supOSCell  = isSupOS  ? `<span class="os-badge sup">⚠ ${fmt(r.supplier_outstanding)}</span>` : `<span class="os-badge clear">✓</span>`;
@@ -2013,7 +2035,7 @@ function renderTable(rows) {
       <td class="mono" style="color:var(--textm);font-size:10px">${i+1}</td>
       <td class="mono" style="font-size:10px;color:var(--textd)">${dateDisp}</td>
       <td><span style="background:${picBg};color:${picColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${r.pic}</span></td>
-      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}">${r.name_job}</td>
+      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}">${r.name_job}${plBadge}</td>
       <td>${sourceBadge(r.source)}</td>
       <td class="mono blue" style="font-weight:600">${r.pcs||'—'}</td>
       <td class="mono" style="color:var(--textm);font-size:10px">${r.inv_number||'—'}</td>
@@ -2144,6 +2166,7 @@ function showDetail(id) {
     <div style="margin:10px 0 6px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">KEWANGAN</div>
     <div class="dp-field"><div class="dp-key">No Inv Supplier</div><div class="dp-val mono">${r.inv_number||'—'}</div></div>
     <div class="dp-field"><div class="dp-key">No Inv DOD</div><div class="dp-val mono">${r.inv_number_supplier||'—'}</div></div>
+    ${(r.pipeline_status||'confirmed')==='quotation'?`<div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:6px;padding:6px 12px;margin-top:8px;font-size:11px;color:#B8720A;font-weight:600;">📋 QUOTATION — Belum Confirmed. Tidak dikira dalam sales.</div>`:''}
     <div class="dp-field"><div class="dp-key">Revenue</div><div class="dp-val" style="color:var(--amber);font-weight:700">${fmt(r.total_customer)}</div></div>
     <div class="dp-field"><div class="dp-key">1st Payment</div><div class="dp-val" style="color:var(--green)">${fmt(r.first_payment)}</div></div>
     ${isCustOS?`<div class="dp-field"><div class="dp-key">Cust OS</div><div class="dp-val" style="color:var(--red);font-weight:700">${fmt(r.balance_customer)}</div></div>`:''}
@@ -2278,6 +2301,8 @@ function openEditModalById(id) {
   loadItemsData(r.items || []);
   document.getElementById('f_prod_date').value   = r.production_date || '';
   document.getElementById('f_prod_status').value = r.production_status || 'job-submit';
+  const ppEditEl = document.getElementById('f_pipeline_status');
+  if (ppEditEl) ppEditEl.value = r.pipeline_status || 'confirmed';
   document.getElementById('addModalBg').classList.add('open');
 }
 
@@ -2294,6 +2319,10 @@ function clearForm() {
   clearItemRows(); // clear item breakdown
   document.getElementById('f_sup_status').value = 'PAYMENT DONE';
   document.getElementById('f_prod_status').value = 'job-submit';
+  // Default pipeline: sales = quotation, admin = confirmed
+  const defPipeline = currentUser?.role === 'admin' ? 'confirmed' : 'quotation';
+  const ppEl = document.getElementById('f_pipeline_status');
+  if (ppEl) ppEl.value = defPipeline;
   // Reset deposit to 70%
   const dPct = document.getElementById('f_deposit_pct');
   if (dPct) dPct.value = 70;
@@ -2363,8 +2392,9 @@ function saveOrder() {
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
   const supStatus  = document.getElementById('f_sup_status').value;
   const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
-  const prodDate   = document.getElementById('f_prod_date')?.value || '';
-  const prodStatus = document.getElementById('f_prod_status')?.value || 'job-submit';
+  const prodDate      = document.getElementById('f_prod_date')?.value || '';
+  const prodStatus    = document.getElementById('f_prod_status')?.value || 'job-submit';
+  const pipelineStatus = document.getElementById('f_pipeline_status')?.value || 'confirmed';
 
   if (!name) { showToast('Sila isi Nama Job', true); return; }
 
@@ -2388,7 +2418,8 @@ function saveOrder() {
           luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
           total_customer:rev, first_payment:pay1, balance_customer:custOS,
           supplier_outstanding:supOS, profit, items:editItems,
-          production_date:prodDate, production_status:prodStatus };
+          production_date:prodDate, production_status:prodStatus,
+          pipeline_status:pipelineStatus };
         break;
       }
     }
@@ -2422,7 +2453,8 @@ function saveOrder() {
       luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
-      production_date:prodDate, production_status:prodStatus
+      production_date:prodDate, production_status:prodStatus,
+      pipeline_status:pipelineStatus
     });
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
@@ -2952,18 +2984,23 @@ function renderHomeKpi() {
   const curOrders = sessionData[curMonth] || [];
   const prevOrders= sessionData[prevMonth] || [];
 
-  const totalRev    = all.reduce((s,o) => s+(o.total_customer||0), 0);
-  const totalPCS    = all.reduce((s,o) => s+(o.pcs||0), 0);
-  const totalProfit = all.reduce((s,o) => s+(o.profit||0), 0);
-  const totalOS     = all.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
+  const allSales    = all.filter(isPipelineSales);
+  const totalRev    = allSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const totalPCS    = allSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const totalProfit = allSales.reduce((s,o) => s+(o.profit||0), 0);
+  const totalOS     = allSales.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
 
-  const curRev    = curOrders.reduce((s,o) => s+(o.total_customer||0), 0);
-  const curPCS    = curOrders.reduce((s,o) => s+(o.pcs||0), 0);
-  const curProfit = curOrders.reduce((s,o) => s+(o.profit||0), 0);
+  const curSales  = curOrders.filter(isPipelineSales);
+  const curQuots  = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation');
+  const curRev    = curSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const curPCS    = curSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const curProfit = curSales.reduce((s,o) => s+(o.profit||0), 0);
+  const curQuotVal = curQuots.reduce((s,o) => s+(o.total_customer||0), 0);
   const curMargin = curRev > 0 ? (curProfit/curRev*100).toFixed(1) : 0;
-  const curOrdsN  = curOrders.length;
+  const curOrdsN  = curSales.length;
+  const curQuotN  = curQuots.length;
 
-  const prevRev   = prevOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const prevRev   = prevOrders.filter(isPipelineSales).reduce((s,o) => s+(o.total_customer||0), 0);
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
@@ -2981,7 +3018,7 @@ function renderHomeKpi() {
     <div class="home-kpi-card accent-amber" style="border-left:3px solid var(--amber);">
       <div class="home-kpi-label">Revenue Bulan Ini</div>
       <div class="home-kpi-val">${fmt(curRev)} ${revTrend}</div>
-      <div class="home-kpi-sub">${curOrdsN} order · vs ${MONTH_LABELS[prevMonth]||prevMonth}: ${fmt(prevRev)}</div>
+      <div class="home-kpi-sub">${curOrdsN} order confirmed · ${curQuotN>0?curQuotN+' quotation pending ('+fmt(curQuotVal)+')':''}</div>
     </div>
     <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
       <div class="home-kpi-label">PCS Bulan Ini</div>
@@ -3141,30 +3178,37 @@ function buildCustomerMap() {
       if (order.cust_email && order.cust_email !== '')  map[tel].email = order.cust_email;
       if (order.cust_addr  && order.cust_addr  !== '')  map[tel].addr  = order.cust_addr;
       map[tel].orders.push({
-        name_job:       order.name_job       || '—',
-        order_date:     order.order_date     || '',
-        pcs:            order.pcs            || 0,
-        total_customer: order.total_customer || 0,
+        name_job:        order.name_job        || '—',
+        order_date:      order.order_date      || '',
+        pcs:             order.pcs             || 0,
+        total_customer:  order.total_customer  || 0,
         balance_customer: order.balance_customer || 0,
-        source:         order.source         || '',
-        pic:            order.pic            || '',
+        source:          order.source          || '',
+        pic:             order.pic             || '',
         inv_number_supplier: order.inv_number_supplier || '',
+        pipeline_status: order.pipeline_status || 'confirmed',
       });
     });
   });
   // Sort orders by date desc
   Object.values(map).forEach(c => {
     c.orders.sort((a,b) => (b.order_date||'').localeCompare(a.order_date||''));
+    const _confirmed = c.orders.filter(o => (o.pipeline_status||'confirmed') !== 'quotation');
     c.totalOrders  = c.orders.length;
-    c.totalPCS     = c.orders.reduce((s,o) => s+(o.pcs||0),0);
-    c.totalRev     = c.orders.reduce((s,o) => s+(o.total_customer||0),0);
+    c.totalPCS     = _confirmed.reduce((s,o) => s+(o.pcs||0),0);
+    c.totalRev     = _confirmed.reduce((s,o) => s+(o.total_customer||0),0);
     c.lastOrder    = c.orders[0]?.order_date || '';
-    c.hasOS        = c.orders.some(o => (o.balance_customer||0) > 0);
+    c.hasOS        = _confirmed.some(o => (o.balance_customer||0) > 0);
   });
   // Add extra computed fields
   Object.values(map).forEach(c => {
-    c.totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0), 0);
-    c.osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
+    // OS only from confirmed pipeline orders
+    const confirmedOrds = c.orders.filter(o => (o.pipeline_status||'confirmed') !== 'quotation');
+    c.totalOS  = confirmedOrds.reduce((s,o) => s+(o.balance_customer||0), 0);
+    c.osOrders = confirmedOrds.filter(o => (o.balance_customer||0) > 0);
+    c.quotCount = c.orders.filter(o => (o.pipeline_status||'confirmed') === 'quotation').length;
+    c.quotVal   = c.orders.filter(o => (o.pipeline_status||'confirmed') === 'quotation')
+                          .reduce((s,o) => s+(o.total_customer||0), 0);
     // Customer tier
     if (c.totalRev >= 5000)      c.tier = { label:'Platinum', color:'#7C3AED', bg:'#f5f0ff' };
     else if (c.totalRev >= 2000) c.tier = { label:'Gold',     color:'#B8720A', bg:'#fdf8ee' };
@@ -3329,6 +3373,10 @@ function renderCustomers() {
       ${hasOS?`<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:11px;color:var(--red);font-weight:600;">💰 Outstanding</span>
         <span style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--red);">${fmt(c.totalOS)}</span>
+      </div>`:''}
+      ${c.quotCount>0?`<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:5px 10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:11px;color:#B8720A;font-weight:600;">📋 ${c.quotCount} Quotation Pending</span>
+        <span style="font-family:'Fira Code',monospace;font-size:11px;color:#B8720A;">${fmt(c.quotVal)}</span>
       </div>`:''}
 
       <div style="font-size:10px;color:var(--textm);display:flex;justify-content:space-between;">
@@ -5333,7 +5381,8 @@ function renderProdTrack() {
 
   // Only show orders with production tracking (exclude no status = treat as job-submit)
   const activeOrders = allOrders.filter(o =>
-    (o.production_status || 'job-submit') !== 'complete'
+    (o.production_status || 'job-submit') !== 'complete' &&
+    (o.pipeline_status || 'confirmed') !== 'quotation'
   );
   const completeOrders = allOrders.filter(o =>
     o.production_status === 'complete'
@@ -5607,11 +5656,14 @@ function renderSalesQuickStats() {
   const months = Object.keys(sessionData);
   const curMonth = months[months.length-1];
   const myOrders = (sessionData[curMonth]||[]).filter(r => r.pic === myName);
+  const myConfirmed = myOrders.filter(isPipelineSales);
+  const myQuotCount = myOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation').length;
 
-  const myPCS     = myOrders.reduce((s,r) => s+(r.pcs||0), 0);
-  const myRev     = myOrders.reduce((s,r) => s+(r.total_customer||0), 0);
-  const myOS      = myOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const myOrdsN   = myOrders.length;
+  const mySales   = myOrders.filter(isPipelineSales);
+  const myPCS     = mySales.reduce((s,r) => s+(r.pcs||0), 0);
+  const myRev     = mySales.reduce((s,r) => s+(r.total_customer||0), 0);
+  const myOS      = mySales.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const myOrdsN   = mySales.length;
   const pcsProgress = Math.min((myPCS/1000)*100, 100);
   const layak     = myPCS >= 1000;
 
@@ -5622,7 +5674,10 @@ function renderSalesQuickStats() {
 
   // Production alerts for my orders
   const today = new Date(); today.setHours(0,0,0,0);
-  const myActive = myOrders.filter(o => (o.production_status||'job-submit') !== 'complete');
+  const myActive = myOrders.filter(o => 
+    (o.production_status||'job-submit') !== 'complete' &&
+    (o.pipeline_status||'confirmed') !== 'quotation'
+  );
   const myOverdue = myActive.filter(o => o.due_date && new Date(o.due_date) < today).length;
   const myReady   = myActive.filter(o => o.production_status === 'ready').length;
 
@@ -5665,6 +5720,7 @@ function renderSalesQuickStats() {
         </div>
       </div>
       <!-- Mini alerts -->
+      ${myQuotCount>0?`<div style="font-size:11px;color:#B8720A;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:6px 10px;margin-top:8px;">📋 ${myQuotCount} quotation pending belum confirmed</div>`:''}
       ${myOverdue>0?`<div style="font-size:11px;color:var(--red);background:var(--redbg);border:1px solid var(--redb);border-radius:6px;padding:6px 10px;margin-top:8px;">🔴 ${myOverdue} order saya overdue deadline</div>`:''}
       ${myReady>0?`<div style="font-size:11px;color:#0E7A7A;background:#f0fafa;border:1px solid #b2e0e0;border-radius:6px;padding:6px 10px;margin-top:6px;">📦 ${myReady} order ready untuk dihantar</div>`:''}
       ${myOS>0?`<div style="font-size:11px;color:var(--red);margin-top:8px;">💰 Customer OS: <strong>${fmt(myOS)}</strong></div>`:''}
