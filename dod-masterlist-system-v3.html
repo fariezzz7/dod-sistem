@@ -3198,29 +3198,47 @@ function renderCustomers() {
       ['rev','Jumlah Pembelian ↓'],['os','OS Tertinggi ↓'],
       ['recent','Order Terbaru'],['name','Nama A-Z'],['orders','Bilangan Order ↓']
     ];
-    let tabBtns = '';
-    tabDefs.forEach(t => {
-      const isAct = _tab === t.id;
-      tabBtns += '<button type="button"'
-        + ' style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;'
-        + 'background:' + (isAct?'var(--blue)':'transparent') + ';'
-        + 'color:' + (isAct?'#fff':'var(--textd)') + ';"'
-        + ' onclick="window._custTab='' + t.id + '';renderCustomers();">'
-        + t.label + '</button>';
+    // Build tab buttons using DOM API — no string quoting issues
+    const tabWrap = document.createElement('div');
+    tabWrap.style.cssText = 'display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;';
+    tabDefs.forEach(function(t) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = t.label;
+      btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;'
+        + 'background:' + (_tab === t.id ? 'var(--blue)' : 'transparent') + ';'
+        + 'color:' + (_tab === t.id ? '#fff' : 'var(--textd)') + ';';
+      btn.addEventListener('click', function() {
+        window._custTab = t.id;
+        renderCustomers();
+      });
+      tabWrap.appendChild(btn);
     });
-    let sortOpts = '';
-    sortDefs.forEach(([v,l]) => {
-      sortOpts += '<option value="' + v + '"' + (_sort===v?' selected':'') + '>' + l + '</option>';
+
+    const sel = document.createElement('select');
+    sel.style.cssText = 'background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;';
+    sortDefs.forEach(function(sd) {
+      const opt = document.createElement('option');
+      opt.value = sd[0];
+      opt.textContent = sd[1];
+      if (_sort === sd[0]) opt.selected = true;
+      sel.appendChild(opt);
     });
-    fb.innerHTML = ''
-      + '<div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">'
-      + tabBtns + '</div>'
-      + '<select onchange="window._custSort=this.value;renderCustomers()"'
-      + ' style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;">'
-      + sortOpts + '</select>'
-      + '<button type="button" onclick="window.bulkOSReminder()"'
-      + ' style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">'
-      + '📄 Bulk OS Reminder</button>';
+    sel.addEventListener('change', function() {
+      window._custSort = this.value;
+      renderCustomers();
+    });
+
+    const bulkBtn = document.createElement('button');
+    bulkBtn.type = 'button';
+    bulkBtn.textContent = '📄 Bulk OS Reminder';
+    bulkBtn.style.cssText = 'font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;';
+    bulkBtn.addEventListener('click', function() { window.bulkOSReminder(); });
+
+    fb.innerHTML = '';
+    fb.appendChild(tabWrap);
+    fb.appendChild(sel);
+    fb.appendChild(bulkBtn);
   }
 
   const sort = window._custSort || 'rev';
