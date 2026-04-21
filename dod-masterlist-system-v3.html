@@ -868,26 +868,8 @@ tr:hover .row-actions{opacity:1;}
           <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.25);" onclick="exportXLSX()">⬇ Export XLSX</button>
         </div>
       </div>
-      <!-- Filter & Sort bar -->
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-        <!-- Tab filters -->
-        <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
-          <button id="custTabAll" onclick="window.setCustTab('all')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--blue);color:#fff;">Semua</button>
-          <button id="custTabOS" onclick="window.setCustTab('os')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Ada OS</button>
-          <button id="custTabNew" onclick="window.setCustTab('new')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Baru (30 hari)</button>
-          <button id="custTabPlatGold" onclick="window.setCustTab('platgold')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Platinum/Gold</button>
-        </div>
-        <!-- Sort -->
-        <select id="custSort" onchange="renderCustomers()" style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;">
-          <option value="rev">Jumlah Pembelian ↓</option>
-          <option value="os">OS Tertinggi ↓</option>
-          <option value="recent">Order Terbaru</option>
-          <option value="name">Nama A-Z</option>
-          <option value="orders">Bilangan Order ↓</option>
-        </select>
-        <!-- Bulk action -->
-        <button onclick="window.bulkOSReminder()" style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">📄 Bulk OS Reminder</button>
-      </div>
+      <!-- Filter & Sort bar — rendered dynamically by renderCustomers -->
+      <div id="custFilterBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
       <div class="cust-grid" id="custGrid"></div>
     </div>
   </div>
@@ -3202,7 +3184,36 @@ function buildCustomerMap() {
 function renderCustomers() {
   const q = (document.getElementById('custSearch')?.value || '').toLowerCase();
   const tab = window._custTab || 'all';
-  const sort = document.getElementById('custSort')?.value || 'rev';
+
+  // Render filter bar dynamically
+  const fb = document.getElementById('custFilterBar');
+  if (fb) {
+    const tabs = [
+      {id:'all',      label:'Semua'},
+      {id:'os',       label:'Ada OS'},
+      {id:'new',      label:'Baru (30 hari)'},
+      {id:'platgold', label:'Platinum/Gold'},
+    ];
+    fb.innerHTML = `
+      <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+        ${tabs.map(t => `<button type="button"
+          style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;
+          background:${tab===t.id?'var(--blue)':'transparent'};
+          color:${tab===t.id?'#fff':'var(--textd)'};"
+          onclick="window._custTab='${t.id}';renderCustomers();">${t.label}</button>`).join('')}
+      </div>
+      <select onchange="window._custSort=this.value;renderCustomers()"
+        style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;">
+        ${[['rev','Jumlah Pembelian ↓'],['os','OS Tertinggi ↓'],['recent','Order Terbaru'],['name','Nama A-Z'],['orders','Bilangan Order ↓']]
+          .map(([v,l])=>`<option value="${v}" ${(window._custSort||'rev')===v?'selected':''}>${l}</option>`).join('')}
+      </select>
+      <button type="button" onclick="window.bulkOSReminder()"
+        style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">
+        📄 Bulk OS Reminder
+      </button>`;
+  }
+
+  const sort = window._custSort || 'rev';
   let customers = buildCustomerMap();
 
   // Apply tab filter
@@ -3229,16 +3240,7 @@ function renderCustomers() {
 
   window._custFiltered = filtered;
 
-  // Update tab button styles
-  ['All','OS','New','PlatGold'].forEach(t => {
-    const btn = document.getElementById('custTab' + t);
-    if (!btn) return;
-    const isActive = (t.toLowerCase() === tab) || (t === 'All' && tab === 'all') ||
-                     (t === 'OS' && tab === 'os') || (t === 'New' && tab === 'new') ||
-                     (t === 'PlatGold' && tab === 'platgold');
-    btn.style.background = isActive ? 'var(--blue)' : 'transparent';
-    btn.style.color = isActive ? '#fff' : 'var(--textd)';
-  });
+
 
   // Summary stats
   const totalOS = filtered.reduce((s,c) => s+c.totalOS, 0);
