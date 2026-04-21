@@ -3433,6 +3433,15 @@ function openCustDetail(idx) {
   const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0),0);
   const osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
+  // Calculate days overdue
+  const _today = new Date(); _today.setHours(0,0,0,0);
+  const daysOverdue = osOrders.length > 0 ? Math.max(...osOrders.map(o => {
+    if (!o.order_date) return 0;
+    return Math.max(0, Math.floor((_today - new Date(o.order_date)) / 86400000));
+  })) : 0;
+  const overdueLabel = daysOverdue > 0 ? daysOverdue + ' hari' : '';
+  const reminderLevel = daysOverdue >= 30 ? 'Final Notice' : daysOverdue >= 15 ? '2nd Reminder' : '1st Reminder';
+  const reminderColor = daysOverdue >= 30 ? 'var(--red)' : daysOverdue >= 15 ? 'var(--amber)' : 'var(--green)';
 
   const jobsHTML = c.orders.map(o => {
     const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
@@ -3475,7 +3484,14 @@ function openCustDetail(idx) {
       <button class="btn-new" style="font-size:11px;padding:6px 12px;background:var(--green);box-shadow:0 2px 6px rgba(15,122,72,0.25);" onclick="openDocFromCust()">📄 Jana Quotation</button>
     ${totalOS > 0 ? `
     <button style="font-size:11px;padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSReminder()">🔔 OS Reminder</button>
-    <button style="font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSPDF()">📄 PDF Reminder</button>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+      <button style="font-size:10px;padding:5px 10px;background:#0F7A48;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap;"
+        onclick="generateOSPDF('first')" title="7-14 hari overdue — tone mesra">📄 1st Reminder</button>
+      <button style="font-size:10px;padding:5px 10px;background:#B8720A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap;"
+        onclick="generateOSPDF('second')" title="15-30 hari overdue — tone serius">📄 2nd Reminder</button>
+      <button style="font-size:10px;padding:5px 10px;background:#C02840;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap;"
+        onclick="generateOSPDF('final')" title=">30 hari overdue — notis akhir">📄 Final Notice</button>
+    </div>
     ` : ''}
     <button style="font-size:11px;padding:6px 12px;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;"
       onclick="window.open('https://wa.me/60'+('${c.tel}'.replace(/^0/,'')), '_blank')">📱 WhatsApp</button>
@@ -3491,7 +3507,15 @@ function openCustDetail(idx) {
 
     ${totalOS > 0 ? `
     <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:12px 14px;margin:12px 20px;">
-      <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;">⚠ Outstanding Belum Dijelaskan</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--red);">⚠ Outstanding Belum Dijelaskan</div>
+        ${overdueLabel ? `<div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;padding:2px 8px;background:${reminderColor}22;color:${reminderColor};border:1px solid ${reminderColor}55;border-radius:10px;font-weight:700;">
+            🕐 ${overdueLabel} overdue
+          </span>
+          <span style="font-size:10px;color:var(--textm);">→ ${reminderLevel}</span>
+        </div>` : ''}
+      </div>
       ${osOrders.map(o => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);font-size:11px;">
         <span style="color:var(--textd);">${o.inv_number_supplier||o.inv_number||o.name_job||'—'}</span>
@@ -5616,37 +5640,102 @@ function bulkOSReminder() {
   showToast(customers.length + ' customer OS — PDF dibuka');
 }
 
-function generateOSPDF() {
-  const c = window._custFiltered?.[custDetailOpen];
-  if (!c || !c.osOrders.length) return;
-  const today = new Date().toISOString().slice(0,10);
-  const todayFmt = new Date().toLocaleDateString('ms-MY', {day:'numeric',month:'long',year:'numeric'});
+// ── OS REMINDER HELPERS ──────────────────────────────────────
+function _getOSDaysOverdue(c) {
+  // Calculate max days overdue across all OS orders
+  const today = new Date(); today.setHours(0,0,0,0);
+  let maxDays = 0;
+  c.osOrders.forEach(o => {
+    if (o.order_date) {
+      const d = new Date(o.order_date);
+      const diff = Math.floor((today - d) / 86400000);
+      if (diff > maxDays) maxDays = diff;
+    }
+  });
+  return maxDays;
+}
 
-  // Build detailed items — one row per outstanding invoice
-  const items = c.osOrders.map(o => ({
-    desc: (o.inv_number_supplier || o.name_job || 'Invoice') + (o.name_job ? ' — ' + o.name_job : ''),
-    qty: 1,
-    price: parseFloat(o.balance_customer) || 0,
-    total: parseFloat(o.balance_customer) || 0,
-  }));
-
+function _buildOSPayload(c, level) {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+  const todayFmt = today.toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
+  const daysOverdue = _getOSDaysOverdue(c);
   const totalOS = c.osOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
 
-  const payload = {
-    type: 'invoice',
-    inv_number: 'OS-' + today,
-    inv_date: today,
-    due_date: today,
+  // Build items — one row per OS invoice
+  const items = c.osOrders.map(o => {
+    const dueInfo = o.order_date ? ' (tarikh: ' + o.order_date + ')' : '';
+    return {
+      desc: (o.inv_number_supplier || o.inv_number || 'Invoice') +
+            (o.name_job ? ' — ' + o.name_job : '') + dueInfo,
+      qty: 1,
+      price: parseFloat(o.balance_customer) || 0,
+      total: parseFloat(o.balance_customer) || 0,
+    };
+  });
+
+  const configs = {
+    first: {
+      num:      'OS-1ST-' + todayStr,
+      title:    'PERINGATAN PEMBAYARAN',
+      window:   7,
+      notes:
+        'Kami dengan hormatnya ingin menarik perhatian Tuan/Puan bahawa terdapat baki pembayaran yang masih belum diselesaikan.' +
+        (daysOverdue > 0 ? ' Pembayaran ini telah tertunggak selama ' + daysOverdue + ' hari.' : '') +
+        '\n\nKami memohon agar Tuan/Puan dapat menjelaskan baki tersebut dalam tempoh 7 hari dari tarikh notis ini (' + todayFmt + ').' +
+        '\n\nSila hubungi kami sekiranya terdapat sebarang pertanyaan. Kerjasama Tuan/Puan amat dihargai.',
+    },
+    second: {
+      num:      'OS-2ND-' + todayStr,
+      title:    'NOTIS PEMBAYARAN KEDUA',
+      window:   5,
+      notes:
+        'Ini merupakan peringatan KEDUA berhubung baki pembayaran yang masih belum diselesaikan.' +
+        (daysOverdue > 0 ? ' Pembayaran ini telah tertunggak selama ' + daysOverdue + ' hari.' : '') +
+        '\n\nKami memohon agar Tuan/Puan segera menjelaskan baki tersebut dalam tempoh 5 hari dari tarikh notis ini (' + todayFmt + ').' +
+        '\n\nSila hubungi kami dengan segera untuk membuat pengesahan tarikh pembayaran. Tindakan lanjut akan diambil sekiranya tiada maklum balas diterima.',
+    },
+    final: {
+      num:      'OS-FINAL-' + todayStr,
+      title:    'NOTIS AKHIR — TINDAKAN SEGERA DIPERLUKAN',
+      window:   3,
+      notes:
+        'NOTIS AKHIR: Ini merupakan notis muktamad berhubung baki pembayaran yang masih belum diselesaikan.' +
+        (daysOverdue > 0 ? ' Pembayaran ini telah tertunggak selama ' + daysOverdue + ' hari.' : '') +
+        '\n\nTuan/Puan DIWAJIBKAN menjelaskan baki tersebut dalam tempoh 3 hari dari tarikh notis ini (' + todayFmt + ').' +
+        '\n\nSekiranya pembayaran tidak diterima dalam tempoh yang ditetapkan, DOD Worldwide Supply berhak mengambil tindakan selanjutnya termasuk menghentikan perkhidmatan dan mendapatkan semula hutang melalui saluran yang sesuai.',
+    },
+  };
+
+  const cfg = configs[level];
+  // Add payment deadline
+  const deadline = new Date(today);
+  deadline.setDate(deadline.getDate() + cfg.window);
+  const deadlineFmt = deadline.toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
+
+  return {
+    type: 'letter',
+    inv_number: cfg.num,
+    inv_date: todayStr,
+    due_date: deadline.toISOString().slice(0,10),
     cust_name: c.name,
     cust_tel: c.tel,
     cust_addr: c.addr || '',
-    name_job: 'NOTIS PEMBAYARAN TERTUNGGAK',
+    name_job: cfg.title,
     items,
     total: totalOS,
     paid: 0,
     balance: totalOS,
-    _notes: 'Ini adalah notis rasmi pembayaran tertunggak. Sila selesaikan pembayaran segera.',
+    _notes: cfg.notes + '\n\nTarikh Pembayaran Akhir: ' + deadlineFmt +
+            '\nAkaun: Maybank 562526579990 (DOD WORLDWIDE SUPPLY)' +
+            '\nSila hantar bukti bayaran kepada kami selepas pembayaran dibuat.',
   };
+}
+
+function generateOSPDF(level) {
+  const c = window._custFiltered?.[custDetailOpen];
+  if (!c || !c.osOrders.length) { showToast('Tiada outstanding untuk customer ini', true); return; }
+  const payload = _buildOSPayload(c, level || 'first');
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
 }

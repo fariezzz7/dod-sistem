@@ -199,6 +199,7 @@
       <button class="db" onclick="setType('quotation',this)"><span class="ic">📋</span><span class="lb">Quotation</span></button>
       <button class="db" onclick="setType('po',this)"><span class="ic">📦</span><span class="lb">Purchase Order</span></button>
       <button class="db" onclick="setType('receipt',this)"><span class="ic">✅</span><span class="lb">Receipt</span></button>
+      <button class="db" onclick="setType('letter',this)"><span class="ic">📝</span><span class="lb">Reminder Letter</span></button>
     </div>
   </div>
   <div class="sb-sect">
@@ -283,7 +284,8 @@ const TYPES = {
   invoice:{lbl:"INVOICE",pfx:"I-",bg:"#0A0E1A",payColor:"#1A5CC8"},
   quotation:{lbl:"QUOTATION",pfx:"Q-",bg:"#1A5CC8",payColor:"#1A5CC8"},
   po:{lbl:"PURCHASE ORDER",pfx:"PO-",bg:"#0F7A48",payColor:"#0F7A48"},
-  receipt:{lbl:"OFFICIAL RECEIPT",pfx:"R-",bg:"#6E30C8",payColor:"#6E30C8"}
+  receipt:{lbl:"OFFICIAL RECEIPT",pfx:"R-",bg:"#6E30C8",payColor:"#6E30C8"},
+  letter:{lbl:"REMINDER LETTER",pfx:"LTR-",bg:"#7C3AED",payColor:"#7C3AED"}
 };
 const DEF_NOTES = {
   invoice:"1. All cheques should be crossed and made payable to DOD WORLDWIDE SUPPLY, MAYBANK 562526579990.\n2. Goods will be processed within two weeks after full payment is received.\n3. Goods sold are neither returnable nor refundable. A cancellation fee of 20% on purchase price will be imposed.",
@@ -312,7 +314,7 @@ window.addEventListener("load", () => {
       const p = JSON.parse(raw);
       // Map masterlist payload to docgen format
       const data = {
-        type:   p.type || "invoice",
+        type:   p.type || "invoice",  // supports: invoice, quotation, po, receipt, letter
         num:    p.inv_number || "",
         date:   p.inv_date || p.order_date || d,
         due:    p.due_date || "",
@@ -330,6 +332,8 @@ window.addEventListener("load", () => {
           if (addrEl) addrEl.value = data.toAddr;
         }, 100);
       }
+      // Pass _notes if present
+      if (p._notes) data._notes = p._notes;
       autoFillFromMasterlist(data);
       return;
     }
@@ -358,7 +362,7 @@ window.addEventListener("load", () => {
 
 function autoFillFromMasterlist(d) {
   // Set document type
-  const typeMap = {invoice:"invoice", quotation:"quotation", po:"po", receipt:"receipt"};
+  const typeMap = {invoice:"invoice", quotation:"quotation", po:"po", receipt:"receipt", letter:"letter"};
   const t = typeMap[d.type] || "invoice";
   const btn = document.querySelector(`.db[onclick="setType('${t}',this)"]`);
   if(btn) setType(t, btn);
@@ -399,6 +403,12 @@ function autoFillFromMasterlist(d) {
   // Always have at least 2 blank rows for manual add
   if(items.length < 3) { addItem("",1,0); addItem("",1,0); }
 
+  // Set notes from payload if provided
+  if(d._notes) {
+    const nEl = document.getElementById("f_notes");
+    if(nEl) nEl.value = d._notes;
+  }
+
   render();
 
   // Flash notification
@@ -417,6 +427,9 @@ function setType(t, btn) {
   document.getElementById("pay_sec").style.display = t==="receipt" ? "block" : "none";
   document.getElementById("to_lbl").textContent = t==="po" ? "Order To" : "Bill To (Customer)";
   document.getElementById("due_lbl").textContent = t==="quotation" ? "Valid Until" : "Due Date";
+  // For letter type - hide items section, show notes prominently
+  const itemsSect = document.getElementById("items_list")?.closest(".sb-sect");
+  if(itemsSect) itemsSect.style.display = t==="letter" ? "none" : "block";
   const cur = document.getElementById("f_num").value.replace(/^[A-Z]+-/,"");
   document.getElementById("f_num").value = TYPES[t].pfx + cur;
   render();
@@ -491,6 +504,9 @@ function buildDocHTML() {
   const toAd  = document.getElementById("f_addr").value||"";
   const toTel = document.getElementById("f_tel").value||"";
   const ref   = document.getElementById("f_ref").value||"";
+
+  // ── REMINDER LETTER — separate template ──────────────────
+  if(docType === "letter") return buildLetterHTML({num,date,due,toNm,toAd,toTel,ref});
   const notesRaw = document.getElementById("f_notes").value||DEF_NOTES[docType];
   const supNm = document.getElementById("f_sup").value||"NOHAD SDN BHD";
   const supAd = document.getElementById("f_supaddr").value||"";
@@ -655,6 +671,122 @@ function doPrint() {
   // Fallback: print after 800ms regardless
   setTimeout(() => window.print(), 800);
 }
+
+function buildLetterHTML({num,date,due,toNm,toAd,toTel,ref}) {
+  const notes = document.getElementById("f_notes").value || "";
+  const pamt  = parseFloat(document.getElementById("f_payamt").value)||0;
+  const validItems = items.filter(i=>i.desc||i.price>0);
+  const totalOS = validItems.reduce((s,i)=>s+(i.qty*i.price),0);
+
+  const dateFmt = date ? new Date(date).toLocaleDateString("ms-MY",{day:"numeric",month:"long",year:"numeric"}) : "—";
+  const dueFmt  = due  ? new Date(due).toLocaleDateString("ms-MY",{day:"numeric",month:"long",year:"numeric"})  : "—";
+
+  // Parse title from ref or use default
+  const letterTitle = ref || "PERINGATAN PEMBAYARAN";
+
+  // Build invoice table (only if items exist)
+  const invoiceTable = validItems.length ? `
+  <table style="width:100%;border-collapse:collapse;margin:20pt 0;font-size:10pt;">
+    <thead>
+      <tr style="background:#f0f0f0;">
+        <th style="padding:6pt 8pt;text-align:left;border:1px solid #ddd;font-size:9pt;">NO. INVOIS / DESKRIPSI</th>
+        <th style="padding:6pt 8pt;text-align:right;border:1px solid #ddd;font-size:9pt;width:100pt;">JUMLAH (RM)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${validItems.map((it,i)=>`
+      <tr>
+        <td style="padding:6pt 8pt;border:1px solid #ddd;">${it.desc||"—"}</td>
+        <td style="padding:6pt 8pt;text-align:right;border:1px solid #ddd;font-family:monospace;">${Number(it.price).toFixed(2)}</td>
+      </tr>`).join("")}
+      <tr style="background:#fff3f3;">
+        <td style="padding:8pt;border:1px solid #ddd;font-weight:700;text-align:right;">JUMLAH TERTUNGGAK</td>
+        <td style="padding:8pt;border:1px solid #ddd;font-weight:700;text-align:right;font-family:monospace;color:#c00;">${fmtRM(totalOS)}</td>
+      </tr>
+    </tbody>
+  </table>` : "";
+
+  // Parse notes into paragraphs
+  const noteParas = notes ? notes.split("\n\n").filter(Boolean)
+    .map(p => `<p style="margin-bottom:10pt;line-height:1.7;">${p.replace(/\n/g,"<br>")}</p>`).join("") : "";
+
+  return `
+  <div class="doc-page" id="print_doc_inner">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24pt;padding-bottom:12pt;border-bottom:2px solid #0A0E1A;">
+      <img src="${LOGO}" alt="DOD" style="width:70pt;height:auto;">
+      <div style="text-align:right;font-size:9pt;color:#555;line-height:1.6;">
+        <div style="font-size:13pt;font-weight:700;color:#0A0E1A;letter-spacing:.02em;">${CO.name}</div>
+        <div>${CO.reg}</div>
+        <div>${CO.addr1}</div>
+        <div>${CO.addr2}</div>
+        <div>${CO.tel}</div>
+      </div>
+    </div>
+
+    <!-- Ref & Date -->
+    <div style="display:flex;justify-content:space-between;margin-bottom:20pt;font-size:10pt;">
+      <div><span style="color:#888;">Ruj:</span> <strong>${num}</strong></div>
+      <div><span style="color:#888;">Tarikh:</span> <strong>${dateFmt}</strong></div>
+    </div>
+
+    <!-- Recipient -->
+    <div style="margin-bottom:20pt;font-size:10pt;">
+      <div style="font-weight:700;">${toNm}</div>
+      ${toAd ? `<div style="color:#555;">${toAd}</div>` : ""}
+      ${toTel ? `<div style="color:#555;">Tel: ${toTel}</div>` : ""}
+    </div>
+
+    <!-- Letter title -->
+    <div style="background:#7C3AED;color:#fff;padding:10pt 14pt;border-radius:4pt;margin-bottom:20pt;">
+      <div style="font-size:13pt;font-weight:700;letter-spacing:.04em;">${letterTitle}</div>
+      ${due ? `<div style="font-size:9pt;opacity:.85;margin-top:3pt;">Sila bayar sebelum: ${dueFmt}</div>` : ""}
+    </div>
+
+    <!-- Body -->
+    <div style="font-size:10.5pt;color:#1a1a1a;">
+      ${noteParas || "<p>Dengan hormatnya, kami ingin menarik perhatian Tuan/Puan berkenaan baki pembayaran yang masih belum diselesaikan.</p>"}
+    </div>
+
+    <!-- Invoice table -->
+    ${invoiceTable}
+
+    <!-- Payment info box -->
+    <div style="background:#f9f9f9;border:1px solid #ddd;border-left:4px solid #7C3AED;padding:12pt;border-radius:4pt;margin:20pt 0;font-size:10pt;">
+      <div style="font-weight:700;margin-bottom:8pt;">MAKLUMAT PEMBAYARAN</div>
+      <div style="display:flex;gap:40pt;">
+        <div>
+          <div style="color:#888;font-size:9pt;">Bank</div>
+          <div style="font-weight:600;">${CO.bank}</div>
+        </div>
+        <div>
+          <div style="color:#888;font-size:9pt;">No. Akaun</div>
+          <div style="font-weight:600;font-family:monospace;">${CO.acc}</div>
+        </div>
+        <div>
+          <div style="color:#888;font-size:9pt;">Nama Akaun</div>
+          <div style="font-weight:600;">${CO.accname}</div>
+        </div>
+      </div>
+      <div style="margin-top:8pt;font-size:9pt;color:#666;">Sila hantar bukti pembayaran selepas transfer dilakukan.</div>
+    </div>
+
+    <!-- Signature -->
+    <div style="margin-top:40pt;display:flex;justify-content:flex-end;">
+      <div style="text-align:center;min-width:160pt;">
+        <div style="border-bottom:1px solid #333;padding-bottom:4pt;margin-bottom:6pt;">&nbsp;</div>
+        <div style="font-size:9pt;font-weight:600;">${CO.name}</div>
+        <div style="font-size:8pt;color:#888;">Tandatangan & Cop Rasmi</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="d-foot">
+      <div class="d-foot-txt">THIS IS A COMPUTER GENERATED DOCUMENT &nbsp;&middot;&nbsp; ${CO.name} &nbsp;&middot;&nbsp; ${CO.tel}</div>
+    </div>
+  </div>`;
+}
+
 </script>
 </body>
 </html>
