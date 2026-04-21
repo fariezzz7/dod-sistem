@@ -1470,7 +1470,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status'];
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -1739,8 +1739,8 @@ function showCustomerView() {
   renderCustomers();
 }
 
-// Load saved supplier edits on startup
-loadSuppliers();
+// Load saved supplier edits on startup (async)
+loadSuppliers().catch(() => {});
 
 function setupNavForRole() {
   const role = currentUser.role;
@@ -3192,7 +3192,9 @@ function buildCustomerMap() {
     const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
     c.isNew = c.lastOrder >= thirtyDaysAgo;
     // Notes from localStorage
-    c.notes = localStorage.getItem('cust_notes_' + c.tel) || '';
+    // Read notes from orders (Supabase) or localStorage fallback
+    const orderWithNote = c.orders.find(o => o.cust_notes);
+    c.notes = orderWithNote?.cust_notes || localStorage.getItem('cust_notes_' + c.tel) || '';
   });
   return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
 }
@@ -5127,16 +5129,65 @@ function generateOSReminder(custIndex) {
 // SUPPLIER MANAGEMENT
 // ══════════════════════════════════════
 
-// Load suppliers from localStorage (persists edits)
-function loadSuppliers() {
+// Load suppliers from Supabase (localStorage as fallback/cache)
+async function loadSuppliers() {
+  try {
+    const rows = await supaGet('suppliers', 'select=*&order=name.asc');
+    if (rows && rows.length) {
+      SUPPLIERS = rows.map(r => ({
+        id:      r.id,
+        name:    r.name,
+        short:   r.short || r.name,
+        color:   r.color || '#1A5CC8',
+        contact: r.contact || '',
+        tel:     r.tel || '',
+        email:   r.email || '',
+        addr:    r.addr || '',
+        bank:    [{ bank: r.bank_name||'', acc: r.bank_acc||'', holder: r.bank_holder||'' }],
+        products: Array.isArray(r.products) ? r.products : (r.products ? JSON.parse(r.products) : []),
+      }));
+      localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
+      return;
+    }
+  } catch(e) {
+    console.warn('Suppliers: using localStorage fallback', e);
+  }
+  // Fallback to localStorage
   try {
     const raw = localStorage.getItem('dod_suppliers_v1');
     if (raw) SUPPLIERS = JSON.parse(raw);
   } catch(e) {}
 }
 
-function saveSuppliers() {
+async function saveSuppliers() {
+  // Save to localStorage cache
   localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
+  // Sync to Supabase
+  const rows = SUPPLIERS.map(s => ({
+    id:           s.id,
+    name:         s.name,
+    short:        s.short || s.name,
+    color:        s.color || '#1A5CC8',
+    contact:      s.contact || '',
+    tel:          s.tel || '',
+    email:        s.email || '',
+    addr:         s.addr || '',
+    bank_name:    s.bank[0]?.bank || '',
+    bank_acc:     s.bank[0]?.acc || '',
+    bank_holder:  s.bank[0]?.holder || '',
+    products:     s.products || [],
+    updated_at:   new Date().toISOString(),
+  }));
+  try {
+    await supaFetch('/rest/v1/suppliers', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify(rows),
+    });
+  } catch(e) {
+    console.warn('Suppliers sync failed:', e);
+    showToast('⚠ Gagal sync supplier ke server', true);
+  }
 }
 
 function openSupModal(supId) {
@@ -5184,10 +5235,11 @@ function saveSupplier() {
   } else {
     SUPPLIERS.push(supObj);
   }
-  saveSuppliers();
-  closeSupModal();
-  renderSupplierDir();
-  showToast('Supplier dikemaskini ✓');
+  saveSuppliers().then(() => {
+    closeSupModal();
+    renderSupplierDir();
+    showToast('Supplier dikemaskini ✓');
+  });
 }
 
 // ── PAYMENT FUNCTIONS ─────────────────────────────────────────
@@ -5642,8 +5694,14 @@ function renderSalesQuickStats() {
 
 
 function saveCustNote(tel, note) {
+  // Save to localStorage for immediate display
   if (note.trim()) localStorage.setItem('cust_notes_' + tel, note.trim());
   else localStorage.removeItem('cust_notes_' + tel);
+  // Sync note to all orders with this tel number in Supabase
+  supaFetch('/rest/v1/orders?cust_tel=eq.' + encodeURIComponent(tel), {
+    method: 'PATCH',
+    body: JSON.stringify({ cust_notes: note.trim() }),
+  }).catch(e => console.warn('Customer notes sync failed:', e));
 }
 
 function bulkOSReminder() {
