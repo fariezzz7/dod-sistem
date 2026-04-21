@@ -288,8 +288,8 @@ const TYPES = {
   letter:{lbl:"REMINDER LETTER",pfx:"LTR-",bg:"#7C3AED",payColor:"#7C3AED"}
 };
 const DEF_NOTES = {
-  invoice:"1. All cheques should be crossed and made payable to DOD WORLDWIDE SUPPLY, MAYBANK 562526579990.\n2. Goods will be processed within two weeks after full payment is received.\n3. Goods sold are neither returnable nor refundable. A cancellation fee of 20% on purchase price will be imposed.",
-  quotation:"1. This quotation is valid for 14 days from the date above.\n2. A 70% deposit is required upon order confirmation.\n3. Balance payment is due upon delivery or collection.\n4. Prices are subject to change without prior notice.",
+  invoice:"1. Sila lakukan pembayaran ke Maybank 562526579990 (DOD WORLDWIDE SUPPLY).\n2. Kerja akan diproses setelah pembayaran penuh diterima.\n3. Barang yang telah dijual tidak boleh dipulangkan atau ditukar. Fi pembatalan 20% akan dikenakan.",
+  quotation:"1. Sebutan harga ini sah selama 14 hari dari tarikh di atas.\n2. Deposit 70% diperlukan sebelum kerja dimulakan. Pembayaran ke Maybank 562526579990 (DOD WORLDWIDE SUPPLY).\n3. Baki 30% perlu diselesaikan sebelum atau semasa pengambilan/penghantaran.\n4. Barang yang telah dipesan tidak boleh dipulangkan atau ditukar.",
   po:"1. Please confirm receipt of this Purchase Order within 2 working days.\n2. All goods must match the specifications stated above.\n3. Any discrepancy in quantity or quality must be reported immediately.",
   receipt:"1. This is an official receipt issued by DOD WORLDWIDE SUPPLY.\n2. Please retain this receipt for your records.\n3. No refund will be entertained once payment has been received."
 };
@@ -559,14 +559,23 @@ function buildDocHTML() {
 
   let rcvdHTML="";
   if(docType==="receipt") {
+    // Receipt: show amount received + outstanding if any
     const dispAmt = pamt>0?pamt:total;
     rcvdHTML=`<div class="d-rcvd"><span class="d-rcvd-lbl">Amount Received</span><span class="d-rcvd-val">${fmtRM(dispAmt)}</span></div>`;
     if(pamt>0 && pamt<total)
       rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Outstanding Balance</span><span class="d-os-val">${fmtRM(total-pamt)}</span></div>`;
-  } else if(docType==="invoice" && pamt>0 && pamt<total) {
-    rcvdHTML=`<div class="d-rcvd" style="background:#e8f4ed;"><span class="d-rcvd-lbl">Deposit Received (${Math.round(pamt/total*100)}%)</span><span class="d-rcvd-val" style="color:#0F7A48;">${fmtRM(pamt)}</span></div>`;
-    rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Balance Due</span><span class="d-os-val">${fmtRM(total-pamt)}</span></div>`;
+  } else if(docType==="quotation") {
+    // Quotation: show deposit requirement note
+    rcvdHTML=`<div class="d-rcvd" style="background:#FEF3C7;border:1px solid #FDE68A;">
+      <span class="d-rcvd-lbl" style="color:#B8720A;">70% Deposit Diperlukan</span>
+      <span class="d-rcvd-val" style="color:#B8720A;">${fmtRM(total*0.7)}</span>
+    </div>
+    <div class="d-os" style="border:1px solid #e5e7eb;">
+      <span class="d-os-lbl">Baki Selepas Deposit</span>
+      <span class="d-os-val" style="color:#6B7280;">${fmtRM(total*0.3)}</span>
+    </div>`;
   }
+  // Invoice: show total amount only — no deposit/balance section
 
   const stamp = docType==="receipt"?`<div class="d-stamp"><div class="d-stamp-txt">PAID</div></div>`:"";
 
