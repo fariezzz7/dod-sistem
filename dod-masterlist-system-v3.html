@@ -872,10 +872,10 @@ tr:hover .row-actions{opacity:1;}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <!-- Tab filters -->
         <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
-          <button id="custTabAll" onclick="setCustTab('all')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--blue);color:#fff;">Semua</button>
-          <button id="custTabOS" onclick="setCustTab('os')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Ada OS</button>
-          <button id="custTabNew" onclick="setCustTab('new')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Baru (30 hari)</button>
-          <button id="custTabPlatGold" onclick="setCustTab('platgold')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Platinum/Gold</button>
+          <button id="custTabAll" onclick="window.setCustTab('all')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--blue);color:#fff;">Semua</button>
+          <button id="custTabOS" onclick="window.setCustTab('os')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Ada OS</button>
+          <button id="custTabNew" onclick="window.setCustTab('new')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Baru (30 hari)</button>
+          <button id="custTabPlatGold" onclick="window.setCustTab('platgold')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Platinum/Gold</button>
         </div>
         <!-- Sort -->
         <select id="custSort" onchange="renderCustomers()" style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;">
@@ -886,7 +886,7 @@ tr:hover .row-actions{opacity:1;}
           <option value="orders">Bilangan Order ↓</option>
         </select>
         <!-- Bulk action -->
-        <button onclick="bulkOSReminder()" style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">📄 Bulk OS Reminder</button>
+        <button onclick="window.bulkOSReminder()" style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">📄 Bulk OS Reminder</button>
       </div>
       <div class="cust-grid" id="custGrid"></div>
     </div>
@@ -3313,6 +3313,7 @@ function setCustTab(tab) {
   window._custTab = tab;
   renderCustomers();
 }
+window.setCustTab = setCustTab;
 
 
 function buildCustomerMap() {
@@ -5730,6 +5731,7 @@ function bulkOSReminder() {
   window.open('dod-document-generator.html', '_blank');
   showToast(customers.length + ' customer OS — PDF dibuka');
 }
+window.bulkOSReminder = bulkOSReminder;
 
 // ── OS REMINDER HELPERS ──────────────────────────────────────
 function _getOSDaysOverdue(c) {
