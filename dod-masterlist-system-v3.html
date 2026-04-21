@@ -1189,6 +1189,7 @@ tr:hover .row-actions{opacity:1;}
                 style="width:70px;flex-shrink:0;" oninput="recalcDeposit()">
               <span style="font-size:12px;color:var(--textm);">%</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                <button type="button" onclick="setDepositPct(0)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">0%</button>
                 <button type="button" onclick="setDepositPct(50)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">50%</button>
                 <button type="button" onclick="setDepositPct(70)" style="font-size:10px;padding:3px 8px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:4px;cursor:pointer;color:var(--blue);font-weight:700;">70%</button>
                 <button type="button" onclick="setDepositPct(100)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">100%</button>
@@ -4788,7 +4789,7 @@ function _buildAndOpenDoc(r, month) {
 
 function setDepositPct(pct) {
   const el = document.getElementById('f_deposit_pct');
-  if (el) { el.value = pct; recalcDeposit(); }
+  if (el) { el.value = pct === 0 ? '0' : pct; recalcDeposit(); }
   // Update button highlight
   document.querySelectorAll('[onclick^="setDepositPct"]').forEach(btn => {
     const btnPct = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
@@ -4807,10 +4808,12 @@ function setDepositPct(pct) {
 }
 
 function recalcDeposit() {
-  const total = parseFloat(document.getElementById('f_inv_cust')?.value) || 0;
-  const pct   = parseFloat(document.getElementById('f_deposit_pct')?.value) || 70;
+  const total   = parseFloat(document.getElementById('f_inv_cust')?.value) || 0;
+  const pctRaw  = document.getElementById('f_deposit_pct')?.value;
+  // Allow 0% — only fallback to 70 if field is empty/null, not if user typed 0
+  const pct     = (pctRaw === '' || pctRaw === null || pctRaw === undefined) ? 70 : parseFloat(pctRaw) || 0;
   const deposit = Math.round(total * pct / 100 * 100) / 100;
-  const pay1El = document.getElementById('f_pay1');
+  const pay1El  = document.getElementById('f_pay1');
   if (pay1El && total > 0) pay1El.value = deposit.toFixed(2);
   // Update OS display
   const custOs = Math.max(0, total - deposit);
