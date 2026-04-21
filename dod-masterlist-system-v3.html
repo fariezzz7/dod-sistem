@@ -3404,58 +3404,7 @@ function buildCustomerMap() {
   return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
 }
 
-function renderCustomers() {
-  const q = (document.getElementById('custSearch')?.value || '').toLowerCase();
-  const customers = buildCustomerMap();
-  const filtered = q ? customers.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    c.tel.includes(q) ||
-    c.email.toLowerCase().includes(q) ||
-    c.orders.some(o => o.name_job.toLowerCase().includes(q))
-  ) : customers;
 
-  document.getElementById('custSubtitle').textContent =
-    customers.length + ' customer · ' + filtered.length + ' ditunjukkan · ' +
-    'berdasarkan order dengan maklumat tel';
-
-  if (!filtered.length) {
-    document.getElementById('custGrid').innerHTML =
-      '<div style="grid-column:1/-1;text-align:center;padding:40px;font-size:13px;color:var(--textm);">📭 Tiada customer dijumpai. Customer akan muncul selepas order baru dengan maklumat telefon diisi.</div>';
-    return;
-  }
-
-  // Avatar colour from name hash
-  const avatarColor = (name) => {
-    const colors = ['#1A5CC8','#0F7A48','#B8720A','#6E30C8','#0E7A7A','#C02840','#C05800'];
-    let h = 0; for (let i=0;i<name.length;i++) h = name.charCodeAt(i)+((h<<5)-h);
-    return colors[Math.abs(h)%colors.length];
-  };
-
-  document.getElementById('custGrid').innerHTML = filtered.map((c,i) => {
-    const col = avatarColor(c.name);
-    const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const lastDate = c.lastOrder ? c.lastOrder.slice(5).replace('-','/') + '/' + c.lastOrder.slice(0,4) : '—';
-    return `<div class="cust-card" onclick="openCustDetail(${i}, ${JSON.stringify(filtered.length)})">
-      <div class="cust-card-header">
-        <div class="cust-avatar" style="background:${col}">${initials}</div>
-        <div>
-          <div class="cust-name">${c.name}</div>
-          <div class="cust-tel">${c.tel}${c.email?' · '+c.email:''}</div>
-        </div>
-        ${c.hasOS ? '<span style="margin-left:auto;font-size:9px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);padding:2px 6px;border-radius:8px;">OS</span>' : ''}
-      </div>
-      <div class="cust-stats-row">
-        <div class="cust-stat"><div class="cust-stat-val">${c.totalOrders}</div><div class="cust-stat-label">Order</div></div>
-        <div class="cust-stat"><div class="cust-stat-val">${fmtNum(c.totalPCS)}</div><div class="cust-stat-label">PCS</div></div>
-        <div class="cust-stat"><div class="cust-stat-val" style="font-size:11px;">${fmt(c.totalRev)}</div><div class="cust-stat-label">Jumlah</div></div>
-      </div>
-      <div class="cust-last-order">Order terakhir: ${lastDate}</div>
-    </div>`;
-  }).join('');
-
-  // Store filtered for detail access
-  window._custFiltered = filtered;
-}
 
 function openCustDetail(idx) {
   const c = window._custFiltered?.[idx];
