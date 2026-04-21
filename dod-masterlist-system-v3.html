@@ -1198,7 +1198,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Bayaran 1st / Deposit (RM)</label>
-            <input class="fi highlight" type="number" id="f_pay1" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
+            <input class="fi highlight" type="number" id="f_pay1" placeholder="0.00" min="0" step="0.01" oninput="onPay1Manual()">
           </div>
           <div class="form-field">
             <label class="fl" style="color:var(--textm);">Customer OS (auto)</label>
@@ -2317,6 +2317,9 @@ function clearForm() {
   if (dPct) dPct.value = 70;
   const osEl = document.getElementById('f_cust_os_display');
   if (osEl) osEl.value = '—';
+  // Clear manual flag on f_pay1
+  const pay1El = document.getElementById('f_pay1');
+  if (pay1El) delete pay1El.dataset.manual;
   // Reset deposit button highlight
   setTimeout(() => setDepositPct(70), 50);
 }
@@ -4810,15 +4813,42 @@ function setDepositPct(pct) {
 function recalcDeposit() {
   const total   = parseFloat(document.getElementById('f_inv_cust')?.value) || 0;
   const pctRaw  = document.getElementById('f_deposit_pct')?.value;
-  // Allow 0% — only fallback to 70 if field is empty/null, not if user typed 0
   const pct     = (pctRaw === '' || pctRaw === null || pctRaw === undefined) ? 70 : parseFloat(pctRaw) || 0;
   const deposit = Math.round(total * pct / 100 * 100) / 100;
   const pay1El  = document.getElementById('f_pay1');
-  if (pay1El && total > 0) pay1El.value = deposit.toFixed(2);
-  // Update OS display
-  const custOs = Math.max(0, total - deposit);
+  // Only auto-fill f_pay1 if NOT manually edited by user
+  if (pay1El && total > 0 && !pay1El.dataset.manual) {
+    pay1El.value = deposit.toFixed(2);
+  }
+  // Update OS based on actual f_pay1 value (manual or auto)
+  const actualPay = parseFloat(pay1El?.value) || 0;
+  const custOs = Math.max(0, total - actualPay);
   const osEl = document.getElementById('f_cust_os_display');
   if (osEl) osEl.value = total > 0 ? 'RM ' + custOs.toFixed(2) : '—';
+  // Update % display if manual amount entered
+  if (pay1El?.dataset.manual && total > 0) {
+    const actualPct = Math.round(actualPay / total * 100);
+    const pctEl = document.getElementById('f_deposit_pct');
+    if (pctEl) pctEl.value = actualPct;
+  }
+  recalc();
+}
+
+function onPay1Manual() {
+  const pay1El = document.getElementById('f_pay1');
+  if (pay1El) pay1El.dataset.manual = '1'; // mark as manually edited
+  // Recalc OS and update % display
+  const total = parseFloat(document.getElementById('f_inv_cust')?.value) || 0;
+  const actualPay = parseFloat(pay1El?.value) || 0;
+  const custOs = Math.max(0, total - actualPay);
+  const osEl = document.getElementById('f_cust_os_display');
+  if (osEl) osEl.value = total > 0 ? 'RM ' + custOs.toFixed(2) : '—';
+  // Update % display
+  if (total > 0) {
+    const actualPct = Math.round(actualPay / total * 100);
+    const pctEl = document.getElementById('f_deposit_pct');
+    if (pctEl) pctEl.value = actualPct;
+  }
   recalc();
 }
 
