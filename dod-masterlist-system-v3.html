@@ -556,6 +556,10 @@ tr:hover .row-actions{opacity:1;}
 .pay-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;}
 .pay-modal-bg.open{display:flex;}
 .pay-modal{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:28px;width:440px;max-width:95vw;}
+
+.home-nav-card.featured{grid-column:span 2;padding:28px 24px;background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);}
+.home-nav-card.featured .home-nav-icon{font-size:32px;margin-bottom:10px;}
+.home-nav-card.featured .home-nav-title{font-size:17px;}
 </style>
 </head>
 <body>
@@ -659,11 +663,18 @@ tr:hover .row-actions{opacity:1;}
         <div class="home-greeting-title" id="homeGreeting">Selamat datang.</div>
         <div class="home-greeting-sub" id="homeDate"></div>
       </div>
+      <!-- Alert Bar (Admin + Sales) -->
+      <div id="homeAlertBar" style="display:none;margin-bottom:16px;"></div>
+
       <!-- KPI Strip (Admin only) -->
       <div id="homeKpiStrip" style="display:none;">
         <div class="home-section-title">Prestasi Kumulatif</div>
         <div class="home-kpi-strip" id="homeKpiCards"></div>
       </div>
+
+      <!-- Sales Quick Stats (Sales role) -->
+      <div id="homeSalesStats" style="display:none;margin-bottom:20px;"></div>
+
       <!-- Nav Grid -->
       <div class="home-section-title">Navigasi Sistem</div>
       <div class="home-nav-grid" id="homeNavGrid"></div>
@@ -2898,6 +2909,12 @@ function renderHomepage() {
     renderHomeRecent();
   }
 
+  // Alert bar (admin + sales)
+  renderHomeAlerts(role);
+
+  // Sales quick stats (sales role only)
+  if (role === 'sales') renderSalesQuickStats();
+
   // Nav grid
   renderHomeNav(role);
 }
@@ -2915,38 +2932,94 @@ function renderHomeKpi() {
   const ystStr   = new Date(now - 86400000).toISOString().slice(0,10);
   const weekAgo  = new Date(now - 7*86400000).toISOString().slice(0,10);
 
-  // Current month key
-  const months = Object.keys(sessionData);
-  const curMonth = months[months.length-1];
+  const months    = Object.keys(sessionData);
+  const curMonth  = months[months.length-1];
+  const prevMonth = months[months.length-2];
   const curOrders = sessionData[curMonth] || [];
+  const prevOrders= sessionData[prevMonth] || [];
 
   const totalRev    = all.reduce((s,o) => s+(o.total_customer||0), 0);
   const totalPCS    = all.reduce((s,o) => s+(o.pcs||0), 0);
   const totalProfit = all.reduce((s,o) => s+(o.profit||0), 0);
-  const curRev      = curOrders.reduce((s,o) => s+(o.total_customer||0), 0);
-  const weekOrders  = all.filter(o => o.order_date && o.order_date >= weekAgo);
-  const weekRev     = weekOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const totalOS     = all.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
+
+  const curRev    = curOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const curPCS    = curOrders.reduce((s,o) => s+(o.pcs||0), 0);
+  const curProfit = curOrders.reduce((s,o) => s+(o.profit||0), 0);
+  const curMargin = curRev > 0 ? (curProfit/curRev*100).toFixed(1) : 0;
+  const curOrdsN  = curOrders.length;
+
+  const prevRev   = prevOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
+  const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
+
   const todayOrders = all.filter(o => o.order_date === todayStr);
   const todayRev    = todayOrders.reduce((s,o) => s+(o.total_customer||0), 0);
   const ystOrders   = all.filter(o => o.order_date === ystStr);
   const ystRev      = ystOrders.reduce((s,o) => s+(o.total_customer||0), 0);
 
-  const cards = [
-    { label:'Total Revenue', val:fmt(totalRev),    sub:'Dis 2025 → kini',   accent:'accent-blue'   },
-    { label:'Total PCS',     val:fmtNum(totalPCS), sub:'Keseluruhan',       accent:'accent-blue'   },
-    { label:'Total Profit',  val:fmt(totalProfit), sub:'Margin ' + (totalRev>0?(totalProfit/totalRev*100).toFixed(1):0)+'%', accent:'accent-green' },
-    { label:'Bulan Ini',     val:fmt(curRev),      sub:curMonth,            accent:'accent-amber'  },
-    { label:'7 Hari Lepas',  val:fmt(weekRev),     sub:weekOrders.length+' order', accent:'accent-purple' },
-    { label:'Hari Ini',      val:fmt(todayRev),    sub:todayOrders.length+' order', accent:'accent-teal'   },
-    { label:'Semalam',       val:fmt(ystRev),      sub:ystOrders.length+' order',   accent:'accent-teal'   },
-  ];
+  const el = document.getElementById('homeKpiCards');
+  el.innerHTML = `
+    <!-- Section label: Bulan Ini -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-bottom:2px;">
+      📅 ${MONTH_LABELS[curMonth]||curMonth} — Bulan Semasa
+    </div>
+    <div class="home-kpi-card accent-amber" style="border-left:3px solid var(--amber);">
+      <div class="home-kpi-label">Revenue Bulan Ini</div>
+      <div class="home-kpi-val">${fmt(curRev)} ${revTrend}</div>
+      <div class="home-kpi-sub">${curOrdsN} order · vs ${MONTH_LABELS[prevMonth]||prevMonth}: ${fmt(prevRev)}</div>
+    </div>
+    <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
+      <div class="home-kpi-label">PCS Bulan Ini</div>
+      <div class="home-kpi-val">${fmtNum(curPCS)}</div>
+      <div class="home-kpi-sub">${curOrdsN} order selesai</div>
+    </div>
+    <div class="home-kpi-card accent-green" style="border-left:3px solid var(--green);">
+      <div class="home-kpi-label">Profit Bulan Ini</div>
+      <div class="home-kpi-val">${fmt(curProfit)}</div>
+      <div class="home-kpi-sub">Margin ${curMargin}%</div>
+    </div>
+    <div class="home-kpi-card ${totalOS>0?'accent-red':'accent-green'}" style="border-left:3px solid ${totalOS>0?'var(--red)':'var(--green)'};">
+      <div class="home-kpi-label">Customer OS</div>
+      <div class="home-kpi-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
+      <div class="home-kpi-sub">${totalOS>0?'belum dikutip':'semua dah bayar'}</div>
+    </div>
 
-  document.getElementById('homeKpiCards').innerHTML = cards.map(c => `
-    <div class="home-kpi-card ${c.accent}">
-      <div class="home-kpi-label">${c.label}</div>
-      <div class="home-kpi-val">${c.val}</div>
-      <div class="home-kpi-sub">${c.sub}</div>
-    </div>`).join('');
+    <!-- Section label: Hari Ini -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      🕐 Hari Ini & Semalam
+    </div>
+    <div class="home-kpi-card accent-teal" style="border-left:3px solid var(--teal);">
+      <div class="home-kpi-label">Hari Ini</div>
+      <div class="home-kpi-val">${fmt(todayRev)}</div>
+      <div class="home-kpi-sub">${todayOrders.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-purple" style="border-left:3px solid var(--purple);">
+      <div class="home-kpi-label">Semalam</div>
+      <div class="home-kpi-val">${fmt(ystRev)}</div>
+      <div class="home-kpi-sub">${ystOrders.length} order</div>
+    </div>
+
+    <!-- Section label: All Time -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      📊 All Time (Dis 2025 → Kini)
+    </div>
+    <div class="home-kpi-card accent-blue">
+      <div class="home-kpi-label">Total Revenue</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(totalRev)}</div>
+      <div class="home-kpi-sub">keseluruhan</div>
+    </div>
+    <div class="home-kpi-card accent-blue">
+      <div class="home-kpi-label">Total PCS</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmtNum(totalPCS)}</div>
+      <div class="home-kpi-sub">keseluruhan</div>
+    </div>
+    <div class="home-kpi-card accent-green">
+      <div class="home-kpi-label">Total Profit</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(totalProfit)}</div>
+      <div class="home-kpi-sub">margin ${totalRev>0?(totalProfit/totalRev*100).toFixed(1):0}%</div>
+    </div>
+  `;
 }
 
 function fmtNum(n) { return Number(n||0).toLocaleString('en-MY'); }
@@ -3015,10 +3088,11 @@ function renderHomeNav(role) {
   };
 
   const items = NAV_ITEMS[role] || NAV_ITEMS.sales;
-  document.getElementById('homeNavGrid').innerHTML = items.map(item => {
+  document.getElementById('homeNavGrid').innerHTML = items.map((item, idx) => {
     const click = item.url ? `onclick="window.open('${item.url}','_blank')"` : `onclick="${item.fn}"`;
     const badgeHTML = item.badge ? `<span class="home-nav-badge" style="background:${item.color}18;color:${item.color};border:1px solid ${item.color}44;">${item.badge}</span>` : '';
-    return `<div class="home-nav-card" ${click} style="--card-color:${item.color};">
+    const isFeatured = idx < 2 ? 'featured' : '';
+    return `<div class="home-nav-card ${isFeatured}" ${click} style="--card-color:${item.color};">
       ${badgeHTML}
       <span class="home-nav-icon">${item.icon}</span>
       <div class="home-nav-title">${item.title}</div>
@@ -5163,6 +5237,119 @@ function sendWANotify(orderId, month) {
   const encoded = encodeURIComponent(msg);
   const url = tel ? `https://wa.me/60${tel.replace(/^0/,'')}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
   window.open(url, '_blank');
+}
+
+
+function renderHomeAlerts(role) {
+  const el = document.getElementById('homeAlertBar');
+  if (!el) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const allOrders = Object.entries(sessionData).flatMap(([m,orders]) => orders.map(o=>({...o,_month:m})));
+
+  // Production alerts
+  const activeJobs = allOrders.filter(o => (o.production_status||'job-submit') !== 'complete');
+  const overdue    = activeJobs.filter(o => o.due_date && new Date(o.due_date) < today);
+  const dueSoon    = activeJobs.filter(o => {
+    if (!o.due_date) return false;
+    const diff = (new Date(o.due_date) - today) / 86400000;
+    return diff >= 0 && diff <= 3;
+  });
+  const readyJobs  = activeJobs.filter(o => o.production_status === 'ready');
+
+  // Customer OS
+  const custOS = allOrders.filter(o => (o.balance_customer||0) > 0);
+  const totalOS = custOS.reduce((s,o) => s+(o.balance_customer||0), 0);
+
+  const alerts = [];
+  if (overdue.length)   alerts.push({ color:'var(--red)',   bg:'var(--redbg)',   border:'var(--redb)',   icon:'🔴', text:`<strong>${overdue.length} job overdue</strong> — deadline dah lepas`, fn:"showProdTrackView()" });
+  if (dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:"showProdTrackView()" });
+  if (readyJobs.length) alerts.push({ color:'#0E7A7A',     bg:'#f0fafa',        border:'#b2e0e0',       icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:"showProdTrackView()" });
+  if (totalOS > 0 && role === 'admin') alerts.push({ color:'var(--red)', bg:'var(--redbg)', border:'var(--redb)', icon:'💰', text:`Customer OS <strong>${fmt(totalOS)}</strong> belum dikutip`, fn:"showCustomerView()" });
+
+  if (!alerts.length) { el.style.display = 'none'; return; }
+
+  el.style.display = 'block';
+  el.innerHTML = alerts.map(a => `
+    <div onclick="${a.fn}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;
+      background:${a.bg};border:1px solid ${a.border};border-left:3px solid ${a.color};
+      border-radius:8px;margin-bottom:6px;cursor:pointer;transition:opacity .15s;"
+      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      <span style="font-size:16px;">${a.icon}</span>
+      <span style="font-size:12px;color:var(--text);">${a.text}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--textm);">Klik untuk lihat →</span>
+    </div>`).join('');
+}
+
+function renderSalesQuickStats() {
+  const el = document.getElementById('homeSalesStats');
+  if (!el) return;
+  const myName = currentUser.name;
+  const months = Object.keys(sessionData);
+  const curMonth = months[months.length-1];
+  const myOrders = (sessionData[curMonth]||[]).filter(r => r.pic === myName);
+
+  const myPCS     = myOrders.reduce((s,r) => s+(r.pcs||0), 0);
+  const myRev     = myOrders.reduce((s,r) => s+(r.total_customer||0), 0);
+  const myOS      = myOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const myOrdsN   = myOrders.length;
+  const pcsProgress = Math.min((myPCS/1000)*100, 100);
+  const layak     = myPCS >= 1000;
+
+  // Komisyen
+  const revSek   = myOrders.filter(r=>r.source==='SEKOLAH').reduce((s,r)=>s+(r.total_customer||0),0);
+  const revBukan = myOrders.filter(r=>r.source!=='SEKOLAH').reduce((s,r)=>s+(r.total_customer||0),0);
+  const totalKom = layak ? (revSek*0.005 + revBukan*0.01) : 0;
+
+  // Production alerts for my orders
+  const today = new Date(); today.setHours(0,0,0,0);
+  const myActive = myOrders.filter(o => (o.production_status||'job-submit') !== 'complete');
+  const myOverdue = myActive.filter(o => o.due_date && new Date(o.due_date) < today).length;
+  const myReady   = myActive.filter(o => o.production_status === 'ready').length;
+
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;">
+        📊 KPI Saya — ${MONTH_LABELS[curMonth]||curMonth}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+        <div class="kpi-card" style="border-top:3px solid var(--blue);">
+          <div class="kpi-card-label">Order</div>
+          <div class="kpi-card-val" style="color:var(--blue);">${myOrdsN}</div>
+          <div class="kpi-card-sub">bulan ini</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid ${layak?'var(--green)':'var(--red)'};">
+          <div class="kpi-card-label">PCS</div>
+          <div class="kpi-card-val" style="color:${layak?'var(--green)':'var(--red)'};">${myPCS.toLocaleString()}</div>
+          <div class="kpi-card-sub">sasaran 1,000</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--amber);">
+          <div class="kpi-card-label">Revenue</div>
+          <div class="kpi-card-val" style="color:var(--amber);font-size:14px;">${fmt(myRev)}</div>
+          <div class="kpi-card-sub">jualan saya</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid ${layak?'var(--green)':'var(--textm)'};">
+          <div class="kpi-card-label">Komisyen</div>
+          <div class="kpi-card-val" style="color:${layak?'var(--green)':'var(--textm)'};">${layak?fmt(totalKom):'—'}</div>
+          <div class="kpi-card-sub">${layak?'unjuran':'min 1,000 PCS'}</div>
+        </div>
+      </div>
+      <!-- PCS Progress -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--textm);margin-bottom:5px;">
+          <span>Progress PCS ke ambang komisyen</span>
+          <span style="font-weight:600;color:${layak?'var(--green)':'var(--red)'};">${myPCS} / 1,000 (${pcsProgress.toFixed(0)}%)</span>
+        </div>
+        <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${pcsProgress}%;background:${layak?'var(--green)':'var(--red)'};border-radius:4px;transition:width .6s;"></div>
+        </div>
+      </div>
+      <!-- Mini alerts -->
+      ${myOverdue>0?`<div style="font-size:11px;color:var(--red);background:var(--redbg);border:1px solid var(--redb);border-radius:6px;padding:6px 10px;margin-top:8px;">🔴 ${myOverdue} order saya overdue deadline</div>`:''}
+      ${myReady>0?`<div style="font-size:11px;color:#0E7A7A;background:#f0fafa;border:1px solid #b2e0e0;border-radius:6px;padding:6px 10px;margin-top:6px;">📦 ${myReady} order ready untuk dihantar</div>`:''}
+      ${myOS>0?`<div style="font-size:11px;color:var(--red);margin-top:8px;">💰 Customer OS: <strong>${fmt(myOS)}</strong></div>`:''}
+    </div>
+  `;
 }
 
 </script>
