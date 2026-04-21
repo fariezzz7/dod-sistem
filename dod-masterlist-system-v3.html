@@ -385,7 +385,7 @@ tr:hover .row-actions{opacity:1;}
 .cust-search-wrap::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--textm);font-size:14px;}
 .cust-search{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:8px 14px 8px 32px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:8px;outline:none;width:280px;transition:all .15s;}
 .cust-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--bluew);width:320px;}
-.cust-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.cust-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:0;}
 .cust-card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
 .cust-card:hover{transform:translateY(-1px);box-shadow:var(--shadow2);border-color:var(--blueb);}
 .cust-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
@@ -861,12 +861,32 @@ tr:hover .row-actions{opacity:1;}
           <div class="cust-title">👥 Customer Directory</div>
           <div style="font-size:12px;color:var(--textm);margin-top:3px;" id="custSubtitle"></div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div class="cust-search-wrap">
             <input class="cust-search" type="text" id="custSearch" placeholder="Cari nama, no tel, email..." oninput="renderCustomers()">
           </div>
           <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.25);" onclick="exportXLSX()">⬇ Export XLSX</button>
         </div>
+      </div>
+      <!-- Filter & Sort bar -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <!-- Tab filters -->
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+          <button id="custTabAll" onclick="setCustTab('all')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:var(--blue);color:#fff;">Semua</button>
+          <button id="custTabOS" onclick="setCustTab('os')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Ada OS</button>
+          <button id="custTabNew" onclick="setCustTab('new')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Baru (30 hari)</button>
+          <button id="custTabPlatGold" onclick="setCustTab('platgold')" style="padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--textd);">Platinum/Gold</button>
+        </div>
+        <!-- Sort -->
+        <select id="custSort" onchange="renderCustomers()" style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:11px;outline:none;">
+          <option value="rev">Jumlah Pembelian ↓</option>
+          <option value="os">OS Tertinggi ↓</option>
+          <option value="recent">Order Terbaru</option>
+          <option value="name">Nama A-Z</option>
+          <option value="orders">Bilangan Order ↓</option>
+        </select>
+        <!-- Bulk action -->
+        <button onclick="bulkOSReminder()" style="font-size:11px;padding:6px 12px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:7px;cursor:pointer;font-weight:600;">📄 Bulk OS Reminder</button>
       </div>
       <div class="cust-grid" id="custGrid"></div>
     </div>
@@ -3155,6 +3175,195 @@ function buildCustomerMap() {
     c.lastOrder    = c.orders[0]?.order_date || '';
     c.hasOS        = c.orders.some(o => (o.balance_customer||0) > 0);
   });
+  // Add extra computed fields
+  Object.values(map).forEach(c => {
+    c.totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0), 0);
+    c.osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
+    // Customer tier
+    if (c.totalRev >= 5000)      c.tier = { label:'Platinum', color:'#7C3AED', bg:'#f5f0ff' };
+    else if (c.totalRev >= 2000) c.tier = { label:'Gold',     color:'#B8720A', bg:'#fdf8ee' };
+    else if (c.totalRev >= 500)  c.tier = { label:'Silver',   color:'#9AA0B8', bg:'#f4f6fa' };
+    else                          c.tier = { label:'Standard', color:'#CBD0E0', bg:'#f9fafc' };
+    // New customer (order within last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+    c.isNew = c.lastOrder >= thirtyDaysAgo;
+    // Notes from localStorage
+    c.notes = localStorage.getItem('cust_notes_' + c.tel) || '';
+  });
+  return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
+}
+
+function renderCustomers() {
+  const q = (document.getElementById('custSearch')?.value || '').toLowerCase();
+  const tab = window._custTab || 'all';
+  const sort = document.getElementById('custSort')?.value || 'rev';
+  let customers = buildCustomerMap();
+
+  // Apply tab filter
+  if (tab === 'os')       customers = customers.filter(c => c.totalOS > 0);
+  if (tab === 'new')      customers = customers.filter(c => c.isNew);
+  if (tab === 'platgold') customers = customers.filter(c => c.tier.label === 'Platinum' || c.tier.label === 'Gold');
+
+  // Apply search
+  const filtered = q ? customers.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.tel.includes(q) ||
+    c.email.toLowerCase().includes(q) ||
+    c.orders.some(o => (o.name_job||'').toLowerCase().includes(q))
+  ) : customers;
+
+  // Apply sort
+  filtered.sort((a,b) => {
+    if (sort === 'os')     return b.totalOS - a.totalOS;
+    if (sort === 'recent') return (b.lastOrder||'').localeCompare(a.lastOrder||'');
+    if (sort === 'name')   return a.name.localeCompare(b.name);
+    if (sort === 'orders') return b.totalOrders - a.totalOrders;
+    return b.totalRev - a.totalRev; // default: rev
+  });
+
+  window._custFiltered = filtered;
+
+  // Update tab button styles
+  ['All','OS','New','PlatGold'].forEach(t => {
+    const btn = document.getElementById('custTab' + t);
+    if (!btn) return;
+    const isActive = (t.toLowerCase() === tab) || (t === 'All' && tab === 'all') ||
+                     (t === 'OS' && tab === 'os') || (t === 'New' && tab === 'new') ||
+                     (t === 'PlatGold' && tab === 'platgold');
+    btn.style.background = isActive ? 'var(--blue)' : 'transparent';
+    btn.style.color = isActive ? '#fff' : 'var(--textd)';
+  });
+
+  // Summary stats
+  const totalOS = filtered.reduce((s,c) => s+c.totalOS, 0);
+  const countOS = filtered.filter(c => c.totalOS > 0).length;
+  document.getElementById('custSubtitle').innerHTML =
+    `${customers.length} customer · ${filtered.length} ditunjukkan` +
+    (totalOS > 0 ? ` · <span style="color:var(--red);font-weight:600;">OS: ${fmt(totalOS)} (${countOS} customer)</span>` : '');
+
+  if (!filtered.length) {
+    document.getElementById('custGrid').innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;padding:40px;font-size:13px;color:var(--textm);">📭 Tiada customer dijumpai.</div>';
+    return;
+  }
+
+  const avatarColor = (name) => {
+    const colors = ['#1A5CC8','#0F7A48','#B8720A','#6E30C8','#0E7A7A','#C02840','#C05800'];
+    let h = 0; for (let i=0;i<name.length;i++) h = name.charCodeAt(i)+((h<<5)-h);
+    return colors[Math.abs(h)%colors.length];
+  };
+
+  document.getElementById('custGrid').innerHTML = filtered.map((c,i) => {
+    const col = avatarColor(c.name);
+    const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const lastDate = c.lastOrder ? c.lastOrder.slice(5).replace('-','/') : '—';
+    const hasOS = c.totalOS > 0;
+    const telUrl = 'https://wa.me/60' + c.tel.replace(/^0/,'');
+
+    return `<div class="cust-card" onclick="openCustDetail(${i})" style="cursor:pointer;position:relative;${hasOS?'border-color:rgba(184,56,56,0.3);':''}}">
+      <!-- Tier badge -->
+      <div style="position:absolute;top:10px;right:10px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:${c.tier.bg};color:${c.tier.color};border:1px solid ${c.tier.color}44;">
+        ${c.tier.label}
+      </div>
+      ${c.isNew?'<div style="position:absolute;top:10px;left:10px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#f0fdf4;color:#0F7A48;border:1px solid #86efac;">NEW</div>':''}
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:${c.isNew?'8px':'0'};">
+        <div style="width:42px;height:42px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;">${initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+          <div style="font-size:11px;color:var(--blue);cursor:pointer;" onclick="event.stopPropagation();window.open('${telUrl}','_blank')">${c.tel} 📱</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+        <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:6px 4px;">
+          <div style="font-size:16px;font-weight:700;color:var(--blue);">${c.totalOrders}</div>
+          <div style="font-size:9px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Order</div>
+        </div>
+        <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:6px 4px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">${c.totalPCS.toLocaleString()}</div>
+          <div style="font-size:9px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">PCS</div>
+        </div>
+        <div style="text-align:center;background:var(--bg3);border-radius:6px;padding:6px 4px;">
+          <div style="font-size:13px;font-weight:700;color:var(--amber);">${fmt(c.totalRev)}</div>
+          <div style="font-size:9px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Jumlah</div>
+        </div>
+      </div>
+
+      ${hasOS?`<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:6px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:11px;color:var(--red);font-weight:600;">💰 Outstanding</span>
+        <span style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--red);">${fmt(c.totalOS)}</span>
+      </div>`:''}
+
+      <div style="font-size:10px;color:var(--textm);display:flex;justify-content:space-between;">
+        <span>Order terakhir: ${lastDate}</span>
+        ${c.notes?`<span title="${c.notes}" style="color:var(--amber);">📝</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setCustTab(tab) {
+  window._custTab = tab;
+  renderCustomers();
+}
+
+
+function buildCustomerMap() {
+  const map = {};
+  Object.keys(sessionData).forEach(month => {
+    sessionData[month].forEach(order => {
+      const tel = (order.cust_tel || '').replace(/\s+/g,'');
+      if (!tel) return;
+      if (!map[tel]) {
+        map[tel] = {
+          name:  order.cust_name  || '—',
+          tel:   tel,
+          email: order.cust_email || '',
+          addr:  order.cust_addr  || '',
+          orders: [],
+        };
+      }
+      // Update with latest name/email/addr if present
+      if (order.cust_name  && order.cust_name  !== '—') map[tel].name  = order.cust_name;
+      if (order.cust_email && order.cust_email !== '')  map[tel].email = order.cust_email;
+      if (order.cust_addr  && order.cust_addr  !== '')  map[tel].addr  = order.cust_addr;
+      map[tel].orders.push({
+        name_job:       order.name_job       || '—',
+        order_date:     order.order_date     || '',
+        pcs:            order.pcs            || 0,
+        total_customer: order.total_customer || 0,
+        balance_customer: order.balance_customer || 0,
+        source:         order.source         || '',
+        pic:            order.pic            || '',
+        inv_number_supplier: order.inv_number_supplier || '',
+      });
+    });
+  });
+  // Sort orders by date desc
+  Object.values(map).forEach(c => {
+    c.orders.sort((a,b) => (b.order_date||'').localeCompare(a.order_date||''));
+    c.totalOrders  = c.orders.length;
+    c.totalPCS     = c.orders.reduce((s,o) => s+(o.pcs||0),0);
+    c.totalRev     = c.orders.reduce((s,o) => s+(o.total_customer||0),0);
+    c.lastOrder    = c.orders[0]?.order_date || '';
+    c.hasOS        = c.orders.some(o => (o.balance_customer||0) > 0);
+  });
+  // Add extra computed fields
+  Object.values(map).forEach(c => {
+    c.totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0), 0);
+    c.osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
+    // Customer tier
+    if (c.totalRev >= 5000)      c.tier = { label:'Platinum', color:'#7C3AED', bg:'#f5f0ff' };
+    else if (c.totalRev >= 2000) c.tier = { label:'Gold',     color:'#B8720A', bg:'#fdf8ee' };
+    else if (c.totalRev >= 500)  c.tier = { label:'Silver',   color:'#9AA0B8', bg:'#f4f6fa' };
+    else                          c.tier = { label:'Standard', color:'#CBD0E0', bg:'#f9fafc' };
+    // New customer (order within last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+    c.isNew = c.lastOrder >= thirtyDaysAgo;
+    // Notes from localStorage
+    c.notes = localStorage.getItem('cust_notes_' + c.tel) || '';
+  });
   return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
 }
 
@@ -3223,6 +3432,7 @@ function openCustDetail(idx) {
   const col = avatarColor(c.name);
   const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0),0);
+  const osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
 
   const jobsHTML = c.orders.map(o => {
     const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
@@ -3263,7 +3473,20 @@ function openCustDetail(idx) {
     ${totalOS > 0 ? `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:14px;">⚠ Outstanding: ${fmt(totalOS)}</div>` : ''}
     <div style="margin-bottom:14px;">
       <button class="btn-new" style="font-size:11px;padding:6px 12px;background:var(--green);box-shadow:0 2px 6px rgba(15,122,72,0.25);" onclick="openDocFromCust()">📄 Jana Quotation</button>
-    ${totalOS > 0 ? `<button style="font-size:11px;padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSReminder()">🔔 OS Reminder (${fmt(totalOS)})</button>` : ''}
+    ${totalOS > 0 ? `
+    <button style="font-size:11px;padding:6px 12px;background:var(--red);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSReminder()">🔔 OS Reminder</button>
+    <button style="font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;" onclick="generateOSPDF()">📄 PDF Reminder</button>
+    ` : ''}
+    <button style="font-size:11px;padding:6px 12px;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;"
+      onclick="window.open('https://wa.me/60'+('${c.tel}'.replace(/^0/,'')), '_blank')">📱 WhatsApp</button>
+    </div>
+
+    <!-- Customer Notes -->
+    <div style="margin:12px 20px;">
+      <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:6px;">📝 Nota Internal</div>
+      <textarea id="custNoteInput" rows="2" placeholder="Tambah nota tentang customer ini (hanya nampak dalam sistem)..."
+        style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:7px;font-size:12px;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"
+        onblur="saveCustNote('${c.tel}',this.value)">${c.notes||''}</textarea>
     </div>
 
     ${totalOS > 0 ? `
@@ -5358,6 +5581,74 @@ function renderSalesQuickStats() {
       ${myOS>0?`<div style="font-size:11px;color:var(--red);margin-top:8px;">💰 Customer OS: <strong>${fmt(myOS)}</strong></div>`:''}
     </div>
   `;
+}
+
+
+function saveCustNote(tel, note) {
+  if (note.trim()) localStorage.setItem('cust_notes_' + tel, note.trim());
+  else localStorage.removeItem('cust_notes_' + tel);
+}
+
+function bulkOSReminder() {
+  const customers = buildCustomerMap().filter(c => c.totalOS > 0);
+  if (!customers.length) { showToast('Tiada customer dengan outstanding', true); return; }
+  // Generate combined PDF reminder for all OS customers
+  const items = customers.map(c => ({
+    desc: c.name + ' (' + c.tel + ') — ' + c.osOrders.length + ' invois',
+    qty: 1,
+    price: c.totalOS,
+    total: c.totalOS,
+  }));
+  const totalOS = customers.reduce((s,c) => s+c.totalOS, 0);
+  const today = new Date().toISOString().slice(0,10);
+  const payload = {
+    type: 'invoice',
+    inv_number: 'BULK-OS-' + today,
+    inv_date: today,
+    cust_name: 'RINGKASAN CUSTOMER OUTSTANDING',
+    items,
+    total: totalOS,
+    paid: 0,
+    balance: totalOS,
+  };
+  localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+  window.open('dod-document-generator.html', '_blank');
+  showToast(customers.length + ' customer OS — PDF dibuka');
+}
+
+function generateOSPDF() {
+  const c = window._custFiltered?.[custDetailOpen];
+  if (!c || !c.osOrders.length) return;
+  const today = new Date().toISOString().slice(0,10);
+  const todayFmt = new Date().toLocaleDateString('ms-MY', {day:'numeric',month:'long',year:'numeric'});
+
+  // Build detailed items — one row per outstanding invoice
+  const items = c.osOrders.map(o => ({
+    desc: (o.inv_number_supplier || o.name_job || 'Invoice') + (o.name_job ? ' — ' + o.name_job : ''),
+    qty: 1,
+    price: parseFloat(o.balance_customer) || 0,
+    total: parseFloat(o.balance_customer) || 0,
+  }));
+
+  const totalOS = c.osOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
+
+  const payload = {
+    type: 'invoice',
+    inv_number: 'OS-' + today,
+    inv_date: today,
+    due_date: today,
+    cust_name: c.name,
+    cust_tel: c.tel,
+    cust_addr: c.addr || '',
+    name_job: 'NOTIS PEMBAYARAN TERTUNGGAK',
+    items,
+    total: totalOS,
+    paid: 0,
+    balance: totalOS,
+    _notes: 'Ini adalah notis rasmi pembayaran tertunggak. Sila selesaikan pembayaran segera.',
+  };
+  localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+  window.open('dod-document-generator.html', '_blank');
 }
 
 </script>
