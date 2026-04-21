@@ -2420,7 +2420,14 @@ function saveOrder() {
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
     const newOrder = { ...sessionData[targetMonth][0], month: targetMonth };
-    if (newOrder) supaUpsert('orders', newOrder).catch(e => console.warn('Supabase sync failed:', e));
+    if (newOrder) {
+      supaUpsert('orders', newOrder).then(() => {
+        showToast('✓ Disimpan ke server');
+      }).catch(e => {
+        console.error('Supabase sync failed:', e);
+        showToast('⚠ Gagal simpan ke server: ' + (e.message||'').slice(0,60), true);
+      });
+    }
   }
 
   closeModal();
