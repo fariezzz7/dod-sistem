@@ -1455,7 +1455,8 @@ async function supaUpsert(table, data) {
       ALLOWED.forEach(k => {
         let v = o[k];
         // Clean empty dates to null
-        if (['order_date','inv_date','due_date'].includes(k) && (!v || v === '')) v = null;
+        if (['order_date','inv_date','due_date','production_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
+        if (k === 'production_status' && !v) v = 'job-submit';
         r[k] = v !== undefined ? v : null;
       });
       return r;
