@@ -665,6 +665,8 @@ tr:hover .row-actions{opacity:1;}
       </div>
       <!-- Alert Bar (Admin + Sales) -->
       <div id="homeAlertBar" style="display:none;margin-bottom:16px;"></div>
+      <!-- Pipeline Section -->
+      <div id="homePipelineSection" style="display:none;margin-bottom:20px;"></div>
 
       <!-- KPI Strip (Admin only) -->
       <div id="homeKpiStrip" style="display:none;">
@@ -901,6 +903,14 @@ tr:hover .row-actions{opacity:1;}
               <button class="fbtn on" onclick="toggleOS('ALL',this)">Semua</button>
               <button class="fbtn" onclick="toggleOS('CUST',this)">Customer OS</button>
               <button class="fbtn" onclick="toggleOS('SUP',this)">Supplier OS</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Pipeline</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="togglePipeline('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="togglePipeline('QUOTATION',this)">📋 Quotation</button>
+              <button class="fbtn" onclick="togglePipeline('CONFIRMED',this)">✅ Confirmed</button>
             </div>
           </div>
           <div class="filter-group">
@@ -1568,7 +1578,7 @@ let currentMonth = '';
 let currentDetailRow = null;
 let editingId = null;
 let deleteTargetId = null;
-let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'' };
+let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL' };
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
@@ -1894,6 +1904,13 @@ function toggleOS(os, btn) {
   renderAll();
 }
 
+function togglePipeline(pl, btn) {
+  activeFilters.pipeline = pl;
+  btn.closest('.filter-btns').querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderAll();
+}
+
 function applyFilters() {
   activeFilters.source = document.getElementById('sourceFilter').value;
   activeFilters.search = document.getElementById('searchInput').value.toLowerCase();
@@ -1907,6 +1924,8 @@ function getFiltered() {
     if (activeFilters.source !== 'ALL' && r.source !== activeFilters.source) return false;
     if (activeFilters.os === 'CUST' && !(r.balance_customer > 0)) return false;
     if (activeFilters.os === 'SUP' && !(r.supplier_outstanding > 0)) return false;
+    if (activeFilters.pipeline === 'QUOTATION' && (r.pipeline_status||'confirmed') !== 'quotation') return false;
+    if (activeFilters.pipeline === 'CONFIRMED' && !isPipelineSales(r)) return false;
     if (activeFilters.search) {
       const s = activeFilters.search;
       if (!((r.name_job||'').toLowerCase().includes(s) ||
@@ -2957,6 +2976,9 @@ function renderHomepage() {
 
   // Alert bar (admin + sales)
   renderHomeAlerts(role);
+
+  // Pipeline section (admin + sales)
+  renderHomePipeline(role);
 
   // Sales quick stats (sales role only)
   if (role === 'sales') renderSalesQuickStats();
@@ -5657,7 +5679,8 @@ function renderSalesQuickStats() {
   const curMonth = months[months.length-1];
   const myOrders = (sessionData[curMonth]||[]).filter(r => r.pic === myName);
   const myConfirmed = myOrders.filter(isPipelineSales);
-  const myQuotCount = myOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation').length;
+  const myQuotOrders = myOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
+  const myQuotCount = myQuotOrders.length;
 
   const mySales   = myOrders.filter(isPipelineSales);
   const myPCS     = mySales.reduce((s,r) => s+(r.pcs||0), 0);
@@ -5707,6 +5730,11 @@ function renderSalesQuickStats() {
           <div class="kpi-card-label">Komisyen</div>
           <div class="kpi-card-val" style="color:${layak?'var(--green)':'var(--textm)'};">${layak?fmt(totalKom):'—'}</div>
           <div class="kpi-card-sub">${layak?'unjuran':'min 1,000 PCS'}</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--purple);">
+          <div class="kpi-card-label">Pipeline Value</div>
+          <div class="kpi-card-val" style="color:var(--purple);font-size:14px;">${fmt(myQuotOrders.reduce((s,o)=>s+(o.total_customer||0),0))}</div>
+          <div class="kpi-card-sub">${myQuotOrders.length} quotation pending</div>
         </div>
       </div>
       <!-- PCS Progress -->
@@ -5867,5 +5895,143 @@ function generateOSPDF(level) {
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
 }
+
+
+// ── PIPELINE CONFIRM ─────────────────────────────────────────
+async function confirmOrder(orderId) {
+  // Find order in sessionData
+  let foundMonth = null;
+  for (const m of Object.keys(sessionData)) {
+    if ((sessionData[m]||[]).find(r => r.id === orderId)) {
+      foundMonth = m; break;
+    }
+  }
+  if (!foundMonth) return;
+  const idx = sessionData[foundMonth].findIndex(r => r.id === orderId);
+  if (idx < 0) return;
+
+  sessionData[foundMonth][idx] = {
+    ...sessionData[foundMonth][idx],
+    pipeline_status: 'confirmed'
+  };
+
+  // Sync to Supabase
+  try {
+    await supaUpsert('orders', { ...sessionData[foundMonth][idx], month: foundMonth });
+    showToast('✅ Order confirmed!');
+  } catch(e) {
+    showToast('⚠ Gagal sync ke server', true);
+  }
+
+  // Re-render
+  renderAll();
+  renderHomepage();
+  if (document.getElementById('customerView').style.display !== 'none') renderCustomers();
+}
+window.confirmOrder = confirmOrder;
+
+
+function renderHomePipeline(role) {
+  const el = document.getElementById('homePipelineSection');
+  if (!el) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const myName = currentUser?.name || '';
+  const allOrders = Object.entries(sessionData).flatMap(([m,orders]) =>
+    orders.map(o => ({...o, _month:m}))
+  );
+
+  // Get quotation orders based on role
+  const quotOrders = allOrders.filter(o =>
+    (o.pipeline_status||'confirmed') === 'quotation' &&
+    (role === 'admin' || o.pic === myName)
+  ).sort((a,b) => (a.order_date||'').localeCompare(b.order_date||''));
+
+  if (!quotOrders.length) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+
+  const totalPipeVal = quotOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const isAdmin = role === 'admin';
+
+  // Potential komisyen (sales)
+  const potKom = quotOrders.reduce((s,o) => {
+    const rate = (o.source||'') === 'SEKOLAH' ? 0.005 : 0.01;
+    return s + (o.total_customer||0) * rate;
+  }, 0);
+
+  // Conversion rate this month (confirmed / (confirmed + quotation))
+  const curMonth = Object.keys(sessionData).slice(-1)[0];
+  const curOrders = (sessionData[curMonth]||[]).filter(o =>
+    role !== 'admin' ? o.pic === myName : true
+  );
+  const curConfirmed = curOrders.filter(isPipelineSales).length;
+  const curQuot = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation').length;
+  const convRate = (curConfirmed + curQuot) > 0
+    ? Math.round(curConfirmed / (curConfirmed + curQuot) * 100) : 0;
+
+  // Build rows
+  let rows = '';
+  quotOrders.forEach(o => {
+    const daysAgo = o.order_date
+      ? Math.floor((today - new Date(o.order_date)) / 86400000) : 0;
+    const urgColor = daysAgo >= 14 ? 'var(--red)' : daysAgo >= 7 ? 'var(--amber)' : 'var(--green)';
+    const urgBg    = daysAgo >= 14 ? 'var(--redbg)' : daysAgo >= 7 ? '#FFFBEB' : 'var(--greenbg)';
+    const urgLabel = daysAgo >= 14 ? daysAgo+'h - KRITIKAL' : daysAgo >= 7 ? daysAgo+'h - Susulan' : daysAgo+'h';
+
+    rows += '<tr style="border-bottom:1px solid var(--line);">'
+      + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
+      + (isAdmin ? '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.pic||'—')+'</td>' : '')
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.cust_name||'—')+'</td>'
+      + '<td style="padding:8px 10px;font-family:\'Fira Code\',monospace;font-size:11px;color:var(--amber);text-align:right;">'+fmt(o.total_customer||0)+'</td>'
+      + '<td style="padding:8px 10px;text-align:center;">'
+        + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;background:'+urgBg+';color:'+urgColor+';border:1px solid '+urgColor+'44;">'+urgLabel+'</span>'
+      + '</td>'
+      + '<td style="padding:8px 10px;text-align:center;">'
+        + '<button onclick="window.confirmOrder(\''+o.id+'\')" '
+        + 'style="font-size:10px;padding:4px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">✅ Confirm</button>'
+        + ' <button onclick="openEditModalById(\''+o.id+'\',\''+o._month+'\')" '
+        + 'style="font-size:10px;padding:4px 8px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:5px;cursor:pointer;margin-left:4px;">✏️</button>'
+      + '</td>'
+      + '</tr>';
+  });
+
+  el.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">'
+      + '<div>'
+        + '<div style="font-size:14px;font-weight:700;color:var(--text);">📋 Pipeline Aktif — Quotation Pending</div>'
+        + '<div style="font-size:12px;color:var(--textm);margin-top:2px;">'+quotOrders.length+' quotation belum confirmed</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+        + '<div style="text-align:right;">'
+          + '<div style="font-size:10px;color:var(--textm);">Pipeline Value</div>'
+          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--amber);">'+fmt(totalPipeVal)+'</div>'
+        + '</div>'
+        + (!isAdmin ? '<div style="text-align:right;">'
+          + '<div style="font-size:10px;color:var(--textm);">Potensi Komisyen</div>'
+          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--green);">'+fmt(potKom)+'</div>'
+        + '</div>' : '')
+        + '<div style="text-align:right;">'
+          + '<div style="font-size:10px;color:var(--textm);">Conversion Rate</div>'
+          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--blue);">'+convRate+'%</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="overflow-x:auto;">'
+    + '<table style="width:100%;border-collapse:collapse;">'
+    + '<thead><tr style="background:var(--bg3);">'
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
+      + (isAdmin ? '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">PIC</th>' : '')
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Customer</th>'
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Pending</th>'
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table></div></div>';
+}
+window.renderHomePipeline = renderHomePipeline;
 
 </script>
