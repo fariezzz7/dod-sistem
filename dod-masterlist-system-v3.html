@@ -3205,9 +3205,9 @@ function renderCustomers() {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = t.label;
-      btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;'
-        + 'background:' + (_tab === t.id ? 'var(--blue)' : 'transparent') + ';'
-        + 'color:' + (_tab === t.id ? '#fff' : 'var(--textd)') + ';';
+      var btnBg = (_tab === t.id) ? 'var(--blue)' : 'transparent';
+      var btnCo = (_tab === t.id) ? '#fff' : 'var(--textd)';
+      btn.style.cssText = 'padding:6px 14px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:' + btnBg + ';color:' + btnCo + ';';
       btn.addEventListener('click', function() {
         window._custTab = t.id;
         renderCustomers();
