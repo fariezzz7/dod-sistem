@@ -624,6 +624,7 @@ tr:hover .row-actions{opacity:1;}
       <button class="btn-secondary" id="btnHome" onclick="showHomeView()" style="font-size:11px;padding:6px 12px;">🏠 Home</button>
       <button class="btn-secondary" id="btnDashboard" onclick="showDashboardView()" style="display:none;font-size:11px;padding:6px 12px;">📈 Dashboard</button>
       <button class="btn-secondary" id="btnSupplierDir" onclick="showSupplierDirView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--teal);color:#fff;border-color:var(--teal);">🏭 Supplier</button>
+      <button class="btn-secondary" id="btnProdTrack" onclick="showProdTrackView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">📦 Production</button>
       <button class="btn-secondary" id="btnSupplierOS" onclick="showSupplierOSView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--amber);color:#fff;border-color:var(--amber);">💸 Supplier OS</button>
       <button class="btn-secondary" id="btnUserMgmt" onclick="showUserMgmtView()" style="display:none;font-size:11px;padding:6px 12px;">👤 Pengguna</button>
       <button class="btn-secondary" id="btnChgPw" onclick="openChpwModal(false)" style="font-size:11px;padding:6px 12px;">🔒 Password</button>
@@ -821,6 +822,11 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 
+  <!-- PRODUCTION TRACKER -->
+  <div id="prodTrackView" style="display:none;padding:24px 28px;">
+    <div id="prodTrackContent"></div>
+  </div>
+
   <!-- SUPPLIER DIRECTORY -->
   <div id="supplierDirView" style="display:none;padding:24px 28px;">
     <div id="supplierDirContent"></div>
@@ -1013,8 +1019,23 @@ tr:hover .row-actions{opacity:1;}
             <input class="fi" type="date" id="f_invdate">
           </div>
           <div class="form-field">
-            <label class="fl">Tarikh Due / Deadline</label>
+            <label class="fl">Tarikh Due / Deadline (Customer)</label>
             <input class="fi" type="date" id="f_duedate">
+          </div>
+          <div class="form-field">
+            <label class="fl">Tarikh Production Siap (Kilang)</label>
+            <input class="fi" type="date" id="f_prod_date">
+          </div>
+          <div class="form-field">
+            <label class="fl">Status Production</label>
+            <select class="fi" id="f_prod_status">
+              <option value="job-submit">📥 Job Submit</option>
+              <option value="printing">🖨️ Printing</option>
+              <option value="jahit">🧵 Jahit / Siap Cetak</option>
+              <option value="qc">🔍 QC</option>
+              <option value="ready">📦 Ready (Pickup/Delivery)</option>
+              <option value="complete">✅ Complete</option>
+            </select>
           </div>
         </div>
       </div>
@@ -1412,7 +1433,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name'];
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -1637,7 +1658,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1704,6 +1725,7 @@ function setupNavForRole() {
     document.getElementById('btnUserMgmt').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
+    document.getElementById('btnProdTrack').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
   } else if (role === 'sales') {
@@ -1712,6 +1734,7 @@ function setupNavForRole() {
     btnBoard.style.display = 'block';
     btnBoard.textContent = '📋 Job Board';
     btnKpi.style.display = 'block';
+    document.getElementById('btnProdTrack').style.display = 'block';
   } else { // designer
     btnAdd.style.display = 'none';
     btnMonth.style.display = 'none';
@@ -2230,6 +2253,8 @@ function openEditModalById(id) {
   recalc();
   // Load item breakdown
   loadItemsData(r.items || []);
+  document.getElementById('f_prod_date').value   = r.production_date || '';
+  document.getElementById('f_prod_status').value = r.production_status || 'job-submit';
   document.getElementById('addModalBg').classList.add('open');
 }
 
@@ -2240,11 +2265,12 @@ function openEditModal(safeR) {
 function clearForm() {
   ['f_order_date','f_pic','f_source','f_name','f_inv','f_inv_supplier','f_pcs','f_invdate','f_duedate',
    'f_cust_name','f_cust_tel','f_cust_email','f_cust_addr','f_supplier_name','f_color',
-   'f_sizes','f_design_notes','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_inv_cust','f_pay1'
+   'f_sizes','f_design_notes','f_prod_date','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_inv_cust','f_pay1'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   recalc();
   clearItemRows(); // clear item breakdown
   document.getElementById('f_sup_status').value = 'PAYMENT DONE';
+  document.getElementById('f_prod_status').value = 'job-submit';
   // Reset deposit to 70%
   const dPct = document.getElementById('f_deposit_pct');
   if (dPct) dPct.value = 70;
@@ -2311,6 +2337,8 @@ function saveOrder() {
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
   const supStatus  = document.getElementById('f_sup_status').value;
   const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
+  const prodDate   = document.getElementById('f_prod_date')?.value || '';
+  const prodStatus = document.getElementById('f_prod_status')?.value || 'job-submit';
 
   if (!name) { showToast('Sila isi Nama Job', true); return; }
 
@@ -2333,7 +2361,8 @@ function saveOrder() {
           supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
           luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
           total_customer:rev, first_payment:pay1, balance_customer:custOS,
-          supplier_outstanding:supOS, profit, items:editItems };
+          supplier_outstanding:supOS, profit, items:editItems,
+          production_date:prodDate, production_status:prodStatus };
         break;
       }
     }
@@ -2366,7 +2395,8 @@ function saveOrder() {
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
       luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
-      supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems
+      supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
+      production_date:prodDate, production_status:prodStatus
     });
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
@@ -4865,6 +4895,266 @@ async function confirmSupPayment() {
   renderSupplierOS();
   renderAll();
   showToast(fullPay ? '✓ Full payment selesai!' : fmt(payAmt) + ' direkod ✓');
+}
+
+
+// ══════════════════════════════════════
+// PRODUCTION TRACKER
+// ══════════════════════════════════════
+const PROD_STATUSES = [
+  { id:'job-submit', label:'Job Submit',           icon:'📥', color:'#9AA0B8', pct:0  },
+  { id:'printing',   label:'Printing',             icon:'🖨️', color:'#1A5CC8', pct:20 },
+  { id:'jahit',      label:'Jahit / Siap Cetak',   icon:'🧵', color:'#7C3AED', pct:45 },
+  { id:'qc',         label:'QC',                   icon:'🔍', color:'#B8720A', pct:70 },
+  { id:'ready',      label:'Ready (Pickup/Delivery)',icon:'📦',color:'#0E7A7A', pct:90 },
+  { id:'complete',   label:'Complete',             icon:'✅', color:'#0F7A48', pct:100},
+];
+
+const PROD_STATUS_MAP = {};
+PROD_STATUSES.forEach(s => { PROD_STATUS_MAP[s.id] = s; });
+
+let prodFilter = 'active'; // 'active' | 'complete'
+let prodFilterStatus = '';
+let prodFilterPic = '';
+
+function showProdTrackView() {
+  setAllViewsHidden();
+  document.getElementById('prodTrackView').style.display = 'block';
+  renderProdTrack();
+}
+
+function renderProdTrack() {
+  const el = document.getElementById('prodTrackContent');
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+
+  // Only show orders with production tracking (exclude no status = treat as job-submit)
+  const activeOrders = allOrders.filter(o =>
+    (o.production_status || 'job-submit') !== 'complete'
+  );
+  const completeOrders = allOrders.filter(o =>
+    o.production_status === 'complete'
+  );
+
+  const showing = prodFilter === 'complete' ? completeOrders : activeOrders;
+
+  // Apply filters
+  let filtered = showing;
+  if (prodFilterStatus) filtered = filtered.filter(o => (o.production_status||'job-submit') === prodFilterStatus);
+  if (prodFilterPic)    filtered = filtered.filter(o => o.pic === prodFilterPic);
+
+  // Sort: overdue first, then by deadline
+  const today = new Date(); today.setHours(0,0,0,0);
+  filtered.sort((a,b) => {
+    const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
+    const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+    return da - db;
+  });
+
+  // Summary KPIs
+  const overdue  = activeOrders.filter(o => o.due_date && new Date(o.due_date) < today && o.production_status !== 'complete').length;
+  const dueSoon  = activeOrders.filter(o => {
+    if (!o.due_date) return false;
+    const d = new Date(o.due_date);
+    const diff = (d - today) / 86400000;
+    return diff >= 0 && diff <= 3;
+  }).length;
+  const readyJobs = activeOrders.filter(o => o.production_status === 'ready').length;
+
+  // Unique PICs for filter
+  const pics = [...new Set(allOrders.map(o => o.pic).filter(Boolean))].sort();
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:var(--text);">📦 Customer Job Progress</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Tracking status production semua order aktif</div>
+      </div>
+    </div>
+
+    <!-- Summary KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+      <div class="kpi-card" style="border-top:3px solid var(--blue);">
+        <div class="kpi-card-label">Job Aktif</div>
+        <div class="kpi-card-val" style="color:var(--blue);">${activeOrders.length}</div>
+        <div class="kpi-card-sub">belum complete</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--red);">
+        <div class="kpi-card-label">Overdue</div>
+        <div class="kpi-card-val" style="color:${overdue>0?'var(--red)':'var(--green)'};">${overdue}</div>
+        <div class="kpi-card-sub">deadline dah lepas</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid var(--amber);">
+        <div class="kpi-card-label">Due Soon</div>
+        <div class="kpi-card-val" style="color:${dueSoon>0?'var(--amber)':'var(--green)'};">${dueSoon}</div>
+        <div class="kpi-card-sub">dalam 3 hari</div>
+      </div>
+      <div class="kpi-card" style="border-top:3px solid #0E7A7A;">
+        <div class="kpi-card-label">Ready</div>
+        <div class="kpi-card-val" style="color:#0E7A7A;">${readyJobs}</div>
+        <div class="kpi-card-sub">tunggu pickup/delivery</div>
+      </div>
+    </div>
+
+    <!-- Filters & Tabs -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+        <button onclick="prodFilter='active';renderProdTrack()"
+          style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;
+          ${prodFilter==='active'?'background:var(--blue);color:#fff;':'background:transparent;color:var(--textd);'}">
+          In Progress (${activeOrders.length})
+        </button>
+        <button onclick="prodFilter='complete';renderProdTrack()"
+          style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;
+          ${prodFilter==='complete'?'background:var(--green);color:#fff;':'background:transparent;color:var(--textd);'}">
+          Complete (${completeOrders.length})
+        </button>
+      </div>
+      <select onchange="prodFilterStatus=this.value;renderProdTrack()"
+        style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;">
+        <option value="">Semua Status</option>
+        ${PROD_STATUSES.map(s => `<option value="${s.id}" ${prodFilterStatus===s.id?'selected':''}>${s.icon} ${s.label}</option>`).join('')}
+      </select>
+      <select onchange="prodFilterPic=this.value;renderProdTrack()"
+        style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;">
+        <option value="">Semua PIC</option>
+        ${pics.map(p => `<option value="${p}" ${prodFilterPic===p?'selected':''}>${p}</option>`).join('')}
+      </select>
+    </div>
+
+    <!-- Job Cards -->
+    ${filtered.length === 0 ? `
+    <div style="text-align:center;padding:60px;color:var(--textm);">
+      <div style="font-size:32px;margin-bottom:12px;">${prodFilter==='complete'?'✅':'📭'}</div>
+      <div style="font-size:14px;font-weight:600;color:var(--textd);">${prodFilter==='complete'?'Tiada job complete lagi':'Tiada job aktif'}</div>
+    </div>` :
+    filtered.map(o => renderProdCard(o)).join('')}
+  `;
+}
+
+function renderProdCard(o) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const status  = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
+  const dueDate = o.due_date ? new Date(o.due_date) : null;
+  const prodDate= o.production_date ? new Date(o.production_date) : null;
+  const diffDue = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const diffProd= prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
+
+  // Alert level
+  let alertColor = 'var(--line)', alertText = '';
+  if (status.id !== 'complete') {
+    if (diffDue !== null && diffDue < 0) {
+      alertColor = 'var(--red)'; alertText = '🔴 OVERDUE ' + Math.abs(diffDue) + ' hari';
+    } else if (diffDue !== null && diffDue <= 3) {
+      alertColor = 'var(--amber)'; alertText = '🟡 Due dalam ' + diffDue + ' hari';
+    } else if (prodDate && dueDate && prodDate > dueDate) {
+      alertColor = 'var(--orange)'; alertText = '⚠️ Prod siap > deadline customer';
+    }
+  }
+
+  // Balance
+  const balance = o.balance_customer || 0;
+  const hasOS   = balance > 0;
+
+  const statusOptions = PROD_STATUSES.map(s =>
+    `<option value="${s.id}" ${s.id===status.id?'selected':''}>${s.icon} ${s.label}</option>`
+  ).join('');
+
+  return `
+  <div style="background:var(--bg2);border:1px solid ${alertColor};border-left:4px solid ${status.color};border-radius:12px;padding:16px 18px;margin-bottom:12px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+
+      <!-- Left: Job info -->
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">${o.name_job||'—'}</div>
+        <div style="font-size:11px;color:var(--textm);display:flex;gap:10px;flex-wrap:wrap;">
+          <span>👤 ${o.pic||'—'}</span>
+          <span>📋 ${o.inv_number_supplier||o.inv_number||'—'}</span>
+          <span>📦 ${o.pcs||0} PCS</span>
+          ${o.cust_name?`<span>🧑 ${o.cust_name}</span>`:''}
+        </div>
+        ${alertText?`<div style="font-size:11px;font-weight:600;color:${alertColor};margin-top:6px;">${alertText}</div>`:''}
+      </div>
+
+      <!-- Right: Dates + Status -->
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+        <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;justify-content:flex-end;">
+          ${dueDate?`<span style="background:${diffDue!==null&&diffDue<0?'var(--redbg)':'var(--bg3)'};border:1px solid ${diffDue!==null&&diffDue<0?'var(--redb)':'var(--line)'};padding:3px 8px;border-radius:5px;color:${diffDue!==null&&diffDue<0?'var(--red)':'var(--textd)'};">📅 Due: ${o.due_date}</span>`:''}
+          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:${prodDate>dueDate&&dueDate?'var(--amber)':'var(--textd)'};">🏭 Prod: ${o.production_date}</span>`:'<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textm);">🏭 Prod: —</span>'}
+        </div>
+        ${hasOS?`<span style="font-size:11px;font-weight:600;color:var(--red);background:var(--redbg);border:1px solid var(--redb);padding:3px 8px;border-radius:5px;">💰 OS: ${fmt(balance)}</span>`:'<span style="font-size:11px;color:var(--green);background:var(--greenbg);border:1px solid var(--greenb);padding:3px 8px;border-radius:5px;">✓ Paid</span>'}
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="margin:12px 0 10px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textm);margin-bottom:5px;">
+        <span>${status.icon} ${status.label}</span>
+        <span>${status.pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${status.pct}%;background:${status.color};border-radius:3px;transition:width .5s ease;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:5px;">
+        ${PROD_STATUSES.map(s => `<div style="width:12px;height:12px;border-radius:50%;background:${status.pct>=s.pct?s.color:'var(--bg3)'};border:2px solid ${s.color};transition:all .3s;" title="${s.label}"></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+      <select onchange="updateProdStatus('${o.id}','${o._month}',this.value)"
+        style="background:${status.color}22;border:1px solid ${status.color}66;color:var(--text);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;outline:none;cursor:pointer;flex:1;min-width:180px;">
+        ${statusOptions}
+      </select>
+      ${status.id==='ready'||status.id==='complete'?`
+      <button onclick="sendWANotify('${o.id}','${o._month}')"
+        style="background:#25D366;color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;">
+        📱 WA Notify
+      </button>`:''}
+      ${status.id==='complete'?`
+      <button onclick="revertProdStatus('${o.id}','${o._month}')"
+        style="background:var(--bg3);color:var(--textd);border:1px solid var(--line);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:11px;white-space:nowrap;">
+        ↩ Edit Status
+      </button>`:''}
+    </div>
+  </div>`;
+}
+
+async function updateProdStatus(orderId, month, newStatus) {
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  sessionData[month][idx] = { ...sessionData[month][idx], production_status: newStatus };
+  // Sync to Supabase
+  supaUpsert('orders', { ...sessionData[month][idx], month })
+    .catch(e => console.warn('Prod status sync failed:', e));
+  renderProdTrack();
+  const s = PROD_STATUS_MAP[newStatus];
+  showToast(s ? s.icon + ' ' + s.label : 'Status dikemaskini');
+}
+
+async function revertProdStatus(orderId, month) {
+  await updateProdStatus(orderId, month, 'ready');
+}
+
+function sendWANotify(orderId, month) {
+  const o = (sessionData[month]||[]).find(r => r.id === orderId);
+  if (!o) return;
+  const name    = o.cust_name || 'Customer';
+  const job     = o.name_job || 'pesanan anda';
+  const tel     = (o.cust_tel || '').replace(/[^0-9]/g,'');
+  const balance = o.balance_customer || 0;
+
+  let msg = '';
+  if (balance > 0) {
+    msg = `Assalamualaikum ${name}, baju untuk ${job} dah siap untuk pickup/penghantaran. Sila selesaikan baki pembayaran sebanyak *RM ${balance.toFixed(2)}* ke akaun berikut:\n\n🏦 Maybank: *562526579990*\nAtas nama: *DOD WORLDWIDE SUPPLY*\n\nSila hantar bukti pembayaran selepas transfer. Terima kasih.`;
+  } else {
+    msg = `Assalamualaikum ${name}, baju untuk ${job} dah siap untuk pickup/penghantaran. Sila hubungi kami untuk urusan seterusnya. Terima kasih.`;
+  }
+
+  const encoded = encodeURIComponent(msg);
+  const url = tel ? `https://wa.me/60${tel.replace(/^0/,'')}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  window.open(url, '_blank');
 }
 
 </script>
