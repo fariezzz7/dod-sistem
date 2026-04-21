@@ -1153,7 +1153,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Kos Supplier — Jumlah (RM)</label>
-            <input class="fi" type="number" id="f_nohad_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
+            <input class="fi" type="number" id="f_nohad_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
           </div>
           <div class="form-field">
             <label class="fl">Kos Supplier — Dah Bayar (RM)</label>
@@ -1165,7 +1165,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Kos Lain — Dah Bayar (RM)</label>
-            <input class="fi highlight" type="number" id="f_luar_paid" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
+            <input class="fi highlight" type="number" id="f_luar_paid" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
           </div>
           <div class="form-field">
             <label class="fl">Status Bayar Supplier</label>
@@ -2299,7 +2299,7 @@ function openEditModalById(id) {
   document.getElementById('f_nohad_paid').value = r.nohad_paid || '';
   document.getElementById('f_luar_amt').value = r.luar_amount || '';
   document.getElementById('f_luar_paid').value = r.luar_paid || '';
-  document.getElementById('f_sup_status').value = r.supplier_payment_status || 'PAYMENT DONE';
+  document.getElementById('f_sup_status').value = r.supplier_payment_status || 'OUTSTANDING';
   document.getElementById('f_supplier_name').value = r.supplier_name || 'NOHAD SDN BHD';
   document.getElementById('f_inv_cust').value = r.total_customer || '';
   document.getElementById('f_pay1').value = r.first_payment || '';
@@ -2336,7 +2336,7 @@ function clearForm() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   recalc();
   clearItemRows(); // clear item breakdown
-  document.getElementById('f_sup_status').value = 'PAYMENT DONE';
+  document.getElementById('f_sup_status').value = 'OUTSTANDING';
   document.getElementById('f_prod_status').value = 'job-submit';
   // Default pipeline: sales = quotation, admin = confirmed
   const defPipeline = currentUser?.role === 'admin' ? 'confirmed' : 'quotation';
@@ -2409,7 +2409,10 @@ function saveOrder() {
   const luarPaid   = parseFloat(document.getElementById('f_luar_paid').value)||0;
   const rev        = parseFloat(document.getElementById('f_inv_cust').value)||0;
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
-  const supStatus  = document.getElementById('f_sup_status').value;
+  // Auto-calculate status: only PAYMENT DONE if amounts match AND total > 0
+  const supStatus = (nohadAmt + luarAmt) > 0 && (nohadPaid + luarPaid) >= (nohadAmt + luarAmt)
+    ? 'PAYMENT DONE'
+    : 'OUTSTANDING';
   const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
   const prodDate      = document.getElementById('f_prod_date')?.value || '';
   const prodStatus    = document.getElementById('f_prod_status')?.value || 'job-submit';
@@ -5051,7 +5054,25 @@ function showSupplierOSView() {
 function renderSupplierOS() {
   const el = document.getElementById('supplierOSContent');
   const allOrders = Object.values(sessionData).flat()
-    .filter(r => r.supplier_payment_status !== 'PAYMENT DONE' && (r.supplier_outstanding||0) > 0)
+    .filter(r => {
+      if (r.supplier_payment_status === 'PAYMENT DONE') return false;
+      // Primary check: supplier_outstanding field
+      const os = r.supplier_outstanding || 0;
+      if (os > 0) return true;
+      // Fallback: recalc from nohad_amount - nohad_paid
+      const nohadOS = Math.max(0, (r.nohad_amount||0) - (r.nohad_paid||0));
+      const luarOS  = Math.max(0, (r.luar_amount||0) - (r.luar_paid||0));
+      return (nohadOS + luarOS) > 0;
+    })
+    .map(r => {
+      // Ensure supplier_outstanding is correctly computed
+      const nohadOS = Math.max(0, (r.nohad_amount||0) - (r.nohad_paid||0));
+      const luarOS  = Math.max(0, (r.luar_amount||0) - (r.luar_paid||0));
+      const calcOS  = nohadOS + luarOS;
+      return calcOS !== (r.supplier_outstanding||0)
+        ? { ...r, supplier_outstanding: calcOS }
+        : r;
+    })
     .sort((a,b) => new Date(b.inv_date||b.order_date||0) - new Date(a.inv_date||a.order_date||0));
 
   const totalOS = allOrders.reduce((s,r) => s + (r.supplier_outstanding||0), 0);
@@ -6033,5 +6054,19 @@ function renderHomePipeline(role) {
     + '</table></div></div>';
 }
 window.renderHomePipeline = renderHomePipeline;
+
+
+function autoUpdateSupStatus() {
+  const nohadAmt  = parseFloat(document.getElementById('f_nohad_amt')?.value) || 0;
+  const nohadPaid = parseFloat(document.getElementById('f_nohad_paid')?.value) || 0;
+  const luarAmt   = parseFloat(document.getElementById('f_luar_amt')?.value) || 0;
+  const luarPaid  = parseFloat(document.getElementById('f_luar_paid')?.value) || 0;
+  const total     = nohadAmt + luarAmt;
+  const paid      = nohadPaid + luarPaid;
+  const el = document.getElementById('f_sup_status');
+  if (!el) return;
+  // Only PAYMENT DONE if total > 0 and fully paid
+  el.value = (total > 0 && paid >= total) ? 'PAYMENT DONE' : 'OUTSTANDING';
+}
 
 </script>
