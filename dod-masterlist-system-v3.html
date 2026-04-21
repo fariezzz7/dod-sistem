@@ -71,15 +71,18 @@ body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(
 
 /* ── NAV ── */
 nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,0.04);}
-.nav-inner{max-width:1440px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:var(--nav-h);gap:16px;}
+.nav-inner{max-width:1440px;margin:0 auto;padding:0;display:flex;flex-direction:column;}
+.nav-row1{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:var(--nav-h);gap:8px;overflow-x:auto;}
+.nav-row2{display:flex;align-items:center;padding:4px 24px;background:var(--bg3);border-top:1px solid var(--line);gap:4px;min-height:36px;flex-wrap:nowrap;overflow-x:auto;}
+.nav-row2:empty{display:none;}
 .nav-logo{font-family:'Fira Code',monospace;font-size:12px;letter-spacing:0.1em;color:var(--blue);font-weight:600;white-space:nowrap;}
 .nav-logo span{color:var(--textm);}
-.nav-tabs{display:flex;gap:2px;background:var(--bg3);padding:3px;border-radius:6px;flex-wrap:wrap;}
+.nav-tabs{display:flex;gap:2px;padding:0;flex-wrap:nowrap;overflow-x:auto;}
 .nav-tab{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 12px;color:var(--textd);cursor:pointer;border:none;background:none;border-radius:4px;transition:all .15s;}
 .nav-tab:hover{color:var(--blue);}
 .nav-tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.1);font-weight:600;}
 .nav-tab.new-month{color:var(--green);border:1px dashed var(--greenb);}
-.nav-right{display:flex;align-items:center;gap:8px;}
+.nav-right{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
 .nav-date{font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);}
 .nav-user-chip{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--line);padding:4px 10px 4px 6px;border-radius:20px;cursor:pointer;transition:all .15s;}
 .nav-user-chip:hover{background:var(--bg4);}
@@ -617,9 +620,9 @@ tr:hover .row-actions{opacity:1;}
 
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo">DOD <span>/ Masterlist v3</span></div>
-    <div class="nav-tabs" id="navTabs"></div>
-    <div class="nav-right">
+    <div class="nav-row1">
+      <div class="nav-logo">DOD <span>/ Masterlist v3</span></div>
+      <div class="nav-right">
       <div class="nav-date" id="navDate"></div>
       <button class="btn-secondary" id="btnHome" onclick="showHomeView()" style="font-size:11px;padding:6px 12px;">🏠 Home</button>
       <button class="btn-secondary" id="btnDashboard" onclick="showDashboardView()" style="display:none;font-size:11px;padding:6px 12px;">📈 Dashboard</button>
@@ -640,7 +643,9 @@ tr:hover .row-actions{opacity:1;}
         </div>
       </div>
       <button class="btn-logout" onclick="doLogout()">Keluar</button>
+      </div>
     </div>
+    <div class="nav-row2" id="navTabs"></div>
   </div>
 </nav>
 
@@ -1662,6 +1667,9 @@ function setAllViewsHidden() {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
+  // Hide month tabs by default — only shown in masterlist view
+  const tabs = document.getElementById('navTabs');
+  if (tabs) tabs.style.display = 'none';
 }
 
 function showHomeView() {
