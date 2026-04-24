@@ -1048,7 +1048,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Tarikh Due / Deadline (Customer)</label>
-            <input class="fi" type="date" id="f_duedate" oninput="calcDeadline()">
+            <input class="fi" type="date" id="f_duedate">
           </div>
           <div class="form-field">
             <label class="fl">Tarikh Production Siap (Kilang)</label>
@@ -1074,56 +1074,6 @@ tr:hover .row-actions{opacity:1;}
               <option value="completed">✔ Completed</option>
             </select>
           </div>
-        </div>
-      </div>
-
-      <!-- ══ DEADLINE CALCULATOR ══ -->
-      <div class="modal-section" id="deadlineSection" style="background:var(--bluebg);border-color:var(--blueb);">
-        <div class="modal-section-title" style="color:var(--blue);">🗓 Deadline Calculator — Auto dari Tarikh Due</div>
-        <div style="font-size:11px;color:var(--textd);margin-bottom:10px;">Isi <strong>Tarikh Due / Deadline (Customer)</strong> di atas, kemudian pilih 2 maklumat di bawah.</div>
-        <div class="form-grid" style="margin-bottom:12px;">
-          <div class="form-field">
-            <label class="fl">Ada Artwork Sendiri?</label>
-            <select class="fi" id="dc_artwork" oninput="calcDeadline()" style="border-color:var(--blueb);">
-              <option value="">— Pilih —</option>
-              <option value="yes">✅ Ya — Ada artwork sendiri</option>
-              <option value="no">🎨 Tidak — Perlukan design dari DOD</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label class="fl">Kaedah Penghantaran</label>
-            <select class="fi" id="dc_delivery" oninput="calcDeadline()" style="border-color:var(--blueb);">
-              <option value="">— Pilih —</option>
-              <option value="collect">🏠 Self Collect</option>
-              <option value="pos_sm">📦 Pos — Semenanjung (1-2 hari)</option>
-              <option value="pos_ss">✈️ Pos — Sabah/Sarawak (3-5 hari)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- RESULT BOX -->
-        <div id="dc_result" style="display:none;">
-          <!-- Urgency Flag -->
-          <div id="dc_urgency_flag" style="margin-bottom:10px;padding:10px 14px;border-radius:8px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;"></div>
-
-          <!-- Timeline -->
-          <div style="background:#fff;border:1px solid var(--blueb);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
-            <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">Timeline Untuk Bagitahu Customer</div>
-            <div id="dc_timeline" style="display:flex;flex-direction:column;gap:7px;"></div>
-          </div>
-
-          <!-- WA Message -->
-          <div style="background:#fff;border:1px solid var(--greenb);border-radius:8px;padding:12px 14px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">📱 Mesej WhatsApp — Sedia Copy-Paste</div>
-              <button type="button" onclick="copyWAMsg()" style="font-size:10px;padding:3px 10px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;color:var(--green);font-weight:700;">📋 Copy</button>
-            </div>
-            <div id="dc_wa_msg" style="font-size:11px;color:var(--textd);line-height:1.7;white-space:pre-wrap;background:var(--bg3);padding:10px;border-radius:6px;"></div>
-          </div>
-        </div>
-
-        <div id="dc_placeholder" style="text-align:center;padding:14px;font-size:12px;color:var(--textm);">
-          ↑ Isi Tarikh Due di atas, kemudian pilih artwork &amp; penghantaran untuk dapatkan deadline dan mesej WA
         </div>
       </div>
 
@@ -1693,6 +1643,8 @@ function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Sync users from Supabase (so new users added on other devices appear)
+  syncUsersFromSupabase();
 }
 
 async function loadOrdersFromSupabase() {
@@ -2270,16 +2222,6 @@ function openEditFromDetail()   { if(currentDetailRow) openEditModalById(current
 function openDeleteFromDetail() { if(currentDetailRow) openDeleteById(currentDetailRow.id); }
 
 // ══════════════════════════════════════
-// TIMEZONE HELPER — Malaysia Time (UTC+8)
-// ══════════════════════════════════════
-function getMYTToday() {
-  const now = new Date();
-  const myt = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
-  myt.setHours(0, 0, 0, 0);
-  return myt;
-}
-
-// ══════════════════════════════════════
 // ADD / EDIT MODAL
 // ══════════════════════════════════════
 async function openAddModal() {
@@ -2412,168 +2354,11 @@ function clearForm() {
   if (pay1El) delete pay1El.dataset.manual;
   // Reset deposit button highlight
   setTimeout(() => setDepositPct(70), 50);
-  // Reset deadline calculator
-  ['dc_artwork','dc_delivery'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value='';
-  });
-  const dcR = document.getElementById('dc_result');
-  const dcP = document.getElementById('dc_placeholder');
-  if(dcR) dcR.style.display='none';
-  if(dcP) dcP.style.display='block';
 }
 
 function closeModal() {
   document.getElementById('addModalBg').classList.remove('open');
   editingId = null;
-  // Reset deadline calculator
-  ['dc_artwork','dc_delivery'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value='';
-  });
-  const r = document.getElementById('dc_result');
-  const p = document.getElementById('dc_placeholder');
-  if(r) r.style.display='none';
-  if(p) p.style.display='block';
-}
-
-// ══════════════════════════════════════
-// DEADLINE CALCULATOR — FASA 1
-// ══════════════════════════════════════
-function calcDeadline() {
-  const custDateVal = document.getElementById('f_duedate').value; // ambil dari field due date yang sedia ada
-  const artwork     = document.getElementById('dc_artwork').value;
-  const delivery    = document.getElementById('dc_delivery').value;
-
-  const resultEl      = document.getElementById('dc_result');
-  const placeholderEl = document.getElementById('dc_placeholder');
-
-  if (!custDateVal || !artwork || !delivery) {
-    resultEl.style.display      = 'none';
-    placeholderEl.style.display = 'block';
-    return;
-  }
-
-  // Lead times (hari)
-  const LT_PROD_NORMAL  = 7;
-  const LT_PROD_URGENT  = 3;
-  const LT_DESIGN       = artwork === 'yes' ? 0 : 3;
-  const LT_BUFFER       = 1;
-  const LT_POSTAGE      = delivery === 'collect' ? 0 : delivery === 'pos_sm' ? 2 : 5;
-
-  const custDate = new Date(custDateVal);
-  custDate.setHours(12,0,0,0);
-  const today    = getMYTToday();
-
-  // Kira backward dari tarikh customer
-  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
-  const subDays = (d, n) => addDays(d, -n);
-  const fmtD    = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric'});
-  const fmtDShort = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short'});
-
-  const dateCollect   = subDays(custDate, LT_POSTAGE);         // bila kena pos/collect
-  const dateKilangSiap = subDays(dateCollect, LT_BUFFER);      // kilang kena siap
-  const dateHantarKilang = subDays(dateKilangSiap, LT_PROD_NORMAL); // file kena hantar kilang (normal)
-  const dateHantarUrgent = subDays(dateKilangSiap, LT_PROD_URGENT); // file kena hantar kilang (urgent)
-  const dateApproveDesign = subDays(dateHantarKilang, LT_DESIGN > 0 ? 0 : 0); // bila file final kena ready
-  const dateDepositDeadline = LT_DESIGN > 0 ? subDays(dateHantarKilang, LT_DESIGN) : dateHantarKilang;
-
-  // Berapa hari dari sekarang ke deadline deposit
-  const daysToDeadline = Math.round((dateDepositDeadline - today) / 86400000);
-  const daysToHantar   = Math.round((dateHantarKilang - today) / 86400000);
-
-  // Tentukan urgency
-  let urgency, urgColor, urgBg, urgIcon, urgDesc;
-  if (daysToHantar < 0) {
-    urgency = '🚫 MUSTAHIL'; urgIcon = '🚫';
-    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
-    urgDesc = 'Tarikh dah lepas. Maklumkan customer dan escalate ke supervisor untuk cari kilang backup.';
-  } else if (daysToHantar <= LT_PROD_URGENT) {
-    urgency = '🔴 URGENT — Caj Tambahan RM10/pcs'; urgIcon = '🔴';
-    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
-    urgDesc = 'Masa terlalu singkat untuk produksi normal. Perlu slot urgent (3 hari). Ada caj tambahan RM10/pcs — maklumkan customer dan dapatkan persetujuan dulu sebelum proceed.';
-  } else if (daysToDeadline <= 2) {
-    urgency = '🟡 PRIORITI — Ketat'; urgIcon = '🟡';
-    urgColor = 'var(--amber)'; urgBg = 'var(--amberbg)';
-    urgDesc = 'Masa ada tapi ketat. Customer kena confirm design dan bayar deposit hari ini atau esok.';
-  } else {
-    urgency = '🟢 NORMAL — Masa Mencukupi'; urgIcon = '🟢';
-    urgColor = 'var(--green)'; urgBg = 'var(--greenbg)';
-    urgDesc = 'Masa mencukupi untuk proses design dan produksi mengikut SOP biasa.';
-  }
-
-  // Build timeline items
-  const tlItems = [];
-  if (LT_DESIGN > 0) {
-    tlItems.push({ label: '📋 Deadline deposit + brief customer', date: dateDepositDeadline, highlight: true });
-    tlItems.push({ label: '🎨 Deadline customer approve design', date: dateHantarKilang, highlight: false });
-  } else {
-    tlItems.push({ label: '📋 Deadline deposit + artwork dari customer', date: dateDepositDeadline, highlight: true });
-  }
-  if (delivery !== 'collect') {
-    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
-    tlItems.push({ label: `🚚 Tarikh pos (${delivery === 'pos_sm' ? 'Semenanjung' : 'Sabah/Sarawak'})`, date: dateCollect, highlight: false });
-  } else {
-    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
-    tlItems.push({ label: '🏠 Tarikh self collect', date: custDate, highlight: false });
-  }
-
-  const timelineHTML = tlItems.map(t => {
-    const isPast = t.date < today;
-    return `<div style="display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);">
-      <span style="font-size:12px;color:${t.highlight ? 'var(--text)' : 'var(--textd)'};font-weight:${t.highlight?'700':'400'};">${t.label}</span>
-      <span style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${isPast ? 'var(--red)' : t.highlight ? 'var(--blue)' : 'var(--textd)'};">${fmtD(t.date)}</span>
-    </div>`;
-  }).join('');
-
-  // Build WA message
-  const deliveryLabel = delivery === 'collect' ? 'self collect' : delivery === 'pos_sm' ? 'penghantaran pos (Semenanjung)' : 'penghantaran pos (Sabah/Sarawak)';
-  const artworkLine   = artwork === 'yes'
-    ? `Oleh kerana tuan/puan ada artwork sendiri, kami boleh terus proses selepas bayaran deposit diterima.`
-    : `Proses design akan mengambil masa 1-3 hari bergantung kepada bilangan pindaan. Untuk pastikan tarikh siap dijaga, kami mohon kerjasama tuan/puan untuk memberi respon dengan segera bagi setiap draft design yang kami hantar.`;
-  const urgentLine    = daysToHantar <= LT_PROD_URGENT && daysToHantar >= 0
-    ? `\n⚠️ *Nota Penting:* Disebabkan tempoh yang singkat, ada caj tambahan *RM10 setiap helai* untuk slot urgent produksi. Sila konfirmasi penerimaan caj ini sebelum kami proceed.`
-    : '';
-  const mustahilLine  = daysToHantar < 0
-    ? `\n🚫 *Maaf, kami tidak dapat memenuhi tarikh tersebut.* Pasukan kami akan menghubungi tuan/puan untuk membincangkan tarikh alternatif atau penyelesaian lain.`
-    : '';
-
-  const waMsg = `Assalamualaikum / Selamat sejahtera,
-
-Terima kasih kerana menghubungi DOD Worldwide Supplies! 🙏
-
-Berdasarkan tarikh yang tuan/puan nyatakan *(${fmtD(custDate)})* dengan kaedah ${deliveryLabel}:
-
-📌 *Tarikh akhir deposit + ${artwork === 'yes' ? 'hantar artwork' : 'brief design'}: ${fmtD(dateDepositDeadline)}*
-${LT_DESIGN > 0 ? `📌 *Tarikh akhir approve design: ${fmtD(dateHantarKilang)}*\n` : ''}
-${artworkLine}${urgentLine}${mustahilLine}
-
-Sebarang pertanyaan, jangan segan untuk bertanya. Kami sedia membantu! 😊
-
-DOD Worldwide Supplies`;
-
-  // Update DOM
-  document.getElementById('dc_urgency_flag').style.cssText = `background:${urgBg};border:1px solid ${urgColor}33;color:${urgColor};margin-bottom:10px;padding:10px 14px;border-radius:8px;display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13px;`;
-  document.getElementById('dc_urgency_flag').innerHTML = `<div>${urgency}</div><div style="font-size:11px;font-weight:400;color:var(--textd);line-height:1.5;">${urgDesc}</div>`;
-  document.getElementById('dc_timeline').innerHTML = timelineHTML;
-  document.getElementById('dc_wa_msg').textContent  = waMsg;
-  window._dcWaMsg = waMsg;
-
-  resultEl.style.display      = 'block';
-  placeholderEl.style.display = 'none';
-}
-
-function copyWAMsg() {
-  const msg = window._dcWaMsg || '';
-  if (!msg) return;
-  navigator.clipboard.writeText(msg).then(() => {
-    showToast('Mesej WA disalin! ✓');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = msg; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Mesej WA disalin! ✓');
-  });
 }
 
 function recalc() {
@@ -3710,7 +3495,7 @@ function openCustDetail(idx) {
   const totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0),0);
   const osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
   // Calculate days overdue
-  const _today = getMYTToday();
+  const _today = new Date(); _today.setHours(0,0,0,0);
   const daysOverdue = osOrders.length > 0 ? Math.max(...osOrders.map(o => {
     if (!o.order_date) return 0;
     return Math.max(0, Math.floor((_today - new Date(o.order_date)) / 86400000));
@@ -4453,6 +4238,33 @@ function loadUserStore() {
   return seedUserStore();
 }
 
+// Load users from Supabase and merge with local store
+async function syncUsersFromSupabase() {
+  try {
+    const rows = await supaGet('users', 'select=*');
+    if (!rows || !rows.length) return;
+    const store = {};
+    rows.forEach(u => {
+      store[u.id] = {
+        id: u.id, name: u.name, role: u.role,
+        color: u.color || '#1A5CC8',
+        bg: u.bg || '#EEF4FF',
+        password: u.password || 'DOD2026',
+        active: u.active !== false,
+        created: u.created || new Date().toISOString(),
+        lastLogin: u.last_login || null,
+      };
+    });
+    _userStoreCache = store;
+    localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
+    if (document.getElementById('userMgmtView')?.style.display !== 'none') {
+      renderUserMgmt();
+    }
+  } catch(e) {
+    console.warn('User sync from Supabase failed:', e);
+  }
+}
+
 function seedUserStore() {
   const seed = {};
   const DEFAULT_COLORS = {
@@ -4480,8 +4292,16 @@ function seedUserStore() {
 function saveUserStore(store) {
   _userStoreCache = store;
   localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-  // Sync all users to Supabase
-  const users = Object.values(store);
+  // Sync all users to Supabase — only send known columns
+  const users = Object.values(store).map(u => ({
+    id: u.id, name: u.name, role: u.role,
+    color: u.color || '#1A5CC8',
+    bg: u.bg || '#EEF4FF',
+    password: u.password || 'DOD2026',
+    active: u.active !== false ? true : false,
+    created: u.created || new Date().toISOString(),
+    last_login: u.lastLogin || null,
+  }));
   if (users.length) {
     supaUpsert('users', users).catch(e => console.warn('User sync failed:', e));
   }
@@ -5656,7 +5476,7 @@ function renderProdTrack() {
   if (prodFilterPic)    filtered = filtered.filter(o => o.pic === prodFilterPic);
 
   // Sort: overdue first, then by deadline
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   filtered.sort((a,b) => {
     const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
     const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
@@ -5745,7 +5565,7 @@ function renderProdTrack() {
 }
 
 function renderProdCard(o) {
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const status  = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
   const dueDate = o.due_date ? new Date(o.due_date) : null;
   const prodDate= o.production_date ? new Date(o.production_date) : null;
@@ -5872,7 +5692,7 @@ function sendWANotify(orderId, month) {
 function renderHomeAlerts(role) {
   const el = document.getElementById('homeAlertBar');
   if (!el) return;
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) => orders.map(o=>({...o,_month:m})));
 
   // Production alerts
@@ -5934,7 +5754,7 @@ function renderSalesQuickStats() {
   const totalKom = layak ? (revSek*0.005 + revBukan*0.01) : 0;
 
   // Production alerts for my orders
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const myActive = myOrders.filter(o => 
     (o.production_status||'job-submit') !== 'complete' &&
     (o.pipeline_status||'confirmed') !== 'quotation'
@@ -6037,7 +5857,7 @@ window.bulkOSReminder = bulkOSReminder;
 // ── OS REMINDER HELPERS ──────────────────────────────────────
 function _getOSDaysOverdue(c) {
   // Calculate max days overdue across all OS orders
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   let maxDays = 0;
   c.osOrders.forEach(o => {
     if (o.order_date) {
@@ -6173,7 +5993,7 @@ function renderHomePipeline(role) {
   const el = document.getElementById('homePipelineSection');
   if (!el) return;
 
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const myName = currentUser?.name || '';
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) =>
     orders.map(o => ({...o, _month:m}))
@@ -6214,11 +6034,10 @@ function renderHomePipeline(role) {
   let rows = '';
   quotOrders.forEach(o => {
     const daysAgo = o.order_date
-      ? Math.round((today - new Date(o.order_date + 'T12:00:00')) / 86400000) : 0;
-    const daysLabel = daysAgo <= 0 ? 'Hari ini' : daysAgo === 1 ? '1 hari' : daysAgo + ' hari';
+      ? Math.floor((today - new Date(o.order_date)) / 86400000) : 0;
     const urgColor = daysAgo >= 14 ? 'var(--red)' : daysAgo >= 7 ? 'var(--amber)' : 'var(--green)';
     const urgBg    = daysAgo >= 14 ? 'var(--redbg)' : daysAgo >= 7 ? '#FFFBEB' : 'var(--greenbg)';
-    const urgLabel = daysAgo >= 14 ? daysLabel + ' — KRITIKAL' : daysAgo >= 7 ? daysLabel + ' — Susulan' : daysLabel;
+    const urgLabel = daysAgo >= 14 ? daysAgo+'h - KRITIKAL' : daysAgo >= 7 ? daysAgo+'h - Susulan' : daysAgo+'h';
 
     rows += '<tr style="border-bottom:1px solid var(--line);">'
       + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
