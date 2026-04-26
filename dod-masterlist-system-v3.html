@@ -634,7 +634,9 @@ tr:hover .row-actions{opacity:1;}
       <button class="btn-secondary" id="btnProdTrack" onclick="showProdTrackView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">📦 Production</button>
       <button class="btn-secondary" id="btnSupplierOS" onclick="showSupplierOSView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--amber);color:#fff;border-color:var(--amber);">💸 Supplier OS</button>
       <button class="btn-secondary" id="btnUserMgmt" onclick="showUserMgmtView()" style="display:none;font-size:11px;padding:6px 12px;">👤 Pengguna</button>
+      <button class="btn-secondary" id="btnSecurity" onclick="showSecurityView()" style="display:none;font-size:11px;padding:6px 12px;background:#C02840;color:#fff;border:none;">🔒 Security</button>
       <button class="btn-secondary" id="btnChgPw" onclick="openChpwModal(false)" style="font-size:11px;padding:6px 12px;">🔒 Password</button>
+      <button class="btn-secondary" id="btnSecurity" onclick="showSecurityView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">🛡 Security</button>
       <button class="btn-month" id="btnAddMonth" onclick="openAddMonthModal()" style="display:none;">＋ Bulan Baru</button>
       <button class="btn-new" id="btnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
       <button class="btn-new" id="btnViewToggle" onclick="openJobBoard()" style="display:none;background:var(--purple);">📋 Job Board</button>
@@ -838,6 +840,16 @@ tr:hover .row-actions{opacity:1;}
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- SECURITY VIEW -->
+  <div id="securityView" style="display:none;padding:24px 28px;">
+    <div id="securityContent"></div>
+  </div>
+
+  <!-- SECURITY VIEW -->
+  <div id="securityView" style="display:none;padding:24px 28px;">
+    <div id="securityContent"></div>
   </div>
 
   <!-- PRODUCTION TRACKER -->
@@ -1645,6 +1657,8 @@ function initApp() {
   loadOrdersFromSupabase();
   // Sync users from Supabase (so new users added on other devices appear)
   syncUsersFromSupabase();
+  // Weekly auto backup (runs on Mondays)
+  if (currentUser?.role === 'admin') checkWeeklyBackup();
 }
 
 async function loadOrdersFromSupabase() {
@@ -1699,7 +1713,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1767,9 +1781,11 @@ function setupNavForRole() {
     btnKpi.style.display = 'none';
     document.getElementById('btnDashboard').style.display = 'block';
     document.getElementById('btnUserMgmt').style.display = 'block';
+    document.getElementById('btnSecurity').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
     document.getElementById('btnProdTrack').style.display = 'block';
+    document.getElementById('btnSecurity').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
   } else if (role === 'sales') {
@@ -2324,6 +2340,8 @@ function openEditModalById(id) {
   document.getElementById('f_prod_status').value = r.production_status || 'job-submit';
   const ppEditEl = document.getElementById('f_pipeline_status');
   if (ppEditEl) ppEditEl.value = r.pipeline_status || 'confirmed';
+  // Capture snapshot before edit for audit log
+  window._preEditSnapshot = { ...r };
   document.getElementById('addModalBg').classList.add('open');
 }
 
@@ -2455,12 +2473,18 @@ function saveOrder() {
         if (found) { currentDetailRow = found; break; }
       }
     }
-    // Sync edit to Supabase
+    // Sync edit to Supabase + audit log
     (() => {
       const months2 = Object.keys(sessionData);
       for (const m2 of months2) {
         const found = sessionData[m2].find(r => r.id === editingId);
-        if (found) { supaUpsert('orders', {...found, month: m2}).catch(e => console.warn('Sync failed:', e)); break; }
+        if (found) {
+          supaUpsert('orders', {...found, month: m2}).then(() => {
+            const changes = diffOrder(_preEditSnapshot, found);
+            if (changes) logAudit(found.id, 'edit', changes, null);
+          }).catch(e => console.warn('Sync failed:', e));
+          break;
+        }
       }
     })();
   } else {
@@ -2486,6 +2510,7 @@ function saveOrder() {
     if (newOrder) {
       supaUpsert('orders', newOrder).then(() => {
         showToast('✓ Disimpan ke server');
+        logAudit(newOrder.id, 'create', null, { name_job: newOrder.name_job, pcs: newOrder.pcs, total: newOrder.total_customer });
       }).catch(e => {
         console.error('Supabase sync failed:', e);
         showToast('⚠ Gagal simpan ke server: ' + (e.message||'').slice(0,60), true);
@@ -2523,6 +2548,12 @@ function confirmDelete() {
   }
   if (!deleteTargetId) return;
   const idToDel = deleteTargetId;
+  // Capture snapshot before delete for audit
+  let delSnap = null;
+  for (const m of Object.keys(sessionData)) {
+    const found = sessionData[m].find(r => r.id === idToDel);
+    if (found) { delSnap = { name_job: found.name_job, pcs: found.pcs, total: found.total_customer, pic: found.pic }; break; }
+  }
   // Remove from local sessionData
   for (const m of Object.keys(sessionData)) {
     const idx = sessionData[m].findIndex(r => r.id === idToDel);
@@ -2532,8 +2563,9 @@ function confirmDelete() {
   closeDetail();
   renderAll();
   showToast('Order dipadam.');
-  // Delete from Supabase
+  // Delete from Supabase + audit log
   supaDelete('orders', 'id=eq.' + encodeURIComponent(idToDel))
+    .then(() => logAudit(idToDel, 'delete', null, delSnap))
     .catch(e => console.warn('Delete sync failed:', e));
 }
 
@@ -2973,6 +3005,7 @@ function renderHomepage() {
   document.getElementById('homeKpiStrip').style.display    = isAdmin ? 'block' : 'none';
   document.getElementById('homeBottomPanels').style.display = isAdmin ? 'block' : 'none';
 
+
   if (isAdmin) {
     renderHomeKpi();
     renderHomeTrend();
@@ -3031,10 +3064,14 @@ function renderHomeKpi() {
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
-  const todayOrders = all.filter(o => o.order_date === todayStr);
+  const weekAgo7    = new Date(now - 6*86400000).toISOString().slice(0,10);
+  const todayOrders = allSales.filter(o => o.order_date === todayStr);
   const todayRev    = todayOrders.reduce((s,o) => s+(o.total_customer||0), 0);
-  const ystOrders   = all.filter(o => o.order_date === ystStr);
+  const ystOrders   = allSales.filter(o => o.order_date === ystStr);
   const ystRev      = ystOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const weekOrders7 = allSales.filter(o => o.order_date >= weekAgo7 && o.order_date <= todayStr);
+  const weekRev7    = weekOrders7.reduce((s,o) => s+(o.total_customer||0), 0);
+  const weekPCS7    = weekOrders7.reduce((s,o) => s+(o.pcs||0), 0);
 
   const el = document.getElementById('homeKpiCards');
   el.innerHTML = `
@@ -3065,7 +3102,7 @@ function renderHomeKpi() {
 
     <!-- Section label: Hari Ini -->
     <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
-      🕐 Hari Ini & Semalam
+      🕐 Hari Ini, Semalam & 7 Hari Lepas
     </div>
     <div class="home-kpi-card accent-teal" style="border-left:3px solid var(--teal);">
       <div class="home-kpi-label">Hari Ini</div>
@@ -3076,6 +3113,11 @@ function renderHomeKpi() {
       <div class="home-kpi-label">Semalam</div>
       <div class="home-kpi-val">${fmt(ystRev)}</div>
       <div class="home-kpi-sub">${ystOrders.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
+      <div class="home-kpi-label">7 Hari Lepas</div>
+      <div class="home-kpi-val">${fmt(weekRev)}</div>
+      <div class="home-kpi-sub">${weekOrders.length} order</div>
     </div>
 
     <!-- Section label: All Time -->
@@ -3421,63 +3463,7 @@ function setCustTab(tab) {
 window.setCustTab = setCustTab;
 
 
-function buildCustomerMap() {
-  const map = {};
-  Object.keys(sessionData).forEach(month => {
-    sessionData[month].forEach(order => {
-      const tel = (order.cust_tel || '').replace(/\s+/g,'');
-      if (!tel) return;
-      if (!map[tel]) {
-        map[tel] = {
-          name:  order.cust_name  || '—',
-          tel:   tel,
-          email: order.cust_email || '',
-          addr:  order.cust_addr  || '',
-          orders: [],
-        };
-      }
-      // Update with latest name/email/addr if present
-      if (order.cust_name  && order.cust_name  !== '—') map[tel].name  = order.cust_name;
-      if (order.cust_email && order.cust_email !== '')  map[tel].email = order.cust_email;
-      if (order.cust_addr  && order.cust_addr  !== '')  map[tel].addr  = order.cust_addr;
-      map[tel].orders.push({
-        name_job:       order.name_job       || '—',
-        order_date:     order.order_date     || '',
-        pcs:            order.pcs            || 0,
-        total_customer: order.total_customer || 0,
-        balance_customer: order.balance_customer || 0,
-        source:         order.source         || '',
-        pic:            order.pic            || '',
-        inv_number_supplier: order.inv_number_supplier || '',
-      });
-    });
-  });
-  // Sort orders by date desc
-  Object.values(map).forEach(c => {
-    c.orders.sort((a,b) => (b.order_date||'').localeCompare(a.order_date||''));
-    c.totalOrders  = c.orders.length;
-    c.totalPCS     = c.orders.reduce((s,o) => s+(o.pcs||0),0);
-    c.totalRev     = c.orders.reduce((s,o) => s+(o.total_customer||0),0);
-    c.lastOrder    = c.orders[0]?.order_date || '';
-    c.hasOS        = c.orders.some(o => (o.balance_customer||0) > 0);
-  });
-  // Add extra computed fields
-  Object.values(map).forEach(c => {
-    c.totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0), 0);
-    c.osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
-    // Customer tier
-    if (c.totalRev >= 5000)      c.tier = { label:'Platinum', color:'#7C3AED', bg:'#f5f0ff' };
-    else if (c.totalRev >= 2000) c.tier = { label:'Gold',     color:'#B8720A', bg:'#fdf8ee' };
-    else if (c.totalRev >= 500)  c.tier = { label:'Silver',   color:'#9AA0B8', bg:'#f4f6fa' };
-    else                          c.tier = { label:'Standard', color:'#CBD0E0', bg:'#f9fafc' };
-    // New customer (order within last 30 days)
-    const thirtyDaysAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
-    c.isNew = c.lastOrder >= thirtyDaysAgo;
-    // Notes from localStorage
-    c.notes = localStorage.getItem('cust_notes_' + c.tel) || '';
-  });
-  return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
-}
+
 
 
 
@@ -6105,5 +6091,443 @@ function autoUpdateSupStatus() {
   // Only PAYMENT DONE if total > 0 and fully paid
   el.value = (total > 0 && paid >= total) ? 'PAYMENT DONE' : 'OUTSTANDING';
 }
+
+
+// ══════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════
+
+async function logAudit(orderId, action, changes, snapshot) {
+  try {
+    const entry = {
+      order_id:   orderId || null,
+      user_name:  currentUser?.name || 'unknown',
+      action,
+      changes:    changes || null,
+      snapshot:   snapshot || null,
+      created_at: new Date().toISOString(),
+    };
+    await supaFetch('/rest/v1/audit_log', {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    });
+  } catch(e) {
+    console.warn('Audit log failed (non-critical):', e);
+  }
+}
+
+function diffOrder(oldObj, newObj) {
+  if (!oldObj) return null;
+  const changes = {};
+  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+  const skipKeys = ['_month'];
+  allKeys.forEach(k => {
+    if (skipKeys.includes(k)) return;
+    const ov = JSON.stringify(oldObj[k]);
+    const nv = JSON.stringify(newObj[k]);
+    if (ov !== nv) {
+      changes[k] = { old: oldObj[k], new: newObj[k] };
+    }
+  });
+  return Object.keys(changes).length ? changes : null;
+}
+
+// ══════════════════════════════════════
+// BACKUP & EXPORT
+// ══════════════════════════════════════
+
+function exportCSV() {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
+
+  const cols = [
+    '_month','pic','status','pipeline_status','name_job','source','channel',
+    'pcs','order_date','inv_date','due_date','inv_number','inv_number_supplier',
+    'total_customer','first_payment','balance_customer','profit',
+    'nohad_amount','nohad_paid','supplier_outstanding','supplier_payment_status',
+    'cust_name','cust_tel','cust_addr','supplier_name',
+    'production_date','production_status',
+  ];
+
+  const escape = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+
+  const header = cols.join(',');
+  const rows = allOrders.map(o => cols.map(c => escape(o[c])).join(','));
+  const csv = [header, ...rows].join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'DOD-orders-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV exported (' + allOrders.length + ' orders)');
+}
+
+function exportJSON() {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
+
+  const payload = {
+    exported_at: new Date().toISOString(),
+    exported_by: currentUser?.name || 'unknown',
+    order_count: allOrders.length,
+    orders: allOrders,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'DOD-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ JSON backup exported (' + allOrders.length + ' orders)');
+}
+
+async function saveBackupToSupabase(label) {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) return;
+
+  const lbl = label || 'Auto-' + new Date().toISOString().slice(0,10);
+  try {
+    await supaFetch('/rest/v1/backup_snapshots', {
+      method: 'POST',
+      body: JSON.stringify({
+        label: lbl,
+        created_by: currentUser?.name || 'system',
+        data: { orders: allOrders, sessionData },
+        order_count: allOrders.length,
+        created_at: new Date().toISOString(),
+      }),
+    });
+    showToast('✓ Backup disimpan: ' + lbl);
+  } catch(e) {
+    showToast('⚠ Backup gagal: ' + e.message, true);
+  }
+}
+
+async function restoreBackup(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.orders || !Array.isArray(data.orders)) {
+          showToast('⚠ Format backup tidak sah', true); return;
+        }
+
+        // Confirm #1
+        if (!confirm('⚠ AMARAN: Restore akan overwrite data semasa dengan ' + data.orders.length + ' orders dari backup ' + (data.exported_at||'').slice(0,10) + '.\n\nTeruskan?')) return;
+
+        // Confirm #2
+        if (!confirm('Ini akan OVERWRITE semua data semasa. Adakah anda pasti?\n\nKlik OK untuk teruskan, Cancel untuk batalkan.')) return;
+
+        // Auto-backup current data first
+        showToast('Menyimpan backup data semasa...');
+        await saveBackupToSupabase('Pre-restore-' + new Date().toISOString().slice(0,10));
+
+        // Restore
+        showToast('Memulihkan data...');
+        const orders = data.orders.map(o => {
+          const { _month, ...rest } = o;
+          return { ...rest, month: _month || rest.month };
+        });
+
+        // Upsert in batches of 50
+        for (let i = 0; i < orders.length; i += 50) {
+          const batch = orders.slice(i, i + 50);
+          await supaFetch('/rest/v1/orders', {
+            method: 'POST',
+            prefer: 'resolution=merge-duplicates',
+            body: JSON.stringify(batch),
+          });
+        }
+
+        showToast('✓ Restore berjaya! Memuatkan semula data...');
+        setTimeout(() => loadOrdersFromSupabase(), 1500);
+        resolve();
+      } catch(err) {
+        showToast('⚠ Restore gagal: ' + err.message, true);
+        reject(err);
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Weekly auto-backup (runs on Monday login)
+async function checkWeeklyBackup() {
+  const lastKey = 'dod_last_backup';
+  const last = localStorage.getItem(lastKey);
+  const now = new Date();
+  const isMonday = now.getDay() === 1;
+  const today = now.toISOString().slice(0,10);
+
+  if (isMonday && last !== today) {
+    localStorage.setItem(lastKey, today);
+    await saveBackupToSupabase('Weekly-' + today);
+    console.log('Weekly backup done:', today);
+  }
+}
+window.exportCSV = exportCSV;
+window.exportJSON = exportJSON;
+window.saveBackupToSupabase = saveBackupToSupabase;
+window.restoreBackup = restoreBackup;
+
+
+async function showAuditLog() {
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=100');
+    if (!rows) { showToast('Gagal load audit log', true); return; }
+
+    const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:24px;width:860px;max-width:95vw;max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">📋 Audit Log (100 terkini)</div>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--textd);">✕ Tutup</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:var(--bg3);">
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Masa</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">User</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Tindakan</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Order</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Perubahan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r,i) => {
+              const dt = new Date(r.created_at).toLocaleString('ms-MY');
+              const actionColor = r.action==='delete'?'var(--red)':r.action==='create'?'var(--green)':'var(--blue)';
+              const actionLabel = r.action==='delete'?'🗑 Padam':r.action==='create'?'✚ Cipta':'✏️ Edit';
+              const changes = r.changes ? Object.keys(r.changes).map(k =>
+                `<div style="color:var(--textm);">${k}: <span style="color:var(--red)">${JSON.stringify(r.changes[k].old).slice(0,30)}</span> → <span style="color:var(--green)">${JSON.stringify(r.changes[k].new).slice(0,30)}</span></div>`
+              ).join('') : (r.snapshot ? JSON.stringify(r.snapshot).slice(0,80) : '—');
+              return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+                <td style="padding:7px 10px;color:var(--textm);white-space:nowrap;">${dt}</td>
+                <td style="padding:7px 10px;color:var(--text);font-weight:600;">${r.user_name||'—'}</td>
+                <td style="padding:7px 10px;"><span style="color:${actionColor};font-weight:600;">${actionLabel}</span></td>
+                <td style="padding:7px 10px;color:var(--textd);font-size:10px;">${r.order_id||'—'}</td>
+                <td style="padding:7px 10px;color:var(--textd);font-size:10px;">${changes}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) {
+    showToast('Gagal load audit log: ' + e.message, true);
+  }
+}
+window.showAuditLog = showAuditLog;
+
+
+
+
+function renderSecurityView() {
+  const el = document.getElementById('securityContent');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="max-width:860px;">
+      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">🛡 Security & Data Management</div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:28px;">Kawalan akses kepada admin sahaja. Semua tindakan di sini dilog dalam audit trail.</div>
+
+      <!-- Export & Backup Section -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">💾 Export & Backup Data</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Download salinan data untuk simpanan atau analisis luar.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="exportCSV()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📊 Export CSV</button>
+          <button onclick="exportJSON()" style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">💾 Backup JSON</button>
+          <button onclick="saveBackupToSupabase(prompt('Label backup (contoh: Manual-Apr-2026):') || 'Manual-'+new Date().toISOString().slice(0,10))" style="padding:9px 18px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Backup ke Cloud</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--textm);">Auto backup: Setiap Isnin secara automatik bila admin login. Backup disimpan dalam Supabase.</div>
+      </div>
+
+      <!-- Restore Section -->
+      <div style="background:var(--bg2);border:1px solid var(--amberb);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">⚠ Restore Backup</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Upload fail JSON backup untuk pulihkan data. Sistem akan auto-backup data semasa sebelum restore.</div>
+        <label style="display:inline-block;padding:9px 18px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+          📂 Pilih Fail Backup (.json)
+          <input type="file" accept=".json" style="display:none;" onchange="restoreBackup(this.files[0]).then(()=>this.value='').catch(()=>this.value='')">
+        </label>
+        <div style="margin-top:10px;font-size:11px;color:var(--amber);background:var(--amberbg);border:1px solid var(--amberb);border-radius:6px;padding:8px 12px;">
+          ⚠ Restore akan OVERWRITE semua data semasa. Sistem akan minta pengesahan 2 kali sebelum proceed.
+        </div>
+      </div>
+
+      <!-- Audit Log Section -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📋 Audit Log</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Rekod semua tindakan edit, cipta, dan padam order dalam sistem.</div>
+        <button onclick="loadAuditLogInline()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📋 Muatkan Audit Log</button>
+        <div id="auditLogInline" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Cloud Backups List -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">☁ Senarai Backup Cloud</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Semua backup yang disimpan dalam Supabase.</div>
+        <button onclick="loadCloudBackups()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Muatkan Senarai</button>
+        <div id="cloudBackupsList" style="margin-top:16px;"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadAuditLogInline() {
+  const el = document.getElementById('auditLogInline');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=200');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--textm);">Tiada log lagi.</div>'; return; }
+
+    el.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<thead><tr style="background:var(--bg3);">'
+      + ['Masa','User','Tindakan','Order ID','Perubahan'].map(h =>
+          `<th style="padding:7px 10px;text-align:left;color:var(--textm);font-size:9px;font-family:\'Fira Code\',monospace;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;">${h}</th>`
+        ).join('') + '</tr></thead><tbody>'
+      + rows.map((r,i) => {
+          const dt = new Date(r.created_at).toLocaleString('ms-MY');
+          const ac = r.action==='delete'?'var(--red)':r.action==='create'?'var(--green)':'var(--blue)';
+          const al = r.action==='delete'?'🗑 Padam':r.action==='create'?'✚ Cipta':'✏️ Edit';
+          const ch = r.changes
+            ? Object.keys(r.changes).slice(0,3).map(k =>
+                `<span style="color:var(--textm)">${k}</span>`).join(', ') + (Object.keys(r.changes).length>3?'...':'')
+            : (r.snapshot ? (r.snapshot.name_job||'').slice(0,30) : '—');
+          return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+            <td style="padding:6px 10px;color:var(--textm);white-space:nowrap;">${dt}</td>
+            <td style="padding:6px 10px;color:var(--text);font-weight:600;">${r.user_name||'—'}</td>
+            <td style="padding:6px 10px;"><span style="color:${ac};font-weight:600;">${al}</span></td>
+            <td style="padding:6px 10px;color:var(--textm);font-size:10px;">${(r.order_id||'—').slice(0,20)}</td>
+            <td style="padding:6px 10px;color:var(--textd);font-size:10px;">${ch}</td>
+          </tr>`;
+        }).join('')
+      + '</tbody></table></div>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal: ' + e.message + '</div>';
+  }
+}
+
+async function loadCloudBackups() {
+  const el = document.getElementById('cloudBackupsList');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('backup_snapshots', 'select=id,label,created_by,order_count,created_at&order=created_at.desc&limit=20');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--textm);">Tiada backup lagi.</div>'; return; }
+
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<thead><tr style="background:var(--bg3);">'
+      + ['Label','Dibuat oleh','Order','Tarikh'].map(h =>
+          `<th style="padding:7px 10px;text-align:left;color:var(--textm);font-size:9px;font-family:\'Fira Code\',monospace;letter-spacing:.08em;text-transform:uppercase;">${h}</th>`
+        ).join('') + '</tr></thead><tbody>'
+      + rows.map((r,i) => `
+        <tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+          <td style="padding:7px 10px;color:var(--text);font-weight:600;">${r.label||'—'}</td>
+          <td style="padding:7px 10px;color:var(--textd);">${r.created_by||'—'}</td>
+          <td style="padding:7px 10px;color:var(--blue);font-family:\'Fira Code\',monospace;">${r.order_count||'—'}</td>
+          <td style="padding:7px 10px;color:var(--textm);">${new Date(r.created_at).toLocaleString('ms-MY')}</td>
+        </tr>`).join('')
+      + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal: ' + e.message + '</div>';
+  }
+}
+
+
+function showSecurityView() {
+  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  setAllViewsHidden();
+  document.getElementById('securityView').style.display = 'block';
+  renderSecurityView();
+}
+
+
+
+async function loadAuditLogInline() {
+  const el = document.getElementById('auditLogInline');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=200');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Tiada log lagi.</div>'; return; }
+    const actionColor = a => a==='delete'?'var(--red)':a==='create'?'var(--green)':'var(--blue)';
+    const actionLabel = a => a==='delete'?'🗑 Padam':a==='create'?'✚ Cipta':'✏️ Edit';
+    el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:var(--bg3);">
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);white-space:nowrap;">Masa</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">User</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Tindakan</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Order ID</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Perubahan</th>
+      </tr></thead>
+      <tbody>${rows.map((r,i) => {
+        const dt = new Date(r.created_at).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'});
+        const changes = r.changes ? Object.keys(r.changes).slice(0,3).map(k =>
+          `<div><span style="color:var(--textm)">${k}:</span> <span style="color:var(--red)">${JSON.stringify(r.changes[k].old||'').slice(0,25)}</span> → <span style="color:var(--green)">${JSON.stringify(r.changes[k].new||'').slice(0,25)}</span></div>`
+        ).join('') : (r.snapshot ? `<span style="color:var(--textm)">${JSON.stringify(r.snapshot).slice(0,60)}</span>` : '—');
+        return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+          <td style="padding:7px 10px;white-space:nowrap;">${dt}</td>
+          <td style="padding:7px 10px;font-weight:600;">${r.user_name||'—'}</td>
+          <td style="padding:7px 10px;"><span style="color:${actionColor(r.action)};font-weight:600;">${actionLabel(r.action)}</span></td>
+          <td style="padding:7px 10px;font-size:10px;color:var(--textm);">${(r.order_id||'—').slice(0,20)}</td>
+          <td style="padding:7px 10px;">${changes}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal muatkan: ' + e.message + '</div>';
+  }
+}
+
+async function showBackupHistory() {
+  try {
+    const rows = await supaGet('backup_snapshots', 'select=id,label,created_by,order_count,created_at&order=created_at.desc&limit=20');
+    if (!rows || !rows.length) { showToast('Tiada backup lagi', true); return; }
+    const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:24px;width:600px;max-width:95vw;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">☁ History Backup</div>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--bg3);">
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Label</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Oleh</th>
+            <th style="padding:8px 10px;text-align:right;color:var(--textm);">Orders</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Masa</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+            <td style="padding:8px 10px;font-weight:600;color:var(--text);">${r.label||'—'}</td>
+            <td style="padding:8px 10px;color:var(--textd);">${r.created_by||'—'}</td>
+            <td style="padding:8px 10px;text-align:right;font-family:'Fira Code',monospace;">${r.order_count||0}</td>
+            <td style="padding:8px 10px;color:var(--textm);">${new Date(r.created_at).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'})}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) { showToast('Gagal: ' + e.message, true); }
+}
+window.showSecurityView = showSecurityView;
+window.loadAuditLogInline = loadAuditLogInline;
+window.showBackupHistory = showBackupHistory;
 
 </script>
