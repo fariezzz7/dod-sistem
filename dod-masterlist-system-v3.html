@@ -3036,7 +3036,6 @@ function renderHomeKpi() {
   const now = new Date();
   const todayStr = now.toISOString().slice(0,10);
   const ystStr   = new Date(now - 86400000).toISOString().slice(0,10);
-  const weekAgo  = new Date(now - 7*86400000).toISOString().slice(0,10);
 
   const months    = Object.keys(sessionData);
   const curMonth  = months[months.length-1];
@@ -3116,8 +3115,8 @@ function renderHomeKpi() {
     </div>
     <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
       <div class="home-kpi-label">7 Hari Lepas</div>
-      <div class="home-kpi-val">${fmt(weekRev)}</div>
-      <div class="home-kpi-sub">${weekOrders.length} order</div>
+      <div class="home-kpi-val">${fmt(weekRev7)}</div>
+      <div class="home-kpi-sub">${weekOrders7.length} order</div>
     </div>
 
     <!-- Section label: All Time -->
