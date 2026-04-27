@@ -1063,6 +1063,15 @@ tr:hover .row-actions{opacity:1;}
             <input class="fi" type="date" id="f_duedate" oninput="calcDeadline()">
           </div>
           <div class="form-field">
+            <label class="fl">Pipeline Status</label>
+            <select class="fi" id="f_pipeline_status">
+              <option value="quotation" selected>📋 Quotation</option>
+              <option value="confirmed">✅ Confirmed</option>
+              <option value="in_production">🏭 In Production</option>
+              <option value="completed">✔ Completed</option>
+            </select>
+          </div>
+          <div class="form-field">
             <label class="fl">Tarikh Production Siap (Kilang)</label>
             <input class="fi" type="date" id="f_prod_date">
           </div>
@@ -1087,16 +1096,18 @@ tr:hover .row-actions{opacity:1;}
           <div class="form-field">
             <label class="fl">Ada Artwork dari DOD?</label>
             <select class="fi" id="dc_artwork" oninput="calcDeadline()">
-              <option value="no">Tidak — Perlukan design dari DOD</option>
-              <option value="yes">Pos — Customer bagi artwork (0 jam design)</option>
+              <option value="">— Pilih —</option>
+              <option value="yes">✅ Ya — Ada artwork sendiri</option>
+              <option value="no">🎨 Tidak — Perlukan design dari DOD</option>
             </select>
           </div>
           <div class="form-field">
             <label class="fl">Kaedah Penghantaran</label>
             <select class="fi" id="dc_delivery" oninput="calcDeadline()">
-              <option value="pos_sm">Pos SM (Semenanjung) — 2 jam</option>
-              <option value="pos_ss">Pos SS (Sabah/Sarawak) — 5 jam</option>
-              <option value="pickup">Pickup Sendiri — 0 jam</option>
+              <option value="">— Pilih —</option>
+              <option value="collect">🏠 Self Collect</option>
+              <option value="pos_sm">📦 Pos — Semenanjung (1-2 hari)</option>
+              <option value="pos_ss">✈️ Pos — Sabah/Sarawak (3-5 hari)</option>
             </select>
           </div>
         </div>
@@ -1122,15 +1133,6 @@ tr:hover .row-actions{opacity:1;}
       <div class="modal-section">
         <div class="modal-section-title" style="display:none;"></div>
         <div class="form-grid">
-          <div class="form-field">
-            <label class="fl">Pipeline Status</label>
-            <select class="fi" id="f_pipeline_status">
-              <option value="quotation">📋 Quotation</option>
-              <option value="confirmed" selected>✅ Confirmed</option>
-              <option value="in_production">🏭 In Production</option>
-              <option value="completed">✔ Completed</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -2404,7 +2406,7 @@ function clearForm() {
   document.getElementById('f_sup_status').value = 'OUTSTANDING';
   document.getElementById('f_prod_status').value = 'job-submit';
   // Default pipeline: sales = quotation, admin = confirmed
-  const defPipeline = currentUser?.role === 'admin' ? 'confirmed' : 'quotation';
+  const defPipeline = 'quotation'; // Default sentiasa Quotation untuk order baru
   const ppEl = document.getElementById('f_pipeline_status');
   if (ppEl) ppEl.value = defPipeline;
   // Reset deposit to 70%
