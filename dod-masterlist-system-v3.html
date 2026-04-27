@@ -854,7 +854,13 @@ tr:hover .row-actions{opacity:1;}
 
   <!-- PRODUCTION TRACKER -->
   <div id="prodTrackView" style="display:none;padding:24px 28px;">
-    <div id="prodTrackContent"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;" id="prodKilangFilter">
+    <button class="fbtn on" onclick="filterProdTrackBySupplier('ALL',this)" style="font-size:11px;">Semua Kilang</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('NOHAD',this)" style="font-size:11px;">🏭 Nohad</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('IKHTIAR',this)" style="font-size:11px;">📦 Ikhtiar Jaya</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('BROTHER',this)" style="font-size:11px;">🛠 Brother Trading</button>
+  </div>
+  <div id="prodTrackContent"></div>
   </div>
 
   <!-- SUPPLIER DIRECTORY -->
@@ -942,6 +948,25 @@ tr:hover .row-actions{opacity:1;}
               <option>SEKOLAH</option><option>AGENT</option>
             </select>
           </div>
+          <div class="filter-group">
+            <div class="filter-label">Kilang / Supplier</div>
+            <select class="fsel" id="supplierFilter" onchange="applyFilters()">
+              <option value="ALL">Semua Kilang</option>
+              <option>NOHAD SDN BHD</option>
+              <option>IKHTIAR JAYA</option>
+              <option>BROTHER TRADING</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Status Produksi</div>
+            <div class="filter-btns" id="prodStatusFilters">
+              <button class="fbtn on" onclick="toggleProdStatus('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleProdStatus('OVERDUE',this)" style="color:var(--red);">🔴 Overdue</button>
+              <button class="fbtn" onclick="toggleProdStatus('ALMOST',this)" style="color:var(--amber);">🟡 Almost Due</button>
+              <button class="fbtn" onclick="toggleProdStatus('OK',this)" style="color:var(--green);">🟢 Processing</button>
+              <button class="fbtn" onclick="toggleProdStatus('NONE',this)">⚫ Tiada Tarikh</button>
+            </div>
+          </div>
         </div>
         <div class="sidebar-card">
           <div class="sidebar-label">PIC</div>
@@ -963,6 +988,7 @@ tr:hover .row-actions{opacity:1;}
               <button class="sort-btn" onclick="sortBy('pcs',this)">PCS</button>
               <button class="sort-btn" onclick="sortBy('revenue',this)">Revenue</button>
               <button class="sort-btn" onclick="sortBy('profit',this)">Profit</button>
+              <button class="sort-btn" onclick="sortBy('production',this)">⚠ Produksi</button>
             </div>
           </div>
           <div class="tbl-outer">
@@ -1127,12 +1153,6 @@ tr:hover .row-actions{opacity:1;}
         </div>
         <div id="dc_placeholder" style="text-align:center;padding:14px;font-size:12px;color:var(--textm);">
           ↑ Isi Tarikh Due di atas, kemudian pilih artwork &amp; penghantaran untuk dapatkan deadline dan mesej WA
-        </div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-title" style="display:none;"></div>
-        <div class="form-grid">
         </div>
       </div>
 
@@ -1637,7 +1657,7 @@ let currentMonth = '';
 let currentDetailRow = null;
 let editingId = null;
 let deleteTargetId = null;
-let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL' };
+let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
@@ -1977,8 +1997,16 @@ function togglePipeline(pl, btn) {
 }
 
 function applyFilters() {
-  activeFilters.source = document.getElementById('sourceFilter').value;
-  activeFilters.search = document.getElementById('searchInput').value.toLowerCase();
+  activeFilters.source   = document.getElementById('sourceFilter').value;
+  activeFilters.supplier = document.getElementById('supplierFilter')?.value || 'ALL';
+  activeFilters.search   = document.getElementById('searchInput').value.toLowerCase();
+  renderAll();
+}
+
+function toggleProdStatus(st, btn) {
+  activeFilters.prodStatus = st;
+  btn.closest('.filter-btns').querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
   renderAll();
 }
 
@@ -1991,6 +2019,13 @@ function getFiltered() {
     if (activeFilters.os === 'SUP' && !(r.supplier_outstanding > 0)) return false;
     if (activeFilters.pipeline === 'QUOTATION' && (r.pipeline_status||'confirmed') !== 'quotation') return false;
     if (activeFilters.pipeline === 'CONFIRMED' && !isPipelineSales(r)) return false;
+    if (activeFilters.supplier !== 'ALL') {
+      const sup = (r.supplier_name||'NOHAD SDN BHD').toUpperCase();
+      if (!sup.includes(activeFilters.supplier.toUpperCase())) return false;
+    }
+    if (activeFilters.prodStatus !== 'ALL') {
+      if (getProdUrgency(r) !== activeFilters.prodStatus) return false;
+    }
     if (activeFilters.search) {
       const s = activeFilters.search;
       if (!((r.name_job||'').toLowerCase().includes(s) ||
@@ -2011,9 +2046,11 @@ function sortBy(field, btn) {
 
 function renderAll() {
   let rows = getFiltered();
+  const urgOrder = { OVERDUE:0, ALMOST:1, OK:2, NONE:3 };
   if (sortField === 'pcs') rows.sort((a,b) => (b.pcs||0)-(a.pcs||0));
   else if (sortField === 'revenue') rows.sort((a,b) => (b.total_customer||0)-(a.total_customer||0));
   else if (sortField === 'profit') rows.sort((a,b) => (b.profit||0)-(a.profit||0));
+  else if (sortField === 'production') rows.sort((a,b) => (urgOrder[getProdUrgency(a)]||3) - (urgOrder[getProdUrgency(b)]||3));
   else rows.sort((a,b) => (b.order_date||'') < (a.order_date||'') ? -1 : 1);
 
   renderKPIs(rows);
@@ -2119,7 +2156,8 @@ function renderTable(rows) {
       <td class="mono" style="color:var(--textm);font-size:10px">${i+1}</td>
       <td class="mono" style="font-size:10px;color:var(--textd)">${dateDisp}</td>
       <td><span style="background:${picBg};color:${picColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${r.pic}</span></td>
-      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}">${r.name_job}${plBadge}</td>
+      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}${r.production_date ? ' | Siap: '+r.production_date : ''}">
+        ${(() => { const u=getProdUrgency(r); return u==='OVERDUE'?'<span title="OVERDUE" style="color:var(--red);margin-right:4px;font-size:10px;">🔴</span>':u==='ALMOST'?'<span title="Almost Due" style="color:var(--amber);margin-right:4px;font-size:10px;">🟡</span>':u==='OK'?'<span title="Processing OK" style="color:var(--green);margin-right:4px;font-size:10px;">🟢</span>':''; })()}${r.name_job}${plBadge}</td>
       <td>${sourceBadge(r.source)}</td>
       <td class="mono blue" style="font-weight:600">${r.pcs||'—'}</td>
       <td class="mono" style="color:var(--textm);font-size:10px">${r.inv_number||'—'}</td>
@@ -3558,6 +3596,10 @@ function openCustDetail(idx) {
   }).join('');
 
   document.getElementById('custDetailBody').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:10px;color:var(--textm);font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;">Customer Directory</div>
+      <button onclick="openAddModalFromCust()" style="font-size:11px;padding:5px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">＋ Tambah Order</button>
+    </div>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
       <div style="width:52px;height:52px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${initials}</div>
       <div>
@@ -5487,9 +5529,13 @@ function showProdTrackView() {
 
 function renderProdTrack() {
   const el = document.getElementById('prodTrackContent');
+  const supF = (window._prodSupFilter || 'ALL').toUpperCase();
   const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
     orders.map(o => ({ ...o, _month: month }))
-  );
+  ).filter(o => {
+    if (supF === 'ALL') return true;
+    return (o.supplier_name||'NOHAD SDN BHD').toUpperCase().includes(supF);
+  });
 
   // Only show orders with production tracking (exclude no status = treat as job-submit)
   const activeOrders = allOrders.filter(o =>
@@ -6727,5 +6773,43 @@ function copyWAMsg() {
 }
 window.calcDeadline = calcDeadline;
 window.copyWAMsg = copyWAMsg;
+
+
+function getProdUrgency(r) {
+  if (!r.production_date || !isPipelineSales(r)) return 'NONE';
+  const today = getMYTToday();
+  const prod  = new Date(r.production_date + 'T00:00:00+08:00');
+  const diffDays = Math.round((prod - today) / 86400000);
+  if (diffDays < 0)  return 'OVERDUE';
+  if (diffDays <= 3) return 'ALMOST';
+  return 'OK';
+}
+
+function openAddModalFromCust() {
+  const c = window._custFiltered?.[window._custDetailIdx ?? custDetailOpen];
+  closeCustDetail();
+  openAddModal().then ? openAddModal().then(() => _prefillCust(c)) : (openAddModal(), setTimeout(() => _prefillCust(c), 100));
+}
+
+function _prefillCust(c) {
+  if (!c) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val||''; };
+  set('f_cust_name', c.name);
+  set('f_cust_tel',  c.tel);
+  set('f_cust_email', c.email);
+  set('f_cust_addr', c.addr);
+  showToast('✓ Maklumat customer dah diisi');
+}
+window.openAddModalFromCust = openAddModalFromCust;
+
+function filterProdTrackBySupplier(sup, btn) {
+  window._prodSupFilter = sup;
+  if (btn) {
+    document.querySelectorAll('#prodKilangFilter .fbtn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  renderProdTrack();
+}
+window.filterProdTrackBySupplier = filterProdTrackBySupplier;
 
 </script>
