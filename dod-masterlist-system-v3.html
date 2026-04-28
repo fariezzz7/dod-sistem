@@ -1661,12 +1661,33 @@ let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'',
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
-function doLogin() {
+async function doLogin() {
   const userId = document.getElementById('ls-user').value.trim().replace(/^@/,'').toLowerCase();
   const pass   = document.getElementById('ls-pass').value;
   const err    = document.getElementById('ls-err');
 
-  // Get user from dynamic store (localStorage override) or fallback to USERS
+  // Fetch fresh user data from Supabase first, then validate
+  showLoading('Log masuk...');
+  try {
+    const rows = await supaGet('users', 'select=*');
+    if (rows && rows.length) {
+      const store = {};
+      rows.forEach(u => {
+        store[u.id] = {
+          id: u.id, name: u.name, role: u.role,
+          color: u.color || '#1A5CC8', bg: u.bg || '#EEF4FF',
+          password: u.password || 'DOD2026',
+          active: u.active !== false,
+        };
+      });
+      _userStoreCache = store;
+      localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
+    }
+  } catch(e) {
+    console.warn('Pre-login sync failed, using cache:', e);
+  }
+  hideLoading();
+
   const userStore = loadUserStore();
   const userData  = userStore[userId];
 
