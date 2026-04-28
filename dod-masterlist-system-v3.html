@@ -1935,9 +1935,12 @@ function selectMonth(m) {
   currentMonth = m;
   buildMonthTabs();
   document.getElementById('heroMonth').textContent = MONTH_LABELS[m] || m;
-  activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'' };
+  activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
   document.getElementById('searchInput').value = '';
   document.getElementById('sourceFilter').value = 'ALL';
+  const supEl = document.getElementById('supplierFilter');
+  if (supEl) supEl.value = 'ALL';
+  document.querySelectorAll('#prodStatusFilters .fbtn').forEach((b,i) => i===0 ? b.classList.add('on') : b.classList.remove('on'));
   buildPicFilters();
   renderAll();
 }
