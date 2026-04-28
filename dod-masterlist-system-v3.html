@@ -2094,27 +2094,79 @@ function isPipelineSales(o) {
 function renderKPIs(rows) {
   const salesRows = rows.filter(isPipelineSales);
   const quotRows  = rows.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
-  const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
-  const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
-  const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
-  const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
-  const totalCost = rows.reduce((s,r)=>s+(r.total_supplier||0),0);
-  const custOS    = rows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const supOS     = rows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
-  const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
-  const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
+  const isQuotView = activeFilters.pipeline === 'QUOTATION';
+  const isAdmin   = currentUser.role === 'admin';
 
-  const isAdmin = currentUser.role === 'admin';
-  document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi"><div class="kpi-l">Revenue</div><div class="kpi-v amber">${fmt(totalRev)}</div><div class="kpi-sub">${rows.length} order</div></div>
-    <div class="kpi"><div class="kpi-l">PCS</div><div class="kpi-v blue">${totalPCS.toLocaleString()}</div><div class="kpi-sub">unit</div></div>
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%</div></div>` : ''}
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Kos Supplier</div><div class="kpi-v red">${fmt(totalCost)}</div><div class="kpi-sub">jumlah kos</div></div>` : ''}
-    <div class="kpi"><div class="kpi-l">Customer OS</div><div class="kpi-v red">${custOS>0?fmt(custOS):'✓ Clear'}</div><div class="kpi-sub">belum dibayar</div></div>
-    <div class="kpi"><div class="kpi-l">Supplier OS</div><div class="kpi-v orange">${supOS>0?fmt(supOS):'✓ Clear'}</div><div class="kpi-sub">perlu bayar</div></div>
-    <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
-  `;
+  if (isQuotView) {
+    // ── QUOTATION MODE ───────────────────────────────
+    const quotPCS    = quotRows.reduce((s,r)=>s+(r.pcs||0),0);
+    const quotVal    = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
+    const quotAvg    = quotPCS > 0 ? quotVal/quotPCS : 0;
+    const komRate    = (o) => (o.source||'')==='SEKOLAH' ? 0.005 : 0.01;
+    const potKom     = quotRows.reduce((s,r)=>s+(r.total_customer||0)*komRate(r),0);
+    const oldestDate = quotRows.reduce((oldest,r) => {
+      if (!r.order_date) return oldest;
+      return !oldest || r.order_date < oldest ? r.order_date : oldest;
+    }, null);
+    const daysOldest = oldestDate
+      ? Math.floor((getMYTToday() - new Date(oldestDate+'T00:00:00+08:00'))/86400000)
+      : 0;
+
+    document.getElementById('kpiRow').innerHTML = `
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">📋 Potensi Sales</div>
+        <div class="kpi-v amber">${fmt(quotVal)}</div>
+        <div class="kpi-sub">${quotRows.length} quotation</div>
+      </div>
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">PCS Potensi</div>
+        <div class="kpi-v blue">${quotPCS.toLocaleString()}</div>
+        <div class="kpi-sub">unit belum confirm</div>
+      </div>
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Avg/PCS</div>
+        <div class="kpi-v">${fmt(quotAvg)}</div>
+        <div class="kpi-sub">harga purata</div>
+      </div>
+      ${!isAdmin ? `<div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Potensi Komisyen</div>
+        <div class="kpi-v green">${fmt(potKom)}</div>
+        <div class="kpi-sub">jika semua confirm</div>
+      </div>` : ''}
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Tertunggak Terlama</div>
+        <div class="kpi-v ${daysOldest>=14?'red':daysOldest>=7?'amber':'green'}">${daysOldest} hari</div>
+        <div class="kpi-sub">${oldestDate||'—'}</div>
+      </div>
+    `;
+  } else {
+    // ── CONFIRMED MODE (default) ─────────────────────
+    const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
+    const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
+    const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
+    const totalCost = salesRows.reduce((s,r)=>s+(r.total_supplier||0),0);
+    const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+    const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
+    const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
+    const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
+    const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
+
+    document.getElementById('kpiRow').innerHTML = `
+      <div class="kpi"><div class="kpi-l">Revenue</div><div class="kpi-v amber">${fmt(totalRev)}</div><div class="kpi-sub">${salesRows.length} order confirmed</div></div>
+      <div class="kpi"><div class="kpi-l">PCS</div><div class="kpi-v blue">${totalPCS.toLocaleString()}</div><div class="kpi-sub">unit</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%</div></div>` : ''}
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Kos Supplier</div><div class="kpi-v red">${fmt(totalCost)}</div><div class="kpi-sub">jumlah kos</div></div>` : ''}
+      <div class="kpi"><div class="kpi-l">Customer OS</div><div class="kpi-v ${custOS>0?'red':'green'}">${custOS>0?fmt(custOS):'✓ Clear'}</div><div class="kpi-sub">belum dibayar</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Supplier OS</div><div class="kpi-v ${supOS>0?'orange':'green'}">${supOS>0?fmt(supOS):'✓ Clear'}</div><div class="kpi-sub">perlu bayar</div></div>` : ''}
+      <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
+      ${quotVal>0 ? `<div class="kpi" style="border-top:2px dashed var(--amber);opacity:0.7;">
+        <div class="kpi-l" style="color:var(--amber);">📋 Pipeline</div>
+        <div class="kpi-v amber">${fmt(quotVal)}</div>
+        <div class="kpi-sub">${quotRows.length} quotation pending</div>
+      </div>` : ''}
+    `;
+  }
 }
 
 // ══════════════════════════════════════
