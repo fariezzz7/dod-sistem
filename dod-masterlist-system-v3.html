@@ -2302,7 +2302,19 @@ function showDetail(id) {
       <button class="dp-doc-btn" onclick="openDoc('receipt')">✅ Receipt</button>
       ${isAdmin?`<button class="dp-doc-btn" onclick="openDoc('po')">📦 PO Supplier</button>`:''}
     </div>
+
+    <div style="margin-top:16px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>DOKUMEN TERSIMPAN</span>
+      </div>
+      <div id="savedDocsList" style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Memuatkan...</div>
+      </div>
+    </div>
   `;
+
+  // Load saved docs for this order
+  loadSavedDocs(r.id);
 
   document.getElementById('detailActions').innerHTML = `
     ${canEdit?`<button class="btn-edit-detail" onclick="openEditFromDetail()">✏️ Edit Order</button>`:'<div style="flex:1"></div>'}
@@ -2753,6 +2765,9 @@ function openDoc(docType) {
 
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
+
+  // Save snapshot to Supabase
+  saveDocSnapshot(r, docType, payload);
 }
 
 // ══════════════════════════════════════
@@ -6812,5 +6827,88 @@ function filterProdTrackBySupplier(sup, btn) {
   renderProdTrack();
 }
 window.filterProdTrackBySupplier = filterProdTrackBySupplier;
+
+
+// ══════════════════════════════════════
+// DOCUMENT STORAGE
+// ══════════════════════════════════════
+
+const DOC_TYPE_LABEL = {
+  invoice:   { icon: '🧾', label: 'Invoice' },
+  quotation: { icon: '📋', label: 'Quotation' },
+  receipt:   { icon: '✅', label: 'Receipt' },
+  po:        { icon: '📦', label: 'PO Supplier' },
+  reminder:  { icon: '📝', label: 'Reminder Letter' },
+};
+
+async function saveDocSnapshot(order, docType, payload) {
+  try {
+    const snap = {
+      order_id:     order.id,
+      doc_type:     docType,
+      inv_number:   payload.inv_number || order.inv_number_supplier || order.inv_number || '',
+      generated_by: currentUser?.name || 'unknown',
+      generated_at: new Date().toISOString(),
+      snapshot:     payload,
+      notes:        order.name_job || '',
+    };
+    await supaFetch('/rest/v1/documents', {
+      method: 'POST',
+      body: JSON.stringify(snap),
+    });
+    // Reload saved docs list if panel still open
+    if (currentDetailRow?.id === order.id) {
+      loadSavedDocs(order.id);
+    }
+  } catch(e) {
+    console.warn('Save doc snapshot failed (non-critical):', e);
+  }
+}
+
+async function loadSavedDocs(orderId) {
+  const el = document.getElementById('savedDocsList');
+  if (!el) return;
+  try {
+    const rows = await supaGet('documents',
+      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes&order_id=eq.${encodeURIComponent(orderId)}&order=generated_at.desc`
+    );
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Tiada dokumen tersimpan lagi</div>';
+      return;
+    }
+    el.innerHTML = rows.map(doc => {
+      const dt = new Date(doc.generated_at).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      const info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:7px;border:1px solid var(--line);">
+        <span style="font-size:14px;">${info.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
+          <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
+        </div>
+        <button onclick="openSavedDoc('${doc.id}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--textm);padding:8px;">Gagal muatkan dokumen</div>';
+  }
+}
+
+async function openSavedDoc(docId) {
+  try {
+    const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
+    if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
+    const doc = rows[0];
+    // Load snapshot payload - use the saved data, NOT current order data
+    const payload = doc.snapshot;
+    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+    window.open('dod-document-generator.html', '_blank');
+  } catch(e) {
+    showToast('Gagal buka dokumen: ' + e.message, true);
+  }
+}
+
+window.loadSavedDocs = loadSavedDocs;
+window.openSavedDoc = openSavedDoc;
+window.saveDocSnapshot = saveDocSnapshot;
 
 </script>
