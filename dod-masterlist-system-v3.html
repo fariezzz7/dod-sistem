@@ -4677,18 +4677,27 @@ function seedUserStore() {
 function saveUserStore(store) {
   _userStoreCache = store;
   localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-  // Sync all users to Supabase — only send known columns
-  const users = Object.values(store).map(u => ({
-    id: u.id, name: u.name, role: u.role,
-    color: u.color || '#1A5CC8',
-    bg: u.bg || '#EEF4FF',
-    password: u.password || 'DOD2026',
-    active: u.active !== false ? true : false,
-    created: u.created || new Date().toISOString(),
-    last_login: u.lastLogin || null,
-  }));
-  if (users.length) {
-    supaUpsert('users', users).catch(e => console.warn('User sync failed:', e));
+  // NOTE: Do NOT sync all users to Supabase here
+  // Supabase is source of truth — only update specific user via saveUserToSupabase()
+}
+
+async function saveUserToSupabase(u) {
+  try {
+    await supaFetch('/rest/v1/users', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify([{
+        id: u.id, name: u.name, role: u.role,
+        color: u.color || '#1A5CC8',
+        bg: u.bg || '#EEF4FF',
+        password: u.password || 'DOD2026',
+        active: u.active !== false,
+        created: u.created || new Date().toISOString(),
+        last_login: u.lastLogin || null,
+      }]),
+    });
+  } catch(e) {
+    console.warn('Save user to Supabase failed:', e);
   }
 }
 
@@ -4892,6 +4901,7 @@ function saveNewUser() {
     lastLogin: null,
   };
   saveUserStore(store);
+  saveUserToSupabase(store[id]);
 
   // Also add to USERS runtime object so current session recognises them
   USERS[id] = { name, role, color: rc.color, bg: rc.bg };
@@ -4937,6 +4947,7 @@ function saveUserEdit(id) {
   store[finalId].bg    = rc.bg;
 
   saveUserStore(store);
+  saveUserToSupabase(store[finalId]);
   showToast('Maklumat ' + newName + ' berjaya dikemaskini ✓');
   renderUserMgmt();
   renderUserEditForm(finalId);
@@ -4951,6 +4962,7 @@ function toggleUserActive(id) {
 
   store[id].active = !store[id].active;
   saveUserStore(store);
+  saveUserToSupabase(store[id]);
   const action = store[id].active ? 'diaktifkan' : 'dinyahaktifkan';
   showToast('Akaun ' + store[id].name + ' ' + action + ' ✓');
   renderUserMgmt();
@@ -5029,6 +5041,7 @@ function submitChpw() {
 
   store[chpwTargetId].password = newPw;
   saveUserStore(store);
+  saveUserToSupabase(store[chpwTargetId]);
 
   closeChpwModal();
   showToast('Password berjaya ditukar ✓');
