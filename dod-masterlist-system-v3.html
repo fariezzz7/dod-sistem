@@ -2940,7 +2940,7 @@ function renderKpiDashboard() {
 
       <!-- Komisyen breakdown -->
       <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
-        ${isSalesExec(staffRole) ? `
+        ${isSalesExec ? `
           ${getTieredBreakdown(revenue).map(t => `
             <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
               <span style="color:var(--textd);">${t.label}: ${fmt(t.base)}</span>
