@@ -3197,7 +3197,7 @@ function renderHomeKpi() {
       <div class="home-kpi-sub">Margin ${curMargin}%</div>
     </div>
     <div class="home-kpi-card ${totalOS>0?'accent-red':'accent-green'}" style="border-left:3px solid ${totalOS>0?'var(--red)':'var(--green)'};">
-      <div class="home-kpi-label">Customer OS</div>
+      <div class="home-kpi-label">Customer OS (Semua Bulan)</div>
       <div class="home-kpi-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
       <div class="home-kpi-sub">${totalOS>0?'belum dikutip':'semua dah bayar'}</div>
     </div>
@@ -5801,8 +5801,8 @@ function renderHomeAlerts(role) {
   });
   const readyJobs  = activeJobs.filter(o => o.production_status === 'ready');
 
-  // Customer OS
-  const custOS = allOrders.filter(o => (o.balance_customer||0) > 0);
+  // Customer OS — exclude Quotation (same logic as homepage KPI)
+  const custOS = allOrders.filter(o => isPipelineSales(o) && (o.balance_customer||0) > 0);
   const totalOS = custOS.reduce((s,o) => s+(o.balance_customer||0), 0);
 
   const alerts = [];
