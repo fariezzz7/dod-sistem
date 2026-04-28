@@ -3338,23 +3338,40 @@ window.addEventListener('load', () => {
   document.getElementById('ls-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
   // Auto-login if session exists (coming from dod-login.html or returning user)
-  try {
-    const saved = localStorage.getItem('dod_session');
-    if (saved) {
+  (async () => {
+    try {
+      const saved = localStorage.getItem('dod_session');
+      if (!saved) return;
       const session = JSON.parse(saved);
-      if (session && session.id) {
-        // Use session directly (already validated at login)
-        currentUser = session;
-        if (!USERS[session.id]) {
-          USERS[session.id] = { name:session.name, role:session.role, color:session.color||'#1A5CC8', bg:session.bg||'#EEF4FF' };
+      if (!session || !session.id) return;
+
+      // Verify role from Supabase (in case role changed since last login)
+      try {
+        const rows = await supaGet('users', `select=id,name,role,color,bg,active&id=eq.${encodeURIComponent(session.id)}`);
+        if (rows && rows.length) {
+          const freshUser = rows[0];
+          if (!freshUser.active) {
+            localStorage.removeItem('dod_session');
+            return;
+          }
+          session.role  = freshUser.role  || session.role;
+          session.name  = freshUser.name  || session.name;
+          session.color = freshUser.color || session.color;
         }
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').style.display = 'block';
-        initApp();
-        return;
+      } catch(e) {
+        console.warn('Session role refresh failed, using cache:', e);
       }
-    }
-  } catch(e) {}
+
+      currentUser = session;
+      localStorage.setItem('dod_session', JSON.stringify(currentUser));
+      if (!USERS[session.id]) {
+        USERS[session.id] = { name:session.name, role:session.role, color:session.color||'#1A5CC8', bg:session.bg||'#EEF4FF' };
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainApp').style.display = 'block';
+      initApp();
+    } catch(e) {}
+  })();
 });
 
 
