@@ -1732,7 +1732,18 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════
 // INIT APP
 // ══════════════════════════════════════
-function initApp() {
+async function initApp() {
+  // Sync users first (await) so role is always fresh from Supabase
+  await syncUsersFromSupabase();
+  // Re-apply currentUser role from fresh store
+  const freshStore = loadUserStore();
+  const freshUser = freshStore[currentUser?.id];
+  if (freshUser) {
+    currentUser.role  = freshUser.role;
+    currentUser.name  = freshUser.name;
+    currentUser.color = freshUser.color;
+    localStorage.setItem('dod_session', JSON.stringify(currentUser));
+  }
   setupNavForRole();
   updateNavDate();
   // Designer goes straight to jobboard
@@ -1743,8 +1754,6 @@ function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
-  // Sync users from Supabase (so new users added on other devices appear)
-  syncUsersFromSupabase();
   // Weekly auto backup (runs on Mondays)
   if (currentUser?.role === 'admin') checkWeeklyBackup();
 }
@@ -4584,9 +4593,10 @@ const USER_STORE_KEY = 'dod_user_store_v1';
 
 // Role display config
 const ROLE_CONFIG = {
-  admin:    { label:'Admin',    color:'#1A5CC8', bg:'#EEF4FF' },
-  sales:    { label:'Sales',    color:'#E89A10', bg:'#FFF8EC' },
-  designer: { label:'Designer', color:'#6E30C8', bg:'#F4EEFF' },
+  admin:           { label:'Admin',           color:'#1A5CC8', bg:'#EEF4FF' },
+  sales:           { label:'Sales',           color:'#E89A10', bg:'#FFF8EC' },
+  sales_executive: { label:'Sales Executive', color:'#D4380D', bg:'#FFF2E8' },
+  designer:        { label:'Designer',        color:'#6E30C8', bg:'#F4EEFF' },
 };
 
 // ── User Store (localStorage) ────────────────────────────────
@@ -4783,8 +4793,9 @@ function renderUserEditForm(id) {
         <label>Role</label>
         <select id="uf_role" ${isOnlyAdmin?'disabled title="Mesti ada sekurang-kurang 1 Admin"':''}>
           <option value="admin"    ${u.role==='admin'   ?'selected':''}>Admin — Akses penuh</option>
-          <option value="sales"    ${u.role==='sales'   ?'selected':''}>Sales Admin</option>
-          <option value="designer" ${u.role==='designer'?'selected':''}>Designer</option>
+          <option value="sales"           ${u.role==='sales'           ?'selected':''}>Sales Admin</option>
+          <option value="sales_executive" ${u.role==='sales_executive'?'selected':''}>Sales Executive</option>
+          <option value="designer"        ${u.role==='designer'        ?'selected':''}>Designer</option>
         </select>
       </div>
     </div>
@@ -4838,6 +4849,7 @@ function openAddUserForm() {
         <label>Role *</label>
         <select id="nuf_role">
           <option value="sales">Sales Admin</option>
+          <option value="sales_executive">Sales Executive</option>
           <option value="admin">Admin — Akses penuh</option>
           <option value="designer">Designer</option>
         </select>
