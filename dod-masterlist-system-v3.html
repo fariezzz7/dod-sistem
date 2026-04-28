@@ -4635,6 +4635,10 @@ async function syncUsersFromSupabase() {
     });
     _userStoreCache = store;
     localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
+    // Update USERS object so role checks are consistent
+    Object.values(store).forEach(u => {
+      if (USERS[u.id]) USERS[u.id].role = u.role;
+    });
     if (document.getElementById('userMgmtView')?.style.display !== 'none') {
       renderUserMgmt();
     }
@@ -4663,7 +4667,10 @@ function seedUserStore() {
       lastLogin: null,
     };
   });
-  saveUserStore(seed);
+  // Only set localStorage — do NOT sync to Supabase
+  // Supabase is source of truth; seedUserStore is only a local fallback
+  _userStoreCache = seed;
+  localStorage.setItem(USER_STORE_KEY, JSON.stringify(seed));
   return seed;
 }
 
