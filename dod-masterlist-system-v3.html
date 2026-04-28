@@ -2157,7 +2157,7 @@ function renderTable(rows) {
       <td class="mono" style="font-size:10px;color:var(--textd)">${dateDisp}</td>
       <td><span style="background:${picBg};color:${picColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${r.pic}</span></td>
       <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}${r.production_date ? ' | Siap: '+r.production_date : ''}">
-        ${(() => { const u=getProdUrgency(r); return u==='OVERDUE'?'<span title="OVERDUE" style="color:var(--red);margin-right:4px;font-size:10px;">🔴</span>':u==='ALMOST'?'<span title="Almost Due" style="color:var(--amber);margin-right:4px;font-size:10px;">🟡</span>':u==='OK'?'<span title="Processing OK" style="color:var(--green);margin-right:4px;font-size:10px;">🟢</span>':''; })()}${r.name_job}${plBadge}</td>
+        ${(() => { const u=getProdUrgency(r); const dot=u==='OVERDUE'?{c:'var(--red)',t:'OVERDUE'}:u==='ALMOST'?{c:'var(--amber)',t:'Almost Due (≤3 hari)'}:u==='OK'?{c:'var(--green)',t:'Processing OK'}:null; return dot?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot.c};margin-right:5px;flex-shrink:0;vertical-align:middle;" title="${dot.t}"></span>`:``; })()}${r.name_job}${plBadge}</td>
       <td>${sourceBadge(r.source)}</td>
       <td class="mono blue" style="font-weight:600">${r.pcs||'—'}</td>
       <td class="mono" style="color:var(--textm);font-size:10px">${r.inv_number||'—'}</td>
@@ -5554,7 +5554,7 @@ function renderProdTrack() {
   if (prodFilterPic)    filtered = filtered.filter(o => o.pic === prodFilterPic);
 
   // Sort: overdue first, then by deadline
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = getMYTToday();
   filtered.sort((a,b) => {
     const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
     const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
@@ -6112,10 +6112,11 @@ function renderHomePipeline(role) {
   let rows = '';
   quotOrders.forEach(o => {
     const daysAgo = o.order_date
-      ? Math.floor((today - new Date(o.order_date)) / 86400000) : 0;
+      ? Math.max(0, Math.floor((today - new Date(o.order_date + 'T00:00:00+08:00')) / 86400000)) : 0;
     const urgColor = daysAgo >= 14 ? 'var(--red)' : daysAgo >= 7 ? 'var(--amber)' : 'var(--green)';
     const urgBg    = daysAgo >= 14 ? 'var(--redbg)' : daysAgo >= 7 ? '#FFFBEB' : 'var(--greenbg)';
-    const urgLabel = daysAgo >= 14 ? daysAgo+'h - KRITIKAL' : daysAgo >= 7 ? daysAgo+'h - Susulan' : daysAgo+'h';
+    const daysLabel = daysAgo === 0 ? 'Hari ini' : daysAgo === 1 ? '1 hari' : daysAgo+' hari';
+    const urgLabel = daysAgo >= 14 ? daysLabel+' — KRITIKAL' : daysAgo >= 7 ? daysLabel+' — Susulan' : daysLabel;
 
     rows += '<tr style="border-bottom:1px solid var(--line);">'
       + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
