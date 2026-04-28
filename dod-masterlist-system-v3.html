@@ -1618,7 +1618,7 @@ const USERS = {
   'aidi':    { name:'AIDI',    role:'designer',    color:'#0E7A7A', bg:'#EDFAFA' },
 };
 
-const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', designer:'Designer' };
+const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', sales_executive:'Sales Executive', designer:'Designer' };
 
 const PIC_COLORS = { 'ANIS':'#2470F0','HAKIMAH':'#E89A10','FATHI':'#12A060','FARIZ':'#1A5CC8',
   'NADIA':'#E03050','ZUL':'#6E30C8','AIDI':'#0E7A7A','DANIEL':'#D4380D','DANIAL':'#D4380D','SALES ADMIN 1':'#9AA0B8' };
@@ -1855,7 +1855,7 @@ function setupNavForRole() {
     document.getElementById('btnSecurity').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
-  } else if (role === 'sales') {
+  } else if (role === 'sales' || role === 'sales_executive') {
     btnAdd.style.display = 'block';
     btnMonth.style.display = 'none';
     btnBoard.style.display = 'block';
@@ -2205,7 +2205,7 @@ function renderTable(rows) {
     const custOSCell = isCustOS ? `<span class="os-badge cust">⚠ ${fmt(r.balance_customer)}</span>` : `<span class="os-badge clear">✓</span>`;
     const supOSCell  = isSupOS  ? `<span class="os-badge sup">⚠ ${fmt(r.supplier_outstanding)}</span>` : `<span class="os-badge clear">✓</span>`;
     const dateDisp = r.order_date ? r.order_date.slice(5).replace('-','/') : '—';
-    const canEdit = isAdmin || (currentUser.role === 'sales' && r.pic === currentUser.name);
+    const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
     const canDel  = isAdmin;
     return `<tr class="${rowClass}">
       <td class="mono" style="color:var(--textm);font-size:10px">${i+1}</td>
@@ -2309,7 +2309,7 @@ function showDetail(id) {
   currentDetailRow = found.row;
   const r = found.row;
   const isAdmin = currentUser.role === 'admin';
-  const canEdit = isAdmin || (currentUser.role === 'sales' && r.pic === currentUser.name);
+  const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
   const margin = r.total_customer > 0 ? (r.profit/r.total_customer*100).toFixed(1) : 0;
   const isCustOS = r.balance_customer > 0;
   const isSupOS  = r.supplier_outstanding > 0;
@@ -2401,7 +2401,7 @@ async function openAddModal() {
   document.getElementById('f_order_date').value = today;
   document.getElementById('f_invdate').value = today;
   // Auto-set PIC to current user if sales role
-  if (currentUser.role === 'sales') {
+  if (currentUser.role === 'sales' || currentUser.role === 'sales_executive') {
     const sel = document.getElementById('f_pic');
     for (let i=0;i<sel.options.length;i++) {
       if (sel.options[i].value === currentUser.name) { sel.selectedIndex = i; break; }
@@ -2828,23 +2828,43 @@ function openDoc(docType) {
 // ══════════════════════════════════════
 // KPI DASHBOARD (Sales Admin)
 // ══════════════════════════════════════
+
+// ══════════════════════════════════════
+// KPI DASHBOARD STATE
+// ══════════════════════════════════════
+let kpiFilterStaff = 'ALL';
+let kpiFilterMonth = null; // null = currentMonth
+
+function showKpiDashboard(staffFilter, monthFilter) {
+  if (staffFilter !== undefined) kpiFilterStaff = staffFilter;
+  if (monthFilter !== undefined) kpiFilterMonth = monthFilter;
+  renderKpiDashboard();
+}
+window.showKpiDashboard = showKpiDashboard;
+
 function renderKpiDashboard() {
   const isAdmin  = currentUser.role === 'admin';
-  const myName   = currentUser.name;
-  const curMonthData = sessionData[currentMonth] || [];
+  const myName     = currentUser.name;
+  const activeMonth = kpiFilterMonth || currentMonth;
+  const curMonthData = sessionData[activeMonth] || [];
+  const prevMonthKey = Object.keys(sessionData).sort()[Object.keys(sessionData).sort().indexOf(activeMonth) - 1] || null;
+  const prevMonthData = prevMonthKey ? (sessionData[prevMonthKey] || []) : [];
 
   // Sales staff list — for admin show all, for sales show self only
-  const SALES_STAFF = isAdmin
+  const allStaff = isAdmin
     ? [...new Set(Object.values(sessionData).flatMap(orders =>
         orders.map(r => r.pic).filter(p => p && p !== 'FATHI' && p !== 'FARIZ')
       ))].sort()
     : [myName];
+  const SALES_STAFF = (isAdmin && kpiFilterStaff !== 'ALL')
+    ? allStaff.filter(s => s === kpiFilterStaff)
+    : allStaff;
 
   const el = document.getElementById('kpiDashContent');
 
   // ── Per-staff KPI builder ──────────────────────────────────
   function buildStaffKpi(picName) {
-    const allPicOrders = curMonthData.filter(r => r.pic === picName);
+    const allPicOrders = (sessionData[activeMonth]||[]).filter(r => r.pic === picName);
     const orders       = allPicOrders.filter(isPipelineSales); // Confirmed ke atas sahaja
     const quotOrders   = allPicOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
     const pcs          = orders.reduce((s,r)=>s+(r.pcs||0),0);
@@ -2857,7 +2877,9 @@ function renderKpiDashboard() {
     const revBukan     = bukanSekolah.reduce((s,r)=>s+(r.total_customer||0),0);
     const komSek       = revSek * KOMISYEN_RATE_SEKOLAH;
     const komBukan     = revBukan * KOMISYEN_RATE_BUKAN_SEKOLAH;
-    const totalKom     = pcs >= KOMISYEN_MIN_PCS ? (komSek + komBukan) : 0;
+    const staffRole    = (() => { const store = loadUserStore(); const u = Object.values(store).find(u => u.name?.toUpperCase() === picName?.toUpperCase()); return u?.role || 'sales'; })();
+    const isSalesExec  = staffRole === 'sales_executive';
+    const totalKom     = pcs >= KOMISYEN_MIN_PCS ? (isSalesExec ? calcKomisyenTiered(revenue) : komSek + komBukan) : 0;
     const pcsProgress  = Math.min((pcs / KOMISYEN_MIN_PCS) * 100, 100);
     const layak        = pcs >= KOMISYEN_MIN_PCS;
 
@@ -2875,6 +2897,7 @@ function renderKpiDashboard() {
           <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
         </div>
         <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">${isSalesExec?'Sales Executive ⭐':'Sales Admin'}</div>
           <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:${layak?'var(--green)':'var(--red)'};">${fmt(totalKom)}</div>
           <div style="font-size:10px;color:var(--textm);">unjuran komisyen</div>
         </div>
@@ -2917,18 +2940,30 @@ function renderKpiDashboard() {
 
       <!-- Komisyen breakdown -->
       <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
-          <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
-          <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
-        </div>
+        ${isSalesExec(staffRole) ? `
+          ${getTieredBreakdown(revenue).map(t => `
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:var(--textd);">${t.label}: ${fmt(t.base)}</span>
+              <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(t.kom)}</span>
+            </div>`).join('')}
+          <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
+            <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(calcKomisyenTiered(revenue))}</span>
+          </div>
+        ` : `
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
+            <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
+            <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
+          </div>
+          <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
+            <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
+          </div>
+        `}
       </div>
 
       <!-- ── PIPELINE SECTION ── -->
@@ -3025,51 +3060,119 @@ function renderKpiDashboard() {
   }
 
   // ── Summary row for admin ──────────────────────────────────
-  function buildAdminSummary() {
-    const allSalesOrders = curMonthData.filter(r =>
-      r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
-    );
-    const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
-    const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
-    const totalOS   = allSalesOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-    const totalOrds = allSalesOrders.length;
+  function buildTeamSummary() {
+  const allSalesOrders = curMonthData.filter(isPipelineSales).filter(r =>
+    r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
+  );
+  const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
+  const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
+  const totalOrds = allSalesOrders.length;
+  const totalOS   = allSalesOrders.filter(isPipelineSales).filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const totalQuot = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation' && r.pic && r.pic!=='FATHI' && r.pic!=='FARIZ');
+  const quotVal   = totalQuot.reduce((s,r)=>s+(r.total_customer||0),0);
 
-    return `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-      <div class="kpi-card" style="border-top:3px solid var(--blue);">
-        <div class="kpi-card-label">Total Order (Team)</div>
-        <div class="kpi-card-val" style="color:var(--blue)">${totalOrds}</div>
-        <div class="kpi-card-sub">${MONTH_LABELS[currentMonth]||currentMonth}</div>
+  // Prev month for trend
+  const prevSalesOrders = prevMonthData.filter(isPipelineSales).filter(r => r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ');
+  const prevRev = prevSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
+  const revTrend = prevRev > 0 ? ((totalRev - prevRev)/prevRev*100).toFixed(1) : null;
+  const trendHTML = revTrend !== null
+    ? `<span style="font-size:11px;color:${revTrend>=0?'var(--green)':'var(--red)'};">${revTrend>=0?'▲':'▼'} ${Math.abs(revTrend)}% vs ${MONTH_LABELS[prevMonthKey]||prevMonthKey}</span>`
+    : '';
+
+  // Ranking by revenue
+  const staffRanking = allStaff.map(pic => {
+    const ords = allSalesOrders.filter(r=>r.pic===pic);
+    const rev  = ords.reduce((s,r)=>s+(r.total_customer||0),0);
+    const pcs  = ords.reduce((s,r)=>s+(r.pcs||0),0);
+    const qOrds = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation'&&r.pic===pic);
+    const total = ords.length + qOrds.length;
+    const rate  = total > 0 ? Math.round(ords.length/total*100) : 0;
+    return { pic, rev, pcs, rate, orders: ords.length };
+  }).sort((a,b) => b.rev - a.rev);
+
+  const rankHTML = staffRanking.map((s,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    const maxRev = staffRanking[0]?.rev || 1;
+    const barPct = Math.round(s.rev/maxRev*100);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);">
+      <span style="font-size:14px;width:24px;">${medal}</span>
+      <span style="font-weight:700;color:var(--text);width:80px;">${s.pic}</span>
+      <div style="flex:1;">
+        <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${barPct}%;background:var(--blue);border-radius:3px;"></div>
+        </div>
       </div>
-      <div class="kpi-card" style="border-top:3px solid var(--blue);">
-        <div class="kpi-card-label">Total PCS (Team)</div>
-        <div class="kpi-card-val" style="color:var(--blue)">${totalPCS.toLocaleString()}</div>
-        <div class="kpi-card-sub">keseluruhan</div>
+      <span style="font-family:'Fira Code',monospace;font-size:11px;color:var(--amber);width:90px;text-align:right;">${fmt(s.rev)}</span>
+      <span style="font-size:10px;color:var(--textm);width:70px;text-align:right;">${s.rate}% CR</span>
+    </div>`;
+  }).join('');
+
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:14px;">📊 Ringkasan Team — ${MONTH_LABELS[activeMonth]||activeMonth}</div>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total Revenue</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--amber);">${fmt(totalRev)}</div>
+          <div style="margin-top:2px;">${trendHTML}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total PCS</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--blue);">${totalPCS.toLocaleString()}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total Order</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--text);">${totalOrds}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Customer OS</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Pipeline</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--amber);">${fmt(quotVal)}</div>
+          <div style="font-size:10px;color:var(--textm);">${totalQuot.length} quotation</div>
+        </div>
       </div>
-      <div class="kpi-card" style="border-top:3px solid var(--amber);">
-        <div class="kpi-card-label">Total Revenue</div>
-        <div class="kpi-card-val" style="color:var(--amber);font-size:14px;">${fmt(totalRev)}</div>
-        <div class="kpi-card-sub">semua sales staff</div>
-      </div>
-      <div class="kpi-card" style="border-top:3px solid var(--red);">
-        <div class="kpi-card-label">Total Customer OS</div>
-        <div class="kpi-card-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
-        <div class="kpi-card-sub">belum collect</div>
+
+      <div>
+        <div style="font-size:10px;color:var(--textm);margin-bottom:8px;font-weight:600;">🏆 Ranking Revenue</div>
+        ${rankHTML}
       </div>
     </div>`;
-  }
+}
 
   // ── Render ─────────────────────────────────────────────────
   const backBtn = `<button onclick="showMasterlistView()" style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:20px;">← Kembali ke Sales List</button>`;
 
+  // Build month options
+  const monthOpts = Object.keys(sessionData).sort().reverse().map(m =>
+    `<option value="${m}" ${m === activeMonth ? 'selected' : ''}>${MONTH_LABELS[m]||m}</option>`
+  ).join('');
+
+  // Build staff filter options (admin only)
+  const staffOpts = isAdmin ? `<option value="ALL">Semua Staff</option>` +
+    allStaff.map(s => `<option value="${s}" ${s === kpiFilterStaff ? 'selected' : ''}>${s}</option>`).join('') : '';
+
+  const filterBar = isAdmin ? `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+      <select onchange="showKpiDashboard(undefined, this.value)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
+        ${monthOpts}
+      </select>
+      <select onchange="showKpiDashboard(this.value, undefined)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
+        ${staffOpts}
+      </select>
+    </div>` : '';
+
   const title = isAdmin
     ? `<div class="kpi-dash-title">Dashboard KPI Sales Team</div>
-       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · Semua Sales Admin</div>`
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[activeMonth]||activeMonth}${kpiFilterStaff !== 'ALL' ? ' · ' + kpiFilterStaff : ' · Semua Staff'}</div>`
     : `<div class="kpi-dash-title">Dashboard KPI Saya</div>
-       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · PIC: ${myName}</div>`;
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[activeMonth]||activeMonth} · PIC: ${myName}</div>`;
 
-  el.innerHTML = backBtn + title +
-    (isAdmin ? buildAdminSummary() : '') +
+  el.innerHTML = backBtn + title + filterBar +
+    (isAdmin && kpiFilterStaff === 'ALL' ? buildTeamSummary() : '') +
     SALES_STAFF.map(buildStaffKpi).join('');
 }
 
@@ -3267,7 +3370,7 @@ function renderHomepage() {
   renderHomePipeline(role);
 
   // Sales quick stats (sales role only)
-  if (role === 'sales') renderSalesQuickStats();
+  if (role === 'sales' || role === 'sales_executive') renderSalesQuickStats();
 
   // Nav grid
   renderHomeNav(role);
@@ -7058,5 +7161,42 @@ async function openSavedDoc(docId) {
 window.loadSavedDocs = loadSavedDocs;
 window.openSavedDoc = openSavedDoc;
 window.saveDocSnapshot = saveDocSnapshot;
+
+
+// Komisyen tiered untuk Sales Executive (Danial & role sales_executive)
+function calcKomisyenTiered(revenue) {
+  if (revenue <= 0) return 0;
+  const tiers = [
+    { max: 5000,  rate: 0.03 },
+    { max: 15000, rate: 0.05 },
+    { max: 25000, rate: 0.07 },
+    { max: 40000, rate: 0.08 },
+    { max: Infinity, rate: 0.10 },
+  ];
+  let kom = 0, remaining = revenue, prev = 0;
+  for (const tier of tiers) {
+    const chunk = Math.min(remaining, tier.max - prev);
+    if (chunk <= 0) break;
+    kom += chunk * tier.rate;
+    remaining -= chunk;
+    prev = tier.max;
+    if (remaining <= 0) break;
+  }
+  return kom;
+}
+
+function getTieredBreakdown(revenue) {
+  const tiers = [
+    { min:0,      max: 5000,     rate: 0.03, label:'Tier 1 (3%)' },
+    { min:5000,   max: 15000,    rate: 0.05, label:'Tier 2 (5%)' },
+    { min:15000,  max: 25000,    rate: 0.07, label:'Tier 3 (7%)' },
+    { min:25000,  max: 40000,    rate: 0.08, label:'Tier 4 (8%)' },
+    { min:40000,  max: Infinity, rate: 0.10, label:'Tier 5 (10%)' },
+  ];
+  return tiers.filter(t => revenue > t.min).map(t => {
+    const chunk = Math.min(revenue - t.min, t.max - t.min);
+    return { label: t.label, base: chunk, kom: chunk * t.rate };
+  });
+}
 
 </script>
