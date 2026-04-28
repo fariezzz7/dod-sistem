@@ -2844,7 +2844,9 @@ function renderKpiDashboard() {
 
   // ── Per-staff KPI builder ──────────────────────────────────
   function buildStaffKpi(picName) {
-    const orders       = curMonthData.filter(r => r.pic === picName);
+    const allPicOrders = curMonthData.filter(r => r.pic === picName);
+    const orders       = allPicOrders.filter(isPipelineSales); // Confirmed ke atas sahaja
+    const quotOrders   = allPicOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
     const pcs          = orders.reduce((s,r)=>s+(r.pcs||0),0);
     const revenue      = orders.reduce((s,r)=>s+(r.total_customer||0),0);
     const orderCount   = orders.length;
@@ -2928,6 +2930,97 @@ function renderKpiDashboard() {
           <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
         </div>
       </div>
+
+      <!-- ── PIPELINE SECTION ── -->
+      ${quotOrders.length > 0 ? `
+      <div style="background:var(--amberbg);border:1px solid var(--amberb);border-radius:8px;padding:12px 14px;font-size:11px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;">📋 Pipeline — Quotation Pending</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Bil Quotation</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--amber);">${quotOrders.length}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Potensi Sales</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--amber);">${fmt(quotOrders.reduce((s,r)=>s+(r.total_customer||0),0))}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Potensi Komisyen</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--green);">${fmt(quotOrders.reduce((s,r)=>s+(r.total_customer||0)*((r.source||'')==='SEKOLAH'?0.005:0.01),0))}</div>
+          </div>
+        </div>
+        ${(() => {
+          const oldest = quotOrders.reduce((o,r) => (!o||r.order_date<o)?r.order_date:o, null);
+          const daysOld = oldest ? Math.max(0,Math.floor((getMYTToday()-new Date(oldest+'T00:00:00+08:00'))/86400000)) : 0;
+          const color = daysOld>=14?'var(--red)':daysOld>=7?'var(--amber)':'var(--green)';
+          return `<div style="border-top:1px solid var(--amberb);padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--textd);">Quotation terlama</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${color};">${daysOld} hari</span>
+          </div>`;
+        })()}
+      </div>` : ''}
+
+      <!-- ── CONVERSION RATE ── -->
+      ${(() => {
+        const total = orders.length + quotOrders.length;
+        const rate  = total > 0 ? Math.round(orders.length / total * 100) : 0;
+        const rateColor = rate>=60?'var(--green)':rate>=40?'var(--amber)':'var(--red)';
+        const barW = Math.min(rate, 100);
+        return total > 0 ? `
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);">📊 Conversion Rate</span>
+            <span style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:${rateColor};">${rate}%</span>
+          </div>
+          <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${barW}%;background:${rateColor};border-radius:3px;transition:width .6s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--textm);">
+            <span>${orders.length} confirmed</span>
+            <span>${quotOrders.length} pending</span>
+            <span>${total} jumlah</span>
+          </div>
+        </div>` : '';
+      })()}
+
+      <!-- ── CUSTOMER OS DETAIL ── -->
+      ${custOS > 0 ? `
+      <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:10px 14px;font-size:11px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">💰 Customer OS — Perlu Kutip</div>
+        ${orders.filter(r=>r.balance_customer>0).slice(0,4).map(r=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);">
+            <span style="color:var(--textd);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cust_name||r.name_job||'—'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--red);">${fmt(r.balance_customer)}</span>
+          </div>`).join('')}
+        ${orders.filter(r=>r.balance_customer>0).length > 4 ? `<div style="text-align:center;padding-top:6px;color:var(--textm);font-size:10px;">+${orders.filter(r=>r.balance_customer>0).length-4} lagi</div>` : ''}
+      </div>` : ''}
+
+      <!-- ── TOP SUMBER ── -->
+      ${(() => {
+        const src = {};
+        orders.forEach(r => { const s=r.source||'LAIN'; src[s]=(src[s]||0)+1; });
+        const sorted = Object.entries(src).sort((a,b)=>b[1]-a[1]).slice(0,3);
+        if (!sorted.length) return '';
+        const max = sorted[0][1];
+        const colors = {'NEW ONLINE':'var(--blue)','REPEAT ONLINE':'var(--teal)','SEKOLAH':'var(--green)','AGENT':'var(--purple)','OFFLINE':'var(--textd)'};
+        return `<div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
+          <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">📈 Top Sumber Order</div>
+          ${sorted.map(([s,c])=>{
+            const pct = Math.round(c/orders.length*100);
+            const col = colors[s]||'var(--textd)';
+            return `<div style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="color:var(--textd);">${s}</span>
+                <span style="font-family:'Fira Code',monospace;font-weight:600;color:${col};">${c} order (${pct}%)</span>
+              </div>
+              <div style="height:5px;background:var(--bg2);border-radius:3px;">
+                <div style="height:100%;width:${Math.round(c/max*100)}%;background:${col};border-radius:3px;"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      })()}
+
     </div>`;
   }
 
