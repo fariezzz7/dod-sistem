@@ -3,264 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOD — Sistem Dalaman</title>
+<title>DOD — Masterlist Invoice System v3</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#F4F6FA; --bg2:#FFFFFF; --bg3:#EEF1F8; --bg4:#E6EAF4;
-  --line:rgba(0,0,0,0.08); --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
-  --text:#1A2040; --textd:#5A6480; --textm:#9AA0B8;
-  --amber:#B8720A; --amberbg:#FFF8EC; --amberb:rgba(184,114,10,0.2);
-  --green:#0F7A48; --greenbg:#EDFAF3; --greenb:rgba(15,122,72,0.2);
-  --red:#C02840; --redbg:#FFF0F3; --redb:rgba(192,40,64,0.2);
-  --blue:#1A5CC8; --bluebg:#EEF4FF; --blueb:rgba(26,92,200,0.2);
-  --purple:#6E30C8; --purplebg:#F4EEFF;
-  --teal:#0E7A7A; --tealbg:#EDFAFA;
-  --sidebar-w: 228px;
-  --topbar-h: 52px;
+  --bg:#F4F6FA;--bg2:#FFFFFF;--bg3:#EEF1F8;--bg4:#E6EAF4;--bg5:#D8DEF0;
+  --line:rgba(0,0,0,0.08);--linhi:rgba(0,0,0,0.15);
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
+  --shadow2:0 2px 8px rgba(0,0,0,0.1),0 8px 32px rgba(0,0,0,0.06);
+  --text:#1A2040;--textd:#5A6480;--textm:#9AA0B8;
+  --amber:#B8720A;--amberhi:#E89A10;--amberw:rgba(184,114,10,0.08);--amberb:rgba(184,114,10,0.2);--amberbg:#FFF8EC;
+  --green:#0F7A48;--greenhi:#12A060;--greenw:rgba(15,122,72,0.08);--greenb:rgba(15,122,72,0.2);--greenbg:#EDFAF3;
+  --red:#C02840;--redhi:#E03050;--redw:rgba(192,40,64,0.07);--redb:rgba(192,40,64,0.2);--redbg:#FFF0F3;
+  --blue:#1A5CC8;--bluehi:#2470F0;--bluew:rgba(26,92,200,0.07);--blueb:rgba(26,92,200,0.2);--bluebg:#EEF4FF;
+  --orange:#C05800;--orangebg:#FFF4EC;--orangeb:rgba(192,88,0,0.2);
+  --purple:#6E30C8;--purplebg:#F4EEFF;--purpleb:rgba(110,48,200,0.2);
+  --teal:#0E7A7A;--tealbg:#EDFAFA;--tealb:rgba(14,122,122,0.2);
+  --nav-h:56px;
 }
-
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; overflow:hidden; }
-body { background:var(--bg); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; }
-
-/* ── APP SHELL ── */
-.app { display:flex; height:100vh; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: var(--sidebar-w);
-  height: 100vh;
-  background: var(--bg2);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.sidebar-logo {
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.sidebar-logo-icon {
-  width: 32px; height: 32px;
-  background: var(--blue);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800;
-  color: #fff;
-  font-family: 'Fira Code', monospace;
-  flex-shrink: 0;
-}
-.sidebar-logo-text { flex:1; }
-.sidebar-logo-main { font-size:13px; font-weight:800; color:var(--text); letter-spacing:0.02em; }
-.sidebar-logo-sub { font-size:10px; color:var(--textm); letter-spacing:0.04em; }
-
-.sidebar-nav { flex:1; overflow-y:auto; padding:8px 10px; }
-.sidebar-nav::-webkit-scrollbar { width:3px; }
-.sidebar-nav::-webkit-scrollbar-thumb { background:var(--line); border-radius:2px; }
-
-.nav-section {
-  font-size:9px; font-family:'Fira Code',monospace;
-  letter-spacing:0.12em; text-transform:uppercase;
-  color:var(--textm); padding:14px 8px 5px;
-}
-
-.nav-item {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 10px; border-radius:8px;
-  cursor:pointer; font-size:12px; font-weight:500;
-  color:var(--textd); transition:all 0.12s;
-  border:none; background:none; width:100%; text-align:left;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  margin-bottom:1px;
-}
-.nav-item:hover { background:var(--bg3); color:var(--text); }
-.nav-item.active { background:var(--bluebg); color:var(--blue); font-weight:700; }
-.nav-item.active .ni-icon { opacity:1; }
-.ni-icon { font-size:15px; width:22px; text-align:center; flex-shrink:0; opacity:0.65; }
-.ni-label { flex:1; }
-.ni-badge {
-  font-size:9px; padding:1px 6px; border-radius:8px;
-  font-weight:700; background:var(--redbg); color:var(--red);
-  font-family:'Fira Code',monospace;
-}
-
-.sidebar-footer {
-  padding:12px;
-  border-top:1px solid var(--line);
-}
-.sidebar-user {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 6px; border-radius:8px;
-  cursor:pointer; margin-bottom:6px;
-}
-.sidebar-user:hover { background:var(--bg3); }
-.sidebar-avatar {
-  width:34px; height:34px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:800; color:#fff;
-  flex-shrink:0;
-}
-.sidebar-user-info { flex:1; min-width:0; }
-.sidebar-user-name { font-size:12px; font-weight:700; color:var(--text); }
-.sidebar-user-role { font-size:10px; color:var(--textm); }
-.sidebar-logout {
-  width:100%; padding:7px; font-size:11px;
-  color:var(--textm); background:var(--bg3);
-  border:1px solid var(--line); border-radius:7px;
-  cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif;
-  font-weight:600; transition:all 0.12s;
-}
-.sidebar-logout:hover { color:var(--red); border-color:var(--redb); background:var(--redbg); }
-
-/* ── MAIN AREA ── */
-.main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-
-/* ── TOP BAR ── */
-.topbar {
-  height: var(--topbar-h);
-  background: var(--bg2);
-  border-bottom: 1px solid var(--line);
-  display: flex; align-items: center;
-  padding: 0 20px; gap: 10px;
-  flex-shrink: 0;
-}
-.topbar-left { flex:1; display:flex; align-items:center; gap:8px; overflow-x:auto; }
-.topbar-left::-webkit-scrollbar { height:0; }
-.topbar-date { font-size:11px; color:var(--textm); font-family:'Fira Code',monospace; white-space:nowrap; }
-.topbar-sep { width:1px; height:16px; background:var(--line); flex-shrink:0; }
-
-/* month tabs */
-.month-tab {
-  font-size:11px; padding:4px 12px; border-radius:6px;
-  border:1px solid transparent; cursor:pointer;
-  color:var(--textd); background:none; white-space:nowrap;
-  font-family:'Plus Jakarta Sans',sans-serif; font-weight:600;
-  transition:all 0.12s;
-}
-.month-tab:hover { background:var(--bg3); color:var(--text); }
-.month-tab.active {
-  background:var(--blue); color:#fff;
-  border-color:var(--blue);
-}
-
-.topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.btn-add-order {
-  padding:7px 16px; font-size:12px; font-weight:700;
-  background:var(--blue); color:#fff;
-  border:none; border-radius:8px; cursor:pointer;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all 0.12s;
-}
-.btn-add-order:hover { background:#1450B0; }
-
-/* ── CONTENT AREA ── */
-.content { flex:1; overflow-y:auto; }
-.content::-webkit-scrollbar { width:6px; }
-.content::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
-
-/* ── VIEWS ── */
-.view { display:none; padding:24px; }
-.view.active { display:block; }
-
-/* HOME VIEW */
-.home-greeting-eyebrow {
-  font-size:11px; font-family:'Fira Code',monospace;
-  letter-spacing:0.1em; text-transform:uppercase;
-  color:var(--textm); margin-bottom:6px;
-}
-.home-greeting-title {
-  font-size:28px; font-weight:800; color:var(--text);
-  letter-spacing:-0.02em; margin-bottom:4px;
-}
-.home-greeting-sub { font-size:13px; color:var(--textd); margin-bottom:24px; }
-
-.alert-strip {
-  border-radius:10px; padding:12px 16px;
-  display:flex; align-items:center; gap:12px;
-  font-size:12px; font-weight:600; margin-bottom:8px;
-  border:1px solid; cursor:pointer; transition:opacity 0.12s;
-}
-.alert-strip:hover { opacity:0.85; }
-.alert-strip .alert-msg { flex:1; }
-.alert-strip .alert-action { font-size:11px; color:var(--textm); white-space:nowrap; }
-
-.home-kpi-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px; margin:20px 0;
-}
-.kpi-card {
-  background:var(--bg2); border:1px solid var(--line);
-  border-radius:12px; padding:16px;
-  box-shadow:var(--shadow);
-}
-.kpi-card-label { font-size:10px; color:var(--textm); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-.kpi-card-val { font-size:20px; font-weight:800; font-family:'Fira Code',monospace; color:var(--text); }
-.kpi-card-sub { font-size:11px; color:var(--textm); margin-top:3px; }
-
-/* MASTERLIST */
-.ml-toolbar {
-  display:flex; align-items:center; gap:8px;
-  margin-bottom:14px; flex-wrap:wrap;
-}
-.ml-search {
-  flex:1; min-width:180px;
-  padding:7px 12px; border:1px solid var(--line);
-  border-radius:8px; font-size:12px;
-  background:var(--bg2); color:var(--text);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  outline:none;
-}
-.ml-search:focus { border-color:var(--blue); }
-.ml-filter-btn {
-  padding:6px 12px; border-radius:7px; border:1px solid var(--line);
-  background:var(--bg2); color:var(--textd); font-size:11px;
-  cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all 0.12s; white-space:nowrap;
-}
-.ml-filter-btn:hover { border-color:var(--blue); color:var(--blue); }
-.ml-filter-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
-
-/* KPI STRIP */
-.kpi-strip {
-  display:flex; gap:1px; background:var(--line);
-  border:1px solid var(--line); border-radius:10px;
-  overflow:hidden; margin-bottom:14px;
-}
-.kpi-strip-item {
-  background:var(--bg2); padding:10px 16px; flex:1;
-}
-.kpi-strip-label { font-size:9px; color:var(--textm); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; }
-.kpi-strip-val { font-size:14px; font-weight:800; font-family:'Fira Code',monospace; }
-.kpi-strip-sub { font-size:10px; color:var(--textm); }
-
-/* TABLE */
-.ml-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--line); background:var(--bg2); }
-.ml-table { width:100%; border-collapse:collapse; font-size:12px; }
-.ml-table th {
-  padding:9px 12px; text-align:left; background:var(--bg3);
-  font-size:9px; font-family:'Fira Code',monospace;
-  letter-spacing:0.1em; text-transform:uppercase; color:var(--textm);
-  border-bottom:1px solid var(--line); white-space:nowrap;
-}
-.ml-table td { padding:9px 12px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--textd); }
-.ml-table tr:last-child td { border-bottom:none; }
-.ml-table tr:hover td { background:var(--bg3); }
-.ml-table .name-col { font-weight:600; color:var(--text); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ml-table .mono { font-family:'Fira Code',monospace; }
-
-/* RESPONSIVE */
-@media(max-width:768px) {
-  .sidebar { display:none; }
-  .sidebar.open { display:flex; position:fixed; z-index:100; }
-}
-
-
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
@@ -800,7 +560,6 @@ tr:hover .row-actions{opacity:1;}
 .home-nav-card.featured{grid-column:span 2;padding:28px 24px;background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);}
 .home-nav-card.featured .home-nav-icon{font-size:32px;margin-bottom:10px;}
 .home-nav-card.featured .home-nav-title{font-size:17px;}
-
 </style>
 </head>
 <body>
@@ -861,242 +620,417 @@ tr:hover .row-actions{opacity:1;}
 <!-- ══════════════════════════════════════
      MAIN APP
 ══════════════════════════════════════ -->
-<div
+<div id="mainApp" style="display:none;">
 
-<div class="app" id="mainApp" style="display:none;">
-
-  <!-- ══ SIDEBAR ══ -->
-  <div class="sidebar" id="appSidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon">D</div>
-      <div class="sidebar-logo-text">
-        <div class="sidebar-logo-main">DOD</div>
-        <div class="sidebar-logo-sub">Sistem Dalaman</div>
-      </div>
-    </div>
-
-    <div class="sidebar-nav" id="sidebarNav">
-      <!-- Admin menus -->
-      <button class="nav-item active" onclick="showView('home', this)">
-        <span class="ni-icon">🏠</span>
-        <span class="ni-label">Home</span>
-      </button>
-      <button class="nav-item" onclick="showView('masterlist', this)">
-        <span class="ni-icon">📋</span>
-        <span class="ni-label">Masterlist</span>
-      </button>
-      <button class="nav-item" onclick="showView('customer', this)">
-        <span class="ni-icon">👥</span>
-        <span class="ni-label">Customer</span>
-      </button>
-
-      <div class="nav-section">Sales</div>
-      <button class="nav-item" onclick="showView('kpi', this)">
-        <span class="ni-icon">📊</span>
-        <span class="ni-label">KPI Sales</span>
-      </button>
-      <button class="nav-item" onclick="showView('payments', this)">
-        <span class="ni-icon">💰</span>
-        <span class="ni-label">Penerimaan</span>
-      </button>
-
-      <div class="nav-section">Operasi</div>
-      <button class="nav-item" onclick="showView('production', this)">
-        <span class="ni-icon">🏭</span>
-        <span class="ni-label">Production</span>
-      </button>
-      <button class="nav-item" onclick="showView('supplier', this)">
-        <span class="ni-icon">🏢</span>
-        <span class="ni-label">Supplier</span>
-      </button>
-      <button class="nav-item" onclick="showView('supplierOS', this)">
-        <span class="ni-icon">💸</span>
-        <span class="ni-label">Supplier OS</span>
-      </button>
-
-      <div class="nav-section">Laporan</div>
-      <button class="nav-item" onclick="showView('dashboard', this)">
-        <span class="ni-icon">📈</span>
-        <span class="ni-label">Dashboard</span>
-      </button>
-
-      <div class="nav-section">Admin</div>
-      <button class="nav-item" onclick="showView('users', this)">
-        <span class="ni-icon">👤</span>
-        <span class="ni-label">Pengguna</span>
-      </button>
-      <button class="nav-item" onclick="showView('security', this)">
-        <span class="ni-icon">🔒</span>
-        <span class="ni-label">Security</span>
-      </button>
-      <button class="nav-item" onclick="openChpwModal()">
-        <span class="ni-icon">🔑</span>
-        <span class="ni-label">Password</span>
-      </button>
-    </div>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-user">
-        <div class="sidebar-avatar" style="background:#1A5CC8;" id="sbAvatar">FA</div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name" id="sbName">FARIZ</div>
-          <div class="sidebar-user-role" id="sbRole">Admin · Full Access</div>
+<nav>
+  <div class="nav-inner">
+    <div class="nav-row1">
+      <div class="nav-logo">DOD <span>/ Masterlist v3</span></div>
+      <div class="nav-right">
+      <div class="nav-date" id="navDate"></div>
+      <button class="btn-secondary" id="btnHome" onclick="showHomeView()" style="font-size:11px;padding:6px 12px;">🏠 Home</button>
+      <button class="btn-secondary" id="btnDashboard" onclick="showDashboardView()" style="display:none;font-size:11px;padding:6px 12px;">📈 Dashboard</button>
+      <button class="btn-secondary" id="btnSupplierDir" onclick="showSupplierDirView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--teal);color:#fff;border-color:var(--teal);">🏭 Supplier</button>
+      <button class="btn-secondary" id="btnProdTrack" onclick="showProdTrackView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">📦 Production</button>
+      <button class="btn-secondary" id="btnSupplierOS" onclick="showSupplierOSView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--amber);color:#fff;border-color:var(--amber);">💸 Supplier OS</button>
+      <button class="btn-secondary" id="btnUserMgmt" onclick="showUserMgmtView()" style="display:none;font-size:11px;padding:6px 12px;">👤 Pengguna</button>
+      <button class="btn-secondary" id="btnSecurity" onclick="showSecurityView()" style="display:none;font-size:11px;padding:6px 12px;background:#C02840;color:#fff;border:none;">🔒 Security</button>
+      <button class="btn-secondary" id="btnChgPw" onclick="openChpwModal(false)" style="font-size:11px;padding:6px 12px;">🔒 Password</button>
+      <button class="btn-secondary" id="btnSecurity" onclick="showSecurityView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">🛡 Security</button>
+      <button class="btn-month" id="btnAddMonth" onclick="openAddMonthModal()" style="display:none;">＋ Bulan Baru</button>
+      <button class="btn-new" id="btnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
+      <button class="btn-new" id="btnViewToggle" onclick="openJobBoard()" style="display:none;background:var(--purple);">📋 Job Board</button>
+      <button class="btn-new" id="btnKpiView" onclick="showKpiView()" style="display:none;background:var(--green);">📊 KPI Saya</button>
+      <div class="nav-user-chip" onclick="doLogout()">
+        <div class="nav-user-avatar" id="navUserAvatar"></div>
+        <div>
+          <div class="nav-user-name" id="navUserName"></div>
+          <div class="nav-user-role" id="navUserRole"></div>
         </div>
       </div>
-      <button class="sidebar-logout" onclick="doLogout()">← Keluar</button>
+      <button class="btn-logout" onclick="doLogout()">Keluar</button>
+      </div>
+    </div>
+    <div class="nav-row2" id="navTabs"></div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HOME VIEW -->
+  <div id="homeView">
+    <div class="home-wrap">
+      <div class="home-greeting">
+        <div class="home-greeting-eyebrow" id="homeEyebrow">DOD Worldwide Supplies · Sistem Dalaman</div>
+        <div class="home-greeting-title" id="homeGreeting">Selamat datang.</div>
+        <div class="home-greeting-sub" id="homeDate"></div>
+      </div>
+      <!-- Alert Bar (Admin + Sales) -->
+      <div id="homeAlertBar" style="display:none;margin-bottom:16px;"></div>
+      <!-- Pipeline Section -->
+      <div id="homePipelineSection" style="display:none;margin-bottom:20px;"></div>
+
+      <!-- KPI Strip (Admin only) -->
+      <div id="homeKpiStrip" style="display:none;">
+        <div class="home-section-title">Prestasi Kumulatif</div>
+        <div class="home-kpi-strip" id="homeKpiCards"></div>
+      </div>
+
+      <!-- Sales Quick Stats (Sales role) -->
+      <div id="homeSalesStats" style="display:none;margin-bottom:20px;"></div>
+
+      <!-- Nav Grid -->
+      <div class="home-section-title">Navigasi Sistem</div>
+      <div class="home-nav-grid" id="homeNavGrid"></div>
+      <!-- Bottom panels (Admin only) -->
+      <div id="homeBottomPanels" style="display:none;">
+        <div class="home-section-title">Ringkasan Terkini</div>
+        <div class="home-bottom-grid">
+          <div class="home-panel">
+            <div class="home-panel-title">Trend Bulanan (Revenue)</div>
+            <div class="trend-row" id="homeTrendBars"></div>
+          </div>
+          <div class="home-panel">
+            <div class="home-panel-title">Order Terkini</div>
+            <div id="homeRecentOrders"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- ══ MAIN AREA ══ -->
-  <div class="main-area">
 
-    <!-- TOP BAR -->
-    <div class="topbar">
-      <div class="topbar-left">
-        <span class="topbar-date" id="topbarDate">Rabu, 29 Apr 2026</span>
-        <div class="topbar-sep"></div>
-        <!-- Month tabs inject here -->
-        <div id="navTabs" style="display:flex;gap:4px;"></div>
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboardView">
+    <div class="dash-wrap">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div class="dash-page-title">📈 Performance Dashboard</div>
+          <div class="dash-page-sub" id="dashPageSub">Analisis prestasi DOD · Admin sahaja</div>
+        </div>
+        <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.2);" onclick="exportDashboardXLSX()">⬇ Export</button>
       </div>
-      <div class="topbar-right">
-        <button class="btn-add-order" id="btnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
+
+      <!-- Manual input bar -->
+      <div class="dash-input-bar">
+        <div class="dash-input-bar-label">Input Manual Bulanan</div>
+        <select class="dash-month-select" id="dashInputMonth"></select>
+        <div class="dash-input-field">
+          <label>Ads Spend (RM)</label>
+          <input type="number" id="dashAdsInput" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="dash-input-field">
+          <label>Jumlah Leads</label>
+          <input type="number" id="dashLeadsInput" placeholder="0" min="0">
+        </div>
+        <button class="dash-save-btn" onclick="saveDashInput()">💾 Simpan</button>
+        <div style="font-size:11px;color:var(--textm);" id="dashSaveStatus"></div>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="dash-kpi-strip" id="dashKpiStrip"></div>
+
+      <!-- Row 1: Sales + PCS -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Total Sales (RM)</div>
+          <div class="dash-chart-sub" id="dashSalesSub"></div>
+          <div class="dash-canvas-wrap"><canvas id="dashSalesChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">PCS</div>
+          <div class="dash-chart-sub" id="dashPcsSub"></div>
+          <div class="dash-canvas-wrap"><canvas id="dashPcsChart" height="160"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 2: Profit + Margin -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Profit (RM)</div>
+          <div class="dash-chart-sub">Keuntungan bersih selepas tolak kos supplier</div>
+          <div class="dash-canvas-wrap"><canvas id="dashProfitChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Margin Keuntungan (%)</div>
+          <div class="dash-chart-sub">Peratusan keuntungan daripada jumlah sales</div>
+          <div class="dash-canvas-wrap"><canvas id="dashMarginChart" height="160"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 3: ROAS + CPL + Ads+Leads -->
+      <div class="dash-row dash-row-3" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">ROAS (×)</div>
+          <div class="dash-chart-sub">Return on Ad Spend</div>
+          <div class="dash-canvas-wrap"><canvas id="dashRoasChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">CPL (RM)</div>
+          <div class="dash-chart-sub">Cost Per Lead</div>
+          <div class="dash-canvas-wrap"><canvas id="dashCplChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Ads Spend + Leads</div>
+          <div class="dash-chart-sub">Belanjawan iklan berbanding leads dijana</div>
+          <div class="dash-canvas-wrap"><canvas id="dashAdsLeadsChart" height="160"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 4: Channel + Staff closing -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Online vs Offline Revenue</div>
+          <div class="dash-chart-sub">Pecahan jualan mengikut channel</div>
+          <div class="dash-canvas-wrap"><canvas id="dashChannelChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Closing Rate Trend (%)</div>
+          <div class="dash-chart-sub">Trend kadar closing sales admin dari masa ke masa</div>
+          <div class="dash-canvas-wrap"><canvas id="dashStaffChart" height="160"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Row 5: Data table + Staff cards -->
+      <div class="dash-row dash-row-2l" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Ringkasan Data Penuh</div>
+          <div class="dash-chart-sub" id="dashTableSub">Semua metrik bulanan</div>
+          <div style="overflow-x:auto;"><table class="dash-data-table" id="dashDataTable"></table></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Prestasi Sales Admin</div>
+          <div class="dash-chart-sub" id="dashStaffSub">Bulan terkini</div>
+          <div class="dash-staff-grid" id="dashStaffCards"></div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- CONTENT -->
-    <div class="content">
 
-      <!-- HOME VIEW -->
-      <div class="view active" id="homeView">
-        <div class="home-greeting-eyebrow" id="homeEyebrow">DOD WORLDWIDE SUPPLIES · SISTEM DALAMAN</div>
-        <div class="home-greeting-title" id="homeGreeting">Selamat datang.</div>
-        <div class="home-greeting-sub" id="homeGreetingSub">Log masuk sebagai — · —</div>
-
-        <!-- Alert strips -->
-        <div id="homeAlerts"></div>
-
-        <!-- KPI Cards -->
-        <div class="home-kpi-grid" id="homeKpiGrid">
-          <div class="kpi-card">
-            <div class="kpi-card-label">Revenue Bulan Ini</div>
-            <div class="kpi-card-val" style="color:var(--amber);">—</div>
-            <div class="kpi-card-sub">memuatkan...</div>
+  <!-- USER MANAGEMENT VIEW -->
+  <div id="userMgmtView">
+    <div class="um-wrap">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div class="um-page-title">👤 Pengurusan Pengguna</div>
+          <div class="um-page-sub">Tambah, edit, reset password, dan urus akses semua pengguna sistem.</div>
+        </div>
+        <button class="btn-new" onclick="openAddUserForm()" style="background:var(--blue);box-shadow:0 2px 8px rgba(26,92,200,0.25);">＋ Tambah Pengguna</button>
+      </div>
+      <div class="um-grid">
+        <!-- User list -->
+        <div class="um-panel">
+          <div class="um-panel-header">
+            <div class="um-panel-title">Senarai Pengguna</div>
+            <div style="font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);" id="umUserCount"></div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">PCS</div>
-            <div class="kpi-card-val" style="color:var(--blue);">—</div>
-            <div class="kpi-card-sub">unit</div>
+          <div id="umUserList"></div>
+        </div>
+        <!-- Right panel: add/edit form -->
+        <div class="um-panel" id="umRightPanel">
+          <div class="um-panel-header">
+            <div class="um-panel-title" id="umFormTitle">Pilih pengguna untuk edit</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">Profit</div>
-            <div class="kpi-card-val" style="color:var(--green);">—</div>
-            <div class="kpi-card-sub">margin —%</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">Customer OS</div>
-            <div class="kpi-card-val" style="color:var(--red);">—</div>
-            <div class="kpi-card-sub">belum dikutip</div>
+          <div class="um-form" id="umFormBody">
+            <div style="text-align:center;padding:30px 20px;color:var(--textm);font-size:12px;">
+              Klik mana-mana pengguna dalam senarai untuk lihat atau edit maklumat.
+            </div>
           </div>
         </div>
-
-        <!-- Pipeline section -->
-        <div id="homePipeline" style="margin-top:8px;"></div>
       </div>
+    </div>
+  </div>
 
-      <!-- MASTERLIST VIEW -->
-      <div class="view" id="masterlistView">
-        <div class="ml-toolbar">
-          <input class="ml-search" id="searchInput" type="text" placeholder="Cari nama job, customer, invois..." oninput="applyFilters()">
-          <button class="ml-filter-btn" onclick="applyFilters()">🔍 Cari</button>
+  <!-- SECURITY VIEW -->
+  <div id="securityView" style="display:none;padding:24px 28px;">
+    <div id="securityContent"></div>
+  </div>
+
+  <!-- SECURITY VIEW -->
+  <div id="securityView" style="display:none;padding:24px 28px;">
+    <div id="securityContent"></div>
+  </div>
+
+  <!-- PRODUCTION TRACKER -->
+  <div id="prodTrackView" style="display:none;padding:24px 28px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;" id="prodKilangFilter">
+    <button class="fbtn on" onclick="filterProdTrackBySupplier('ALL',this)" style="font-size:11px;">Semua Kilang</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('NOHAD',this)" style="font-size:11px;">🏭 Nohad</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('IKHTIAR',this)" style="font-size:11px;">📦 Ikhtiar Jaya</button>
+    <button class="fbtn" onclick="filterProdTrackBySupplier('BROTHER',this)" style="font-size:11px;">🛠 Brother Trading</button>
+  </div>
+  <div id="prodTrackContent"></div>
+  </div>
+
+  <!-- SUPPLIER DIRECTORY -->
+  <div id="supplierDirView" style="display:none;padding:24px 28px;">
+    <div id="supplierDirContent"></div>
+  </div>
+
+  <!-- SUPPLIER OUTSTANDING -->
+  <div id="supplierOSView" style="display:none;padding:24px 28px;">
+    <div id="supplierOSContent"></div>
+  </div>
+
+  <!-- CUSTOMER VIEW -->
+  <div id="customerView">
+    <div class="cust-wrap">
+      <div class="cust-toolbar">
+        <div>
+          <div class="cust-title">👥 Customer Directory</div>
+          <div style="font-size:12px;color:var(--textm);margin-top:3px;" id="custSubtitle"></div>
         </div>
-
-        <!-- KPI strip -->
-        <div class="kpi-strip" id="kpiRow">
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Revenue</div>
-            <div class="kpi-strip-val" style="color:var(--amber);">—</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="cust-search-wrap">
+            <input class="cust-search" type="text" id="custSearch" placeholder="Cari nama, no tel, email..." oninput="renderCustomers()">
           </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">PCS</div>
-            <div class="kpi-strip-val" style="color:var(--blue);">—</div>
-          </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Profit</div>
-            <div class="kpi-strip-val" style="color:var(--green);">—</div>
-          </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Customer OS</div>
-            <div class="kpi-strip-val" style="color:var(--red);">—</div>
-          </div>
-        </div>
-
-        <!-- Table -->
-        <div class="ml-table-wrap">
-          <table class="ml-table">
-            <thead id="tableHead"></thead>
-            <tbody id="tableBody">
-              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--textm);">Memuatkan data...</td></tr>
-            </tbody>
-          </table>
+          <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.25);" onclick="exportXLSX()">⬇ Export XLSX</button>
         </div>
       </div>
+      <!-- Filter & Sort bar — rendered dynamically by renderCustomers -->
+      <div id="custFilterBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+      <div class="cust-grid" id="custGrid"></div>
+    </div>
+  </div>
 
-      <!-- CUSTOMER VIEW -->
-      <div class="view" id="customerView">
-        <div id="customerContent">Memuatkan...</div>
+
+  <!-- MASTERLIST VIEW -->
+  <div id="masterlistView">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-title">Prestasi Bulanan</div>
+          <div class="hero-month" id="heroMonth"></div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpiRow"></div>
+    </div>
+
+    <div class="main">
+      <div class="sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-label">Carian</div>
+          <div class="search-wrap"><input type="text" id="searchInput" placeholder="Cari nama, no invois..." oninput="applyFilters()"></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-label">Filter</div>
+          <div class="filter-group">
+            <div class="filter-label">Status OS</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="toggleOS('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleOS('CUST',this)">Customer OS</button>
+              <button class="fbtn" onclick="toggleOS('SUP',this)">Supplier OS</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Pipeline</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="togglePipeline('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="togglePipeline('QUOTATION',this)">📋 Quotation</button>
+              <button class="fbtn" onclick="togglePipeline('CONFIRMED',this)">✅ Confirmed</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Channel</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="toggleChannel('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleChannel('ONLINE',this)">Online</button>
+              <button class="fbtn" onclick="toggleChannel('OFFLINE',this)">Offline</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Sumber</div>
+            <select class="fsel" id="sourceFilter" onchange="applyFilters()">
+              <option value="ALL">Semua Sumber</option>
+              <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
+              <option>ONLINE</option><option>OFFLINE</option>
+              <option>SEKOLAH</option><option>AGENT</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Kilang / Supplier</div>
+            <select class="fsel" id="supplierFilter" onchange="applyFilters()">
+              <option value="ALL">Semua Kilang</option>
+              <option>NOHAD SDN BHD</option>
+              <option>IKHTIAR JAYA</option>
+              <option>BROTHER TRADING</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Status Produksi</div>
+            <div class="filter-btns" id="prodStatusFilters">
+              <button class="fbtn on" onclick="toggleProdStatus('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleProdStatus('OVERDUE',this)" style="color:var(--red);">🔴 Overdue</button>
+              <button class="fbtn" onclick="toggleProdStatus('ALMOST',this)" style="color:var(--amber);">🟡 Almost Due</button>
+              <button class="fbtn" onclick="toggleProdStatus('OK',this)" style="color:var(--green);">🟢 Processing</button>
+              <button class="fbtn" onclick="toggleProdStatus('NONE',this)">⚫ Tiada Tarikh</button>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-label">PIC</div>
+          <div class="filter-btns" style="margin-bottom:10px;" id="picFilters"></div>
+          <div class="pic-breakdown" id="picBreakdown"></div>
+        </div>
+        <div class="sidebar-card" id="chartCard">
+          <div class="sidebar-label">Channel Mix</div>
+          <div class="mini-bar-chart" id="channelChart"></div>
+        </div>
       </div>
 
-      <!-- KPI VIEW -->
-      <div class="view" id="kpiView">
-        <div id="kpiDashContent">Memuatkan...</div>
+      <div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="table-count" id="tableCount"></div>
+            <div class="sort-btns">
+              <button class="sort-btn active" onclick="sortBy('date',this)">Tarikh</button>
+              <button class="sort-btn" onclick="sortBy('pcs',this)">PCS</button>
+              <button class="sort-btn" onclick="sortBy('revenue',this)">Revenue</button>
+              <button class="sort-btn" onclick="sortBy('profit',this)">Profit</button>
+              <button class="sort-btn" onclick="sortBy('production',this)">⚠ Produksi</button>
+            </div>
+          </div>
+          <div class="tbl-outer">
+            <table class="data">
+              <thead><tr id="tableHead"></tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <!-- PAYMENTS VIEW -->
-      <div class="view" id="paymentsView">
-        <div id="paymentsContent">Memuatkan...</div>
+  <!-- KPI VIEW (Sales Admin) -->
+  <div id="kpiView">
+    <div class="kpi-dashboard" id="kpiDashContent"></div>
+  </div>
+
+  <!-- DESIGNER BOARD VIEW -->
+  <div id="designerView">
+    <div class="board-wrap">
+      <div class="board-header">
+        <div class="board-title">🎨 DOD Design Tracker</div>
+        <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);" id="boardDate"></div>
       </div>
+      <div class="board" id="boardCols"></div>
+    </div>
+  </div>
 
-      <!-- PRODUCTION VIEW -->
-      <div class="view" id="prodTrackView">
-        <div id="prodTrackContent">Memuatkan...</div>
-      </div>
+</div><!-- /wrap -->
 
-      <!-- SUPPLIER DIR VIEW -->
-      <div class="view" id="supplierDirView">
-        <div id="supplierDirContent">Memuatkan...</div>
-      </div>
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <div class="detail-title">Detail Order</div>
+    <button class="detail-close" onclick="closeDetail()">✕ Tutup</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-actions" id="detailActions"></div>
+</div>
 
-      <!-- SUPPLIER OS VIEW -->
-      <div class="view" id="supplierOSView">
-        <div id="supplierOSContent">Memuatkan...</div>
-      </div>
-
-      <!-- DASHBOARD VIEW -->
-      <div class="view" id="dashboardView">
-        <div id="dashboardContent">Memuatkan...</div>
-      </div>
-
-      <!-- USER MGMT VIEW -->
-      <div class="view" id="userMgmtView">
-        <div id="umUserCount"></div>
-        <div id="umUserList"></div>
-      </div>
-
-      <!-- SECURITY VIEW -->
-      <div class="view" id="securityView">
-        <div id="securityContent">Memuatkan...</div>
-      </div>
-
-      <!-- DESIGNER VIEW -->
-      <div class="view" id="designerView">
-        <div id="designerContent">Memuatkan...</div>
-      </div>
-
-    </div><!-- end content -->
-  </div><!-- end main-area -->
-
-<div class="toast" id="toast"></div>
-
+<!-- ADD/EDIT ORDER MODAL -->
 <div class="modal-bg" id="addModalBg">
   <div class="modal">
     <div class="modal-header">
@@ -1155,6 +1089,15 @@ tr:hover .row-actions{opacity:1;}
             <input class="fi" type="date" id="f_duedate" oninput="calcDeadline()">
           </div>
           <div class="form-field">
+            <label class="fl">Pipeline Status</label>
+            <select class="fi" id="f_pipeline_status">
+              <option value="quotation" selected>📋 Quotation</option>
+              <option value="confirmed">✅ Confirmed</option>
+              <option value="in_production">🏭 In Production</option>
+              <option value="completed">✔ Completed</option>
+            </select>
+          </div>
+          <div class="form-field">
             <label class="fl">Tarikh Production Siap (Kilang)</label>
             <input class="fi" type="date" id="f_prod_date">
           </div>
@@ -1169,26 +1112,16 @@ tr:hover .row-actions{opacity:1;}
               <option value="complete">✅ Complete</option>
             </select>
           </div>
-          <div class="form-field">
-            <label class="fl">Pipeline Status</label>
-            <select class="fi" id="f_pipeline_status">
-              <option value="quotation">📋 Quotation</option>
-              <option value="confirmed" selected>✅ Confirmed</option>
-              <option value="in_production">🏭 In Production</option>
-              <option value="completed">✔ Completed</option>
-            </select>
-          </div>
         </div>
       </div>
 
-      <!-- ══ DEADLINE CALCULATOR ══ -->
-      <div class="modal-section" id="deadlineSection" style="background:var(--bluebg);border-color:var(--blueb);">
-        <div class="modal-section-title" style="color:var(--blue);">🗓 Deadline Calculator — Auto dari Tarikh Due</div>
-        <div style="font-size:11px;color:var(--textd);margin-bottom:10px;">Isi <strong>Tarikh Due / Deadline (Customer)</strong> di atas, kemudian pilih 2 maklumat di bawah.</div>
-        <div class="form-grid" style="margin-bottom:12px;">
+      <!-- DEADLINE CALCULATOR -->
+      <div class="modal-section" id="deadlineCalcSection">
+        <div class="modal-section-title">🗓 Deadline Calculator — Auto Dari Tarikh Due</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
           <div class="form-field">
-            <label class="fl">Ada Artwork Sendiri?</label>
-            <select class="fi" id="dc_artwork" oninput="calcDeadline()" style="border-color:var(--blueb);">
+            <label class="fl">Ada Artwork dari DOD?</label>
+            <select class="fi" id="dc_artwork" oninput="calcDeadline()">
               <option value="">— Pilih —</option>
               <option value="yes">✅ Ya — Ada artwork sendiri</option>
               <option value="no">🎨 Tidak — Perlukan design dari DOD</option>
@@ -1196,7 +1129,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Kaedah Penghantaran</label>
-            <select class="fi" id="dc_delivery" oninput="calcDeadline()" style="border-color:var(--blueb);">
+            <select class="fi" id="dc_delivery" oninput="calcDeadline()">
               <option value="">— Pilih —</option>
               <option value="collect">🏠 Self Collect</option>
               <option value="pos_sm">📦 Pos — Semenanjung (1-2 hari)</option>
@@ -1204,19 +1137,12 @@ tr:hover .row-actions{opacity:1;}
             </select>
           </div>
         </div>
-
-        <!-- RESULT BOX -->
         <div id="dc_result" style="display:none;">
-          <!-- Urgency Flag -->
-          <div id="dc_urgency_flag" style="margin-bottom:10px;padding:10px 14px;border-radius:8px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:13px;"></div>
-
-          <!-- Timeline -->
+          <div id="dc_urgency_flag" style="margin-bottom:10px;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;"></div>
           <div style="background:#fff;border:1px solid var(--blueb);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
             <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">Timeline Untuk Bagitahu Customer</div>
             <div id="dc_timeline" style="display:flex;flex-direction:column;gap:7px;"></div>
           </div>
-
-          <!-- WA Message -->
           <div style="background:#fff;border:1px solid var(--greenb);border-radius:8px;padding:12px 14px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">📱 Mesej WhatsApp — Sedia Copy-Paste</div>
@@ -1225,7 +1151,6 @@ tr:hover .row-actions{opacity:1;}
             <div id="dc_wa_msg" style="font-size:11px;color:var(--textd);line-height:1.7;white-space:pre-wrap;background:var(--bg3);padding:10px;border-radius:6px;"></div>
           </div>
         </div>
-
         <div id="dc_placeholder" style="text-align:center;padding:14px;font-size:12px;color:var(--textm);">
           ↑ Isi Tarikh Due di atas, kemudian pilih artwork &amp; penghantaran untuk dapatkan deadline dan mesej WA
         </div>
@@ -1361,37 +1286,6 @@ tr:hover .row-actions{opacity:1;}
               style="background:var(--bg3);color:var(--textm);cursor:default;">
           </div>
         </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">
-          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;">💳 Rekod Bayaran Pertama (Deposit)</div>
-          <div class="form-grid">
-            <div class="form-field"><label class="fl">Tarikh</label><input class="fi" type="date" id="f_pay1_date"></div>
-            <div class="form-field"><label class="fl">Masa</label><input class="fi" type="time" id="f_pay1_time"></div>
-            <div class="form-field"><label class="fl">Kaedah</label>
-              <select class="fi" id="f_pay1_method">
-                <option value="">— Pilih —</option>
-                <option>Transfer Bank</option><option>QR</option><option>Cash</option><option>Cheque</option>
-              </select>
-            </div>
-            <div class="form-field"><label class="fl">No. Rujukan</label><input class="fi" type="text" id="f_pay1_ref" placeholder="TXN123456"></div>
-          </div>
-        </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px;">💳 Rekod Bayaran Kedua (Baki)</div>
-          <div class="form-grid">
-            <div class="form-field"><label class="fl">Amaun Baki (RM)</label><input class="fi" type="number" id="f_pay2" placeholder="0.00" step="0.01" oninput="recalcOS()"></div>
-            <div class="form-field"><label class="fl">Tarikh</label><input class="fi" type="date" id="f_pay2_date"></div>
-            <div class="form-field"><label class="fl">Masa</label><input class="fi" type="time" id="f_pay2_time"></div>
-            <div class="form-field"><label class="fl">Kaedah</label>
-              <select class="fi" id="f_pay2_method">
-                <option value="">— Pilih —</option>
-                <option>Transfer Bank</option><option>QR</option><option>Cash</option><option>Cheque</option>
-              </select>
-            </div>
-            <div class="form-field"><label class="fl">No. Rujukan</label><input class="fi" type="text" id="f_pay2_ref" placeholder="TXN789012"></div>
-          </div>
-        </div>
       </div>
 
       <div class="calc-box">
@@ -1415,89 +1309,50 @@ tr:hover .row-actions{opacity:1;}
       <button class="btn-save" onclick="saveOrder()">💾 Simpan Order</button>
     </div>
   </div>
-</div><div class="modal-bg" id="addModalBg">
-  <div class="modal">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modalTitle">Tambah Order Baru</div>
-        <div class="modal-subtitle" id="modalSubtitle">Profit dikira automatik</div>
-      </div>
-      <button class="modal-close" onclick="closeModal()">✕ Tutup</button>
-    </div>
-    <div class="modal-body">
+</div>
 
-      <div class="modal-section">
-        <div class="modal-section-title">📋 Maklumat Asas Order</div>
-        <div class="form-grid g3">
-          <div class="form-field">
-            <label class="fl">Tarikh Order</label>
-            <input class="fi" type="date" id="f_order_date">
-          </div>
-          <div class="form-field">
-            <label class="fl">PIC / Sales Admin</label>
-            <select class="fi" id="f_pic">
-              <option>ANIS</option><option>HAKIMAH</option><option>DANIEL</option>
-              <option>FATHI</option><option>FARIZ</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label class="fl">Sumber / Channel</label>
-            <select class="fi" id="f_source">
-              <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
-              <option>ONLINE</option><option>OFFLINE</option>
-              <option>SEKOLAH</option><option>AGENT</option>
-            </select>
-          </div>
-          <div class="form-field full">
-            <label class="fl">Nama Job / Deskripsi</label>
-            <input class="fi" type="text" id="f_name" placeholder="cth: BAJU SUKAN SK TAMAN JAYA 50PCS">
-          </div>
-          <div class="form-field">
-            <label class="fl">No. Invois Supplier</label>
-            <input class="fi" type="text" id="f_inv" placeholder="cth: NOH-2026-001">
-          </div>
-          <div class="form-field">
-            <label class="fl">No. Invois DOD</label>
-            <input class="fi" type="text" id="f_inv_supplier" placeholder="cth: I-063000">
-          </div>
-          <div class="form-field">
-            <label class="fl">Jumlah PCS</label>
-            <input class="fi" type="number" id="f_pcs" placeholder="0" min="0" oninput="recalc()">
-          </div>
-          <div class="form-field">
-            <label class="fl">Tarikh Invois</label>
-            <input class="fi" type="date" id="f_invdate">
-          </div>
-          <div class="form-field">
-            <label class="fl">Tarikh Due / Deadline (Customer)</label>
-            <input class="fi" type="date" id="f_duedate" oninput="calcDeadline()">
-          </div>
-          <div class="form-field">
-            <label class="fl">Tarikh Production Siap (Kilang)</label>
-            <input class="fi" type="date" id="f_prod_date">
-          </div>
-          <div class="form-field">
-            <label class="fl">Status Production</label>
-            <select class="fi" id="f_prod_status">
-              <option value="job-submit">📥 Job Submit</option>
-              <option value="printing">🖨️ Printing</option>
-              <option value="jahit">🧵 Jahit / Siap Cetak</option>
-              <option value="qc">🔍 QC</option>
-              <option value="ready">📦 Ready (Pickup/Delivery)</option>
-              <option value="complete">✅ Complete</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label class="fl">Pipeline Status</label>
-            <select class="fi" id="f_pipeline_status">
-              <option value="quotation">📋 Quotation</option>
-              <option value="confirmed" selected>✅ Confirmed</option>
-              <option value="in_production">🏭 In Production</option>
-              <option value="completed">✔ Completed</option>
-            </select>
-          </div>
-        </div>
-      </div>
+<!-- DELETE MODAL -->
+<div id="delModalBg">
+  <div class="del-modal">
+    <div class="del-modal-title">🗑 Padam Order</div>
+    <div class="del-modal-desc" id="delDesc">Tindakan ini tidak boleh dibatalkan. Sila masukkan kata laluan untuk pengesahan.</div>
+    <label class="del-pw-label">Kata Laluan Pengesahan</label>
+    <input class="del-pw-input" type="password" id="delPwInput" placeholder="••••" maxlength="10" oninput="clearDelError()" onkeydown="if(event.key==='Enter')confirmDelete()">
+    <div class="del-pw-error" id="delPwError"></div>
+    <div class="del-btn-row">
+      <button class="btn-cancel" style="flex:1;" onclick="closeDelModal()">Batal</button>
+      <button style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" onclick="confirmDelete()">Padam</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MONTH MODAL -->
+<div id="monthModalBg">
+  <div class="month-modal">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">＋ Tambah Bulan Baru</div>
+    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Masukkan nama bulan untuk rekod baru.</div>
+    <label class="del-pw-label">Nama Bulan</label>
+    <input class="fi" type="text" id="newMonthInput" placeholder="cth: MEI 2026" style="width:100%;margin-bottom:16px;" onkeydown="if(event.key==='Enter')confirmAddMonth()">
+    <div style="font-size:10px;color:var(--textm);margin-bottom:12px;" id="monthSuggest"></div>
+    <div class="del-btn-row">
+      <button class="btn-cancel" style="flex:1;" onclick="closeAddMonthModal()">Batal</button>
+      <button class="btn-save" style="flex:1;" onclick="confirmAddMonth()">＋ Tambah</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CUSTOMER DETAIL PANEL -->
+<div class="cust-detail-panel" id="custDetailPanel">
+  <div class="cust-detail-header">
+    <div style="font-family:'Fira Code',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--textm);">Profil Customer</div>
+    <button style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:12px;" onclick="closeCustDetail()">✕ Tutup</button>
+  </div>
+  <div class="cust-detail-body" id="custDetailBody"></div>
+</div>
+
+
+<!-- CHANGE PASSWORD MODAL -->
 <div class="modal-bg" id="chpwModalBg">
   <div class="chpw-modal">
     <div class="modal-header">
@@ -1525,33 +1380,39 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
+
+
+<datalist id="supplierList">
+  <option value="NOHAD SDN BHD">
+  <option value="IKHTIAR JAYA">
+  <option value="BROTHER TRADING">
+</datalist>
+<datalist id="itemTypesList">
+  <option value="Sublimation Adult Short Sleeve">
+  <option value="Sublimation Adult Long Sleeve">
+  <option value="Customade Adult Short Sleeve Corporate">
+  <option value="Customade Adult Long Sleeve Corporate">
+  <option value="Add On Big Size (3XL - 5XL)">
+  <option value="Add On Big Size (6XL - 8XL)">
+  <option value="Sublimation Adult Muslimah">
+  <option value="Sublimation Kids Short Sleeve">
+  <option value="Sublimation Kids Long Sleeve">
+  <option value="Customade Adult Muslimah Corporate">
+  <option value="Postage">
+  <option value="Add Collar">
+  <option value="Backtape Custom">
+  <option value="Add On Material (Diamond V2)">
+  <option value="Label Tag">
+  <option value="Block Sulam">
+  <option value="Sulam">
+  <option value="Urgent Charge (1-3 Days)">
+  <option value="Lain-lain">
+</datalist>
 <div class="toast" id="toast"></div>
-<div id="delModalBg">
-  <div class="del-modal">
-    <div class="del-modal-title">🗑 Padam Order</div>
-    <div class="del-modal-desc" id="delDesc">Tindakan ini tidak boleh dibatalkan. Sila masukkan kata laluan untuk pengesahan.</div>
-    <label class="del-pw-label">Kata Laluan Pengesahan</label>
-    <input class="del-pw-input" type="password" id="delPwInput" placeholder="••••" maxlength="10" oninput="clearDelError()" onkeydown="if(event.key==='Enter')confirmDelete()">
-    <div class="del-pw-error" id="delPwError"></div>
-    <div class="del-btn-row">
-      <button class="btn-cancel" style="flex:1;" onclick="closeDelModal()">Batal</button>
-      <button style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" onclick="confirmDelete()">Padam</button>
-    </div>
-  </div>
-</div>
-<div id="monthModalBg">
-  <div class="month-modal">
-    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">＋ Tambah Bulan Baru</div>
-    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Masukkan nama bulan untuk rekod baru.</div>
-    <label class="del-pw-label">Nama Bulan</label>
-    <input class="fi" type="text" id="newMonthInput" placeholder="cth: MEI 2026" style="width:100%;margin-bottom:16px;" onkeydown="if(event.key==='Enter')confirmAddMonth()">
-    <div style="font-size:10px;color:var(--textm);margin-bottom:12px;" id="monthSuggest"></div>
-    <div class="del-btn-row">
-      <button class="btn-cancel" style="flex:1;" onclick="closeAddMonthModal()">Batal</button>
-      <button class="btn-save" style="flex:1;" onclick="confirmAddMonth()">＋ Tambah</button>
-    </div>
-  </div>
-</div>
+
+</div><!-- /mainApp -->
+
+<!-- SUPPLIER EDIT MODAL -->
 <div class="sup-modal-bg" id="supModalBg">
   <div class="sup-modal">
     <h3 id="supModalTitle">Edit Supplier</h3>
@@ -1604,6 +1465,8 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
+
+<!-- SUPPLIER PAYMENT MODAL -->
 <div class="pay-modal-bg" id="payModalBg">
   <div class="pay-modal">
     <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;" id="payModalTitle">Rekod Pembayaran Supplier</h3>
@@ -1639,11 +1502,10 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
-
-</div><!-- end app -->
+</body>
+</html>
 
 <script>
-
 // ══════════════════════════════════════
 // DATA & CONFIG
 // ══════════════════════════════════════
@@ -1751,7 +1613,7 @@ const USERS = {
   'fathi':   { name:'FATHI',   role:'admin',       color:'#0F7A48', bg:'#EDFAF3' },
   'anis':    { name:'ANIS',    role:'sales',       color:'#2470F0', bg:'#EEF4FF' },
   'hakimah': { name:'HAKIMAH', role:'sales',       color:'#E89A10', bg:'#FFF8EC' },
-  'daniel':  { name:'DANIEL',  role:'sales_executive', color:'#D4380D', bg:'#FFF2E8' },
+  'daniel':  { name:'DANIEL',  role:'sales',       color:'#D4380D', bg:'#FFF2E8' },
   'zul':     { name:'ZUL',     role:'designer',    color:'#6E30C8', bg:'#F4EEFF' },
   'aidi':    { name:'AIDI',    role:'designer',    color:'#0E7A7A', bg:'#EDFAFA' },
 };
@@ -1790,93 +1652,6 @@ const RAW = {"DEC 2025": [{"id": "DEC 2025_0", "pic": "SALES ADMIN 1", "status":
 // SESSION / AUTH
 // ══════════════════════════════════════
 let currentUser = null;
-
-// ══════════════════════════════════════
-// SIDEBAR NAVIGATION (NEW UI)
-// ══════════════════════════════════════
-
-var SIDEBAR_MENUS = {
-  admin: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { section:'SALES' },
-    { id:'kpi',         icon:'📊', label:'KPI Sales',    fn:'showKpiView' },
-    { id:'payments',    icon:'💰', label:'Penerimaan',   fn:'showPaymentsView' },
-    { section:'OPERASI' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'supplier',    icon:'🏢', label:'Supplier',     fn:'showSupplierDirView' },
-    { id:'supplierOS',  icon:'💸', label:'Supplier OS',  fn:'showSupplierOSView' },
-    { section:'LAPORAN' },
-    { id:'dashboard',   icon:'📈', label:'Dashboard',    fn:'showDashboardView' },
-    { section:'ADMIN' },
-    { id:'users',       icon:'👤', label:'Pengguna',     fn:'showUserMgmtView' },
-    { id:'security',    icon:'🔒', label:'Security',     fn:'showSecurityView' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  sales: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { id:'kpi',         icon:'📊', label:'KPI Saya',     fn:'showKpiView' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  sales_executive: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { id:'kpi',         icon:'📊', label:'KPI Saya',     fn:'showKpiView' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  designer: [
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-};
-
-var _activeSidebarItem = 'home';
-
-function renderSidebar() {
-  const role = currentUser?.role || 'sales';
-  const menus = SIDEBAR_MENUS[role] || SIDEBAR_MENUS.sales;
-  const nav = document.getElementById('sidebarNav');
-  if (!nav) return;
-  let html = '';
-  menus.forEach(item => {
-    if (!item.id) {
-      html += `<div class="nav-section">${item.section}</div>`;
-      return;
-    }
-    const isActive = _activeSidebarItem === item.id;
-    const onclick = item.noFn
-      ? `onclick="${item.fn}()"`
-      : `onclick="setSidebarActive('${item.id}');${item.fn}()"`;
-    html += `<button class="nav-item${isActive?' active':''}" ${onclick} id="si_${item.id}">
-      <span class="ni-icon">${item.icon}</span>
-      <span class="ni-label">${item.label}</span>
-    </button>`;
-  });
-  nav.innerHTML = html;
-  // Update user info
-  const av = document.getElementById('sbAvatar');
-  if (av) { av.textContent = (currentUser?.name||'?').slice(0,2); av.style.background = currentUser?.color||'#1A5CC8'; }
-  const nm = document.getElementById('sbName');
-  if (nm) nm.textContent = currentUser?.name || '';
-  const rl = document.getElementById('sbRole');
-  if (rl) rl.textContent = ROLE_LABELS[role] || role;
-  // Show/hide add order button
-  const btnAdd = document.getElementById('btnAddOrder');
-  if (btnAdd) btnAdd.style.display = role === 'designer' ? 'none' : '';
-}
-
-
-window.setSidebarActive = setSidebarActive;
-window.renderSidebar = renderSidebar;
-
 let sessionData = {};
 let currentMonth = '';
 let currentDetailRow = null;
@@ -1886,12 +1661,33 @@ let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'',
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
-function doLogin() {
+async function doLogin() {
   const userId = document.getElementById('ls-user').value.trim().replace(/^@/,'').toLowerCase();
   const pass   = document.getElementById('ls-pass').value;
   const err    = document.getElementById('ls-err');
 
-  // Get user from dynamic store (localStorage override) or fallback to USERS
+  // Fetch fresh user data from Supabase first, then validate
+  showLoading('Log masuk...');
+  try {
+    const rows = await supaGet('users', 'select=*');
+    if (rows && rows.length) {
+      const store = {};
+      rows.forEach(u => {
+        store[u.id] = {
+          id: u.id, name: u.name, role: u.role,
+          color: u.color || '#1A5CC8', bg: u.bg || '#EEF4FF',
+          password: u.password || 'DOD2026',
+          active: u.active !== false,
+        };
+      });
+      _userStoreCache = store;
+      localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
+    }
+  } catch(e) {
+    console.warn('Pre-login sync failed, using cache:', e);
+  }
+  hideLoading();
+
   const userStore = loadUserStore();
   const userData  = userStore[userId];
 
@@ -1911,7 +1707,7 @@ function doLogin() {
   currentUser = { ...baseUser, id: userId, name: userData.name, role: userData.role };
   localStorage.setItem('dod_session', JSON.stringify(currentUser));
   document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('mainApp').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'block';
   initApp();
 }
 
@@ -1937,17 +1733,17 @@ document.addEventListener('keydown', e => {
 // INIT APP
 // ══════════════════════════════════════
 async function initApp() {
-  try {
-    await syncUsersFromSupabase();
-    const freshStore = loadUserStore();
-    const freshUser = freshStore[currentUser?.id];
-    if (freshUser) {
-      currentUser.role  = freshUser.role;
-      currentUser.name  = freshUser.name;
-      currentUser.color = freshUser.color;
-      localStorage.setItem('dod_session', JSON.stringify(currentUser));
-    }
-  } catch(e) { console.warn('User sync skipped:', e); }
+  // Sync users first (await) so role is always fresh from Supabase
+  await syncUsersFromSupabase();
+  // Re-apply currentUser role from fresh store
+  const freshStore = loadUserStore();
+  const freshUser = freshStore[currentUser?.id];
+  if (freshUser) {
+    currentUser.role  = freshUser.role;
+    currentUser.name  = freshUser.name;
+    currentUser.color = freshUser.color;
+    localStorage.setItem('dod_session', JSON.stringify(currentUser));
+  }
   setupNavForRole();
   updateNavDate();
   // Designer goes straight to jobboard
@@ -1958,6 +1754,8 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Weekly auto backup (runs on Mondays)
+  if (currentUser?.role === 'admin') checkWeeklyBackup();
 }
 
 async function loadOrdersFromSupabase() {
@@ -2012,50 +1810,46 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Hide month tabs by default — only shown in masterlist view
   const tabs = document.getElementById('navTabs');
   if (tabs) tabs.style.display = 'none';
-
 }
 
 function showHomeView() {
-  setSidebarActive('home');
   setAllViewsHidden();
-  document.getElementById('homeView').classList.add('active');
+  document.getElementById('homeView').style.display = 'block';
   renderHomepage();
 }
 
 function showMasterlistViewFull() {
-  setSidebarActive('masterlist');
-  const mlTabs = document.getElementById('navTabs');
-  if (mlTabs) mlTabs.style.display = 'flex';
   if (currentUser && currentUser.role === 'designer') {
     showToast('Akses ditolak — Sales data tidak tersedia untuk Designer.', true);
     return;
   }
   setAllViewsHidden();
-  document.getElementById('masterlistView').classList.add('active');
+  document.getElementById('masterlistView').style.display = 'block';
   if (!document.getElementById('tableBody').innerHTML) renderAll();
 }
 
 function showDashboardView() {
-  setSidebarActive('dashboard');
   setAllViewsHidden();
-  document.getElementById('dashboardView').classList.add('active');
+  document.getElementById('dashboardView').style.display = 'block';
   initDashboard();
 }
 
 function showUserMgmtView() {
-  setSidebarActive('users');
   setAllViewsHidden();
-  document.getElementById('userMgmtView').classList.add('active');
+  document.getElementById('userMgmtView').style.display = 'block';
   renderUserMgmt();
 }
 
 function showCustomerView() {
-  setSidebarActive('customer');
   setAllViewsHidden();
-  document.getElementById('customerView').classList.add('active');
+  document.getElementById('customerView').style.display = 'block';
   renderCustomers();
 }
 
@@ -2064,7 +1858,6 @@ loadSuppliers().catch(() => {});
 
 function setupNavForRole() {
   const role = currentUser.role;
-  renderSidebar();
   // Nav user chip
   const av = document.getElementById('navUserAvatar');
   av.textContent = currentUser.name.slice(0,2);
@@ -2084,12 +1877,12 @@ function setupNavForRole() {
     btnBoard.style.display = 'block';
     btnKpi.style.display = 'none';
     document.getElementById('btnDashboard').style.display = 'block';
-    document.getElementById('btnSecurity').style.display = 'block';
-    document.getElementById('btnPayments').style.display = 'block';
     document.getElementById('btnUserMgmt').style.display = 'block';
+    document.getElementById('btnSecurity').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
     document.getElementById('btnProdTrack').style.display = 'block';
+    document.getElementById('btnSecurity').style.display = 'block';
     document.getElementById('btnSupplierDir').style.display = 'block';
     document.getElementById('btnSupplierOS').style.display = 'block';
   } else if (role === 'sales' || role === 'sales_executive') {
@@ -2123,7 +1916,7 @@ function showMasterlistView() {
   }
   currentView = 'masterlist';
   setAllViewsHidden();
-  document.getElementById('masterlistView').classList.add('active');
+  document.getElementById('masterlistView').style.display = 'block';
   document.getElementById('btnViewToggle').textContent = '📋 Job Board';
   document.getElementById('navTabs').style.display = '';
   renderAll();
@@ -2132,7 +1925,7 @@ function showMasterlistView() {
 function showDesignerView() {
   currentView = 'designer';
   document.getElementById('masterlistView').style.display = 'none';
-  document.getElementById('designerView').classList.add('active');
+  document.getElementById('designerView').style.display = 'block';
   document.getElementById('kpiView').style.display = 'none';
   document.getElementById('btnViewToggle').textContent = '📊 Sales List';
   document.getElementById('navTabs').style.display = 'none';
@@ -2141,10 +1934,9 @@ function showDesignerView() {
 }
 
 function showKpiView() {
-  setSidebarActive('kpi');
   currentView = 'kpi';
   setAllViewsHidden();
-  document.getElementById('kpiView').classList.add('active');
+  document.getElementById('kpiView').style.display = 'block';
   renderKpiDashboard();
 }
 
@@ -2176,6 +1968,9 @@ function selectMonth(m) {
   activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
   document.getElementById('searchInput').value = '';
   document.getElementById('sourceFilter').value = 'ALL';
+  const supEl = document.getElementById('supplierFilter');
+  if (supEl) supEl.value = 'ALL';
+  document.querySelectorAll('#prodStatusFilters .fbtn').forEach((b,i) => i===0 ? b.classList.add('on') : b.classList.remove('on'));
   buildPicFilters();
   renderAll();
 }
@@ -2235,8 +2030,16 @@ function togglePipeline(pl, btn) {
 }
 
 function applyFilters() {
-  activeFilters.source = document.getElementById('sourceFilter').value;
-  activeFilters.search = document.getElementById('searchInput').value.toLowerCase();
+  activeFilters.source   = document.getElementById('sourceFilter').value;
+  activeFilters.supplier = document.getElementById('supplierFilter')?.value || 'ALL';
+  activeFilters.search   = document.getElementById('searchInput').value.toLowerCase();
+  renderAll();
+}
+
+function toggleProdStatus(st, btn) {
+  activeFilters.prodStatus = st;
+  btn.closest('.filter-btns').querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
   renderAll();
 }
 
@@ -2249,6 +2052,13 @@ function getFiltered() {
     if (activeFilters.os === 'SUP' && !(r.supplier_outstanding > 0)) return false;
     if (activeFilters.pipeline === 'QUOTATION' && (r.pipeline_status||'confirmed') !== 'quotation') return false;
     if (activeFilters.pipeline === 'CONFIRMED' && !isPipelineSales(r)) return false;
+    if (activeFilters.supplier !== 'ALL') {
+      const sup = (r.supplier_name||'NOHAD SDN BHD').toUpperCase();
+      if (!sup.includes(activeFilters.supplier.toUpperCase())) return false;
+    }
+    if (activeFilters.prodStatus !== 'ALL') {
+      if (getProdUrgency(r) !== activeFilters.prodStatus) return false;
+    }
     if (activeFilters.search) {
       const s = activeFilters.search;
       if (!((r.name_job||'').toLowerCase().includes(s) ||
@@ -2269,14 +2079,16 @@ function sortBy(field, btn) {
 
 function renderAll() {
   let rows = getFiltered();
+  const urgOrder = { OVERDUE:0, ALMOST:1, OK:2, NONE:3 };
   if (sortField === 'pcs') rows.sort((a,b) => (b.pcs||0)-(a.pcs||0));
   else if (sortField === 'revenue') rows.sort((a,b) => (b.total_customer||0)-(a.total_customer||0));
   else if (sortField === 'profit') rows.sort((a,b) => (b.profit||0)-(a.profit||0));
+  else if (sortField === 'production') rows.sort((a,b) => (urgOrder[getProdUrgency(a)]||3) - (urgOrder[getProdUrgency(b)]||3));
   else rows.sort((a,b) => (b.order_date||'') < (a.order_date||'') ? -1 : 1);
 
   renderKPIs(rows);
   renderTable(rows);
-  renderTableRows(rows);
+  renderSidebar(rows);
   buildPicFilters();
   document.getElementById('heroMonth').textContent = MONTH_LABELS[currentMonth] || currentMonth;
 }
@@ -2312,27 +2124,79 @@ function isPipelineSales(o) {
 function renderKPIs(rows) {
   const salesRows = rows.filter(isPipelineSales);
   const quotRows  = rows.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
-  const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
-  const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
-  const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
-  const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
-  const totalCost = rows.reduce((s,r)=>s+(r.total_supplier||0),0);
-  const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
-  const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
-  const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
+  const isQuotView = activeFilters.pipeline === 'QUOTATION';
+  const isAdmin   = currentUser.role === 'admin';
 
-  const isAdmin = currentUser.role === 'admin';
-  document.getElementById('kpiRow').innerHTML = `
-    <div class="kpi"><div class="kpi-l">Revenue</div><div class="kpi-v amber">${fmt(totalRev)}</div><div class="kpi-sub">${rows.length} order</div></div>
-    <div class="kpi"><div class="kpi-l">PCS</div><div class="kpi-v blue">${totalPCS.toLocaleString()}</div><div class="kpi-sub">unit</div></div>
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%</div></div>` : ''}
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Kos Supplier</div><div class="kpi-v red">${fmt(totalCost)}</div><div class="kpi-sub">jumlah kos</div></div>` : ''}
-    <div class="kpi"><div class="kpi-l">Customer OS</div><div class="kpi-v red">${custOS>0?fmt(custOS):'✓ Clear'}</div><div class="kpi-sub">belum dibayar</div></div>
-    <div class="kpi"><div class="kpi-l">Supplier OS</div><div class="kpi-v orange">${supOS>0?fmt(supOS):'✓ Clear'}</div><div class="kpi-sub">perlu bayar</div></div>
-    <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
-    ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
-  `;
+  if (isQuotView) {
+    // ── QUOTATION MODE ───────────────────────────────
+    const quotPCS    = quotRows.reduce((s,r)=>s+(r.pcs||0),0);
+    const quotVal    = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
+    const quotAvg    = quotPCS > 0 ? quotVal/quotPCS : 0;
+    const komRate    = (o) => (o.source||'')==='SEKOLAH' ? 0.005 : 0.01;
+    const potKom     = quotRows.reduce((s,r)=>s+(r.total_customer||0)*komRate(r),0);
+    const oldestDate = quotRows.reduce((oldest,r) => {
+      if (!r.order_date) return oldest;
+      return !oldest || r.order_date < oldest ? r.order_date : oldest;
+    }, null);
+    const daysOldest = oldestDate
+      ? Math.floor((getMYTToday() - new Date(oldestDate+'T00:00:00+08:00'))/86400000)
+      : 0;
+
+    document.getElementById('kpiRow').innerHTML = `
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">📋 Potensi Sales</div>
+        <div class="kpi-v amber">${fmt(quotVal)}</div>
+        <div class="kpi-sub">${quotRows.length} quotation</div>
+      </div>
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">PCS Potensi</div>
+        <div class="kpi-v blue">${quotPCS.toLocaleString()}</div>
+        <div class="kpi-sub">unit belum confirm</div>
+      </div>
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Avg/PCS</div>
+        <div class="kpi-v">${fmt(quotAvg)}</div>
+        <div class="kpi-sub">harga purata</div>
+      </div>
+      ${!isAdmin ? `<div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Potensi Komisyen</div>
+        <div class="kpi-v green">${fmt(potKom)}</div>
+        <div class="kpi-sub">jika semua confirm</div>
+      </div>` : ''}
+      <div class="kpi" style="border-top:2px solid var(--amber);">
+        <div class="kpi-l" style="color:var(--amber);">Tertunggak Terlama</div>
+        <div class="kpi-v ${daysOldest>=14?'red':daysOldest>=7?'amber':'green'}">${daysOldest} hari</div>
+        <div class="kpi-sub">${oldestDate||'—'}</div>
+      </div>
+    `;
+  } else {
+    // ── CONFIRMED MODE (default) ─────────────────────
+    const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
+    const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
+    const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
+    const totalCost = salesRows.reduce((s,r)=>s+(r.total_supplier||0),0);
+    const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+    const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
+    const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
+    const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
+    const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
+
+    document.getElementById('kpiRow').innerHTML = `
+      <div class="kpi"><div class="kpi-l">Revenue</div><div class="kpi-v amber">${fmt(totalRev)}</div><div class="kpi-sub">${salesRows.length} order confirmed</div></div>
+      <div class="kpi"><div class="kpi-l">PCS</div><div class="kpi-v blue">${totalPCS.toLocaleString()}</div><div class="kpi-sub">unit</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%</div></div>` : ''}
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Kos Supplier</div><div class="kpi-v red">${fmt(totalCost)}</div><div class="kpi-sub">jumlah kos</div></div>` : ''}
+      <div class="kpi"><div class="kpi-l">Customer OS</div><div class="kpi-v ${custOS>0?'red':'green'}">${custOS>0?fmt(custOS):'✓ Clear'}</div><div class="kpi-sub">belum dibayar</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Supplier OS</div><div class="kpi-v ${supOS>0?'orange':'green'}">${supOS>0?fmt(supOS):'✓ Clear'}</div><div class="kpi-sub">perlu bayar</div></div>` : ''}
+      <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
+      ${quotVal>0 ? `<div class="kpi" style="border-top:2px dashed var(--amber);opacity:0.7;">
+        <div class="kpi-l" style="color:var(--amber);">📋 Pipeline</div>
+        <div class="kpi-v amber">${fmt(quotVal)}</div>
+        <div class="kpi-sub">${quotRows.length} quotation pending</div>
+      </div>` : ''}
+    `;
+  }
 }
 
 // ══════════════════════════════════════
@@ -2371,13 +2235,14 @@ function renderTable(rows) {
     const custOSCell = isCustOS ? `<span class="os-badge cust">⚠ ${fmt(r.balance_customer)}</span>` : `<span class="os-badge clear">✓</span>`;
     const supOSCell  = isSupOS  ? `<span class="os-badge sup">⚠ ${fmt(r.supplier_outstanding)}</span>` : `<span class="os-badge clear">✓</span>`;
     const dateDisp = r.order_date ? r.order_date.slice(5).replace('-','/') : '—';
-    const canEdit = isAdmin || (currentUser.role === 'sales' && r.pic === currentUser.name);
+    const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
     const canDel  = isAdmin;
     return `<tr class="${rowClass}">
       <td class="mono" style="color:var(--textm);font-size:10px">${i+1}</td>
       <td class="mono" style="font-size:10px;color:var(--textd)">${dateDisp}</td>
       <td><span style="background:${picBg};color:${picColor};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${r.pic}</span></td>
-      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}">${r.name_job}${plBadge}</td>
+      <td class="name-col" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.name_job}${r.production_date ? ' | Siap: '+r.production_date : ''}">
+        ${(() => { const u=getProdUrgency(r); const dot=u==='OVERDUE'?{c:'var(--red)',t:'OVERDUE'}:u==='ALMOST'?{c:'var(--amber)',t:'Almost Due (≤3 hari)'}:u==='OK'?{c:'var(--green)',t:'Processing OK'}:null; return dot?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${dot.c};margin-right:5px;flex-shrink:0;vertical-align:middle;" title="${dot.t}"></span>`:``; })()}${r.name_job}${plBadge}</td>
       <td>${sourceBadge(r.source)}</td>
       <td class="mono blue" style="font-weight:600">${r.pcs||'—'}</td>
       <td class="mono" style="color:var(--textm);font-size:10px">${r.inv_number||'—'}</td>
@@ -2410,7 +2275,7 @@ function renderTable(rows) {
 // ══════════════════════════════════════
 // RENDER SIDEBAR
 // ══════════════════════════════════════
-function renderTableRows(rows) {
+function renderSidebar(rows) {
   const picMap = {};
   rows.forEach(r => {
     if (!r.pic) return;
@@ -2474,7 +2339,7 @@ function showDetail(id) {
   currentDetailRow = found.row;
   const r = found.row;
   const isAdmin = currentUser.role === 'admin';
-  const canEdit = isAdmin || (currentUser.role === 'sales' && r.pic === currentUser.name);
+  const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
   const margin = r.total_customer > 0 ? (r.profit/r.total_customer*100).toFixed(1) : 0;
   const isCustOS = r.balance_customer > 0;
   const isSupOS  = r.supplier_outstanding > 0;
@@ -2522,7 +2387,19 @@ function showDetail(id) {
       <button class="dp-doc-btn" onclick="openDoc('receipt')">✅ Receipt</button>
       ${isAdmin?`<button class="dp-doc-btn" onclick="openDoc('po')">📦 PO Supplier</button>`:''}
     </div>
+
+    <div style="margin-top:16px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span>DOKUMEN TERSIMPAN</span>
+      </div>
+      <div id="savedDocsList" style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Memuatkan...</div>
+      </div>
+    </div>
   `;
+
+  // Load saved docs for this order
+  loadSavedDocs(r.id);
 
   document.getElementById('detailActions').innerHTML = `
     ${canEdit?`<button class="btn-edit-detail" onclick="openEditFromDetail()">✏️ Edit Order</button>`:'<div style="flex:1"></div>'}
@@ -2543,16 +2420,6 @@ function openEditFromDetail()   { if(currentDetailRow) openEditModalById(current
 function openDeleteFromDetail() { if(currentDetailRow) openDeleteById(currentDetailRow.id); }
 
 // ══════════════════════════════════════
-// TIMEZONE HELPER — Malaysia Time (UTC+8)
-// ══════════════════════════════════════
-function getMYTToday() {
-  const now = new Date();
-  const myt = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
-  myt.setHours(0, 0, 0, 0);
-  return myt;
-}
-
-// ══════════════════════════════════════
 // ADD / EDIT MODAL
 // ══════════════════════════════════════
 async function openAddModal() {
@@ -2564,7 +2431,7 @@ async function openAddModal() {
   document.getElementById('f_order_date').value = today;
   document.getElementById('f_invdate').value = today;
   // Auto-set PIC to current user if sales role
-  if (currentUser.role === 'sales') {
+  if (currentUser.role === 'sales' || currentUser.role === 'sales_executive') {
     const sel = document.getElementById('f_pic');
     for (let i=0;i<sel.options.length;i++) {
       if (sel.options[i].value === currentUser.name) { sel.selectedIndex = i; break; }
@@ -2655,6 +2522,8 @@ function openEditModalById(id) {
   document.getElementById('f_prod_status').value = r.production_status || 'job-submit';
   const ppEditEl = document.getElementById('f_pipeline_status');
   if (ppEditEl) ppEditEl.value = r.pipeline_status || 'confirmed';
+  // Capture snapshot before edit for audit log
+  window._preEditSnapshot = { ...r };
   document.getElementById('addModalBg').classList.add('open');
 }
 
@@ -2672,7 +2541,7 @@ function clearForm() {
   document.getElementById('f_sup_status').value = 'OUTSTANDING';
   document.getElementById('f_prod_status').value = 'job-submit';
   // Default pipeline: sales = quotation, admin = confirmed
-  const defPipeline = currentUser?.role === 'admin' ? 'confirmed' : 'quotation';
+  const defPipeline = 'quotation'; // Default sentiasa Quotation untuk order baru
   const ppEl = document.getElementById('f_pipeline_status');
   if (ppEl) ppEl.value = defPipeline;
   // Reset deposit to 70%
@@ -2685,168 +2554,11 @@ function clearForm() {
   if (pay1El) delete pay1El.dataset.manual;
   // Reset deposit button highlight
   setTimeout(() => setDepositPct(70), 50);
-  // Reset deadline calculator
-  ['dc_artwork','dc_delivery'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value='';
-  });
-  const dcR = document.getElementById('dc_result');
-  const dcP = document.getElementById('dc_placeholder');
-  if(dcR) dcR.style.display='none';
-  if(dcP) dcP.style.display='block';
 }
 
 function closeModal() {
   document.getElementById('addModalBg').classList.remove('open');
   editingId = null;
-  // Reset deadline calculator
-  ['dc_artwork','dc_delivery'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value='';
-  });
-  const r = document.getElementById('dc_result');
-  const p = document.getElementById('dc_placeholder');
-  if(r) r.style.display='none';
-  if(p) p.style.display='block';
-}
-
-// ══════════════════════════════════════
-// DEADLINE CALCULATOR — FASA 1
-// ══════════════════════════════════════
-function calcDeadline() {
-  const custDateVal = document.getElementById('f_duedate').value; // ambil dari field due date yang sedia ada
-  const artwork     = document.getElementById('dc_artwork').value;
-  const delivery    = document.getElementById('dc_delivery').value;
-
-  const resultEl      = document.getElementById('dc_result');
-  const placeholderEl = document.getElementById('dc_placeholder');
-
-  if (!custDateVal || !artwork || !delivery) {
-    resultEl.style.display      = 'none';
-    placeholderEl.style.display = 'block';
-    return;
-  }
-
-  // Lead times (hari)
-  const LT_PROD_NORMAL  = 7;
-  const LT_PROD_URGENT  = 3;
-  const LT_DESIGN       = artwork === 'yes' ? 0 : 3;
-  const LT_BUFFER       = 1;
-  const LT_POSTAGE      = delivery === 'collect' ? 0 : delivery === 'pos_sm' ? 2 : 5;
-
-  const custDate = new Date(custDateVal);
-  custDate.setHours(12,0,0,0);
-  const today    = getMYTToday();
-
-  // Kira backward dari tarikh customer
-  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
-  const subDays = (d, n) => addDays(d, -n);
-  const fmtD    = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric'});
-  const fmtDShort = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short'});
-
-  const dateCollect   = subDays(custDate, LT_POSTAGE);         // bila kena pos/collect
-  const dateKilangSiap = subDays(dateCollect, LT_BUFFER);      // kilang kena siap
-  const dateHantarKilang = subDays(dateKilangSiap, LT_PROD_NORMAL); // file kena hantar kilang (normal)
-  const dateHantarUrgent = subDays(dateKilangSiap, LT_PROD_URGENT); // file kena hantar kilang (urgent)
-  const dateApproveDesign = subDays(dateHantarKilang, LT_DESIGN > 0 ? 0 : 0); // bila file final kena ready
-  const dateDepositDeadline = LT_DESIGN > 0 ? subDays(dateHantarKilang, LT_DESIGN) : dateHantarKilang;
-
-  // Berapa hari dari sekarang ke deadline deposit
-  const daysToDeadline = Math.round((dateDepositDeadline - today) / 86400000);
-  const daysToHantar   = Math.round((dateHantarKilang - today) / 86400000);
-
-  // Tentukan urgency
-  let urgency, urgColor, urgBg, urgIcon, urgDesc;
-  if (daysToHantar < 0) {
-    urgency = '🚫 MUSTAHIL'; urgIcon = '🚫';
-    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
-    urgDesc = 'Tarikh dah lepas. Maklumkan customer dan escalate ke supervisor untuk cari kilang backup.';
-  } else if (daysToHantar <= LT_PROD_URGENT) {
-    urgency = '🔴 URGENT — Caj Tambahan RM10/pcs'; urgIcon = '🔴';
-    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
-    urgDesc = 'Masa terlalu singkat untuk produksi normal. Perlu slot urgent (3 hari). Ada caj tambahan RM10/pcs — maklumkan customer dan dapatkan persetujuan dulu sebelum proceed.';
-  } else if (daysToDeadline <= 2) {
-    urgency = '🟡 PRIORITI — Ketat'; urgIcon = '🟡';
-    urgColor = 'var(--amber)'; urgBg = 'var(--amberbg)';
-    urgDesc = 'Masa ada tapi ketat. Customer kena confirm design dan bayar deposit hari ini atau esok.';
-  } else {
-    urgency = '🟢 NORMAL — Masa Mencukupi'; urgIcon = '🟢';
-    urgColor = 'var(--green)'; urgBg = 'var(--greenbg)';
-    urgDesc = 'Masa mencukupi untuk proses design dan produksi mengikut SOP biasa.';
-  }
-
-  // Build timeline items
-  const tlItems = [];
-  if (LT_DESIGN > 0) {
-    tlItems.push({ label: '📋 Deadline deposit + brief customer', date: dateDepositDeadline, highlight: true });
-    tlItems.push({ label: '🎨 Deadline customer approve design', date: dateHantarKilang, highlight: false });
-  } else {
-    tlItems.push({ label: '📋 Deadline deposit + artwork dari customer', date: dateDepositDeadline, highlight: true });
-  }
-  if (delivery !== 'collect') {
-    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
-    tlItems.push({ label: `🚚 Tarikh pos (${delivery === 'pos_sm' ? 'Semenanjung' : 'Sabah/Sarawak'})`, date: dateCollect, highlight: false });
-  } else {
-    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
-    tlItems.push({ label: '🏠 Tarikh self collect', date: custDate, highlight: false });
-  }
-
-  const timelineHTML = tlItems.map(t => {
-    const isPast = t.date < today;
-    return `<div style="display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);">
-      <span style="font-size:12px;color:${t.highlight ? 'var(--text)' : 'var(--textd)'};font-weight:${t.highlight?'700':'400'};">${t.label}</span>
-      <span style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${isPast ? 'var(--red)' : t.highlight ? 'var(--blue)' : 'var(--textd)'};">${fmtD(t.date)}</span>
-    </div>`;
-  }).join('');
-
-  // Build WA message
-  const deliveryLabel = delivery === 'collect' ? 'self collect' : delivery === 'pos_sm' ? 'penghantaran pos (Semenanjung)' : 'penghantaran pos (Sabah/Sarawak)';
-  const artworkLine   = artwork === 'yes'
-    ? `Oleh kerana tuan/puan ada artwork sendiri, kami boleh terus proses selepas bayaran deposit diterima.`
-    : `Proses design akan mengambil masa 1-3 hari bergantung kepada bilangan pindaan. Untuk pastikan tarikh siap dijaga, kami mohon kerjasama tuan/puan untuk memberi respon dengan segera bagi setiap draft design yang kami hantar.`;
-  const urgentLine    = daysToHantar <= LT_PROD_URGENT && daysToHantar >= 0
-    ? `\n⚠️ *Nota Penting:* Disebabkan tempoh yang singkat, ada caj tambahan *RM10 setiap helai* untuk slot urgent produksi. Sila konfirmasi penerimaan caj ini sebelum kami proceed.`
-    : '';
-  const mustahilLine  = daysToHantar < 0
-    ? `\n🚫 *Maaf, kami tidak dapat memenuhi tarikh tersebut.* Pasukan kami akan menghubungi tuan/puan untuk membincangkan tarikh alternatif atau penyelesaian lain.`
-    : '';
-
-  const waMsg = `Assalamualaikum / Selamat sejahtera,
-
-Terima kasih kerana menghubungi DOD Worldwide Supplies! 🙏
-
-Berdasarkan tarikh yang tuan/puan nyatakan *(${fmtD(custDate)})* dengan kaedah ${deliveryLabel}:
-
-📌 *Tarikh akhir deposit + ${artwork === 'yes' ? 'hantar artwork' : 'brief design'}: ${fmtD(dateDepositDeadline)}*
-${LT_DESIGN > 0 ? `📌 *Tarikh akhir approve design: ${fmtD(dateHantarKilang)}*\n` : ''}
-${artworkLine}${urgentLine}${mustahilLine}
-
-Sebarang pertanyaan, jangan segan untuk bertanya. Kami sedia membantu! 😊
-
-DOD Worldwide Supplies`;
-
-  // Update DOM
-  document.getElementById('dc_urgency_flag').style.cssText = `background:${urgBg};border:1px solid ${urgColor}33;color:${urgColor};margin-bottom:10px;padding:10px 14px;border-radius:8px;display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13px;`;
-  document.getElementById('dc_urgency_flag').innerHTML = `<div>${urgency}</div><div style="font-size:11px;font-weight:400;color:var(--textd);line-height:1.5;">${urgDesc}</div>`;
-  document.getElementById('dc_timeline').innerHTML = timelineHTML;
-  document.getElementById('dc_wa_msg').textContent  = waMsg;
-  window._dcWaMsg = waMsg;
-
-  resultEl.style.display      = 'block';
-  placeholderEl.style.display = 'none';
-}
-
-function copyWAMsg() {
-  const msg = window._dcWaMsg || '';
-  if (!msg) return;
-  navigator.clipboard.writeText(msg).then(() => {
-    showToast('Mesej WA disalin! ✓');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = msg; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Mesej WA disalin! ✓');
-  });
 }
 
 function recalc() {
@@ -2943,12 +2655,18 @@ function saveOrder() {
         if (found) { currentDetailRow = found; break; }
       }
     }
-    // Sync edit to Supabase
+    // Sync edit to Supabase + audit log
     (() => {
       const months2 = Object.keys(sessionData);
       for (const m2 of months2) {
         const found = sessionData[m2].find(r => r.id === editingId);
-        if (found) { supaUpsert('orders', {...found, month: m2}).catch(e => console.warn('Sync failed:', e)); break; }
+        if (found) {
+          supaUpsert('orders', {...found, month: m2}).then(() => {
+            const changes = diffOrder(_preEditSnapshot, found);
+            if (changes) logAudit(found.id, 'edit', changes, null);
+          }).catch(e => console.warn('Sync failed:', e));
+          break;
+        }
       }
     })();
   } else {
@@ -2974,6 +2692,7 @@ function saveOrder() {
     if (newOrder) {
       supaUpsert('orders', newOrder).then(() => {
         showToast('✓ Disimpan ke server');
+        logAudit(newOrder.id, 'create', null, { name_job: newOrder.name_job, pcs: newOrder.pcs, total: newOrder.total_customer });
       }).catch(e => {
         console.error('Supabase sync failed:', e);
         showToast('⚠ Gagal simpan ke server: ' + (e.message||'').slice(0,60), true);
@@ -3011,6 +2730,12 @@ function confirmDelete() {
   }
   if (!deleteTargetId) return;
   const idToDel = deleteTargetId;
+  // Capture snapshot before delete for audit
+  let delSnap = null;
+  for (const m of Object.keys(sessionData)) {
+    const found = sessionData[m].find(r => r.id === idToDel);
+    if (found) { delSnap = { name_job: found.name_job, pcs: found.pcs, total: found.total_customer, pic: found.pic }; break; }
+  }
   // Remove from local sessionData
   for (const m of Object.keys(sessionData)) {
     const idx = sessionData[m].findIndex(r => r.id === idToDel);
@@ -3020,8 +2745,9 @@ function confirmDelete() {
   closeDetail();
   renderAll();
   showToast('Order dipadam.');
-  // Delete from Supabase
+  // Delete from Supabase + audit log
   supaDelete('orders', 'id=eq.' + encodeURIComponent(idToDel))
+    .then(() => logAudit(idToDel, 'delete', null, delSnap))
     .catch(e => console.warn('Delete sync failed:', e));
 }
 
@@ -3124,28 +2850,53 @@ function openDoc(docType) {
 
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
+
+  // Save snapshot to Supabase
+  saveDocSnapshot(r, docType, payload);
 }
 
 // ══════════════════════════════════════
 // KPI DASHBOARD (Sales Admin)
 // ══════════════════════════════════════
+
+// ══════════════════════════════════════
+// KPI DASHBOARD STATE
+// ══════════════════════════════════════
+let kpiFilterStaff = 'ALL';
+let kpiFilterMonth = null; // null = currentMonth
+
+function showKpiDashboard(staffFilter, monthFilter) {
+  if (staffFilter !== undefined) kpiFilterStaff = staffFilter;
+  if (monthFilter !== undefined) kpiFilterMonth = monthFilter;
+  renderKpiDashboard();
+}
+window.showKpiDashboard = showKpiDashboard;
+
 function renderKpiDashboard() {
   const isAdmin  = currentUser.role === 'admin';
-  const myName   = currentUser.name;
-  const curMonthData = sessionData[currentMonth] || [];
+  const myName     = currentUser.name;
+  const activeMonth = kpiFilterMonth || currentMonth;
+  const curMonthData = sessionData[activeMonth] || [];
+  const prevMonthKey = Object.keys(sessionData).sort()[Object.keys(sessionData).sort().indexOf(activeMonth) - 1] || null;
+  const prevMonthData = prevMonthKey ? (sessionData[prevMonthKey] || []) : [];
 
   // Sales staff list — for admin show all, for sales show self only
-  const SALES_STAFF = isAdmin
+  const allStaff = isAdmin
     ? [...new Set(Object.values(sessionData).flatMap(orders =>
         orders.map(r => r.pic).filter(p => p && p !== 'FATHI' && p !== 'FARIZ')
       ))].sort()
     : [myName];
+  const SALES_STAFF = (isAdmin && kpiFilterStaff !== 'ALL')
+    ? allStaff.filter(s => s === kpiFilterStaff)
+    : allStaff;
 
   const el = document.getElementById('kpiDashContent');
 
   // ── Per-staff KPI builder ──────────────────────────────────
   function buildStaffKpi(picName) {
-    const orders       = curMonthData.filter(r => r.pic === picName);
+    const allPicOrders = (sessionData[activeMonth]||[]).filter(r => r.pic === picName);
+    const orders       = allPicOrders.filter(isPipelineSales); // Confirmed ke atas sahaja
+    const quotOrders   = allPicOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
     const pcs          = orders.reduce((s,r)=>s+(r.pcs||0),0);
     const revenue      = orders.reduce((s,r)=>s+(r.total_customer||0),0);
     const orderCount   = orders.length;
@@ -3156,7 +2907,9 @@ function renderKpiDashboard() {
     const revBukan     = bukanSekolah.reduce((s,r)=>s+(r.total_customer||0),0);
     const komSek       = revSek * KOMISYEN_RATE_SEKOLAH;
     const komBukan     = revBukan * KOMISYEN_RATE_BUKAN_SEKOLAH;
-    const totalKom     = pcs >= KOMISYEN_MIN_PCS ? (komSek + komBukan) : 0;
+    const staffRole    = (() => { const store = loadUserStore(); const u = Object.values(store).find(u => u.name?.toUpperCase() === picName?.toUpperCase()); return u?.role || 'sales'; })();
+    const isSalesExec  = staffRole === 'sales_executive';
+    const totalKom     = pcs >= KOMISYEN_MIN_PCS ? (isSalesExec ? calcKomisyenTiered(revenue) : komSek + komBukan) : 0;
     const pcsProgress  = Math.min((pcs / KOMISYEN_MIN_PCS) * 100, 100);
     const layak        = pcs >= KOMISYEN_MIN_PCS;
 
@@ -3174,6 +2927,7 @@ function renderKpiDashboard() {
           <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
         </div>
         <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">${isSalesExec?'Sales Executive ⭐':'Sales Admin'}</div>
           <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:${layak?'var(--green)':'var(--red)'};">${fmt(totalKom)}</div>
           <div style="font-size:10px;color:var(--textm);">unjuran komisyen</div>
         </div>
@@ -3216,68 +2970,239 @@ function renderKpiDashboard() {
 
       <!-- Komisyen breakdown -->
       <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
-          <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
-          <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
-        </div>
+        ${isSalesExec ? `
+          ${getTieredBreakdown(revenue).map(t => `
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:var(--textd);">${t.label}: ${fmt(t.base)}</span>
+              <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(t.kom)}</span>
+            </div>`).join('')}
+          <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
+            <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(calcKomisyenTiered(revenue))}</span>
+          </div>
+        ` : `
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
+            <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
+            <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
+          </div>
+          <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
+            <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
+          </div>
+        `}
       </div>
+
+      <!-- ── PIPELINE SECTION ── -->
+      ${quotOrders.length > 0 ? `
+      <div style="background:var(--amberbg);border:1px solid var(--amberb);border-radius:8px;padding:12px 14px;font-size:11px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:10px;">📋 Pipeline — Quotation Pending</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Bil Quotation</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--amber);">${quotOrders.length}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Potensi Sales</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--amber);">${fmt(quotOrders.reduce((s,r)=>s+(r.total_customer||0),0))}</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">Potensi Komisyen</div>
+            <div style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:var(--green);">${fmt(quotOrders.reduce((s,r)=>s+(r.total_customer||0)*((r.source||'')==='SEKOLAH'?0.005:0.01),0))}</div>
+          </div>
+        </div>
+        ${(() => {
+          const oldest = quotOrders.reduce((o,r) => (!o||r.order_date<o)?r.order_date:o, null);
+          const daysOld = oldest ? Math.max(0,Math.floor((getMYTToday()-new Date(oldest+'T00:00:00+08:00'))/86400000)) : 0;
+          const color = daysOld>=14?'var(--red)':daysOld>=7?'var(--amber)':'var(--green)';
+          return `<div style="border-top:1px solid var(--amberb);padding-top:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--textd);">Quotation terlama</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:${color};">${daysOld} hari</span>
+          </div>`;
+        })()}
+      </div>` : ''}
+
+      <!-- ── CONVERSION RATE ── -->
+      ${(() => {
+        const total = orders.length + quotOrders.length;
+        const rate  = total > 0 ? Math.round(orders.length / total * 100) : 0;
+        const rateColor = rate>=60?'var(--green)':rate>=40?'var(--amber)':'var(--red)';
+        const barW = Math.min(rate, 100);
+        return total > 0 ? `
+        <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);">📊 Conversion Rate</span>
+            <span style="font-family:'Fira Code',monospace;font-size:16px;font-weight:700;color:${rateColor};">${rate}%</span>
+          </div>
+          <div style="height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${barW}%;background:${rateColor};border-radius:3px;transition:width .6s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--textm);">
+            <span>${orders.length} confirmed</span>
+            <span>${quotOrders.length} pending</span>
+            <span>${total} jumlah</span>
+          </div>
+        </div>` : '';
+      })()}
+
+      <!-- ── CUSTOMER OS DETAIL ── -->
+      ${custOS > 0 ? `
+      <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:10px 14px;font-size:11px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">💰 Customer OS — Perlu Kutip</div>
+        ${orders.filter(r=>r.balance_customer>0).slice(0,4).map(r=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);">
+            <span style="color:var(--textd);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.cust_name||r.name_job||'—'}</span>
+            <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--red);">${fmt(r.balance_customer)}</span>
+          </div>`).join('')}
+        ${orders.filter(r=>r.balance_customer>0).length > 4 ? `<div style="text-align:center;padding-top:6px;color:var(--textm);font-size:10px;">+${orders.filter(r=>r.balance_customer>0).length-4} lagi</div>` : ''}
+      </div>` : ''}
+
+      <!-- ── TOP SUMBER ── -->
+      ${(() => {
+        const src = {};
+        orders.forEach(r => { const s=r.source||'LAIN'; src[s]=(src[s]||0)+1; });
+        const sorted = Object.entries(src).sort((a,b)=>b[1]-a[1]).slice(0,3);
+        if (!sorted.length) return '';
+        const max = sorted[0][1];
+        const colors = {'NEW ONLINE':'var(--blue)','REPEAT ONLINE':'var(--teal)','SEKOLAH':'var(--green)','AGENT':'var(--purple)','OFFLINE':'var(--textd)'};
+        return `<div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
+          <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">📈 Top Sumber Order</div>
+          ${sorted.map(([s,c])=>{
+            const pct = Math.round(c/orders.length*100);
+            const col = colors[s]||'var(--textd)';
+            return `<div style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="color:var(--textd);">${s}</span>
+                <span style="font-family:'Fira Code',monospace;font-weight:600;color:${col};">${c} order (${pct}%)</span>
+              </div>
+              <div style="height:5px;background:var(--bg2);border-radius:3px;">
+                <div style="height:100%;width:${Math.round(c/max*100)}%;background:${col};border-radius:3px;"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      })()}
+
     </div>`;
   }
 
   // ── Summary row for admin ──────────────────────────────────
-  function buildAdminSummary() {
-    const allSalesOrders = curMonthData.filter(r =>
-      r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
-    );
-    const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
-    const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
-    const totalOS   = allSalesOrders.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-    const totalOrds = allSalesOrders.length;
+  function buildTeamSummary() {
+  const allSalesOrders = curMonthData.filter(isPipelineSales).filter(r =>
+    r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
+  );
+  const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
+  const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
+  const totalOrds = allSalesOrders.length;
+  const totalOS   = allSalesOrders.filter(isPipelineSales).filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const totalQuot = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation' && r.pic && r.pic!=='FATHI' && r.pic!=='FARIZ');
+  const quotVal   = totalQuot.reduce((s,r)=>s+(r.total_customer||0),0);
 
-    return `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-      <div class="kpi-card" style="border-top:3px solid var(--blue);">
-        <div class="kpi-card-label">Total Order (Team)</div>
-        <div class="kpi-card-val" style="color:var(--blue)">${totalOrds}</div>
-        <div class="kpi-card-sub">${MONTH_LABELS[currentMonth]||currentMonth}</div>
+  // Prev month for trend
+  const prevSalesOrders = prevMonthData.filter(isPipelineSales).filter(r => r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ');
+  const prevRev = prevSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
+  const revTrend = prevRev > 0 ? ((totalRev - prevRev)/prevRev*100).toFixed(1) : null;
+  const trendHTML = revTrend !== null
+    ? `<span style="font-size:11px;color:${revTrend>=0?'var(--green)':'var(--red)'};">${revTrend>=0?'▲':'▼'} ${Math.abs(revTrend)}% vs ${MONTH_LABELS[prevMonthKey]||prevMonthKey}</span>`
+    : '';
+
+  // Ranking by revenue
+  const staffRanking = allStaff.map(pic => {
+    const ords = allSalesOrders.filter(r=>r.pic===pic);
+    const rev  = ords.reduce((s,r)=>s+(r.total_customer||0),0);
+    const pcs  = ords.reduce((s,r)=>s+(r.pcs||0),0);
+    const qOrds = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation'&&r.pic===pic);
+    const total = ords.length + qOrds.length;
+    const rate  = total > 0 ? Math.round(ords.length/total*100) : 0;
+    return { pic, rev, pcs, rate, orders: ords.length };
+  }).sort((a,b) => b.rev - a.rev);
+
+  const rankHTML = staffRanking.map((s,i) => {
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    const maxRev = staffRanking[0]?.rev || 1;
+    const barPct = Math.round(s.rev/maxRev*100);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);">
+      <span style="font-size:14px;width:24px;">${medal}</span>
+      <span style="font-weight:700;color:var(--text);width:80px;">${s.pic}</span>
+      <div style="flex:1;">
+        <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${barPct}%;background:var(--blue);border-radius:3px;"></div>
+        </div>
       </div>
-      <div class="kpi-card" style="border-top:3px solid var(--blue);">
-        <div class="kpi-card-label">Total PCS (Team)</div>
-        <div class="kpi-card-val" style="color:var(--blue)">${totalPCS.toLocaleString()}</div>
-        <div class="kpi-card-sub">keseluruhan</div>
+      <span style="font-family:'Fira Code',monospace;font-size:11px;color:var(--amber);width:90px;text-align:right;">${fmt(s.rev)}</span>
+      <span style="font-size:10px;color:var(--textm);width:70px;text-align:right;">${s.rate}% CR</span>
+    </div>`;
+  }).join('');
+
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:14px;">📊 Ringkasan Team — ${MONTH_LABELS[activeMonth]||activeMonth}</div>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total Revenue</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--amber);">${fmt(totalRev)}</div>
+          <div style="margin-top:2px;">${trendHTML}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total PCS</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--blue);">${totalPCS.toLocaleString()}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Total Order</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--text);">${totalOrds}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Customer OS</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:3px;">Pipeline</div>
+          <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--amber);">${fmt(quotVal)}</div>
+          <div style="font-size:10px;color:var(--textm);">${totalQuot.length} quotation</div>
+        </div>
       </div>
-      <div class="kpi-card" style="border-top:3px solid var(--amber);">
-        <div class="kpi-card-label">Total Revenue</div>
-        <div class="kpi-card-val" style="color:var(--amber);font-size:14px;">${fmt(totalRev)}</div>
-        <div class="kpi-card-sub">semua sales staff</div>
-      </div>
-      <div class="kpi-card" style="border-top:3px solid var(--red);">
-        <div class="kpi-card-label">Total Customer OS</div>
-        <div class="kpi-card-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
-        <div class="kpi-card-sub">belum collect</div>
+
+      <div>
+        <div style="font-size:10px;color:var(--textm);margin-bottom:8px;font-weight:600;">🏆 Ranking Revenue</div>
+        ${rankHTML}
       </div>
     </div>`;
-  }
+}
 
   // ── Render ─────────────────────────────────────────────────
   const backBtn = `<button onclick="showMasterlistView()" style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:20px;">← Kembali ke Sales List</button>`;
 
+  // Build month options
+  const monthOpts = Object.keys(sessionData).sort().reverse().map(m =>
+    `<option value="${m}" ${m === activeMonth ? 'selected' : ''}>${MONTH_LABELS[m]||m}</option>`
+  ).join('');
+
+  // Build staff filter options (admin only)
+  const staffOpts = isAdmin ? `<option value="ALL">Semua Staff</option>` +
+    allStaff.map(s => `<option value="${s}" ${s === kpiFilterStaff ? 'selected' : ''}>${s}</option>`).join('') : '';
+
+  const filterBar = isAdmin ? `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+      <select onchange="showKpiDashboard(undefined, this.value)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
+        ${monthOpts}
+      </select>
+      <select onchange="showKpiDashboard(this.value, undefined)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
+        ${staffOpts}
+      </select>
+    </div>` : '';
+
   const title = isAdmin
     ? `<div class="kpi-dash-title">Dashboard KPI Sales Team</div>
-       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · Semua Sales Admin</div>`
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[activeMonth]||activeMonth}${kpiFilterStaff !== 'ALL' ? ' · ' + kpiFilterStaff : ' · Semua Staff'}</div>`
     : `<div class="kpi-dash-title">Dashboard KPI Saya</div>
-       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · PIC: ${myName}</div>`;
+       <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[activeMonth]||activeMonth} · PIC: ${myName}</div>`;
 
-  el.innerHTML = backBtn + title +
-    (isAdmin ? buildAdminSummary() : '') +
+  el.innerHTML = backBtn + title + filterBar +
+    (isAdmin && kpiFilterStaff === 'ALL' ? buildTeamSummary() : '') +
     SALES_STAFF.map(buildStaffKpi).join('');
 }
 
@@ -3372,7 +3297,7 @@ function showToast(msg, isErr=false) {
 
 // Auto-refresh data from Supabase every 60 seconds
 let _autoRefreshTimer = null;
-async function startAutoRefresh() {
+function startAutoRefresh() {
   if (_autoRefreshTimer) clearInterval(_autoRefreshTimer);
   _autoRefreshTimer = setInterval(async () => {
     if (document.hidden) return; // skip if tab not visible
@@ -3422,23 +3347,40 @@ window.addEventListener('load', () => {
   document.getElementById('ls-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
   // Auto-login if session exists (coming from dod-login.html or returning user)
-  try {
-    const saved = localStorage.getItem('dod_session');
-    if (saved) {
+  (async () => {
+    try {
+      const saved = localStorage.getItem('dod_session');
+      if (!saved) return;
       const session = JSON.parse(saved);
-      if (session && session.id) {
-        // Use session directly (already validated at login)
-        currentUser = session;
-        if (!USERS[session.id]) {
-          USERS[session.id] = { name:session.name, role:session.role, color:session.color||'#1A5CC8', bg:session.bg||'#EEF4FF' };
+      if (!session || !session.id) return;
+
+      // Verify role from Supabase (in case role changed since last login)
+      try {
+        const rows = await supaGet('users', `select=id,name,role,color,bg,active&id=eq.${encodeURIComponent(session.id)}`);
+        if (rows && rows.length) {
+          const freshUser = rows[0];
+          if (!freshUser.active) {
+            localStorage.removeItem('dod_session');
+            return;
+          }
+          session.role  = freshUser.role  || session.role;
+          session.name  = freshUser.name  || session.name;
+          session.color = freshUser.color || session.color;
         }
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').style.display = 'flex';
-        initApp();
-        return;
+      } catch(e) {
+        console.warn('Session role refresh failed, using cache:', e);
       }
-    }
-  } catch(e) {}
+
+      currentUser = session;
+      localStorage.setItem('dod_session', JSON.stringify(currentUser));
+      if (!USERS[session.id]) {
+        USERS[session.id] = { name:session.name, role:session.role, color:session.color||'#1A5CC8', bg:session.bg||'#EEF4FF' };
+      }
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainApp').style.display = 'block';
+      initApp();
+    } catch(e) {}
+  })();
 });
 
 
@@ -3461,6 +3403,7 @@ function renderHomepage() {
   document.getElementById('homeKpiStrip').style.display    = isAdmin ? 'block' : 'none';
   document.getElementById('homeBottomPanels').style.display = isAdmin ? 'block' : 'none';
 
+
   if (isAdmin) {
     renderHomeKpi();
     renderHomeTrend();
@@ -3474,7 +3417,7 @@ function renderHomepage() {
   renderHomePipeline(role);
 
   // Sales quick stats (sales role only)
-  if (role === 'sales') renderSalesQuickStats();
+  if (role === 'sales' || role === 'sales_executive') renderSalesQuickStats();
 
   // Nav grid
   renderHomeNav(role);
@@ -3491,7 +3434,6 @@ function renderHomeKpi() {
   const now = new Date();
   const todayStr = now.toISOString().slice(0,10);
   const ystStr   = new Date(now - 86400000).toISOString().slice(0,10);
-  const weekAgo  = new Date(now - 7*86400000).toISOString().slice(0,10);
 
   const months    = Object.keys(sessionData);
   const curMonth  = months[months.length-1];
@@ -3519,10 +3461,14 @@ function renderHomeKpi() {
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
-  const todayOrders = all.filter(o => o.order_date === todayStr);
+  const weekAgo7    = new Date(now - 6*86400000).toISOString().slice(0,10);
+  const todayOrders = allSales.filter(o => o.order_date === todayStr);
   const todayRev    = todayOrders.reduce((s,o) => s+(o.total_customer||0), 0);
-  const ystOrders   = all.filter(o => o.order_date === ystStr);
+  const ystOrders   = allSales.filter(o => o.order_date === ystStr);
   const ystRev      = ystOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+  const weekOrders7 = allSales.filter(o => o.order_date >= weekAgo7 && o.order_date <= todayStr);
+  const weekRev7    = weekOrders7.reduce((s,o) => s+(o.total_customer||0), 0);
+  const weekPCS7    = weekOrders7.reduce((s,o) => s+(o.pcs||0), 0);
 
   const el = document.getElementById('homeKpiCards');
   el.innerHTML = `
@@ -3546,14 +3492,14 @@ function renderHomeKpi() {
       <div class="home-kpi-sub">Margin ${curMargin}%</div>
     </div>
     <div class="home-kpi-card ${totalOS>0?'accent-red':'accent-green'}" style="border-left:3px solid ${totalOS>0?'var(--red)':'var(--green)'};">
-      <div class="home-kpi-label">Customer OS</div>
+      <div class="home-kpi-label">Customer OS (Semua Bulan)</div>
       <div class="home-kpi-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
       <div class="home-kpi-sub">${totalOS>0?'belum dikutip':'semua dah bayar'}</div>
     </div>
 
     <!-- Section label: Hari Ini -->
     <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
-      🕐 Hari Ini & Semalam
+      🕐 Hari Ini, Semalam & 7 Hari Lepas
     </div>
     <div class="home-kpi-card accent-teal" style="border-left:3px solid var(--teal);">
       <div class="home-kpi-label">Hari Ini</div>
@@ -3564,6 +3510,11 @@ function renderHomeKpi() {
       <div class="home-kpi-label">Semalam</div>
       <div class="home-kpi-val">${fmt(ystRev)}</div>
       <div class="home-kpi-sub">${ystOrders.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
+      <div class="home-kpi-label">7 Hari Lepas</div>
+      <div class="home-kpi-val">${fmt(weekRev7)}</div>
+      <div class="home-kpi-sub">${weekOrders7.length} order</div>
     </div>
 
     <!-- Section label: All Time -->
@@ -3927,7 +3878,7 @@ function openCustDetail(idx) {
   const totalOS = c.orders.reduce((s,o) => s+(o.balance_customer||0),0);
   const osOrders = c.orders.filter(o => (o.balance_customer||0) > 0);
   // Calculate days overdue
-  const _today = getMYTToday();
+  const _today = new Date(); _today.setHours(0,0,0,0);
   const daysOverdue = osOrders.length > 0 ? Math.max(...osOrders.map(o => {
     if (!o.order_date) return 0;
     return Math.max(0, Math.floor((_today - new Date(o.order_date)) / 86400000));
@@ -3958,6 +3909,10 @@ function openCustDetail(idx) {
   }).join('');
 
   document.getElementById('custDetailBody').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:10px;color:var(--textm);font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;">Customer Directory</div>
+      <button onclick="openAddModalFromCust()" style="font-size:11px;padding:5px 12px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">＋ Tambah Order</button>
+    </div>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
       <div style="width:52px;height:52px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${initials}</div>
       <div>
@@ -4671,6 +4626,37 @@ function loadUserStore() {
   return seedUserStore();
 }
 
+// Load users from Supabase and merge with local store
+async function syncUsersFromSupabase() {
+  try {
+    const rows = await supaGet('users', 'select=*');
+    if (!rows || !rows.length) return;
+    const store = {};
+    rows.forEach(u => {
+      store[u.id] = {
+        id: u.id, name: u.name, role: u.role,
+        color: u.color || '#1A5CC8',
+        bg: u.bg || '#EEF4FF',
+        password: u.password || 'DOD2026',
+        active: u.active !== false,
+        created: u.created || new Date().toISOString(),
+        lastLogin: u.last_login || null,
+      };
+    });
+    _userStoreCache = store;
+    localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
+    // Update USERS object so role checks are consistent
+    Object.values(store).forEach(u => {
+      if (USERS[u.id]) USERS[u.id].role = u.role;
+    });
+    if (document.getElementById('userMgmtView')?.style.display !== 'none') {
+      renderUserMgmt();
+    }
+  } catch(e) {
+    console.warn('User sync from Supabase failed:', e);
+  }
+}
+
 function seedUserStore() {
   const seed = {};
   const DEFAULT_COLORS = {
@@ -4691,17 +4677,37 @@ function seedUserStore() {
       lastLogin: null,
     };
   });
-  saveUserStore(seed);
+  // Only set localStorage — do NOT sync to Supabase
+  // Supabase is source of truth; seedUserStore is only a local fallback
+  _userStoreCache = seed;
+  localStorage.setItem(USER_STORE_KEY, JSON.stringify(seed));
   return seed;
 }
 
 function saveUserStore(store) {
   _userStoreCache = store;
   localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-  // Sync all users to Supabase
-  const users = Object.values(store);
-  if (users.length) {
-    supaUpsert('users', users).catch(e => console.warn('User sync failed:', e));
+  // NOTE: Do NOT sync all users to Supabase here
+  // Supabase is source of truth — only update specific user via saveUserToSupabase()
+}
+
+async function saveUserToSupabase(u) {
+  try {
+    await supaFetch('/rest/v1/users', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify([{
+        id: u.id, name: u.name, role: u.role,
+        color: u.color || '#1A5CC8',
+        bg: u.bg || '#EEF4FF',
+        password: u.password || 'DOD2026',
+        active: u.active !== false,
+        created: u.created || new Date().toISOString(),
+        last_login: u.lastLogin || null,
+      }]),
+    });
+  } catch(e) {
+    console.warn('Save user to Supabase failed:', e);
   }
 }
 
@@ -4787,8 +4793,9 @@ function renderUserEditForm(id) {
         <label>Role</label>
         <select id="uf_role" ${isOnlyAdmin?'disabled title="Mesti ada sekurang-kurang 1 Admin"':''}>
           <option value="admin"    ${u.role==='admin'   ?'selected':''}>Admin — Akses penuh</option>
-          <option value="sales"    ${u.role==='sales'   ?'selected':''}>Sales Admin</option>
-          <option value="designer" ${u.role==='designer'?'selected':''}>Designer</option>
+          <option value="sales"           ${u.role==='sales'           ?'selected':''}>Sales Admin</option>
+          <option value="sales_executive" ${u.role==='sales_executive'?'selected':''}>Sales Executive</option>
+          <option value="designer"        ${u.role==='designer'        ?'selected':''}>Designer</option>
         </select>
       </div>
     </div>
@@ -4842,6 +4849,7 @@ function openAddUserForm() {
         <label>Role *</label>
         <select id="nuf_role">
           <option value="sales">Sales Admin</option>
+          <option value="sales_executive">Sales Executive</option>
           <option value="admin">Admin — Akses penuh</option>
           <option value="designer">Designer</option>
         </select>
@@ -4905,6 +4913,7 @@ function saveNewUser() {
     lastLogin: null,
   };
   saveUserStore(store);
+  saveUserToSupabase(store[id]);
 
   // Also add to USERS runtime object so current session recognises them
   USERS[id] = { name, role, color: rc.color, bg: rc.bg };
@@ -4950,6 +4959,7 @@ function saveUserEdit(id) {
   store[finalId].bg    = rc.bg;
 
   saveUserStore(store);
+  saveUserToSupabase(store[finalId]);
   showToast('Maklumat ' + newName + ' berjaya dikemaskini ✓');
   renderUserMgmt();
   renderUserEditForm(finalId);
@@ -4964,6 +4974,7 @@ function toggleUserActive(id) {
 
   store[id].active = !store[id].active;
   saveUserStore(store);
+  saveUserToSupabase(store[id]);
   const action = store[id].active ? 'diaktifkan' : 'dinyahaktifkan';
   showToast('Akaun ' + store[id].name + ' ' + action + ' ✓');
   renderUserMgmt();
@@ -5042,6 +5053,7 @@ function submitChpw() {
 
   store[chpwTargetId].password = newPw;
   saveUserStore(store);
+  saveUserToSupabase(store[chpwTargetId]);
 
   closeChpwModal();
   showToast('Password berjaya ditukar ✓');
@@ -5410,9 +5422,8 @@ let SUPPLIERS = [
 ];
 
 function showSupplierDirView() {
-  setSidebarActive('supplier');
   setAllViewsHidden();
-  document.getElementById('supplierDirView').classList.add('active');
+  document.getElementById('supplierDirView').style.display = 'block';
   renderSupplierDir();
 }
 
@@ -5482,9 +5493,8 @@ function renderSupplierDir() {
 }
 
 function showSupplierOSView() {
-  setSidebarActive('supplierOS');
   setAllViewsHidden();
-  document.getElementById('supplierOSView').classList.add('active');
+  document.getElementById('supplierOSView').style.display = 'block';
   renderSupplierOS();
 }
 
@@ -5848,17 +5858,20 @@ let prodFilterStatus = '';
 let prodFilterPic = '';
 
 function showProdTrackView() {
-  setSidebarActive('production');
   setAllViewsHidden();
-  document.getElementById('prodTrackView').classList.add('active');
+  document.getElementById('prodTrackView').style.display = 'block';
   renderProdTrack();
 }
 
 function renderProdTrack() {
   const el = document.getElementById('prodTrackContent');
+  const supF = (window._prodSupFilter || 'ALL').toUpperCase();
   const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
     orders.map(o => ({ ...o, _month: month }))
-  );
+  ).filter(o => {
+    if (supF === 'ALL') return true;
+    return (o.supplier_name||'NOHAD SDN BHD').toUpperCase().includes(supF);
+  });
 
   // Only show orders with production tracking (exclude no status = treat as job-submit)
   const activeOrders = allOrders.filter(o =>
@@ -5966,7 +5979,7 @@ function renderProdTrack() {
 }
 
 function renderProdCard(o) {
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const status  = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
   const dueDate = o.due_date ? new Date(o.due_date) : null;
   const prodDate= o.production_date ? new Date(o.production_date) : null;
@@ -6093,7 +6106,7 @@ function sendWANotify(orderId, month) {
 function renderHomeAlerts(role) {
   const el = document.getElementById('homeAlertBar');
   if (!el) return;
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) => orders.map(o=>({...o,_month:m})));
 
   // Production alerts
@@ -6106,8 +6119,8 @@ function renderHomeAlerts(role) {
   });
   const readyJobs  = activeJobs.filter(o => o.production_status === 'ready');
 
-  // Customer OS
-  const custOS = allOrders.filter(o => (o.balance_customer||0) > 0);
+  // Customer OS — exclude Quotation (same logic as homepage KPI)
+  const custOS = allOrders.filter(o => isPipelineSales(o) && (o.balance_customer||0) > 0);
   const totalOS = custOS.reduce((s,o) => s+(o.balance_customer||0), 0);
 
   const alerts = [];
@@ -6155,7 +6168,7 @@ function renderSalesQuickStats() {
   const totalKom = layak ? (revSek*0.005 + revBukan*0.01) : 0;
 
   // Production alerts for my orders
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const myActive = myOrders.filter(o => 
     (o.production_status||'job-submit') !== 'complete' &&
     (o.pipeline_status||'confirmed') !== 'quotation'
@@ -6258,7 +6271,7 @@ window.bulkOSReminder = bulkOSReminder;
 // ── OS REMINDER HELPERS ──────────────────────────────────────
 function _getOSDaysOverdue(c) {
   // Calculate max days overdue across all OS orders
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   let maxDays = 0;
   c.osOrders.forEach(o => {
     if (o.order_date) {
@@ -6394,7 +6407,7 @@ function renderHomePipeline(role) {
   const el = document.getElementById('homePipelineSection');
   if (!el) return;
 
-  const today = getMYTToday();
+  const today = new Date(); today.setHours(0,0,0,0);
   const myName = currentUser?.name || '';
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) =>
     orders.map(o => ({...o, _month:m}))
@@ -6435,11 +6448,11 @@ function renderHomePipeline(role) {
   let rows = '';
   quotOrders.forEach(o => {
     const daysAgo = o.order_date
-      ? Math.round((today - new Date(o.order_date + 'T12:00:00')) / 86400000) : 0;
-    const daysLabel = daysAgo <= 0 ? 'Hari ini' : daysAgo === 1 ? '1 hari' : daysAgo + ' hari';
+      ? Math.max(0, Math.floor((today - new Date(o.order_date + 'T00:00:00+08:00')) / 86400000)) : 0;
     const urgColor = daysAgo >= 14 ? 'var(--red)' : daysAgo >= 7 ? 'var(--amber)' : 'var(--green)';
     const urgBg    = daysAgo >= 14 ? 'var(--redbg)' : daysAgo >= 7 ? '#FFFBEB' : 'var(--greenbg)';
-    const urgLabel = daysAgo >= 14 ? daysLabel + ' — KRITIKAL' : daysAgo >= 7 ? daysLabel + ' — Susulan' : daysLabel;
+    const daysLabel = daysAgo === 0 ? 'Hari ini' : daysAgo === 1 ? '1 hari' : daysAgo+' hari';
+    const urgLabel = daysAgo >= 14 ? daysLabel+' — KRITIKAL' : daysAgo >= 7 ? daysLabel+' — Susulan' : daysLabel;
 
     rows += '<tr style="border-bottom:1px solid var(--line);">'
       + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
@@ -6509,7 +6522,595 @@ function autoUpdateSupStatus() {
 }
 
 
-// ══ PORTED NEW FEATURES ══
+// ══════════════════════════════════════
+// AUDIT LOG
+// ══════════════════════════════════════
+
+async function logAudit(orderId, action, changes, snapshot) {
+  try {
+    const entry = {
+      order_id:   orderId || null,
+      user_name:  currentUser?.name || 'unknown',
+      action,
+      changes:    changes || null,
+      snapshot:   snapshot || null,
+      created_at: new Date().toISOString(),
+    };
+    await supaFetch('/rest/v1/audit_log', {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    });
+  } catch(e) {
+    console.warn('Audit log failed (non-critical):', e);
+  }
+}
+
+function diffOrder(oldObj, newObj) {
+  if (!oldObj) return null;
+  const changes = {};
+  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+  const skipKeys = ['_month'];
+  allKeys.forEach(k => {
+    if (skipKeys.includes(k)) return;
+    const ov = JSON.stringify(oldObj[k]);
+    const nv = JSON.stringify(newObj[k]);
+    if (ov !== nv) {
+      changes[k] = { old: oldObj[k], new: newObj[k] };
+    }
+  });
+  return Object.keys(changes).length ? changes : null;
+}
+
+// ══════════════════════════════════════
+// BACKUP & EXPORT
+// ══════════════════════════════════════
+
+function exportCSV() {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
+
+  const cols = [
+    '_month','pic','status','pipeline_status','name_job','source','channel',
+    'pcs','order_date','inv_date','due_date','inv_number','inv_number_supplier',
+    'total_customer','first_payment','balance_customer','profit',
+    'nohad_amount','nohad_paid','supplier_outstanding','supplier_payment_status',
+    'cust_name','cust_tel','cust_addr','supplier_name',
+    'production_date','production_status',
+  ];
+
+  const escape = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+
+  const header = cols.join(',');
+  const rows = allOrders.map(o => cols.map(c => escape(o[c])).join(','));
+  const csv = [header, ...rows].join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'DOD-orders-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV exported (' + allOrders.length + ' orders)');
+}
+
+function exportJSON() {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
+
+  const payload = {
+    exported_at: new Date().toISOString(),
+    exported_by: currentUser?.name || 'unknown',
+    order_count: allOrders.length,
+    orders: allOrders,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'DOD-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ JSON backup exported (' + allOrders.length + ' orders)');
+}
+
+async function saveBackupToSupabase(label) {
+  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
+    orders.map(o => ({ ...o, _month: month }))
+  );
+  if (!allOrders.length) return;
+
+  const lbl = label || 'Auto-' + new Date().toISOString().slice(0,10);
+  try {
+    await supaFetch('/rest/v1/backup_snapshots', {
+      method: 'POST',
+      body: JSON.stringify({
+        label: lbl,
+        created_by: currentUser?.name || 'system',
+        data: { orders: allOrders, sessionData },
+        order_count: allOrders.length,
+        created_at: new Date().toISOString(),
+      }),
+    });
+    showToast('✓ Backup disimpan: ' + lbl);
+  } catch(e) {
+    showToast('⚠ Backup gagal: ' + e.message, true);
+  }
+}
+
+async function restoreBackup(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.orders || !Array.isArray(data.orders)) {
+          showToast('⚠ Format backup tidak sah', true); return;
+        }
+
+        // Confirm #1
+        if (!confirm('⚠ AMARAN: Restore akan overwrite data semasa dengan ' + data.orders.length + ' orders dari backup ' + (data.exported_at||'').slice(0,10) + '.\n\nTeruskan?')) return;
+
+        // Confirm #2
+        if (!confirm('Ini akan OVERWRITE semua data semasa. Adakah anda pasti?\n\nKlik OK untuk teruskan, Cancel untuk batalkan.')) return;
+
+        // Auto-backup current data first
+        showToast('Menyimpan backup data semasa...');
+        await saveBackupToSupabase('Pre-restore-' + new Date().toISOString().slice(0,10));
+
+        // Restore
+        showToast('Memulihkan data...');
+        const orders = data.orders.map(o => {
+          const { _month, ...rest } = o;
+          return { ...rest, month: _month || rest.month };
+        });
+
+        // Upsert in batches of 50
+        for (let i = 0; i < orders.length; i += 50) {
+          const batch = orders.slice(i, i + 50);
+          await supaFetch('/rest/v1/orders', {
+            method: 'POST',
+            prefer: 'resolution=merge-duplicates',
+            body: JSON.stringify(batch),
+          });
+        }
+
+        showToast('✓ Restore berjaya! Memuatkan semula data...');
+        setTimeout(() => loadOrdersFromSupabase(), 1500);
+        resolve();
+      } catch(err) {
+        showToast('⚠ Restore gagal: ' + err.message, true);
+        reject(err);
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Weekly auto-backup (runs on Monday login)
+async function checkWeeklyBackup() {
+  const lastKey = 'dod_last_backup';
+  const last = localStorage.getItem(lastKey);
+  const now = new Date();
+  const isMonday = now.getDay() === 1;
+  const today = now.toISOString().slice(0,10);
+
+  if (isMonday && last !== today) {
+    localStorage.setItem(lastKey, today);
+    await saveBackupToSupabase('Weekly-' + today);
+    console.log('Weekly backup done:', today);
+  }
+}
+window.exportCSV = exportCSV;
+window.exportJSON = exportJSON;
+window.saveBackupToSupabase = saveBackupToSupabase;
+window.restoreBackup = restoreBackup;
+
+
+async function showAuditLog() {
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=100');
+    if (!rows) { showToast('Gagal load audit log', true); return; }
+
+    const html = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:24px;width:860px;max-width:95vw;max-height:85vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">📋 Audit Log (100 terkini)</div>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--textd);">✕ Tutup</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:var(--bg3);">
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Masa</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">User</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Tindakan</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Order</th>
+              <th style="padding:7px 10px;text-align:left;color:var(--textm);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;">Perubahan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((r,i) => {
+              const dt = new Date(r.created_at).toLocaleString('ms-MY');
+              const actionColor = r.action==='delete'?'var(--red)':r.action==='create'?'var(--green)':'var(--blue)';
+              const actionLabel = r.action==='delete'?'🗑 Padam':r.action==='create'?'✚ Cipta':'✏️ Edit';
+              const changes = r.changes ? Object.keys(r.changes).map(k =>
+                `<div style="color:var(--textm);">${k}: <span style="color:var(--red)">${JSON.stringify(r.changes[k].old).slice(0,30)}</span> → <span style="color:var(--green)">${JSON.stringify(r.changes[k].new).slice(0,30)}</span></div>`
+              ).join('') : (r.snapshot ? JSON.stringify(r.snapshot).slice(0,80) : '—');
+              return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+                <td style="padding:7px 10px;color:var(--textm);white-space:nowrap;">${dt}</td>
+                <td style="padding:7px 10px;color:var(--text);font-weight:600;">${r.user_name||'—'}</td>
+                <td style="padding:7px 10px;"><span style="color:${actionColor};font-weight:600;">${actionLabel}</span></td>
+                <td style="padding:7px 10px;color:var(--textd);font-size:10px;">${r.order_id||'—'}</td>
+                <td style="padding:7px 10px;color:var(--textd);font-size:10px;">${changes}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) {
+    showToast('Gagal load audit log: ' + e.message, true);
+  }
+}
+window.showAuditLog = showAuditLog;
+
+
+
+
+function renderSecurityView() {
+  const el = document.getElementById('securityContent');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="max-width:860px;">
+      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">🛡 Security & Data Management</div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:28px;">Kawalan akses kepada admin sahaja. Semua tindakan di sini dilog dalam audit trail.</div>
+
+      <!-- Export & Backup Section -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">💾 Export & Backup Data</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Download salinan data untuk simpanan atau analisis luar.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="exportCSV()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📊 Export CSV</button>
+          <button onclick="exportJSON()" style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">💾 Backup JSON</button>
+          <button onclick="saveBackupToSupabase(prompt('Label backup (contoh: Manual-Apr-2026):') || 'Manual-'+new Date().toISOString().slice(0,10))" style="padding:9px 18px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Backup ke Cloud</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--textm);">Auto backup: Setiap Isnin secara automatik bila admin login. Backup disimpan dalam Supabase.</div>
+      </div>
+
+      <!-- Restore Section -->
+      <div style="background:var(--bg2);border:1px solid var(--amberb);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">⚠ Restore Backup</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Upload fail JSON backup untuk pulihkan data. Sistem akan auto-backup data semasa sebelum restore.</div>
+        <label style="display:inline-block;padding:9px 18px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+          📂 Pilih Fail Backup (.json)
+          <input type="file" accept=".json" style="display:none;" onchange="restoreBackup(this.files[0]).then(()=>this.value='').catch(()=>this.value='')">
+        </label>
+        <div style="margin-top:10px;font-size:11px;color:var(--amber);background:var(--amberbg);border:1px solid var(--amberb);border-radius:6px;padding:8px 12px;">
+          ⚠ Restore akan OVERWRITE semua data semasa. Sistem akan minta pengesahan 2 kali sebelum proceed.
+        </div>
+      </div>
+
+      <!-- Audit Log Section -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📋 Audit Log</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Rekod semua tindakan edit, cipta, dan padam order dalam sistem.</div>
+        <button onclick="loadAuditLogInline()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📋 Muatkan Audit Log</button>
+        <div id="auditLogInline" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Cloud Backups List -->
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">☁ Senarai Backup Cloud</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Semua backup yang disimpan dalam Supabase.</div>
+        <button onclick="loadCloudBackups()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Muatkan Senarai</button>
+        <div id="cloudBackupsList" style="margin-top:16px;"></div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadAuditLogInline() {
+  const el = document.getElementById('auditLogInline');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=200');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--textm);">Tiada log lagi.</div>'; return; }
+
+    el.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<thead><tr style="background:var(--bg3);">'
+      + ['Masa','User','Tindakan','Order ID','Perubahan'].map(h =>
+          `<th style="padding:7px 10px;text-align:left;color:var(--textm);font-size:9px;font-family:\'Fira Code\',monospace;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;">${h}</th>`
+        ).join('') + '</tr></thead><tbody>'
+      + rows.map((r,i) => {
+          const dt = new Date(r.created_at).toLocaleString('ms-MY');
+          const ac = r.action==='delete'?'var(--red)':r.action==='create'?'var(--green)':'var(--blue)';
+          const al = r.action==='delete'?'🗑 Padam':r.action==='create'?'✚ Cipta':'✏️ Edit';
+          const ch = r.changes
+            ? Object.keys(r.changes).slice(0,3).map(k =>
+                `<span style="color:var(--textm)">${k}</span>`).join(', ') + (Object.keys(r.changes).length>3?'...':'')
+            : (r.snapshot ? (r.snapshot.name_job||'').slice(0,30) : '—');
+          return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+            <td style="padding:6px 10px;color:var(--textm);white-space:nowrap;">${dt}</td>
+            <td style="padding:6px 10px;color:var(--text);font-weight:600;">${r.user_name||'—'}</td>
+            <td style="padding:6px 10px;"><span style="color:${ac};font-weight:600;">${al}</span></td>
+            <td style="padding:6px 10px;color:var(--textm);font-size:10px;">${(r.order_id||'—').slice(0,20)}</td>
+            <td style="padding:6px 10px;color:var(--textd);font-size:10px;">${ch}</td>
+          </tr>`;
+        }).join('')
+      + '</tbody></table></div>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal: ' + e.message + '</div>';
+  }
+}
+
+async function loadCloudBackups() {
+  const el = document.getElementById('cloudBackupsList');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('backup_snapshots', 'select=id,label,created_by,order_count,created_at&order=created_at.desc&limit=20');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="font-size:12px;color:var(--textm);">Tiada backup lagi.</div>'; return; }
+
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      + '<thead><tr style="background:var(--bg3);">'
+      + ['Label','Dibuat oleh','Order','Tarikh'].map(h =>
+          `<th style="padding:7px 10px;text-align:left;color:var(--textm);font-size:9px;font-family:\'Fira Code\',monospace;letter-spacing:.08em;text-transform:uppercase;">${h}</th>`
+        ).join('') + '</tr></thead><tbody>'
+      + rows.map((r,i) => `
+        <tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+          <td style="padding:7px 10px;color:var(--text);font-weight:600;">${r.label||'—'}</td>
+          <td style="padding:7px 10px;color:var(--textd);">${r.created_by||'—'}</td>
+          <td style="padding:7px 10px;color:var(--blue);font-family:\'Fira Code\',monospace;">${r.order_count||'—'}</td>
+          <td style="padding:7px 10px;color:var(--textm);">${new Date(r.created_at).toLocaleString('ms-MY')}</td>
+        </tr>`).join('')
+      + '</tbody></table>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal: ' + e.message + '</div>';
+  }
+}
+
+
+function showSecurityView() {
+  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  setAllViewsHidden();
+  document.getElementById('securityView').style.display = 'block';
+  renderSecurityView();
+}
+
+
+
+async function loadAuditLogInline() {
+  const el = document.getElementById('auditLogInline');
+  el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Memuatkan...</div>';
+  try {
+    const rows = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=200');
+    if (!rows || !rows.length) { el.innerHTML = '<div style="color:var(--textm);font-size:12px;">Tiada log lagi.</div>'; return; }
+    const actionColor = a => a==='delete'?'var(--red)':a==='create'?'var(--green)':'var(--blue)';
+    const actionLabel = a => a==='delete'?'🗑 Padam':a==='create'?'✚ Cipta':'✏️ Edit';
+    el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="background:var(--bg3);">
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);white-space:nowrap;">Masa</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">User</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Tindakan</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Order ID</th>
+        <th style="padding:7px 10px;text-align:left;color:var(--textm);">Perubahan</th>
+      </tr></thead>
+      <tbody>${rows.map((r,i) => {
+        const dt = new Date(r.created_at).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'});
+        const changes = r.changes ? Object.keys(r.changes).slice(0,3).map(k =>
+          `<div><span style="color:var(--textm)">${k}:</span> <span style="color:var(--red)">${JSON.stringify(r.changes[k].old||'').slice(0,25)}</span> → <span style="color:var(--green)">${JSON.stringify(r.changes[k].new||'').slice(0,25)}</span></div>`
+        ).join('') : (r.snapshot ? `<span style="color:var(--textm)">${JSON.stringify(r.snapshot).slice(0,60)}</span>` : '—');
+        return `<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+          <td style="padding:7px 10px;white-space:nowrap;">${dt}</td>
+          <td style="padding:7px 10px;font-weight:600;">${r.user_name||'—'}</td>
+          <td style="padding:7px 10px;"><span style="color:${actionColor(r.action)};font-weight:600;">${actionLabel(r.action)}</span></td>
+          <td style="padding:7px 10px;font-size:10px;color:var(--textm);">${(r.order_id||'—').slice(0,20)}</td>
+          <td style="padding:7px 10px;">${changes}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Gagal muatkan: ' + e.message + '</div>';
+  }
+}
+
+async function showBackupHistory() {
+  try {
+    const rows = await supaGet('backup_snapshots', 'select=id,label,created_by,order_count,created_at&order=created_at.desc&limit=20');
+    if (!rows || !rows.length) { showToast('Tiada backup lagi', true); return; }
+    const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.remove()">
+      <div style="background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:24px;width:600px;max-width:95vw;max-height:80vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-size:16px;font-weight:700;color:var(--text);">☁ History Backup</div>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--bg3);">
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Label</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Oleh</th>
+            <th style="padding:8px 10px;text-align:right;color:var(--textm);">Orders</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--textm);">Masa</th>
+          </tr></thead>
+          <tbody>${rows.map((r,i)=>`<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--bg)':'var(--bg3)'}">
+            <td style="padding:8px 10px;font-weight:600;color:var(--text);">${r.label||'—'}</td>
+            <td style="padding:8px 10px;color:var(--textd);">${r.created_by||'—'}</td>
+            <td style="padding:8px 10px;text-align:right;font-family:'Fira Code',monospace;">${r.order_count||0}</td>
+            <td style="padding:8px 10px;color:var(--textm);">${new Date(r.created_at).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'})}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) { showToast('Gagal: ' + e.message, true); }
+}
+window.showSecurityView = showSecurityView;
+window.loadAuditLogInline = loadAuditLogInline;
+window.showBackupHistory = showBackupHistory;
+
+
+// ══════════════════════════════════════
+// DEADLINE CALCULATOR — FASA 1
+// ══════════════════════════════════════
+
+function getMYTToday() {
+  const now = new Date();
+  const myt = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
+  myt.setHours(0, 0, 0, 0);
+  return myt;
+}
+
+function calcDeadline() {
+  const custDateVal = document.getElementById('f_duedate').value; // ambil dari field due date yang sedia ada
+  const artwork     = document.getElementById('dc_artwork').value;
+  const delivery    = document.getElementById('dc_delivery').value;
+
+  const resultEl      = document.getElementById('dc_result');
+  const placeholderEl = document.getElementById('dc_placeholder');
+
+  if (!custDateVal || !artwork || !delivery) {
+    resultEl.style.display      = 'none';
+    placeholderEl.style.display = 'block';
+    return;
+  }
+
+  // Lead times (hari)
+  const LT_PROD_NORMAL  = 7;
+  const LT_PROD_URGENT  = 3;
+  const LT_DESIGN       = artwork === 'yes' ? 0 : 3;
+  const LT_BUFFER       = 1;
+  const LT_POSTAGE      = delivery === 'collect' ? 0 : delivery === 'pos_sm' ? 2 : 5;
+
+  const custDate = new Date(custDateVal);
+  custDate.setHours(12,0,0,0);
+  const today    = getMYTToday();
+
+  // Kira backward dari tarikh customer
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  const subDays = (d, n) => addDays(d, -n);
+  const fmtD    = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric'});
+  const fmtDShort = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short'});
+
+  const dateCollect   = subDays(custDate, LT_POSTAGE);         // bila kena pos/collect
+  const dateKilangSiap = subDays(dateCollect, LT_BUFFER);      // kilang kena siap
+  const dateHantarKilang = subDays(dateKilangSiap, LT_PROD_NORMAL); // file kena hantar kilang (normal)
+  const dateHantarUrgent = subDays(dateKilangSiap, LT_PROD_URGENT); // file kena hantar kilang (urgent)
+  const dateApproveDesign = subDays(dateHantarKilang, LT_DESIGN > 0 ? 0 : 0); // bila file final kena ready
+  const dateDepositDeadline = LT_DESIGN > 0 ? subDays(dateHantarKilang, LT_DESIGN) : dateHantarKilang;
+
+  // Berapa hari dari sekarang ke deadline deposit
+  const daysToDeadline = Math.round((dateDepositDeadline - today) / 86400000);
+  const daysToHantar   = Math.round((dateHantarKilang - today) / 86400000);
+
+  // Tentukan urgency
+  let urgency, urgColor, urgBg, urgIcon, urgDesc;
+  if (daysToHantar < 0) {
+    urgency = '🚫 MUSTAHIL'; urgIcon = '🚫';
+    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
+    urgDesc = 'Tarikh dah lepas. Maklumkan customer dan escalate ke supervisor untuk cari kilang backup.';
+  } else if (daysToHantar <= LT_PROD_URGENT) {
+    urgency = '🔴 URGENT — Caj Tambahan RM10/pcs'; urgIcon = '🔴';
+    urgColor = 'var(--red)'; urgBg = 'var(--redbg)';
+    urgDesc = 'Masa terlalu singkat untuk produksi normal. Perlu slot urgent (3 hari). Ada caj tambahan RM10/pcs — maklumkan customer dan dapatkan persetujuan dulu sebelum proceed.';
+  } else if (daysToDeadline <= 2) {
+    urgency = '🟡 PRIORITI — Ketat'; urgIcon = '🟡';
+    urgColor = 'var(--amber)'; urgBg = 'var(--amberbg)';
+    urgDesc = 'Masa ada tapi ketat. Customer kena confirm design dan bayar deposit hari ini atau esok.';
+  } else {
+    urgency = '🟢 NORMAL — Masa Mencukupi'; urgIcon = '🟢';
+    urgColor = 'var(--green)'; urgBg = 'var(--greenbg)';
+    urgDesc = 'Masa mencukupi untuk proses design dan produksi mengikut SOP biasa.';
+  }
+
+  // Build timeline items
+  const tlItems = [];
+  if (LT_DESIGN > 0) {
+    tlItems.push({ label: '📋 Deadline deposit + brief customer', date: dateDepositDeadline, highlight: true });
+    tlItems.push({ label: '🎨 Deadline customer approve design', date: dateHantarKilang, highlight: false });
+  } else {
+    tlItems.push({ label: '📋 Deadline deposit + artwork dari customer', date: dateDepositDeadline, highlight: true });
+  }
+  if (delivery !== 'collect') {
+    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
+    tlItems.push({ label: `🚚 Tarikh pos (${delivery === 'pos_sm' ? 'Semenanjung' : 'Sabah/Sarawak'})`, date: dateCollect, highlight: false });
+  } else {
+    tlItems.push({ label: '📦 Tarikh kilang kena siap', date: dateKilangSiap, highlight: false });
+    tlItems.push({ label: '🏠 Tarikh self collect', date: custDate, highlight: false });
+  }
+
+  const timelineHTML = tlItems.map(t => {
+    const isPast = t.date < today;
+    return `<div style="display:flex;align-items:baseline;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);">
+      <span style="font-size:12px;color:${t.highlight ? 'var(--text)' : 'var(--textd)'};font-weight:${t.highlight?'700':'400'};">${t.label}</span>
+      <span style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${isPast ? 'var(--red)' : t.highlight ? 'var(--blue)' : 'var(--textd)'};">${fmtD(t.date)}</span>
+    </div>`;
+  }).join('');
+
+  // Build WA message
+  const deliveryLabel = delivery === 'collect' ? 'self collect' : delivery === 'pos_sm' ? 'penghantaran pos (Semenanjung)' : 'penghantaran pos (Sabah/Sarawak)';
+  const artworkLine   = artwork === 'yes'
+    ? `Oleh kerana tuan/puan ada artwork sendiri, kami boleh terus proses selepas bayaran deposit diterima.`
+    : `Proses design akan mengambil masa 1-3 hari bergantung kepada bilangan pindaan. Untuk pastikan tarikh siap dijaga, kami mohon kerjasama tuan/puan untuk memberi respon dengan segera bagi setiap draft design yang kami hantar.`;
+  const urgentLine    = daysToHantar <= LT_PROD_URGENT && daysToHantar >= 0
+    ? `\n⚠️ *Nota Penting:* Disebabkan tempoh yang singkat, ada caj tambahan *RM10 setiap helai* untuk slot urgent produksi. Sila konfirmasi penerimaan caj ini sebelum kami proceed.`
+    : '';
+  const mustahilLine  = daysToHantar < 0
+    ? `\n🚫 *Maaf, kami tidak dapat memenuhi tarikh tersebut.* Pasukan kami akan menghubungi tuan/puan untuk membincangkan tarikh alternatif atau penyelesaian lain.`
+    : '';
+
+  const waMsg = `Assalamualaikum / Selamat sejahtera,
+
+Terima kasih kerana menghubungi DOD Worldwide Supplies! 🙏
+
+Berdasarkan tarikh yang tuan/puan nyatakan *(${fmtD(custDate)})* dengan kaedah ${deliveryLabel}:
+
+📌 *Tarikh akhir deposit + ${artwork === 'yes' ? 'hantar artwork' : 'brief design'}: ${fmtD(dateDepositDeadline)}*
+${LT_DESIGN > 0 ? `📌 *Tarikh akhir approve design: ${fmtD(dateHantarKilang)}*\n` : ''}
+${artworkLine}${urgentLine}${mustahilLine}
+
+Sebarang pertanyaan, jangan segan untuk bertanya. Kami sedia membantu! 😊
+
+DOD Worldwide Supplies`;
+
+  // Update DOM
+  document.getElementById('dc_urgency_flag').style.cssText = `background:${urgBg};border:1px solid ${urgColor}33;color:${urgColor};margin-bottom:10px;padding:10px 14px;border-radius:8px;display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:13px;`;
+  document.getElementById('dc_urgency_flag').innerHTML = `<div>${urgency}</div><div style="font-size:11px;font-weight:400;color:var(--textd);line-height:1.5;">${urgDesc}</div>`;
+  document.getElementById('dc_timeline').innerHTML = timelineHTML;
+  document.getElementById('dc_wa_msg').textContent  = waMsg;
+  window._dcWaMsg = waMsg;
+
+  resultEl.style.display      = 'block';
+  placeholderEl.style.display = 'none';
+}
+
+function copyWAMsg() {
+  const msg = window._dcWaMsg || '';
+  if (!msg) return;
+  navigator.clipboard.writeText(msg).then(() => {
+    showToast('Mesej WA disalin! ✓');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = msg; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Mesej WA disalin! ✓');
+  });
+}
+window.calcDeadline = calcDeadline;
+window.copyWAMsg = copyWAMsg;
+
 
 function getProdUrgency(r) {
   if (!r.production_date || !isPipelineSales(r)) return 'NONE';
@@ -6519,41 +7120,6 @@ function getProdUrgency(r) {
   if (diffDays < 0)  return 'OVERDUE';
   if (diffDays <= 3) return 'ALMOST';
   return 'OK';
-}
-
-function calcKomisyenTiered(revenue) {
-  if (revenue <= 0) return 0;
-  const tiers = [
-    { max: 5000,  rate: 0.03 },
-    { max: 15000, rate: 0.05 },
-    { max: 25000, rate: 0.07 },
-    { max: 40000, rate: 0.08 },
-    { max: Infinity, rate: 0.10 },
-  ];
-  let kom = 0, remaining = revenue, prev = 0;
-  for (const tier of tiers) {
-    const chunk = Math.min(remaining, tier.max - prev);
-    if (chunk <= 0) break;
-    kom += chunk * tier.rate;
-    remaining -= chunk;
-    prev = tier.max;
-    if (remaining <= 0) break;
-  }
-  return kom;
-}
-
-function getTieredBreakdown(revenue) {
-  const tiers = [
-    { min:0,      max: 5000,     rate: 0.03, label:'Tier 1 (3%)' },
-    { min:5000,   max: 15000,    rate: 0.05, label:'Tier 2 (5%)' },
-    { min:15000,  max: 25000,    rate: 0.07, label:'Tier 3 (7%)' },
-    { min:25000,  max: 40000,    rate: 0.08, label:'Tier 4 (8%)' },
-    { min:40000,  max: Infinity, rate: 0.10, label:'Tier 5 (10%)' },
-  ];
-  return tiers.filter(t => revenue > t.min).map(t => {
-    const chunk = Math.min(revenue - t.min, t.max - t.min);
-    return { label: t.label, base: chunk, kom: chunk * t.rate };
-  });
 }
 
 function openAddModalFromCust() {
@@ -6571,13 +7137,7 @@ function _prefillCust(c) {
   set('f_cust_addr', c.addr);
   showToast('✓ Maklumat customer dah diisi');
 }
-
-function toggleProdStatus(st, btn) {
-  activeFilters.prodStatus = st;
-  btn.closest('.filter-btns').querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  renderAll();
-}
+window.openAddModalFromCust = openAddModalFromCust;
 
 function filterProdTrackBySupplier(sup, btn) {
   window._prodSupFilter = sup;
@@ -6587,6 +7147,20 @@ function filterProdTrackBySupplier(sup, btn) {
   }
   renderProdTrack();
 }
+window.filterProdTrackBySupplier = filterProdTrackBySupplier;
+
+
+// ══════════════════════════════════════
+// DOCUMENT STORAGE
+// ══════════════════════════════════════
+
+const DOC_TYPE_LABEL = {
+  invoice:   { icon: '🧾', label: 'Invoice' },
+  quotation: { icon: '📋', label: 'Quotation' },
+  receipt:   { icon: '✅', label: 'Receipt' },
+  po:        { icon: '📦', label: 'PO Supplier' },
+  reminder:  { icon: '📝', label: 'Reminder Letter' },
+};
 
 async function saveDocSnapshot(order, docType, payload) {
   try {
@@ -6654,439 +7228,45 @@ async function openSavedDoc(docId) {
   }
 }
 
-async function saveUserToSupabase(u) {
-  try {
-    await supaFetch('/rest/v1/users', {
-      method: 'POST',
-      prefer: 'resolution=merge-duplicates',
-      body: JSON.stringify([{
-        id: u.id, name: u.name, role: u.role,
-        color: u.color || '#1A5CC8',
-        bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
-        active: u.active !== false,
-        created: u.created || new Date().toISOString(),
-        last_login: u.lastLogin || null,
-      }]),
-    });
-  } catch(e) {
-    console.warn('Save user to Supabase failed:', e);
-  }
-}
-
-async function showPaymentsView() {
-  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
-  setAllViewsHidden();
-  document.getElementById('paymentsView').classList.add('active');
-  renderPaymentsView();
-}
-
-async function renderPaymentsView() {
-  const el = document.getElementById('paymentsContent');
-  if (!el) return;
-
-  // Collect all payment records
-  const payments = [];
-  Object.entries(sessionData).forEach(([month, orders]) => {
-    orders.forEach(o => {
-      if (!isPipelineSales(o)) return;
-      // 1st payment
-      if ((o.first_payment||0) > 0) {
-        payments.push({
-          type: '1st',
-          order_id: o.id,
-          name_job: o.name_job,
-          cust_name: o.cust_name || '—',
-          pic: o.pic,
-          month,
-          amount: o.first_payment,
-          date: o.pay1_date || o.order_date || '',
-          time: o.pay1_time || '',
-          method: o.pay1_method || '—',
-          ref: o.pay1_ref || '',
-          has_os: (o.balance_customer||0) > 0,
-          inv_number: o.inv_number_supplier || o.inv_number || '',
-        });
-      }
-      // 2nd payment
-      if ((o.pay2_amount||0) > 0) {
-        payments.push({
-          type: '2nd',
-          order_id: o.id,
-          name_job: o.name_job,
-          cust_name: o.cust_name || '—',
-          pic: o.pic,
-          month,
-          amount: o.pay2_amount,
-          date: o.pay2_date || '',
-          time: o.pay2_time || '',
-          method: o.pay2_method || '—',
-          ref: o.pay2_ref || '',
-          has_os: false,
-          inv_number: o.inv_number_supplier || o.inv_number || '',
-        });
-      }
-    });
-  });
-
-  // Apply filters
-  let filtered = payments;
-  if (payFilterMonth !== 'ALL') filtered = filtered.filter(p => p.month === payFilterMonth);
-  if (payFilterMethod !== 'ALL') filtered = filtered.filter(p => p.method === payFilterMethod);
-  if (payFilterPic !== 'ALL') filtered = filtered.filter(p => p.pic === payFilterPic);
-
-  // Sort by date desc
-  filtered.sort((a,b) => {
-    const da = (a.date||'') + (a.time||'');
-    const db = (b.date||'') + (b.time||'');
-    return db.localeCompare(da);
-  });
-
-  const totalIn = filtered.reduce((s,p) => s + (p.amount||0), 0);
-  const totalPay1 = filtered.filter(p=>p.type==='1st').reduce((s,p)=>s+(p.amount||0),0);
-  const totalPay2 = filtered.filter(p=>p.type==='2nd').reduce((s,p)=>s+(p.amount||0),0);
-
-  // Build month options
-  const months = [...new Set(payments.map(p=>p.month))].sort().reverse();
-  const monthOpts = `<option value="ALL">Semua Bulan</option>` +
-    months.map(m => `<option value="${m}" ${m===payFilterMonth?'selected':''}>${MONTH_LABELS[m]||m}</option>`).join('');
-
-  // Build method options
-  const methods = [...new Set(payments.map(p=>p.method).filter(m=>m&&m!=='—'))].sort();
-  const methodOpts = `<option value="ALL">Semua Kaedah</option>` +
-    methods.map(m => `<option value="${m}" ${m===payFilterMethod?'selected':''}>${m}</option>`).join('');
-
-  // Build pic options
-  const pics = [...new Set(payments.map(p=>p.pic).filter(Boolean))].sort();
-  const picOpts = `<option value="ALL">Semua Staff</option>` +
-    pics.map(p => `<option value="${p}" ${p===payFilterPic?'selected':''}>${p}</option>`).join('');
-
-  const methodColors = {
-    'Transfer Bank': '#1A5CC8',
-    'QR': '#0F7A48',
-    'Cash': '#B8720A',
-    'Cheque': '#6E30C8',
-  };
-
-  el.innerHTML = `
-    <div style="max-width:1100px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-        <div>
-          <div style="font-size:20px;font-weight:700;color:var(--text);">💰 Rekod Penerimaan</div>
-          <div style="font-size:12px;color:var(--textm);">Semua bayaran yang diterima dari customer</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <select onchange="payFilterMonth=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${monthOpts}</select>
-          <select onchange="payFilterMethod=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${methodOpts}</select>
-          <select onchange="payFilterPic=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${picOpts}</select>
-        </div>
-      </div>
-
-      <!-- Summary strip -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--green);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Jumlah Masuk</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--green);">${fmt(totalIn)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.length} transaksi</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--blue);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Deposit (1st)</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--blue);">${fmt(totalPay1)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.filter(p=>p.type==='1st').length} bayaran</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--amber);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Baki (2nd)</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--amber);">${fmt(totalPay2)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.filter(p=>p.type==='2nd').length} bayaran</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--red);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Ada OS Lagi</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--red);">${filtered.filter(p=>p.has_os).length}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">order belum settle</div>
-        </div>
-      </div>
-
-      <!-- Table -->
-      ${filtered.length === 0 ? `<div style="text-align:center;padding:60px;color:var(--textm);">Tiada rekod bayaran dijumpai</div>` : `
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:var(--bg3);">
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;">Tarikh & Masa</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Customer</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Job</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">PIC</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Jenis</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Kaedah</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Ref</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Amaun</th>
-              <th style="padding:10px 12px;text-align:center;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filtered.map((p,i) => {
-              const methodColor = methodColors[p.method] || 'var(--textm)';
-              const rowBg = i%2===0 ? 'var(--bg)' : 'var(--bg3)';
-              return `<tr style="border-bottom:1px solid var(--line);background:${rowBg};">
-                <td style="padding:9px 12px;white-space:nowrap;">
-                  <div style="font-weight:600;color:var(--text);">${p.date||'—'}</div>
-                  ${p.time?`<div style="font-size:10px;color:var(--textm);">${p.time}</div>`:''}
-                </td>
-                <td style="padding:9px 12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">${p.cust_name}</td>
-                <td style="padding:9px 12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--textd);font-size:11px;">${p.name_job||'—'}</td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:var(--bg3);color:var(--textd);">${p.pic||'—'}</span>
-                </td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${p.type==='1st'?'#DBEAFE':'#FEF3C7'};color:${p.type==='1st'?'var(--blue)':'var(--amber)'};">${p.type==='1st'?'Deposit':'Baki'}</span>
-                </td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:11px;font-weight:600;color:${methodColor};">${p.method}</span>
-                </td>
-                <td style="padding:9px 12px;font-size:11px;color:var(--textm);font-family:'Fira Code',monospace;">${p.ref||'—'}</td>
-                <td style="padding:9px 12px;text-align:right;font-family:'Fira Code',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</td>
-                <td style="padding:9px 12px;text-align:center;">
-                  ${p.has_os
-                    ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">Ada OS</span>`
-                    : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--greenbg);color:var(--green);font-weight:600;">✓ Selesai</span>`
-                  }
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-          <tfoot>
-            <tr style="background:var(--bg2);border-top:2px solid var(--line);">
-              <td colspan="7" style="padding:10px 12px;font-weight:700;color:var(--text);">JUMLAH (${filtered.length} transaksi)</td>
-              <td style="padding:10px 12px;text-align:right;font-family:'Fira Code',monospace;font-weight:700;font-size:14px;color:var(--green);">${fmt(totalIn)}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>`}
-    </div>`;
-}
-
-function showSecurityView() {
-  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
-  setAllViewsHidden();
-  document.getElementById('securityView').classList.add('active');
-  renderSecurityView();
-}
-
-function renderSecurityView() {
-  const el = document.getElementById('securityContent');
-  if (!el) return;
-
-  el.innerHTML = `
-    <div style="max-width:860px;">
-      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">🛡 Security & Data Management</div>
-      <div style="font-size:12px;color:var(--textm);margin-bottom:28px;">Kawalan akses kepada admin sahaja. Semua tindakan di sini dilog dalam audit trail.</div>
-
-      <!-- Export & Backup Section -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">💾 Export & Backup Data</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Download salinan data untuk simpanan atau analisis luar.</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="exportCSV()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📊 Export CSV</button>
-          <button onclick="exportJSON()" style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">💾 Backup JSON</button>
-          <button onclick="saveBackupToSupabase(prompt('Label backup (contoh: Manual-Apr-2026):') || 'Manual-'+new Date().toISOString().slice(0,10))" style="padding:9px 18px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Backup ke Cloud</button>
-        </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--textm);">Auto backup: Setiap Isnin secara automatik bila admin login. Backup disimpan dalam Supabase.</div>
-      </div>
-
-      <!-- Restore Section -->
-      <div style="background:var(--bg2);border:1px solid var(--amberb);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">⚠ Restore Backup</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Upload fail JSON backup untuk pulihkan data. Sistem akan auto-backup data semasa sebelum restore.</div>
-        <label style="display:inline-block;padding:9px 18px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
-          📂 Pilih Fail Backup (.json)
-          <input type="file" accept=".json" style="display:none;" onchange="restoreBackup(this.files[0]).then(()=>this.value='').catch(()=>this.value='')">
-        </label>
-        <div style="margin-top:10px;font-size:11px;color:var(--amber);background:var(--amberbg);border:1px solid var(--amberb);border-radius:6px;padding:8px 12px;">
-          ⚠ Restore akan OVERWRITE semua data semasa. Sistem akan minta pengesahan 2 kali sebelum proceed.
-        </div>
-      </div>
-
-      <!-- Audit Log Section -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📋 Audit Log</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Rekod semua tindakan edit, cipta, dan padam order dalam sistem.</div>
-        <button onclick="loadAuditLogInline()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📋 Muatkan Audit Log</button>
-        <div id="auditLogInline" style="margin-top:16px;"></div>
-      </div>
-
-      <!-- Cloud Backups List -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">☁ Senarai Backup Cloud</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Semua backup yang disimpan dalam Supabase.</div>
-        <button onclick="loadCloudBackups()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Muatkan Senarai</button>
-        <div id="cloudBackupsList" style="margin-top:16px;"></div>
-      </div>
-    </div>
-  `;
-}
-
-function exportCSV() {
-  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
-    orders.map(o => ({ ...o, _month: month }))
-  );
-  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
-
-  const cols = [
-    '_month','pic','status','pipeline_status','name_job','source','channel',
-    'pcs','order_date','inv_date','due_date','inv_number','inv_number_supplier',
-    'total_customer','first_payment','balance_customer','profit',
-    'nohad_amount','nohad_paid','supplier_outstanding','supplier_payment_status',
-    'cust_name','cust_tel','cust_addr','supplier_name',
-    'production_date','production_status',
-  ];
-
-  const escape = v => {
-    if (v === null || v === undefined) return '';
-    const s = String(v);
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
-
-  const header = cols.join(',');
-  const rows = allOrders.map(o => cols.map(c => escape(o[c])).join(','));
-  const csv = [header, ...rows].join('\n');
-
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'DOD-orders-' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✓ CSV exported (' + allOrders.length + ' orders)');
-}
-
-function exportJSON() {
-  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
-    orders.map(o => ({ ...o, _month: month }))
-  );
-  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
-
-  const payload = {
-    exported_at: new Date().toISOString(),
-    exported_by: currentUser?.name || 'unknown',
-    order_count: allOrders.length,
-    orders: allOrders,
-  };
-
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'DOD-backup-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✓ JSON backup exported (' + allOrders.length + ' orders)');
-}
-
-function diffOrder(oldObj, newObj) {
-  if (!oldObj) return null;
-  const changes = {};
-  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-  const skipKeys = ['_month'];
-  allKeys.forEach(k => {
-    if (skipKeys.includes(k)) return;
-    const ov = JSON.stringify(oldObj[k]);
-    const nv = JSON.stringify(newObj[k]);
-    if (ov !== nv) {
-      changes[k] = { old: oldObj[k], new: newObj[k] };
-    }
-  });
-  return Object.keys(changes).length ? changes : null;
-}
-
-async function logAudit(orderId, action, changes, snapshot) {
-  try {
-    const entry = {
-      order_id:   orderId || null,
-      user_name:  currentUser?.name || 'unknown',
-      action,
-      changes:    changes || null,
-      snapshot:   snapshot || null,
-      created_at: new Date().toISOString(),
-    };
-    await supaFetch('/rest/v1/audit_log', {
-      method: 'POST',
-      body: JSON.stringify(entry),
-    });
-  } catch(e) {
-    console.warn('Audit log failed (non-critical):', e);
-  }
-}
-
-function showKpiDashboard(staffFilter, monthFilter) {
-  if (staffFilter !== undefined) kpiFilterStaff = staffFilter;
-  if (monthFilter !== undefined) kpiFilterMonth = monthFilter;
-  renderKpiDashboard();
-}
-
-function setSidebarActive(id) {
-  _activeSidebarItem = id;
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  const el = document.getElementById('si_' + id);
-  if (el) el.classList.add('active');
-}
-
-window.setSidebarActive = setSidebarActive;
-window.showKpiDashboard = showKpiDashboard;
-window.exportCSV = exportCSV;
-window.exportJSON = exportJSON;
-window.showSecurityView = showSecurityView;
-window.openAddModalFromCust = openAddModalFromCust;
-window.filterProdTrackBySupplier = filterProdTrackBySupplier;
 window.loadSavedDocs = loadSavedDocs;
 window.openSavedDoc = openSavedDoc;
 window.saveDocSnapshot = saveDocSnapshot;
-window.showPaymentsView = showPaymentsView;
-window.renderPaymentsView = renderPaymentsView;
 
 
-
-function recalcOS() {
-  const rev  = parseFloat(document.getElementById('f_rev')?.value) || 0;
-  const pay1 = parseFloat(document.getElementById('f_pay1')?.value) || 0;
-  const pay2 = parseFloat(document.getElementById('f_pay2')?.value) || 0;
-  const os   = Math.max(0, rev - pay1 - pay2);
-  const el   = document.getElementById('f_cust_os_display');
-  if (el) el.value = os > 0 ? 'RM ' + os.toFixed(2) : '✓ Selesai';
-}
-
-
-async function syncUsersFromSupabase() {
-  try {
-    const rows = await supaGet('users', 'select=*');
-    if (!rows || !rows.length) return;
-    const store = {};
-    rows.forEach(u => {
-      store[u.id] = {
-        id: u.id, name: u.name, role: u.role,
-        color: u.color || '#1A5CC8', bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
-        active: u.active !== false,
-        created: u.created || new Date().toISOString(),
-        lastLogin: u.last_login || null,
-      };
-    });
-    _userStoreCache = store;
-    localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-    // Update USERS runtime object
-    Object.values(store).forEach(u => {
-      if (USERS[u.id]) USERS[u.id].role = u.role;
-    });
-  } catch(e) {
-    console.warn('User sync from Supabase failed:', e);
+// Komisyen tiered untuk Sales Executive (Danial & role sales_executive)
+function calcKomisyenTiered(revenue) {
+  if (revenue <= 0) return 0;
+  const tiers = [
+    { max: 5000,  rate: 0.03 },
+    { max: 15000, rate: 0.05 },
+    { max: 25000, rate: 0.07 },
+    { max: 40000, rate: 0.08 },
+    { max: Infinity, rate: 0.10 },
+  ];
+  let kom = 0, remaining = revenue, prev = 0;
+  for (const tier of tiers) {
+    const chunk = Math.min(remaining, tier.max - prev);
+    if (chunk <= 0) break;
+    kom += chunk * tier.rate;
+    remaining -= chunk;
+    prev = tier.max;
+    if (remaining <= 0) break;
   }
+  return kom;
 }
 
-
-
+function getTieredBreakdown(revenue) {
+  const tiers = [
+    { min:0,      max: 5000,     rate: 0.03, label:'Tier 1 (3%)' },
+    { min:5000,   max: 15000,    rate: 0.05, label:'Tier 2 (5%)' },
+    { min:15000,  max: 25000,    rate: 0.07, label:'Tier 3 (7%)' },
+    { min:25000,  max: 40000,    rate: 0.08, label:'Tier 4 (8%)' },
+    { min:40000,  max: Infinity, rate: 0.10, label:'Tier 5 (10%)' },
+  ];
+  return tiers.filter(t => revenue > t.min).map(t => {
+    const chunk = Math.min(revenue - t.min, t.max - t.min);
+    return { label: t.label, base: chunk, kom: chunk * t.rate };
+  });
+}
 
 </script>
-</body>
-</html>
