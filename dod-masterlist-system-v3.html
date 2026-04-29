@@ -968,6 +968,13 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- HOME VIEW -->
       <div class="view active" id="homeView">
+        <div id="heroMonth" style="display:none;"></div>
+        <div id="homeDate" style="display:none;"></div>
+        <div id="homeKpiStrip" style="display:none;"></div>
+        <div id="homeBottomPanels" style="display:none;"></div>
+        <div id="homeTrendBars" style="display:none;"></div>
+        <div id="homeRecentOrders" style="display:none;"></div>
+        <div id="homeNavGrid" style="display:none;"></div>
         <div class="home-greeting-eyebrow" id="homeEyebrow">DOD WORLDWIDE SUPPLIES · SISTEM DALAMAN</div>
         <div class="home-greeting-title" id="homeGreeting">Selamat datang.</div>
         <div class="home-greeting-sub" id="homeGreetingSub">Log masuk sebagai — · —</div>
@@ -1005,6 +1012,14 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- MASTERLIST VIEW -->
       <div class="view" id="masterlistView">
+        <div id="tableCount" style="display:none;"></div>
+        <div id="picBreakdown" style="display:none;"></div>
+        <div id="channelChart" style="display:none;"></div>
+        <div id="detailPanel" class="detail-panel"></div>
+        <div id="detailBody" style="display:none;"></div>
+        <div id="detailActions" style="display:none;"></div>
+        <button id="btnViewToggle" style="display:none;" onclick="openJobBoard()"></button>
+        <select id="sourceFilter" style="display:none;" onchange="applyFilters()"></select>
         <div class="ml-toolbar">
           <input class="ml-search" id="searchInput" type="text" placeholder="Cari nama job, customer, invois..." oninput="applyFilters()">
           <button class="ml-filter-btn" onclick="applyFilters()">🔍 Cari</button>
@@ -1043,6 +1058,10 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- CUSTOMER VIEW -->
       <div class="view" id="customerView">
+        <div id="custSubtitle" style="display:none;"></div>
+        <div id="custGrid"></div>
+        <div id="custDetailBody" style="display:none;"></div>
+        <div id="custDetailPanel" class="detail-panel"></div>
         <div id="customerContent">Memuatkan...</div>
       </div>
 
@@ -1073,11 +1092,25 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- DASHBOARD VIEW -->
       <div class="view" id="dashboardView">
+        <input id="dashInputMonth" style="display:none;">
+        <input id="dashAdsInput" style="display:none;">
+        <input id="dashLeadsInput" style="display:none;">
+        <div id="dashSaveStatus" style="display:none;"></div>
+        <div id="dashKpiStrip"></div>
+        <div id="dashPageSub" style="display:none;"></div>
+        <div id="dashSalesSub" style="display:none;"></div>
+        <div id="dashPcsSub" style="display:none;"></div>
+        <div id="dashTableSub" style="display:none;"></div>
+        <div id="dashDataTable"></div>
+        <div id="dashStaffSub" style="display:none;"></div>
+        <div id="dashStaffCards"></div>
         <div id="dashboardContent">Memuatkan...</div>
       </div>
 
       <!-- USER MGMT VIEW -->
       <div class="view" id="userMgmtView">
+        <div id="umFormTitle" style="display:none;"></div>
+        <div id="umFormBody" style="display:none;"></div>
         <div id="umUserCount"></div>
         <div id="umUserList"></div>
       </div>
@@ -1089,6 +1122,7 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- DESIGNER VIEW -->
       <div class="view" id="designerView">
+        <div id="boardDate" style="display:none;"></div>
         <div id="designerContent">Memuatkan...</div>
       </div>
 
@@ -2064,50 +2098,17 @@ loadSuppliers().catch(() => {});
 
 function setupNavForRole() {
   const role = currentUser.role;
+  // Render sidebar navigation
   renderSidebar();
-  // Nav user chip
+  // Legacy nav elements (optional - may not exist in new UI)
   const av = document.getElementById('navUserAvatar');
-  av.textContent = currentUser.name.slice(0,2);
-  av.style.background = currentUser.color;
-  document.getElementById('navUserName').textContent = '@' + currentUser.id;
-  document.getElementById('navUserRole').textContent = ROLE_LABELS[role];
-
-  // Buttons by role
-  const btnAdd   = document.getElementById('btnAddOrder');
-  const btnMonth = document.getElementById('btnAddMonth');
-  const btnBoard = document.getElementById('btnViewToggle');
-  const btnKpi   = document.getElementById('btnKpiView');
-
-  if (role === 'admin') {
-    btnAdd.style.display = 'block';
-    btnMonth.style.display = 'block';
-    btnBoard.style.display = 'block';
-    btnKpi.style.display = 'none';
-    document.getElementById('btnDashboard').style.display = 'block';
-    document.getElementById('btnSecurity').style.display = 'block';
-    document.getElementById('btnPayments').style.display = 'block';
-    document.getElementById('btnUserMgmt').style.display = 'block';
-    document.getElementById('btnSupplierDir').style.display = 'block';
-    document.getElementById('btnSupplierOS').style.display = 'block';
-    document.getElementById('btnProdTrack').style.display = 'block';
-    document.getElementById('btnSupplierDir').style.display = 'block';
-    document.getElementById('btnSupplierOS').style.display = 'block';
-  } else if (role === 'sales' || role === 'sales_executive') {
-    btnAdd.style.display = 'block';
-    btnMonth.style.display = 'none';
-    btnBoard.style.display = 'block';
-    btnBoard.textContent = '📋 Job Board';
-    btnKpi.style.display = 'block';
-    document.getElementById('btnProdTrack').style.display = 'block';
-  } else { // designer
-    btnAdd.style.display = 'none';
-    btnMonth.style.display = 'none';
-    btnBoard.style.display = 'none';  // hide Sales List button
-    btnKpi.style.display = 'none';
-    document.getElementById('navTabs').style.display = 'none'; // hide month tabs
-  }
+  if (av) { av.textContent = currentUser.name.slice(0,2); av.style.background = currentUser.color; }
+  const navName = document.getElementById('navUserName');
+  if (navName) navName.textContent = '@' + currentUser.id;
+  const navRole = document.getElementById('navUserRole');
+  if (navRole) navRole.textContent = ROLE_LABELS[role];
+  // Designer goes straight to jobboard (handled in initApp)
 }
-
 function toggleBoardView() {
   if (currentView === 'designer') {
     showMasterlistView();
@@ -3408,7 +3409,8 @@ function updateNavDate() {
   const now = new Date();
   const days = ['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
   const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-  document.getElementById('navDate').textContent = days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  const navDateEl = document.getElementById('navDate') || document.getElementById('topbarDate');
+  if (navDateEl) navDateEl.textContent = days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
   document.getElementById('ls-date').textContent = days[now.getDay()]+' · '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
 }
 
