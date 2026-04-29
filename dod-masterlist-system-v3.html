@@ -864,6 +864,14 @@ tr:hover .row-actions{opacity:1;}
 <div
 
 <div class="app" id="mainApp" style="display:none;">
+  <!-- Legacy nav elements (hidden - referenced by JS) -->
+  <div style="display:none;">
+    <div id="navDate"></div>
+    <div id="navUserAvatar"></div>
+    <div id="navUserName"></div>
+    <div id="navUserRole"></div>
+    <div id="supaLoading"></div>
+  </div>
 
   <!-- ══ SIDEBAR ══ -->
   <div class="sidebar" id="appSidebar">
@@ -968,6 +976,10 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- HOME VIEW -->
       <div class="view active" id="homeView">
+        <div id="homeKpiCards"></div>
+        <div id="homeAlertBar"></div>
+        <div id="homePipelineSection"></div>
+        <div id="homeSalesStats" style="display:none;"></div>
         <div id="heroMonth" style="display:none;"></div>
         <div id="homeDate" style="display:none;"></div>
         <div id="homeKpiStrip" style="display:none;"></div>
@@ -1012,6 +1024,9 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- MASTERLIST VIEW -->
       <div class="view" id="masterlistView">
+        <div id="picFilters" style="display:none;"></div>
+        <div id="f_rev" style="display:none;"></div>
+        <div id="savedDocsList" style="display:none;"></div>
         <div id="tableCount" style="display:none;"></div>
         <div id="picBreakdown" style="display:none;"></div>
         <div id="channelChart" style="display:none;"></div>
@@ -1058,6 +1073,8 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- CUSTOMER VIEW -->
       <div class="view" id="customerView">
+        <div id="custFilterBar" style="display:none;"></div>
+        <input id="custSearch" style="display:none;">
         <div id="custSubtitle" style="display:none;"></div>
         <div id="custGrid"></div>
         <div id="custDetailBody" style="display:none;"></div>
@@ -1092,6 +1109,15 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- DASHBOARD VIEW -->
       <div class="view" id="dashboardView">
+        <canvas id="dashSalesChart" style="display:none;"></canvas>
+        <canvas id="dashPcsChart" style="display:none;"></canvas>
+        <canvas id="dashRoasChart" style="display:none;"></canvas>
+        <canvas id="dashCplChart" style="display:none;"></canvas>
+        <canvas id="dashAdsLeadsChart" style="display:none;"></canvas>
+        <canvas id="dashProfitChart" style="display:none;"></canvas>
+        <canvas id="dashMarginChart" style="display:none;"></canvas>
+        <canvas id="dashChannelChart" style="display:none;"></canvas>
+        <canvas id="dashStaffChart" style="display:none;"></canvas>
         <input id="dashInputMonth" style="display:none;">
         <input id="dashAdsInput" style="display:none;">
         <input id="dashLeadsInput" style="display:none;">
@@ -1122,6 +1148,7 @@ tr:hover .row-actions{opacity:1;}
 
       <!-- DESIGNER VIEW -->
       <div class="view" id="designerView">
+        <div id="boardCols"></div>
         <div id="boardDate" style="display:none;"></div>
         <div id="designerContent">Memuatkan...</div>
       </div>
