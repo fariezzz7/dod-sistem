@@ -1886,7 +1886,7 @@ let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'',
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
-function doLogin() {
+async function doLogin() {
   const userId = document.getElementById('ls-user').value.trim().replace(/^@/,'').toLowerCase();
   const pass   = document.getElementById('ls-pass').value;
   const err    = document.getElementById('ls-err');
