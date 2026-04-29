@@ -3,264 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOD — Sistem Dalaman</title>
+<title>DOD — Masterlist Invoice System v3</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#F4F6FA; --bg2:#FFFFFF; --bg3:#EEF1F8; --bg4:#E6EAF4;
-  --line:rgba(0,0,0,0.08); --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
-  --text:#1A2040; --textd:#5A6480; --textm:#9AA0B8;
-  --amber:#B8720A; --amberbg:#FFF8EC; --amberb:rgba(184,114,10,0.2);
-  --green:#0F7A48; --greenbg:#EDFAF3; --greenb:rgba(15,122,72,0.2);
-  --red:#C02840; --redbg:#FFF0F3; --redb:rgba(192,40,64,0.2);
-  --blue:#1A5CC8; --bluebg:#EEF4FF; --blueb:rgba(26,92,200,0.2);
-  --purple:#6E30C8; --purplebg:#F4EEFF;
-  --teal:#0E7A7A; --tealbg:#EDFAFA;
-  --sidebar-w: 228px;
-  --topbar-h: 52px;
+  --bg:#F4F6FA;--bg2:#FFFFFF;--bg3:#EEF1F8;--bg4:#E6EAF4;--bg5:#D8DEF0;
+  --line:rgba(0,0,0,0.08);--linhi:rgba(0,0,0,0.15);
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
+  --shadow2:0 2px 8px rgba(0,0,0,0.1),0 8px 32px rgba(0,0,0,0.06);
+  --text:#1A2040;--textd:#5A6480;--textm:#9AA0B8;
+  --amber:#B8720A;--amberhi:#E89A10;--amberw:rgba(184,114,10,0.08);--amberb:rgba(184,114,10,0.2);--amberbg:#FFF8EC;
+  --green:#0F7A48;--greenhi:#12A060;--greenw:rgba(15,122,72,0.08);--greenb:rgba(15,122,72,0.2);--greenbg:#EDFAF3;
+  --red:#C02840;--redhi:#E03050;--redw:rgba(192,40,64,0.07);--redb:rgba(192,40,64,0.2);--redbg:#FFF0F3;
+  --blue:#1A5CC8;--bluehi:#2470F0;--bluew:rgba(26,92,200,0.07);--blueb:rgba(26,92,200,0.2);--bluebg:#EEF4FF;
+  --orange:#C05800;--orangebg:#FFF4EC;--orangeb:rgba(192,88,0,0.2);
+  --purple:#6E30C8;--purplebg:#F4EEFF;--purpleb:rgba(110,48,200,0.2);
+  --teal:#0E7A7A;--tealbg:#EDFAFA;--tealb:rgba(14,122,122,0.2);
+  --nav-h:56px;
 }
-
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; overflow:hidden; }
-body { background:var(--bg); color:var(--text); font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; }
-
-/* ── APP SHELL ── */
-.app { display:flex; height:100vh; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: var(--sidebar-w);
-  height: 100vh;
-  background: var(--bg2);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.sidebar-logo {
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.sidebar-logo-icon {
-  width: 32px; height: 32px;
-  background: var(--blue);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 800;
-  color: #fff;
-  font-family: 'Fira Code', monospace;
-  flex-shrink: 0;
-}
-.sidebar-logo-text { flex:1; }
-.sidebar-logo-main { font-size:13px; font-weight:800; color:var(--text); letter-spacing:0.02em; }
-.sidebar-logo-sub { font-size:10px; color:var(--textm); letter-spacing:0.04em; }
-
-.sidebar-nav { flex:1; overflow-y:auto; padding:8px 10px; }
-.sidebar-nav::-webkit-scrollbar { width:3px; }
-.sidebar-nav::-webkit-scrollbar-thumb { background:var(--line); border-radius:2px; }
-
-.nav-section {
-  font-size:9px; font-family:'Fira Code',monospace;
-  letter-spacing:0.12em; text-transform:uppercase;
-  color:var(--textm); padding:14px 8px 5px;
-}
-
-.nav-item {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 10px; border-radius:8px;
-  cursor:pointer; font-size:12px; font-weight:500;
-  color:var(--textd); transition:all 0.12s;
-  border:none; background:none; width:100%; text-align:left;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  margin-bottom:1px;
-}
-.nav-item:hover { background:var(--bg3); color:var(--text); }
-.nav-item.active { background:var(--bluebg); color:var(--blue); font-weight:700; }
-.nav-item.active .ni-icon { opacity:1; }
-.ni-icon { font-size:15px; width:22px; text-align:center; flex-shrink:0; opacity:0.65; }
-.ni-label { flex:1; }
-.ni-badge {
-  font-size:9px; padding:1px 6px; border-radius:8px;
-  font-weight:700; background:var(--redbg); color:var(--red);
-  font-family:'Fira Code',monospace;
-}
-
-.sidebar-footer {
-  padding:12px;
-  border-top:1px solid var(--line);
-}
-.sidebar-user {
-  display:flex; align-items:center; gap:10px;
-  padding:8px 6px; border-radius:8px;
-  cursor:pointer; margin-bottom:6px;
-}
-.sidebar-user:hover { background:var(--bg3); }
-.sidebar-avatar {
-  width:34px; height:34px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:800; color:#fff;
-  flex-shrink:0;
-}
-.sidebar-user-info { flex:1; min-width:0; }
-.sidebar-user-name { font-size:12px; font-weight:700; color:var(--text); }
-.sidebar-user-role { font-size:10px; color:var(--textm); }
-.sidebar-logout {
-  width:100%; padding:7px; font-size:11px;
-  color:var(--textm); background:var(--bg3);
-  border:1px solid var(--line); border-radius:7px;
-  cursor:pointer; font-family:'Plus Jakarta Sans',sans-serif;
-  font-weight:600; transition:all 0.12s;
-}
-.sidebar-logout:hover { color:var(--red); border-color:var(--redb); background:var(--redbg); }
-
-/* ── MAIN AREA ── */
-.main-area { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-
-/* ── TOP BAR ── */
-.topbar {
-  height: var(--topbar-h);
-  background: var(--bg2);
-  border-bottom: 1px solid var(--line);
-  display: flex; align-items: center;
-  padding: 0 20px; gap: 10px;
-  flex-shrink: 0;
-}
-.topbar-left { flex:1; display:flex; align-items:center; gap:8px; overflow-x:auto; }
-.topbar-left::-webkit-scrollbar { height:0; }
-.topbar-date { font-size:11px; color:var(--textm); font-family:'Fira Code',monospace; white-space:nowrap; }
-.topbar-sep { width:1px; height:16px; background:var(--line); flex-shrink:0; }
-
-/* month tabs */
-.month-tab {
-  font-size:11px; padding:4px 12px; border-radius:6px;
-  border:1px solid transparent; cursor:pointer;
-  color:var(--textd); background:none; white-space:nowrap;
-  font-family:'Plus Jakarta Sans',sans-serif; font-weight:600;
-  transition:all 0.12s;
-}
-.month-tab:hover { background:var(--bg3); color:var(--text); }
-.month-tab.active {
-  background:var(--blue); color:#fff;
-  border-color:var(--blue);
-}
-
-.topbar-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.btn-add-order {
-  padding:7px 16px; font-size:12px; font-weight:700;
-  background:var(--blue); color:#fff;
-  border:none; border-radius:8px; cursor:pointer;
-  font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all 0.12s;
-}
-.btn-add-order:hover { background:#1450B0; }
-
-/* ── CONTENT AREA ── */
-.content { flex:1; overflow-y:auto; }
-.content::-webkit-scrollbar { width:6px; }
-.content::-webkit-scrollbar-thumb { background:var(--line); border-radius:3px; }
-
-/* ── VIEWS ── */
-.view { display:none; padding:24px; }
-.view.active { display:block; }
-
-/* HOME VIEW */
-.home-greeting-eyebrow {
-  font-size:11px; font-family:'Fira Code',monospace;
-  letter-spacing:0.1em; text-transform:uppercase;
-  color:var(--textm); margin-bottom:6px;
-}
-.home-greeting-title {
-  font-size:28px; font-weight:800; color:var(--text);
-  letter-spacing:-0.02em; margin-bottom:4px;
-}
-.home-greeting-sub { font-size:13px; color:var(--textd); margin-bottom:24px; }
-
-.alert-strip {
-  border-radius:10px; padding:12px 16px;
-  display:flex; align-items:center; gap:12px;
-  font-size:12px; font-weight:600; margin-bottom:8px;
-  border:1px solid; cursor:pointer; transition:opacity 0.12s;
-}
-.alert-strip:hover { opacity:0.85; }
-.alert-strip .alert-msg { flex:1; }
-.alert-strip .alert-action { font-size:11px; color:var(--textm); white-space:nowrap; }
-
-.home-kpi-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:10px; margin:20px 0;
-}
-.kpi-card {
-  background:var(--bg2); border:1px solid var(--line);
-  border-radius:12px; padding:16px;
-  box-shadow:var(--shadow);
-}
-.kpi-card-label { font-size:10px; color:var(--textm); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-.kpi-card-val { font-size:20px; font-weight:800; font-family:'Fira Code',monospace; color:var(--text); }
-.kpi-card-sub { font-size:11px; color:var(--textm); margin-top:3px; }
-
-/* MASTERLIST */
-.ml-toolbar {
-  display:flex; align-items:center; gap:8px;
-  margin-bottom:14px; flex-wrap:wrap;
-}
-.ml-search {
-  flex:1; min-width:180px;
-  padding:7px 12px; border:1px solid var(--line);
-  border-radius:8px; font-size:12px;
-  background:var(--bg2); color:var(--text);
-  font-family:'Plus Jakarta Sans',sans-serif;
-  outline:none;
-}
-.ml-search:focus { border-color:var(--blue); }
-.ml-filter-btn {
-  padding:6px 12px; border-radius:7px; border:1px solid var(--line);
-  background:var(--bg2); color:var(--textd); font-size:11px;
-  cursor:pointer; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif;
-  transition:all 0.12s; white-space:nowrap;
-}
-.ml-filter-btn:hover { border-color:var(--blue); color:var(--blue); }
-.ml-filter-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
-
-/* KPI STRIP */
-.kpi-strip {
-  display:flex; gap:1px; background:var(--line);
-  border:1px solid var(--line); border-radius:10px;
-  overflow:hidden; margin-bottom:14px;
-}
-.kpi-strip-item {
-  background:var(--bg2); padding:10px 16px; flex:1;
-}
-.kpi-strip-label { font-size:9px; color:var(--textm); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:3px; }
-.kpi-strip-val { font-size:14px; font-weight:800; font-family:'Fira Code',monospace; }
-.kpi-strip-sub { font-size:10px; color:var(--textm); }
-
-/* TABLE */
-.ml-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--line); background:var(--bg2); }
-.ml-table { width:100%; border-collapse:collapse; font-size:12px; }
-.ml-table th {
-  padding:9px 12px; text-align:left; background:var(--bg3);
-  font-size:9px; font-family:'Fira Code',monospace;
-  letter-spacing:0.1em; text-transform:uppercase; color:var(--textm);
-  border-bottom:1px solid var(--line); white-space:nowrap;
-}
-.ml-table td { padding:9px 12px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--textd); }
-.ml-table tr:last-child td { border-bottom:none; }
-.ml-table tr:hover td { background:var(--bg3); }
-.ml-table .name-col { font-weight:600; color:var(--text); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ml-table .mono { font-family:'Fira Code',monospace; }
-
-/* RESPONSIVE */
-@media(max-width:768px) {
-  .sidebar { display:none; }
-  .sidebar.open { display:flex; position:fixed; z-index:100; }
-}
-
-
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
@@ -337,9 +97,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .btn-logout:hover{background:var(--red);color:#fff;}
 
 /* ── VIEW SWITCHING ── */
-
-
-
+#masterlistView{display:block;}
+#designerView{display:none;}
+#kpiView{display:none;}
 
 /* ── WRAP ── */
 .wrap{max-width:1440px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
@@ -562,7 +322,7 @@ tr:hover .row-actions{opacity:1;}
 .mb-val{font-family:'Fira Code',monospace;font-size:10px;color:var(--textd);width:70px;text-align:right;}
 
 /* ── HOMEPAGE ── */
-
+#homeView{display:none;}
 .home-wrap{max-width:1200px;margin:0 auto;padding:32px 24px;}
 .home-greeting{margin-bottom:28px;}
 .home-greeting-eyebrow{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--textm);margin-bottom:6px;}
@@ -617,7 +377,7 @@ tr:hover .row-actions{opacity:1;}
 .trend-bar-val{font-family:'Fira Code',monospace;font-size:8px;color:var(--textd);text-align:center;}
 
 /* ── CUSTOMER VIEW ── */
-
+#customerView{display:none;}
 .cust-wrap{padding:20px 0;}
 .cust-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .cust-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:var(--text);}
@@ -658,7 +418,7 @@ tr:hover .row-actions{opacity:1;}
 .cust-section-label::after{content:'';flex:1;height:1px;background:var(--line);}
 
 /* ── DASHBOARD VIEW ── */
-
+#dashboardView{display:none;}
 .dash-wrap{padding:20px 0 32px;}
 .dash-page-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:var(--text);margin-bottom:3px;}
 .dash-page-sub{font-size:12px;color:var(--textm);margin-bottom:20px;}
@@ -715,7 +475,7 @@ tr:hover .row-actions{opacity:1;}
 .dash-closing-fill{height:100%;border-radius:2px;transition:width .6s ease;}
 
 /* ── USER MANAGEMENT ── */
-
+#userMgmtView{display:none;}
 .um-wrap{padding:20px 0 32px;}
 .um-page-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:var(--text);margin-bottom:3px;}
 .um-page-sub{font-size:12px;color:var(--textm);margin-bottom:20px;}
@@ -801,6 +561,153 @@ tr:hover .row-actions{opacity:1;}
 .home-nav-card.featured .home-nav-icon{font-size:32px;margin-bottom:10px;}
 .home-nav-card.featured .home-nav-title{font-size:17px;}
 
+/* ══ SIDEBAR LAYOUT ══ */
+:root {
+  --sb-w: 220px;
+  --tb-h: 52px;
+}
+
+/* Hide old nav */
+nav { display: none !important; }
+
+/* App wrapper */
+#mainApp {
+  display: flex !important;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.dod-sidebar {
+  width: var(--sb-w);
+  height: 100vh;
+  background: #fff;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.sb-logo {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sb-logo-icon {
+  width: 30px; height: 30px;
+  background: #1A5CC8;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff;
+  font-family: 'Fira Code', monospace;
+  flex-shrink: 0;
+}
+.sb-logo-main { font-size: 13px; font-weight: 800; color: #1A2040; }
+.sb-logo-sub { font-size: 10px; color: #9AA0B8; letter-spacing: 0.04em; }
+
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 8px;
+}
+.sb-nav::-webkit-scrollbar { width: 3px; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
+
+.sb-section {
+  font-size: 9px;
+  font-family: 'Fira Code', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9AA0B8;
+  padding: 12px 8px 4px;
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5A6480;
+  transition: all 0.1s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin-bottom: 1px;
+}
+.sb-item:hover { background: #F4F6FA; color: #1A2040; }
+.sb-item.active { background: #EEF4FF; color: #1A5CC8; font-weight: 700; }
+.sb-item .sb-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.sb-item .sb-label { flex: 1; }
+
+.sb-footer {
+  padding: 10px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.sb-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 7px; margin-bottom: 6px;
+}
+.sb-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.sb-username { font-size: 12px; font-weight: 700; color: #1A2040; }
+.sb-userrole { font-size: 10px; color: #9AA0B8; }
+.sb-logout {
+  width: 100%; padding: 6px; font-size: 11px; color: #9AA0B8;
+  background: #F4F6FA; border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 6px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600;
+  transition: all 0.1s;
+}
+.sb-logout:hover { color: #C02840; border-color: rgba(192,40,64,0.2); background: #FFF0F3; }
+
+/* Main content area */
+.dod-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Topbar */
+.dod-topbar {
+  height: var(--tb-h);
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.dod-topbar-left { flex: 1; display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+.dod-topbar-left::-webkit-scrollbar { height: 0; }
+.dod-topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.dod-topbar-date { font-size: 11px; color: #9AA0B8; font-family: 'Fira Code', monospace; white-space: nowrap; }
+
+/* Content scroll area */
+.dod-content {
+  flex: 1;
+  overflow-y: auto;
+}
+.dod-content::-webkit-scrollbar { width: 6px; }
+.dod-content::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 3px; }
+
+/* Keep existing .wrap but reset positioning */
+.dod-content .wrap { max-width: 100%; padding: 0; }
 </style>
 </head>
 <body>
@@ -861,301 +768,420 @@ tr:hover .row-actions{opacity:1;}
 <!-- ══════════════════════════════════════
      MAIN APP
 ══════════════════════════════════════ -->
-<div class="app" id="mainApp" style="display:none;">
-  <!-- Legacy nav elements (hidden - referenced by JS) -->
-  <div style="display:none;">
-    <div id="navDate"></div>
-    <div id="navUserAvatar"></div>
-    <div id="navUserName"></div>
-    <div id="navUserRole"></div>
-    <div id="supaLoading"></div>
-  </div>
+<div id="mainApp" style="display:none;">
 
   <!-- ══ SIDEBAR ══ -->
-  <div class="sidebar" id="appSidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon">D</div>
-      <div class="sidebar-logo-text">
-        <div class="sidebar-logo-main">DOD</div>
-        <div class="sidebar-logo-sub">Sistem Dalaman</div>
+  <div class="dod-sidebar" id="dodSidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">D</div>
+      <div>
+        <div class="sb-logo-main">DOD</div>
+        <div class="sb-logo-sub">Sistem Dalaman</div>
       </div>
     </div>
-
-    <div class="sidebar-nav" id="sidebarNav">
-      <!-- Admin menus -->
-      <button class="nav-item active" onclick="setSidebarActive('home');showHomeView()">
-        <span class="ni-icon">🏠</span>
-        <span class="ni-label">Home</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('masterlist');showMasterlistViewFull()">
-        <span class="ni-icon">📋</span>
-        <span class="ni-label">Masterlist</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('customer');showCustomerView()">
-        <span class="ni-icon">👥</span>
-        <span class="ni-label">Customer</span>
-      </button>
-
-      <div class="nav-section">Sales</div>
-      <button class="nav-item" onclick="setSidebarActive('kpi');showKpiView()">
-        <span class="ni-icon">📊</span>
-        <span class="ni-label">KPI Sales</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('payments');showPaymentsView()">
-        <span class="ni-icon">💰</span>
-        <span class="ni-label">Penerimaan</span>
-      </button>
-
-      <div class="nav-section">Operasi</div>
-      <button class="nav-item" onclick="setSidebarActive('production');showProdTrackView()">
-        <span class="ni-icon">🏭</span>
-        <span class="ni-label">Production</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('supplier');showSupplierDirView()">
-        <span class="ni-icon">🏢</span>
-        <span class="ni-label">Supplier</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('supplierOS');showSupplierOSView()">
-        <span class="ni-icon">💸</span>
-        <span class="ni-label">Supplier OS</span>
-      </button>
-
-      <div class="nav-section">Laporan</div>
-      <button class="nav-item" onclick="setSidebarActive('dashboard');showDashboardView()">
-        <span class="ni-icon">📈</span>
-        <span class="ni-label">Dashboard</span>
-      </button>
-
-      <div class="nav-section">Admin</div>
-      <button class="nav-item" onclick="setSidebarActive('users');showUserMgmtView()">
-        <span class="ni-icon">👤</span>
-        <span class="ni-label">Pengguna</span>
-      </button>
-      <button class="nav-item" onclick="setSidebarActive('security');showSecurityView()">
-        <span class="ni-icon">🔒</span>
-        <span class="ni-label">Security</span>
-      </button>
-      <button class="nav-item" onclick="openChpwModal(false)">
-        <span class="ni-icon">🔑</span>
-        <span class="ni-label">Password</span>
-      </button>
+    <div class="sb-nav" id="sbNav">
+      <!-- Rendered by JS -->
     </div>
-
-    <div class="sidebar-footer">
-      <div class="sidebar-user">
-        <div class="sidebar-avatar" style="background:#1A5CC8;" id="sbAvatar">FA</div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name" id="sbName">FARIZ</div>
-          <div class="sidebar-user-role" id="sbRole">Admin · Full Access</div>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sbAvatar" style="background:#1A5CC8;">FA</div>
+        <div>
+          <div class="sb-username" id="sbUsername">FARIZ</div>
+          <div class="sb-userrole" id="sbUserrole">Admin</div>
         </div>
       </div>
-      <button class="sidebar-logout" onclick="doLogout()">← Keluar</button>
+      <button class="sb-logout" onclick="doLogout()">← Keluar</button>
     </div>
   </div>
 
   <!-- ══ MAIN AREA ══ -->
-  <div class="main-area">
-
-    <!-- TOP BAR -->
-    <div class="topbar">
-      <div class="topbar-left">
-        <span class="topbar-date" id="topbarDate">Rabu, 29 Apr 2026</span>
-        <div class="topbar-sep"></div>
-        <!-- Month tabs inject here -->
-        <div id="navTabs" style="display:flex;gap:4px;"></div>
+  <div class="dod-main">
+    <!-- TOPBAR -->
+    <div class="dod-topbar">
+      <div class="dod-topbar-left">
+        <span class="dod-topbar-date" id="sbDate"></span>
+        <div id="dodNavTabs" style="display:flex;gap:4px;"></div>
       </div>
-      <div class="topbar-right">
-        <button class="btn-add-order" id="btnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
+      <div class="dod-topbar-right">
+        <button class="btn-new" id="dodBtnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
+
       </div>
     </div>
-
     <!-- CONTENT -->
-    <div class="content">
+    <div class="dod-content">
 
-      <!-- HOME VIEW -->
-      <div class="view active" id="homeView">
-        <div id="homeKpiCards"></div>
-        <div id="homeAlertBar"></div>
-        <div id="homePipelineSection"></div>
-        <div id="homeSalesStats" style="display:none;"></div>
-        <div id="heroMonth" style="display:none;"></div>
-        <div id="homeDate" style="display:none;"></div>
-        <div id="homeKpiStrip" style="display:none;"></div>
-        <div id="homeBottomPanels" style="display:none;"></div>
-        <div id="homeTrendBars" style="display:none;"></div>
-        <div id="homeRecentOrders" style="display:none;"></div>
-        <div id="homeNavGrid" style="display:none;"></div>
-        <div class="home-greeting-eyebrow" id="homeEyebrow">DOD WORLDWIDE SUPPLIES · SISTEM DALAMAN</div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-row1">
+      <div class="nav-logo">DOD <span>/ Masterlist v3</span></div>
+      <div class="nav-right">
+      <div class="nav-date" id="navDate"></div>
+      <button class="btn-secondary" id="btnHome" onclick="showHomeView()" style="font-size:11px;padding:6px 12px;">🏠 Home</button>
+      <button class="btn-secondary" id="btnDashboard" onclick="showDashboardView()" style="display:none;font-size:11px;padding:6px 12px;">📈 Dashboard</button>
+      <button class="btn-secondary" id="btnSupplierDir" onclick="showSupplierDirView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--teal);color:#fff;border-color:var(--teal);">🏭 Supplier</button>
+      <button class="btn-secondary" id="btnProdTrack" onclick="showProdTrackView()" style="display:none;font-size:11px;padding:6px 12px;background:#7C3AED;color:#fff;border:none;">📦 Production</button>
+      <button class="btn-secondary" id="btnSupplierOS" onclick="showSupplierOSView()" style="display:none;font-size:11px;padding:6px 12px;background:var(--amber);color:#fff;border-color:var(--amber);">💸 Supplier OS</button>
+      <button class="btn-secondary" id="btnUserMgmt" onclick="showUserMgmtView()" style="display:none;font-size:11px;padding:6px 12px;">👤 Pengguna</button>
+      <button class="btn-secondary" id="btnChgPw" onclick="openChpwModal(false)" style="font-size:11px;padding:6px 12px;">🔒 Password</button>
+      <button class="btn-month" id="btnAddMonth" onclick="openAddMonthModal()" style="display:none;">＋ Bulan Baru</button>
+      <button class="btn-new" id="btnAddOrder" onclick="openAddModal()">＋ Tambah Order</button>
+      <button class="btn-new" id="btnViewToggle" onclick="openJobBoard()" style="display:none;background:var(--purple);">📋 Job Board</button>
+      <button class="btn-new" id="btnKpiView" onclick="showKpiView()" style="display:none;background:var(--green);">📊 KPI Saya</button>
+      <div class="nav-user-chip" onclick="doLogout()">
+        <div class="nav-user-avatar" id="navUserAvatar"></div>
+        <div>
+          <div class="nav-user-name" id="navUserName"></div>
+          <div class="nav-user-role" id="navUserRole"></div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Keluar</button>
+      </div>
+    </div>
+    <div class="nav-row2" id="navTabs"></div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HOME VIEW -->
+  <div id="homeView">
+    <div class="home-wrap">
+      <div class="home-greeting">
+        <div class="home-greeting-eyebrow" id="homeEyebrow">DOD Worldwide Supplies · Sistem Dalaman</div>
         <div class="home-greeting-title" id="homeGreeting">Selamat datang.</div>
-        <div class="home-greeting-sub" id="homeGreetingSub">Log masuk sebagai — · —</div>
+        <div class="home-greeting-sub" id="homeDate"></div>
+      </div>
+      <!-- Alert Bar (Admin + Sales) -->
+      <div id="homeAlertBar" style="display:none;margin-bottom:16px;"></div>
+      <!-- Pipeline Section -->
+      <div id="homePipelineSection" style="display:none;margin-bottom:20px;"></div>
 
-        <!-- Alert strips -->
-        <div id="homeAlerts"></div>
-
-        <!-- KPI Cards -->
-        <div class="home-kpi-grid" id="homeKpiGrid">
-          <div class="kpi-card">
-            <div class="kpi-card-label">Revenue Bulan Ini</div>
-            <div class="kpi-card-val" style="color:var(--amber);">—</div>
-            <div class="kpi-card-sub">memuatkan...</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">PCS</div>
-            <div class="kpi-card-val" style="color:var(--blue);">—</div>
-            <div class="kpi-card-sub">unit</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">Profit</div>
-            <div class="kpi-card-val" style="color:var(--green);">—</div>
-            <div class="kpi-card-sub">margin —%</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-card-label">Customer OS</div>
-            <div class="kpi-card-val" style="color:var(--red);">—</div>
-            <div class="kpi-card-sub">belum dikutip</div>
-          </div>
-        </div>
-
-        <!-- Pipeline section -->
-        <div id="homePipeline" style="margin-top:8px;"></div>
+      <!-- KPI Strip (Admin only) -->
+      <div id="homeKpiStrip" style="display:none;">
+        <div class="home-section-title">Prestasi Kumulatif</div>
+        <div class="home-kpi-strip" id="homeKpiCards"></div>
       </div>
 
-      <!-- MASTERLIST VIEW -->
-      <div class="view" id="masterlistView">
-        <div id="picFilters" style="display:none;"></div>
-        <div id="f_rev" style="display:none;"></div>
-        <div id="savedDocsList" style="display:none;"></div>
-        <div id="tableCount" style="display:none;"></div>
-        <div id="picBreakdown" style="display:none;"></div>
-        <div id="channelChart" style="display:none;"></div>
-        <div id="detailPanel" class="detail-panel"></div>
-        <div id="detailBody" style="display:none;"></div>
-        <div id="detailActions" style="display:none;"></div>
-        <button id="btnViewToggle" style="display:none;" onclick="openJobBoard()"></button>
-        <select id="sourceFilter" style="display:none;" onchange="applyFilters()"></select>
-        <div class="ml-toolbar">
-          <input class="ml-search" id="searchInput" type="text" placeholder="Cari nama job, customer, invois..." oninput="applyFilters()">
-          <button class="ml-filter-btn" onclick="applyFilters()">🔍 Cari</button>
-        </div>
+      <!-- Sales Quick Stats (Sales role) -->
+      <div id="homeSalesStats" style="display:none;margin-bottom:20px;"></div>
 
-        <!-- KPI strip -->
-        <div class="kpi-strip" id="kpiRow">
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Revenue</div>
-            <div class="kpi-strip-val" style="color:var(--amber);">—</div>
+      <!-- Nav Grid -->
+      <div class="home-section-title">Navigasi Sistem</div>
+      <div class="home-nav-grid" id="homeNavGrid"></div>
+      <!-- Bottom panels (Admin only) -->
+      <div id="homeBottomPanels" style="display:none;">
+        <div class="home-section-title">Ringkasan Terkini</div>
+        <div class="home-bottom-grid">
+          <div class="home-panel">
+            <div class="home-panel-title">Trend Bulanan (Revenue)</div>
+            <div class="trend-row" id="homeTrendBars"></div>
           </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">PCS</div>
-            <div class="kpi-strip-val" style="color:var(--blue);">—</div>
-          </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Profit</div>
-            <div class="kpi-strip-val" style="color:var(--green);">—</div>
-          </div>
-          <div class="kpi-strip-item">
-            <div class="kpi-strip-label">Customer OS</div>
-            <div class="kpi-strip-val" style="color:var(--red);">—</div>
+          <div class="home-panel">
+            <div class="home-panel-title">Order Terkini</div>
+            <div id="homeRecentOrders"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Table -->
-        <div class="ml-table-wrap">
-          <table class="ml-table">
-            <thead id="tableHead"></thead>
-            <tbody id="tableBody">
-              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--textm);">Memuatkan data...</td></tr>
-            </tbody>
-          </table>
+
+  <!-- DASHBOARD VIEW -->
+  <div id="dashboardView">
+    <div class="dash-wrap">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div class="dash-page-title">📈 Performance Dashboard</div>
+          <div class="dash-page-sub" id="dashPageSub">Analisis prestasi DOD · Admin sahaja</div>
+        </div>
+        <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.2);" onclick="exportDashboardXLSX()">⬇ Export</button>
+      </div>
+
+      <!-- Manual input bar -->
+      <div class="dash-input-bar">
+        <div class="dash-input-bar-label">Input Manual Bulanan</div>
+        <select class="dash-month-select" id="dashInputMonth"></select>
+        <div class="dash-input-field">
+          <label>Ads Spend (RM)</label>
+          <input type="number" id="dashAdsInput" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="dash-input-field">
+          <label>Jumlah Leads</label>
+          <input type="number" id="dashLeadsInput" placeholder="0" min="0">
+        </div>
+        <button class="dash-save-btn" onclick="saveDashInput()">💾 Simpan</button>
+        <div style="font-size:11px;color:var(--textm);" id="dashSaveStatus"></div>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="dash-kpi-strip" id="dashKpiStrip"></div>
+
+      <!-- Row 1: Sales + PCS -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Total Sales (RM)</div>
+          <div class="dash-chart-sub" id="dashSalesSub"></div>
+          <div class="dash-canvas-wrap"><canvas id="dashSalesChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">PCS</div>
+          <div class="dash-chart-sub" id="dashPcsSub"></div>
+          <div class="dash-canvas-wrap"><canvas id="dashPcsChart" height="160"></canvas></div>
         </div>
       </div>
 
-      <!-- CUSTOMER VIEW -->
-      <div class="view" id="customerView">
-        <div id="custFilterBar" style="display:none;"></div>
-        <input id="custSearch" style="display:none;">
-        <div id="custSubtitle" style="display:none;"></div>
-        <div id="custGrid"></div>
-        <div id="custDetailBody" style="display:none;"></div>
-        <div id="custDetailPanel" class="detail-panel"></div>
-        <div id="customerContent">Memuatkan...</div>
+      <!-- Row 2: Profit + Margin -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Profit (RM)</div>
+          <div class="dash-chart-sub">Keuntungan bersih selepas tolak kos supplier</div>
+          <div class="dash-canvas-wrap"><canvas id="dashProfitChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Margin Keuntungan (%)</div>
+          <div class="dash-chart-sub">Peratusan keuntungan daripada jumlah sales</div>
+          <div class="dash-canvas-wrap"><canvas id="dashMarginChart" height="160"></canvas></div>
+        </div>
       </div>
 
-      <!-- KPI VIEW -->
-      <div class="view" id="kpiView">
-        <div id="kpiDashContent">Memuatkan...</div>
+      <!-- Row 3: ROAS + CPL + Ads+Leads -->
+      <div class="dash-row dash-row-3" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">ROAS (×)</div>
+          <div class="dash-chart-sub">Return on Ad Spend</div>
+          <div class="dash-canvas-wrap"><canvas id="dashRoasChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">CPL (RM)</div>
+          <div class="dash-chart-sub">Cost Per Lead</div>
+          <div class="dash-canvas-wrap"><canvas id="dashCplChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Ads Spend + Leads</div>
+          <div class="dash-chart-sub">Belanjawan iklan berbanding leads dijana</div>
+          <div class="dash-canvas-wrap"><canvas id="dashAdsLeadsChart" height="160"></canvas></div>
+        </div>
       </div>
 
-      <!-- PAYMENTS VIEW -->
-      <div class="view" id="paymentsView">
-        <div id="paymentsContent">Memuatkan...</div>
+      <!-- Row 4: Channel + Staff closing -->
+      <div class="dash-row dash-row-2" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Online vs Offline Revenue</div>
+          <div class="dash-chart-sub">Pecahan jualan mengikut channel</div>
+          <div class="dash-canvas-wrap"><canvas id="dashChannelChart" height="160"></canvas></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Closing Rate Trend (%)</div>
+          <div class="dash-chart-sub">Trend kadar closing sales admin dari masa ke masa</div>
+          <div class="dash-canvas-wrap"><canvas id="dashStaffChart" height="160"></canvas></div>
+        </div>
       </div>
 
-      <!-- PRODUCTION VIEW -->
-      <div class="view" id="prodTrackView">
-        <div id="prodTrackContent">Memuatkan...</div>
+      <!-- Row 5: Data table + Staff cards -->
+      <div class="dash-row dash-row-2l" style="margin-bottom:12px;">
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Ringkasan Data Penuh</div>
+          <div class="dash-chart-sub" id="dashTableSub">Semua metrik bulanan</div>
+          <div style="overflow-x:auto;"><table class="dash-data-table" id="dashDataTable"></table></div>
+        </div>
+        <div class="dash-chart-card">
+          <div class="dash-chart-title">Prestasi Sales Admin</div>
+          <div class="dash-chart-sub" id="dashStaffSub">Bulan terkini</div>
+          <div class="dash-staff-grid" id="dashStaffCards"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- USER MANAGEMENT VIEW -->
+  <div id="userMgmtView">
+    <div class="um-wrap">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div class="um-page-title">👤 Pengurusan Pengguna</div>
+          <div class="um-page-sub">Tambah, edit, reset password, dan urus akses semua pengguna sistem.</div>
+        </div>
+        <button class="btn-new" onclick="openAddUserForm()" style="background:var(--blue);box-shadow:0 2px 8px rgba(26,92,200,0.25);">＋ Tambah Pengguna</button>
+      </div>
+      <div class="um-grid">
+        <!-- User list -->
+        <div class="um-panel">
+          <div class="um-panel-header">
+            <div class="um-panel-title">Senarai Pengguna</div>
+            <div style="font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);" id="umUserCount"></div>
+          </div>
+          <div id="umUserList"></div>
+        </div>
+        <!-- Right panel: add/edit form -->
+        <div class="um-panel" id="umRightPanel">
+          <div class="um-panel-header">
+            <div class="um-panel-title" id="umFormTitle">Pilih pengguna untuk edit</div>
+          </div>
+          <div class="um-form" id="umFormBody">
+            <div style="text-align:center;padding:30px 20px;color:var(--textm);font-size:12px;">
+              Klik mana-mana pengguna dalam senarai untuk lihat atau edit maklumat.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTION TRACKER -->
+  <div id="prodTrackView" style="display:none;padding:24px 28px;">
+    <div id="prodTrackContent"></div>
+  </div>
+
+  <!-- SUPPLIER DIRECTORY -->
+  <div id="supplierDirView" style="display:none;padding:24px 28px;">
+    <div id="supplierDirContent"></div>
+  </div>
+
+  <!-- SUPPLIER OUTSTANDING -->
+  <div id="supplierOSView" style="display:none;padding:24px 28px;">
+    <div id="supplierOSContent"></div>
+  </div>
+
+  <!-- CUSTOMER VIEW -->
+  <div id="customerView">
+    <div class="cust-wrap">
+      <div class="cust-toolbar">
+        <div>
+          <div class="cust-title">👥 Customer Directory</div>
+          <div style="font-size:12px;color:var(--textm);margin-top:3px;" id="custSubtitle"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="cust-search-wrap">
+            <input class="cust-search" type="text" id="custSearch" placeholder="Cari nama, no tel, email..." oninput="renderCustomers()">
+          </div>
+          <button class="btn-new" style="background:var(--green);box-shadow:0 2px 8px rgba(15,122,72,0.25);" onclick="exportXLSX()">⬇ Export XLSX</button>
+        </div>
+      </div>
+      <!-- Filter & Sort bar — rendered dynamically by renderCustomers -->
+      <div id="custFilterBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+      <div class="cust-grid" id="custGrid"></div>
+    </div>
+  </div>
+
+
+  <!-- MASTERLIST VIEW -->
+  <div id="masterlistView">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-title">Prestasi Bulanan</div>
+          <div class="hero-month" id="heroMonth"></div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpiRow"></div>
+    </div>
+
+    <div class="main">
+      <div class="sidebar">
+        <div class="sidebar-card">
+          <div class="sidebar-label">Carian</div>
+          <div class="search-wrap"><input type="text" id="searchInput" placeholder="Cari nama, no invois..." oninput="applyFilters()"></div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-label">Filter</div>
+          <div class="filter-group">
+            <div class="filter-label">Status OS</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="toggleOS('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleOS('CUST',this)">Customer OS</button>
+              <button class="fbtn" onclick="toggleOS('SUP',this)">Supplier OS</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Pipeline</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="togglePipeline('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="togglePipeline('QUOTATION',this)">📋 Quotation</button>
+              <button class="fbtn" onclick="togglePipeline('CONFIRMED',this)">✅ Confirmed</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Channel</div>
+            <div class="filter-btns">
+              <button class="fbtn on" onclick="toggleChannel('ALL',this)">Semua</button>
+              <button class="fbtn" onclick="toggleChannel('ONLINE',this)">Online</button>
+              <button class="fbtn" onclick="toggleChannel('OFFLINE',this)">Offline</button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Sumber</div>
+            <select class="fsel" id="sourceFilter" onchange="applyFilters()">
+              <option value="ALL">Semua Sumber</option>
+              <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
+              <option>ONLINE</option><option>OFFLINE</option>
+              <option>SEKOLAH</option><option>AGENT</option>
+            </select>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-label">PIC</div>
+          <div class="filter-btns" style="margin-bottom:10px;" id="picFilters"></div>
+          <div class="pic-breakdown" id="picBreakdown"></div>
+        </div>
+        <div class="sidebar-card" id="chartCard">
+          <div class="sidebar-label">Channel Mix</div>
+          <div class="mini-bar-chart" id="channelChart"></div>
+        </div>
       </div>
 
-      <!-- SUPPLIER DIR VIEW -->
-      <div class="view" id="supplierDirView">
-        <div id="supplierDirContent">Memuatkan...</div>
+      <div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="table-count" id="tableCount"></div>
+            <div class="sort-btns">
+              <button class="sort-btn active" onclick="sortBy('date',this)">Tarikh</button>
+              <button class="sort-btn" onclick="sortBy('pcs',this)">PCS</button>
+              <button class="sort-btn" onclick="sortBy('revenue',this)">Revenue</button>
+              <button class="sort-btn" onclick="sortBy('profit',this)">Profit</button>
+            </div>
+          </div>
+          <div class="tbl-outer">
+            <table class="data">
+              <thead><tr id="tableHead"></tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <!-- SUPPLIER OS VIEW -->
-      <div class="view" id="supplierOSView">
-        <div id="supplierOSContent">Memuatkan...</div>
+  <!-- KPI VIEW (Sales Admin) -->
+  <div id="kpiView">
+    <div class="kpi-dashboard" id="kpiDashContent"></div>
+  </div>
+
+  <!-- DESIGNER BOARD VIEW -->
+  <div id="designerView">
+    <div class="board-wrap">
+      <div class="board-header">
+        <div class="board-title">🎨 DOD Design Tracker</div>
+        <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);" id="boardDate"></div>
       </div>
+      <div class="board" id="boardCols"></div>
+    </div>
+  </div>
 
-      <!-- DASHBOARD VIEW -->
-      <div class="view" id="dashboardView">
-        <canvas id="dashSalesChart" style="display:none;"></canvas>
-        <canvas id="dashPcsChart" style="display:none;"></canvas>
-        <canvas id="dashRoasChart" style="display:none;"></canvas>
-        <canvas id="dashCplChart" style="display:none;"></canvas>
-        <canvas id="dashAdsLeadsChart" style="display:none;"></canvas>
-        <canvas id="dashProfitChart" style="display:none;"></canvas>
-        <canvas id="dashMarginChart" style="display:none;"></canvas>
-        <canvas id="dashChannelChart" style="display:none;"></canvas>
-        <canvas id="dashStaffChart" style="display:none;"></canvas>
-        <input id="dashInputMonth" style="display:none;">
-        <input id="dashAdsInput" style="display:none;">
-        <input id="dashLeadsInput" style="display:none;">
-        <div id="dashSaveStatus" style="display:none;"></div>
-        <div id="dashKpiStrip"></div>
-        <div id="dashPageSub" style="display:none;"></div>
-        <div id="dashSalesSub" style="display:none;"></div>
-        <div id="dashPcsSub" style="display:none;"></div>
-        <div id="dashTableSub" style="display:none;"></div>
-        <div id="dashDataTable"></div>
-        <div id="dashStaffSub" style="display:none;"></div>
-        <div id="dashStaffCards"></div>
-        <div id="dashboardContent">Memuatkan...</div>
-      </div>
+</div><!-- /wrap -->
 
-      <!-- USER MGMT VIEW -->
-      <div class="view" id="userMgmtView">
-        <div id="umFormTitle" style="display:none;"></div>
-        <div id="umFormBody" style="display:none;"></div>
-        <div id="umUserCount"></div>
-        <div id="umUserList"></div>
-      </div>
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <div class="detail-title">Detail Order</div>
+    <button class="detail-close" onclick="closeDetail()">✕ Tutup</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-actions" id="detailActions"></div>
+</div>
 
-      <!-- SECURITY VIEW -->
-      <div class="view" id="securityView">
-        <div id="securityContent">Memuatkan...</div>
-      </div>
-
-      <!-- DESIGNER VIEW -->
-      <div class="view" id="designerView">
-        <div id="boardCols"></div>
-        <div id="boardDate" style="display:none;"></div>
-        <div id="designerContent">Memuatkan...</div>
-      </div>
-
-    </div><!-- end content -->
-  </div><!-- end main-area -->
-
-<div class="toast" id="toast"></div>
-
+<!-- ADD/EDIT ORDER MODAL -->
 <div class="modal-bg" id="addModalBg">
   <div class="modal">
     <div class="modal-header">
@@ -1420,37 +1446,6 @@ tr:hover .row-actions{opacity:1;}
               style="background:var(--bg3);color:var(--textm);cursor:default;">
           </div>
         </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">
-          <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;">💳 Rekod Bayaran Pertama (Deposit)</div>
-          <div class="form-grid">
-            <div class="form-field"><label class="fl">Tarikh</label><input class="fi" type="date" id="f_pay1_date"></div>
-            <div class="form-field"><label class="fl">Masa</label><input class="fi" type="time" id="f_pay1_time"></div>
-            <div class="form-field"><label class="fl">Kaedah</label>
-              <select class="fi" id="f_pay1_method">
-                <option value="">— Pilih —</option>
-                <option>Transfer Bank</option><option>QR</option><option>Cash</option><option>Cheque</option>
-              </select>
-            </div>
-            <div class="form-field"><label class="fl">No. Rujukan</label><input class="fi" type="text" id="f_pay1_ref" placeholder="TXN123456"></div>
-          </div>
-        </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;">
-          <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:8px;">💳 Rekod Bayaran Kedua (Baki)</div>
-          <div class="form-grid">
-            <div class="form-field"><label class="fl">Amaun Baki (RM)</label><input class="fi" type="number" id="f_pay2" placeholder="0.00" step="0.01" oninput="recalcOS()"></div>
-            <div class="form-field"><label class="fl">Tarikh</label><input class="fi" type="date" id="f_pay2_date"></div>
-            <div class="form-field"><label class="fl">Masa</label><input class="fi" type="time" id="f_pay2_time"></div>
-            <div class="form-field"><label class="fl">Kaedah</label>
-              <select class="fi" id="f_pay2_method">
-                <option value="">— Pilih —</option>
-                <option>Transfer Bank</option><option>QR</option><option>Cash</option><option>Cheque</option>
-              </select>
-            </div>
-            <div class="form-field"><label class="fl">No. Rujukan</label><input class="fi" type="text" id="f_pay2_ref" placeholder="TXN789012"></div>
-          </div>
-        </div>
       </div>
 
       <div class="calc-box">
@@ -1469,12 +1464,14 @@ tr:hover .row-actions{opacity:1;}
         </div>
       </div>
     </div>
-    
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-save" onclick="saveOrder()">💾 Simpan Order</button>
+    </div>
   </div>
-</div></div>
 </div>
 
-
+<!-- DELETE MODAL -->
 <div id="delModalBg">
   <div class="del-modal">
     <div class="del-modal-title">🗑 Padam Order</div>
@@ -1489,6 +1486,33 @@ tr:hover .row-actions{opacity:1;}
   </div>
 </div>
 
+<!-- ADD MONTH MODAL -->
+<div id="monthModalBg">
+  <div class="month-modal">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">＋ Tambah Bulan Baru</div>
+    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Masukkan nama bulan untuk rekod baru.</div>
+    <label class="del-pw-label">Nama Bulan</label>
+    <input class="fi" type="text" id="newMonthInput" placeholder="cth: MEI 2026" style="width:100%;margin-bottom:16px;" onkeydown="if(event.key==='Enter')confirmAddMonth()">
+    <div style="font-size:10px;color:var(--textm);margin-bottom:12px;" id="monthSuggest"></div>
+    <div class="del-btn-row">
+      <button class="btn-cancel" style="flex:1;" onclick="closeAddMonthModal()">Batal</button>
+      <button class="btn-save" style="flex:1;" onclick="confirmAddMonth()">＋ Tambah</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- CUSTOMER DETAIL PANEL -->
+<div class="cust-detail-panel" id="custDetailPanel">
+  <div class="cust-detail-header">
+    <div style="font-family:'Fira Code',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--textm);">Profil Customer</div>
+    <button style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:12px;" onclick="closeCustDetail()">✕ Tutup</button>
+  </div>
+  <div class="cust-detail-body" id="custDetailBody"></div>
+</div>
+
+
+<!-- CHANGE PASSWORD MODAL -->
 <div class="modal-bg" id="chpwModalBg">
   <div class="chpw-modal">
     <div class="modal-header">
@@ -1516,19 +1540,39 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
-<div id="monthModalBg">
-  <div class="month-modal">
-    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;">＋ Tambah Bulan Baru</div>
-    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Masukkan nama bulan untuk rekod baru.</div>
-    <label class="del-pw-label">Nama Bulan</label>
-    <input class="fi" type="text" id="newMonthInput" placeholder="cth: MEI 2026" style="width:100%;margin-bottom:16px;" onkeydown="if(event.key==='Enter')confirmAddMonth()">
-    <div style="font-size:10px;color:var(--textm);margin-bottom:12px;" id="monthSuggest"></div>
-    <div class="del-btn-row">
-      <button class="btn-cancel" style="flex:1;" onclick="closeAddMonthModal()">Batal</button>
-      <button class="btn-save" style="flex:1;" onclick="confirmAddMonth()">＋ Tambah</button>
-    </div>
-  </div>
-</div>
+
+
+<datalist id="supplierList">
+  <option value="NOHAD SDN BHD">
+  <option value="IKHTIAR JAYA">
+  <option value="BROTHER TRADING">
+</datalist>
+<datalist id="itemTypesList">
+  <option value="Sublimation Adult Short Sleeve">
+  <option value="Sublimation Adult Long Sleeve">
+  <option value="Customade Adult Short Sleeve Corporate">
+  <option value="Customade Adult Long Sleeve Corporate">
+  <option value="Add On Big Size (3XL - 5XL)">
+  <option value="Add On Big Size (6XL - 8XL)">
+  <option value="Sublimation Adult Muslimah">
+  <option value="Sublimation Kids Short Sleeve">
+  <option value="Sublimation Kids Long Sleeve">
+  <option value="Customade Adult Muslimah Corporate">
+  <option value="Postage">
+  <option value="Add Collar">
+  <option value="Backtape Custom">
+  <option value="Add On Material (Diamond V2)">
+  <option value="Label Tag">
+  <option value="Block Sulam">
+  <option value="Sulam">
+  <option value="Urgent Charge (1-3 Days)">
+  <option value="Lain-lain">
+</datalist>
+<div class="toast" id="toast"></div>
+
+</div><!-- /mainApp -->
+
+<!-- SUPPLIER EDIT MODAL -->
 <div class="sup-modal-bg" id="supModalBg">
   <div class="sup-modal">
     <h3 id="supModalTitle">Edit Supplier</h3>
@@ -1581,6 +1625,8 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
+
+<!-- SUPPLIER PAYMENT MODAL -->
 <div class="pay-modal-bg" id="payModalBg">
   <div class="pay-modal">
     <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px;" id="payModalTitle">Rekod Pembayaran Supplier</h3>
@@ -1616,11 +1662,108 @@ tr:hover .row-actions{opacity:1;}
     </div>
   </div>
 </div>
-
-</div><!-- end app -->
+</body>
+</html>
 
 <script>
 
+// ══ SIDEBAR MENUS (defined early - before all other code) ══
+var SIDEBAR_MENUS_CFG = {
+  admin: [
+    { id:'home',       icon:'🏠', label:'Home',        fn:'showHomeView' },
+    { id:'masterlist', icon:'📋', label:'Masterlist',  fn:'showMasterlistViewFull' },
+    { id:'customer',   icon:'👥', label:'Customer',    fn:'showCustomerView' },
+    { section:'SALES' },
+    { id:'kpi',        icon:'📊', label:'KPI Sales',   fn:'showKpiView' },
+    { id:'payments',   icon:'💰', label:'Penerimaan',  fn:'showPaymentsView' },
+    { section:'OPERASI' },
+    { id:'production', icon:'🏭', label:'Production',  fn:'showProdTrackView' },
+    { id:'supplier',   icon:'🏢', label:'Supplier',    fn:'showSupplierDirView' },
+    { id:'supplierOS', icon:'💸', label:'Supplier OS', fn:'showSupplierOSView' },
+    { section:'LAPORAN' },
+    { id:'dashboard',  icon:'📈', label:'Dashboard',   fn:'showDashboardView' },
+    { section:'ADMIN' },
+    { id:'users',      icon:'👤', label:'Pengguna',    fn:'showUserMgmtView' },
+    { id:'security',   icon:'🔒', label:'Security',    fn:'showSecurityView' },
+    { id:'password',   icon:'🔑', label:'Password',    fn:'openChpwModal(false)', raw:true },
+  ],
+  sales: [
+    { id:'home',       icon:'🏠', label:'Home',        fn:'showHomeView' },
+    { id:'masterlist', icon:'📋', label:'Masterlist',  fn:'showMasterlistViewFull' },
+    { id:'customer',   icon:'👥', label:'Customer',    fn:'showCustomerView' },
+    { id:'kpi',        icon:'📊', label:'KPI Saya',    fn:'showKpiView' },
+    { id:'production', icon:'🏭', label:'Production',  fn:'showProdTrackView' },
+    { id:'jobboard',   icon:'🎨', label:'Job Board',   fn:'openJobBoard' },
+    { id:'password',   icon:'🔑', label:'Password',    fn:'openChpwModal(false)', raw:true },
+  ],
+  sales_executive: [
+    { id:'home',       icon:'🏠', label:'Home',        fn:'showHomeView' },
+    { id:'masterlist', icon:'📋', label:'Masterlist',  fn:'showMasterlistViewFull' },
+    { id:'customer',   icon:'👥', label:'Customer',    fn:'showCustomerView' },
+    { id:'kpi',        icon:'📊', label:'KPI Saya',    fn:'showKpiView' },
+    { id:'production', icon:'🏭', label:'Production',  fn:'showProdTrackView' },
+    { id:'jobboard',   icon:'🎨', label:'Job Board',   fn:'openJobBoard' },
+    { id:'password',   icon:'🔑', label:'Password',    fn:'openChpwModal(false)', raw:true },
+  ],
+  designer: [
+    { id:'jobboard',   icon:'🎨', label:'Job Board',   fn:'openJobBoard' },
+    { id:'password',   icon:'🔑', label:'Password',    fn:'openChpwModal(false)', raw:true },
+  ],
+};
+
+var _sbActive = 'home';
+
+function renderSidebarNav() {
+  const role = currentUser?.role || 'sales';
+  const menus = SIDEBAR_MENUS_CFG[role] || SIDEBAR_MENUS_CFG.sales;
+  const nav = document.getElementById('sbNav');
+  if (!nav) return;
+
+  let html = '';
+  menus.forEach(item => {
+    if (!item.id) {
+      html += `<div class="sb-section">${item.section}</div>`;
+      return;
+    }
+    const isActive = _sbActive === item.id;
+    const onclick = item.raw
+      ? `onclick="${item.fn}"`
+      : `onclick="sbSetActive('${item.id}');${item.fn}()"`;
+    html += `<button class="sb-item${isActive?' active':''}" ${onclick} id="sbi_${item.id}">
+      <span class="sb-icon">${item.icon}</span>
+      <span class="sb-label">${item.label}</span>
+    </button>`;
+  });
+  nav.innerHTML = html;
+
+  // Update user info
+  const av = document.getElementById('sbAvatar');
+  if (av) { av.textContent=(currentUser?.name||'?').slice(0,2); av.style.background=currentUser?.color||'#1A5CC8'; }
+  const un = document.getElementById('sbUsername');
+  if (un) un.textContent = currentUser?.name || '';
+  const ur = document.getElementById('sbUserrole');
+  if (ur) ur.textContent = ROLE_LABELS[role] || role;
+  // Update topbar date
+  const sd = document.getElementById('sbDate');
+  if (sd) {
+    const now = new Date();
+    const days=['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
+    const months=['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+    sd.textContent = days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  }
+  // Show add order button
+  const btnAdd = document.getElementById('dodBtnAddOrder') || document.getElementById('btnAddOrder');
+  if (btnAdd) btnAdd.style.display = role === 'designer' ? 'none' : '';
+}
+
+function sbSetActive(id) {
+  _sbActive = id;
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbi_' + id);
+  if (el) el.classList.add('active');
+}
+window.sbSetActive = sbSetActive;
+window.renderSidebarNav = renderSidebarNav;
 // ══════════════════════════════════════
 // DATA & CONFIG
 // ══════════════════════════════════════
@@ -1712,8 +1855,7 @@ function showLoading(msg) {
     document.head.appendChild(style);
     document.body.appendChild(el);
   }
-  const msgEl = document.getElementById('supaLoadingMsg');
-  if (msgEl) msgEl.textContent = msg || 'Memuatkan...';
+  document.getElementById('supaLoadingMsg').textContent = msg || 'Memuatkan...';
   el.style.display = 'flex';
 }
 
@@ -1729,12 +1871,12 @@ const USERS = {
   'fathi':   { name:'FATHI',   role:'admin',       color:'#0F7A48', bg:'#EDFAF3' },
   'anis':    { name:'ANIS',    role:'sales',       color:'#2470F0', bg:'#EEF4FF' },
   'hakimah': { name:'HAKIMAH', role:'sales',       color:'#E89A10', bg:'#FFF8EC' },
-  'daniel':  { name:'DANIEL',  role:'sales_executive', color:'#D4380D', bg:'#FFF2E8' },
+  'daniel':  { name:'DANIEL',  role:'sales',       color:'#D4380D', bg:'#FFF2E8' },
   'zul':     { name:'ZUL',     role:'designer',    color:'#6E30C8', bg:'#F4EEFF' },
   'aidi':    { name:'AIDI',    role:'designer',    color:'#0E7A7A', bg:'#EDFAFA' },
 };
 
-const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', sales_executive:'Sales Executive', designer:'Designer' };
+const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', designer:'Designer' };
 
 const PIC_COLORS = { 'ANIS':'#2470F0','HAKIMAH':'#E89A10','FATHI':'#12A060','FARIZ':'#1A5CC8',
   'NADIA':'#E03050','ZUL':'#6E30C8','AIDI':'#0E7A7A','DANIEL':'#D4380D','DANIAL':'#D4380D','SALES ADMIN 1':'#9AA0B8' };
@@ -1768,103 +1910,16 @@ const RAW = {"DEC 2025": [{"id": "DEC 2025_0", "pic": "SALES ADMIN 1", "status":
 // SESSION / AUTH
 // ══════════════════════════════════════
 let currentUser = null;
-
-// ══════════════════════════════════════
-// SIDEBAR NAVIGATION (NEW UI)
-// ══════════════════════════════════════
-
-var SIDEBAR_MENUS = {
-  admin: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { section:'SALES' },
-    { id:'kpi',         icon:'📊', label:'KPI Sales',    fn:'showKpiView' },
-    { id:'payments',    icon:'💰', label:'Penerimaan',   fn:'showPaymentsView' },
-    { section:'OPERASI' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'supplier',    icon:'🏢', label:'Supplier',     fn:'showSupplierDirView' },
-    { id:'supplierOS',  icon:'💸', label:'Supplier OS',  fn:'showSupplierOSView' },
-    { section:'LAPORAN' },
-    { id:'dashboard',   icon:'📈', label:'Dashboard',    fn:'showDashboardView' },
-    { section:'ADMIN' },
-    { id:'users',       icon:'👤', label:'Pengguna',     fn:'showUserMgmtView' },
-    { id:'security',    icon:'🔒', label:'Security',     fn:'showSecurityView' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  sales: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { id:'kpi',         icon:'📊', label:'KPI Saya',     fn:'showKpiView' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  sales_executive: [
-    { id:'home',        icon:'🏠', label:'Home',         fn:'showHomeView' },
-    { id:'masterlist',  icon:'📋', label:'Masterlist',   fn:'showMasterlistViewFull' },
-    { id:'customer',    icon:'👥', label:'Customer',     fn:'showCustomerView' },
-    { id:'kpi',         icon:'📊', label:'KPI Saya',     fn:'showKpiView' },
-    { id:'production',  icon:'🏭', label:'Production',   fn:'showProdTrackView' },
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-  designer: [
-    { id:'jobboard',    icon:'🎨', label:'Job Board',    fn:'openJobBoard' },
-    { id:'password',    icon:'🔑', label:'Password',     fn:'openChpwModal', noFn:true },
-  ],
-};
-
-var _activeSidebarItem = 'home';
-
-function renderSidebar() {
-  const role = currentUser?.role || 'sales';
-  const menus = SIDEBAR_MENUS[role] || SIDEBAR_MENUS.sales;
-  const nav = document.getElementById('sidebarNav');
-  if (!nav) return;
-  let html = '';
-  menus.forEach(item => {
-    if (!item.id) {
-      html += `<div class="nav-section">${item.section}</div>`;
-      return;
-    }
-    const isActive = _activeSidebarItem === item.id;
-    const onclick = item.noFn
-      ? `onclick="${item.fn}()"`
-      : `onclick="setSidebarActive('${item.id}');${item.fn}()"`;
-    html += `<button class="nav-item${isActive?' active':''}" ${onclick} id="si_${item.id}">
-      <span class="ni-icon">${item.icon}</span>
-      <span class="ni-label">${item.label}</span>
-    </button>`;
-  });
-  nav.innerHTML = html;
-  // Update user info
-  const av = document.getElementById('sbAvatar');
-  if (av) { av.textContent = (currentUser?.name||'?').slice(0,2); av.style.background = currentUser?.color||'#1A5CC8'; }
-  const nm = document.getElementById('sbName');
-  if (nm) nm.textContent = currentUser?.name || '';
-  const rl = document.getElementById('sbRole');
-  if (rl) rl.textContent = ROLE_LABELS[role] || role;
-  // Show/hide add order button
-  const btnAdd = document.getElementById('btnAddOrder');
-  if (btnAdd) btnAdd.style.display = role === 'designer' ? 'none' : '';
-}
-
-
-window.setSidebarActive = setSidebarActive;
-window.renderSidebar = renderSidebar;
-
 let sessionData = {};
 let currentMonth = '';
 let currentDetailRow = null;
 let editingId = null;
 let deleteTargetId = null;
-let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
+let activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL' };
 let sortField = 'date';
 let currentView = 'masterlist'; // masterlist | designer | kpi
 
-async function doLogin() {
+function doLogin() {
   const userId = document.getElementById('ls-user').value.trim().replace(/^@/,'').toLowerCase();
   const pass   = document.getElementById('ls-pass').value;
   const err    = document.getElementById('ls-err');
@@ -1889,7 +1944,7 @@ async function doLogin() {
   currentUser = { ...baseUser, id: userId, name: userData.name, role: userData.role };
   localStorage.setItem('dod_session', JSON.stringify(currentUser));
   document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('mainApp').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'block';
   initApp();
 }
 
@@ -1914,18 +1969,7 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════
 // INIT APP
 // ══════════════════════════════════════
-async function initApp() {
-  try {
-    await syncUsersFromSupabase();
-    const freshStore = loadUserStore();
-    const freshUser = freshStore[currentUser?.id];
-    if (freshUser) {
-      currentUser.role  = freshUser.role;
-      currentUser.name  = freshUser.name;
-      currentUser.color = freshUser.color;
-      localStorage.setItem('dod_session', JSON.stringify(currentUser));
-    }
-  } catch(e) { console.warn('User sync skipped:', e); }
+function initApp() {
   setupNavForRole();
   updateNavDate();
   // Designer goes straight to jobboard
@@ -1990,57 +2034,50 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  // navTabs managed by individual views - not hidden here
-
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  // Hide month tabs by default — only shown in masterlist view
+  const tabs = document.getElementById('dodNavTabs') || document.getElementById('navTabs');
+  if (tabs) tabs.style.display = 'none';
 }
 
 function showHomeView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('home');
+  sbSetActive('home');
   setAllViewsHidden();
-  document.getElementById('homeView').classList.add('active');
+  document.getElementById('homeView').style.display = 'block';
   renderHomepage();
 }
 
 function showMasterlistViewFull() {
-  setSidebarActive('masterlist');
-  setAllViewsHidden();
-  const mlTabs = document.getElementById('navTabs');
-  if (mlTabs) mlTabs.style.display = 'flex';
   if (currentUser && currentUser.role === 'designer') {
     showToast('Akses ditolak — Sales data tidak tersedia untuk Designer.', true);
     return;
   }
-  document.getElementById('masterlistView').classList.add('active');
+  setAllViewsHidden();
+  document.getElementById('masterlistView').style.display = 'block';
   if (!document.getElementById('tableBody').innerHTML) renderAll();
 }
 
 function showDashboardView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('dashboard');
+  sbSetActive('dashboard');
   setAllViewsHidden();
-  document.getElementById('dashboardView').classList.add('active');
+  document.getElementById('dashboardView').style.display = 'block';
   initDashboard();
 }
 
 function showUserMgmtView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('users');
+  sbSetActive('users');
   setAllViewsHidden();
-  document.getElementById('userMgmtView').classList.add('active');
+  document.getElementById('userMgmtView').style.display = 'block';
   renderUserMgmt();
 }
 
 function showCustomerView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('customer');
+  sbSetActive('customer');
   setAllViewsHidden();
-  document.getElementById('customerView').classList.add('active');
+  document.getElementById('customerView').style.display = 'block';
   renderCustomers();
 }
 
@@ -2049,17 +2086,50 @@ loadSuppliers().catch(() => {});
 
 function setupNavForRole() {
   const role = currentUser.role;
-  // Render sidebar navigation
-  renderSidebar();
-  // Legacy nav elements (optional - may not exist in new UI)
+  // Render sidebar
+  renderSidebarNav();
+  // Legacy (hidden elements - null safe)
   const av = document.getElementById('navUserAvatar');
-  if (av) { av.textContent = currentUser.name.slice(0,2); av.style.background = currentUser.color; }
-  const navName = document.getElementById('navUserName');
-  if (navName) navName.textContent = '@' + currentUser.id;
-  const navRole = document.getElementById('navUserRole');
-  if (navRole) navRole.textContent = ROLE_LABELS[role];
-  // Designer goes straight to jobboard (handled in initApp)
+  if (av) { av.textContent=currentUser.name.slice(0,2); av.style.background=currentUser.color; }
+  const nn = document.getElementById('navUserName');
+  if (nn) nn.textContent = '@'+currentUser.id;
+  const nr = document.getElementById('navUserRole');
+  if (nr) nr.textContent = ROLE_LABELS[role];
+
+  // Buttons by role
+  const btnAdd   = document.getElementById('btnAddOrder');
+  const btnMonth = document.getElementById('btnAddMonth');
+  const btnBoard = document.getElementById('btnViewToggle');
+  const btnKpi   = document.getElementById('btnKpiView');
+
+  if (role === 'admin') {
+    btnAdd.style.display = 'block';
+    btnMonth.style.display = 'block';
+    btnBoard.style.display = 'block';
+    btnKpi.style.display = 'none';
+    document.getElementById('btnDashboard').style.display = 'block';
+    document.getElementById('btnUserMgmt').style.display = 'block';
+    document.getElementById('btnSupplierDir').style.display = 'block';
+    document.getElementById('btnSupplierOS').style.display = 'block';
+    document.getElementById('btnProdTrack').style.display = 'block';
+    document.getElementById('btnSupplierDir').style.display = 'block';
+    document.getElementById('btnSupplierOS').style.display = 'block';
+  } else if (role === 'sales') {
+    btnAdd.style.display = 'block';
+    btnMonth.style.display = 'none';
+    btnBoard.style.display = 'block';
+    btnBoard.textContent = '📋 Job Board';
+    btnKpi.style.display = 'block';
+    document.getElementById('btnProdTrack').style.display = 'block';
+  } else { // designer
+    btnAdd.style.display = 'none';
+    btnMonth.style.display = 'none';
+    btnBoard.style.display = 'none';  // hide Sales List button
+    btnKpi.style.display = 'none';
+    document.getElementById('navTabs').style.display = 'none'; // hide month tabs
+  }
 }
+
 function toggleBoardView() {
   if (currentView === 'designer') {
     showMasterlistView();
@@ -2075,7 +2145,7 @@ function showMasterlistView() {
   }
   currentView = 'masterlist';
   setAllViewsHidden();
-  document.getElementById('masterlistView').classList.add('active');
+  document.getElementById('masterlistView').style.display = 'block';
   document.getElementById('btnViewToggle').textContent = '📋 Job Board';
   document.getElementById('navTabs').style.display = '';
   renderAll();
@@ -2084,7 +2154,7 @@ function showMasterlistView() {
 function showDesignerView() {
   currentView = 'designer';
   document.getElementById('masterlistView').style.display = 'none';
-  document.getElementById('designerView').classList.add('active');
+  document.getElementById('designerView').style.display = 'block';
   document.getElementById('kpiView').style.display = 'none';
   document.getElementById('btnViewToggle').textContent = '📊 Sales List';
   document.getElementById('navTabs').style.display = 'none';
@@ -2093,12 +2163,10 @@ function showDesignerView() {
 }
 
 function showKpiView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('kpi');
+  sbSetActive('kpi');
   currentView = 'kpi';
   setAllViewsHidden();
-  document.getElementById('kpiView').classList.add('active');
+  document.getElementById('kpiView').style.display = 'block';
   renderKpiDashboard();
 }
 
@@ -2106,7 +2174,7 @@ function showKpiView() {
 // MONTH TABS
 // ══════════════════════════════════════
 function buildMonthTabs() {
-  const tabs = document.getElementById('navTabs');
+  const tabs = document.getElementById('dodNavTabs') || document.getElementById('navTabs');
   tabs.innerHTML = '';
   const months = Object.keys(sessionData);
   months.forEach(m => {
@@ -2127,7 +2195,7 @@ function selectMonth(m) {
   currentMonth = m;
   buildMonthTabs();
   document.getElementById('heroMonth').textContent = MONTH_LABELS[m] || m;
-  activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
+  activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'' };
   document.getElementById('searchInput').value = '';
   document.getElementById('sourceFilter').value = 'ALL';
   buildPicFilters();
@@ -2230,7 +2298,7 @@ function renderAll() {
 
   renderKPIs(rows);
   renderTable(rows);
-  renderTableRows(rows);
+  renderSidebar(rows);
   buildPicFilters();
   document.getElementById('heroMonth').textContent = MONTH_LABELS[currentMonth] || currentMonth;
 }
@@ -2271,8 +2339,8 @@ function renderKPIs(rows) {
   const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
   const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
   const totalCost = rows.reduce((s,r)=>s+(r.total_supplier||0),0);
-  const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
+  const custOS    = rows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const supOS     = rows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
   const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
   const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
 
@@ -2364,7 +2432,7 @@ function renderTable(rows) {
 // ══════════════════════════════════════
 // RENDER SIDEBAR
 // ══════════════════════════════════════
-function renderTableRows(rows) {
+function renderSidebar(rows) {
   const picMap = {};
   rows.forEach(r => {
     if (!r.pic) return;
@@ -3362,8 +3430,7 @@ function updateNavDate() {
   const now = new Date();
   const days = ['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
   const months = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
-  const navDateEl = document.getElementById('navDate') || document.getElementById('topbarDate');
-  if (navDateEl) navDateEl.textContent = days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('navDate').textContent = days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
   document.getElementById('ls-date').textContent = days[now.getDay()]+' · '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
 }
 
@@ -3388,7 +3455,7 @@ window.addEventListener('load', () => {
           USERS[session.id] = { name:session.name, role:session.role, color:session.color||'#1A5CC8', bg:session.bg||'#EEF4FF' };
         }
         document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'block';
         initApp();
         return;
       }
@@ -4593,10 +4660,9 @@ const USER_STORE_KEY = 'dod_user_store_v1';
 
 // Role display config
 const ROLE_CONFIG = {
-  admin:           { label:'Admin',           color:'#1A5CC8', bg:'#EEF4FF' },
-  sales:           { label:'Sales',           color:'#E89A10', bg:'#FFF8EC' },
-  sales_executive: { label:'Sales Executive', color:'#D4380D', bg:'#FFF2E8' },
-  designer:        { label:'Designer',        color:'#6E30C8', bg:'#F4EEFF' },
+  admin:    { label:'Admin',    color:'#1A5CC8', bg:'#EEF4FF' },
+  sales:    { label:'Sales',    color:'#E89A10', bg:'#FFF8EC' },
+  designer: { label:'Designer', color:'#6E30C8', bg:'#F4EEFF' },
 };
 
 // ── User Store (localStorage) ────────────────────────────────
@@ -5365,11 +5431,9 @@ let SUPPLIERS = [
 ];
 
 function showSupplierDirView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('supplier');
+  sbSetActive('supplier');
   setAllViewsHidden();
-  document.getElementById('supplierDirView').classList.add('active');
+  document.getElementById('supplierDirView').style.display = 'block';
   renderSupplierDir();
 }
 
@@ -5439,11 +5503,9 @@ function renderSupplierDir() {
 }
 
 function showSupplierOSView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('supplierOS');
+  sbSetActive('supplierOS');
   setAllViewsHidden();
-  document.getElementById('supplierOSView').classList.add('active');
+  document.getElementById('supplierOSView').style.display = 'block';
   renderSupplierOS();
 }
 
@@ -5807,11 +5869,9 @@ let prodFilterStatus = '';
 let prodFilterPic = '';
 
 function showProdTrackView() {
-  const mlTabs2 = document.getElementById('navTabs');
-  if (mlTabs2) mlTabs2.style.display = 'none';
-  setSidebarActive('production');
+  sbSetActive('production');
   setAllViewsHidden();
-  document.getElementById('prodTrackView').classList.add('active');
+  document.getElementById('prodTrackView').style.display = 'block';
   renderProdTrack();
 }
 
@@ -6469,585 +6529,10 @@ function autoUpdateSupStatus() {
   el.value = (total > 0 && paid >= total) ? 'PAYMENT DONE' : 'OUTSTANDING';
 }
 
-
-// ══ PORTED NEW FEATURES ══
-
-function getProdUrgency(r) {
-  if (!r.production_date || !isPipelineSales(r)) return 'NONE';
-  const today = getMYTToday();
-  const prod  = new Date(r.production_date + 'T00:00:00+08:00');
-  const diffDays = Math.round((prod - today) / 86400000);
-  if (diffDays < 0)  return 'OVERDUE';
-  if (diffDays <= 3) return 'ALMOST';
-  return 'OK';
-}
-
-function calcKomisyenTiered(revenue) {
-  if (revenue <= 0) return 0;
-  const tiers = [
-    { max: 5000,  rate: 0.03 },
-    { max: 15000, rate: 0.05 },
-    { max: 25000, rate: 0.07 },
-    { max: 40000, rate: 0.08 },
-    { max: Infinity, rate: 0.10 },
-  ];
-  let kom = 0, remaining = revenue, prev = 0;
-  for (const tier of tiers) {
-    const chunk = Math.min(remaining, tier.max - prev);
-    if (chunk <= 0) break;
-    kom += chunk * tier.rate;
-    remaining -= chunk;
-    prev = tier.max;
-    if (remaining <= 0) break;
-  }
-  return kom;
-}
-
-function getTieredBreakdown(revenue) {
-  const tiers = [
-    { min:0,      max: 5000,     rate: 0.03, label:'Tier 1 (3%)' },
-    { min:5000,   max: 15000,    rate: 0.05, label:'Tier 2 (5%)' },
-    { min:15000,  max: 25000,    rate: 0.07, label:'Tier 3 (7%)' },
-    { min:25000,  max: 40000,    rate: 0.08, label:'Tier 4 (8%)' },
-    { min:40000,  max: Infinity, rate: 0.10, label:'Tier 5 (10%)' },
-  ];
-  return tiers.filter(t => revenue > t.min).map(t => {
-    const chunk = Math.min(revenue - t.min, t.max - t.min);
-    return { label: t.label, base: chunk, kom: chunk * t.rate };
-  });
-}
-
-function openAddModalFromCust() {
-  const c = window._custFiltered?.[window._custDetailIdx ?? custDetailOpen];
-  closeCustDetail();
-  openAddModal().then ? openAddModal().then(() => _prefillCust(c)) : (openAddModal(), setTimeout(() => _prefillCust(c), 100));
-}
-
-function _prefillCust(c) {
-  if (!c) return;
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val||''; };
-  set('f_cust_name', c.name);
-  set('f_cust_tel',  c.tel);
-  set('f_cust_email', c.email);
-  set('f_cust_addr', c.addr);
-  showToast('✓ Maklumat customer dah diisi');
-}
-
-function toggleProdStatus(st, btn) {
-  activeFilters.prodStatus = st;
-  btn.closest('.filter-btns').querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  renderAll();
-}
-
-function filterProdTrackBySupplier(sup, btn) {
-  window._prodSupFilter = sup;
-  if (btn) {
-    document.querySelectorAll('#prodKilangFilter .fbtn').forEach(b => b.classList.remove('on'));
-    btn.classList.add('on');
-  }
-  renderProdTrack();
-}
-
-async function saveDocSnapshot(order, docType, payload) {
-  try {
-    const snap = {
-      order_id:     order.id,
-      doc_type:     docType,
-      inv_number:   payload.inv_number || order.inv_number_supplier || order.inv_number || '',
-      generated_by: currentUser?.name || 'unknown',
-      generated_at: new Date().toISOString(),
-      snapshot:     payload,
-      notes:        order.name_job || '',
-    };
-    await supaFetch('/rest/v1/documents', {
-      method: 'POST',
-      body: JSON.stringify(snap),
-    });
-    // Reload saved docs list if panel still open
-    if (currentDetailRow?.id === order.id) {
-      loadSavedDocs(order.id);
-    }
-  } catch(e) {
-    console.warn('Save doc snapshot failed (non-critical):', e);
-  }
-}
-
-async function loadSavedDocs(orderId) {
-  const el = document.getElementById('savedDocsList');
-  if (!el) return;
-  try {
-    const rows = await supaGet('documents',
-      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes&order_id=eq.${encodeURIComponent(orderId)}&order=generated_at.desc`
-    );
-    if (!rows || !rows.length) {
-      el.innerHTML = '<div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Tiada dokumen tersimpan lagi</div>';
-      return;
-    }
-    el.innerHTML = rows.map(doc => {
-      const dt = new Date(doc.generated_at).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-      const info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
-      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:7px;border:1px solid var(--line);">
-        <span style="font-size:14px;">${info.icon}</span>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
-          <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
-        </div>
-        <button onclick="openSavedDoc('${doc.id}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    if (el) el.innerHTML = '<div style="font-size:11px;color:var(--textm);padding:8px;">Gagal muatkan dokumen</div>';
-  }
-}
-
-async function openSavedDoc(docId) {
-  try {
-    const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
-    if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
-    const doc = rows[0];
-    // Load snapshot payload - use the saved data, NOT current order data
-    const payload = doc.snapshot;
-    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
-    window.open('dod-document-generator.html', '_blank');
-  } catch(e) {
-    showToast('Gagal buka dokumen: ' + e.message, true);
-  }
-}
-
-async function saveUserToSupabase(u) {
-  try {
-    await supaFetch('/rest/v1/users', {
-      method: 'POST',
-      prefer: 'resolution=merge-duplicates',
-      body: JSON.stringify([{
-        id: u.id, name: u.name, role: u.role,
-        color: u.color || '#1A5CC8',
-        bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
-        active: u.active !== false,
-        created: u.created || new Date().toISOString(),
-        last_login: u.lastLogin || null,
-      }]),
-    });
-  } catch(e) {
-    console.warn('Save user to Supabase failed:', e);
-  }
-}
-
-async function showPaymentsView() {
-  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
-  setAllViewsHidden();
-  document.getElementById('paymentsView').classList.add('active');
-  renderPaymentsView();
-}
-
-async function renderPaymentsView() {
-  const el = document.getElementById('paymentsContent');
-  if (!el) return;
-
-  // Collect all payment records
-  const payments = [];
-  Object.entries(sessionData).forEach(([month, orders]) => {
-    orders.forEach(o => {
-      if (!isPipelineSales(o)) return;
-      // 1st payment
-      if ((o.first_payment||0) > 0) {
-        payments.push({
-          type: '1st',
-          order_id: o.id,
-          name_job: o.name_job,
-          cust_name: o.cust_name || '—',
-          pic: o.pic,
-          month,
-          amount: o.first_payment,
-          date: o.pay1_date || o.order_date || '',
-          time: o.pay1_time || '',
-          method: o.pay1_method || '—',
-          ref: o.pay1_ref || '',
-          has_os: (o.balance_customer||0) > 0,
-          inv_number: o.inv_number_supplier || o.inv_number || '',
-        });
-      }
-      // 2nd payment
-      if ((o.pay2_amount||0) > 0) {
-        payments.push({
-          type: '2nd',
-          order_id: o.id,
-          name_job: o.name_job,
-          cust_name: o.cust_name || '—',
-          pic: o.pic,
-          month,
-          amount: o.pay2_amount,
-          date: o.pay2_date || '',
-          time: o.pay2_time || '',
-          method: o.pay2_method || '—',
-          ref: o.pay2_ref || '',
-          has_os: false,
-          inv_number: o.inv_number_supplier || o.inv_number || '',
-        });
-      }
-    });
-  });
-
-  // Apply filters
-  let filtered = payments;
-  if (payFilterMonth !== 'ALL') filtered = filtered.filter(p => p.month === payFilterMonth);
-  if (payFilterMethod !== 'ALL') filtered = filtered.filter(p => p.method === payFilterMethod);
-  if (payFilterPic !== 'ALL') filtered = filtered.filter(p => p.pic === payFilterPic);
-
-  // Sort by date desc
-  filtered.sort((a,b) => {
-    const da = (a.date||'') + (a.time||'');
-    const db = (b.date||'') + (b.time||'');
-    return db.localeCompare(da);
-  });
-
-  const totalIn = filtered.reduce((s,p) => s + (p.amount||0), 0);
-  const totalPay1 = filtered.filter(p=>p.type==='1st').reduce((s,p)=>s+(p.amount||0),0);
-  const totalPay2 = filtered.filter(p=>p.type==='2nd').reduce((s,p)=>s+(p.amount||0),0);
-
-  // Build month options
-  const months = [...new Set(payments.map(p=>p.month))].sort().reverse();
-  const monthOpts = `<option value="ALL">Semua Bulan</option>` +
-    months.map(m => `<option value="${m}" ${m===payFilterMonth?'selected':''}>${MONTH_LABELS[m]||m}</option>`).join('');
-
-  // Build method options
-  const methods = [...new Set(payments.map(p=>p.method).filter(m=>m&&m!=='—'))].sort();
-  const methodOpts = `<option value="ALL">Semua Kaedah</option>` +
-    methods.map(m => `<option value="${m}" ${m===payFilterMethod?'selected':''}>${m}</option>`).join('');
-
-  // Build pic options
-  const pics = [...new Set(payments.map(p=>p.pic).filter(Boolean))].sort();
-  const picOpts = `<option value="ALL">Semua Staff</option>` +
-    pics.map(p => `<option value="${p}" ${p===payFilterPic?'selected':''}>${p}</option>`).join('');
-
-  const methodColors = {
-    'Transfer Bank': '#1A5CC8',
-    'QR': '#0F7A48',
-    'Cash': '#B8720A',
-    'Cheque': '#6E30C8',
-  };
-
-  el.innerHTML = `
-    <div style="max-width:1100px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-        <div>
-          <div style="font-size:20px;font-weight:700;color:var(--text);">💰 Rekod Penerimaan</div>
-          <div style="font-size:12px;color:var(--textm);">Semua bayaran yang diterima dari customer</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <select onchange="payFilterMonth=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${monthOpts}</select>
-          <select onchange="payFilterMethod=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${methodOpts}</select>
-          <select onchange="payFilterPic=this.value;renderPaymentsView()" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);">${picOpts}</select>
-        </div>
-      </div>
-
-      <!-- Summary strip -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--green);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Jumlah Masuk</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--green);">${fmt(totalIn)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.length} transaksi</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--blue);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Deposit (1st)</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--blue);">${fmt(totalPay1)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.filter(p=>p.type==='1st').length} bayaran</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--amber);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Baki (2nd)</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--amber);">${fmt(totalPay2)}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">${filtered.filter(p=>p.type==='2nd').length} bayaran</div>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;border-top:3px solid var(--red);">
-          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;text-transform:uppercase;letter-spacing:.08em;">Ada OS Lagi</div>
-          <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:var(--red);">${filtered.filter(p=>p.has_os).length}</div>
-          <div style="font-size:10px;color:var(--textm);margin-top:2px;">order belum settle</div>
-        </div>
-      </div>
-
-      <!-- Table -->
-      ${filtered.length === 0 ? `<div style="text-align:center;padding:60px;color:var(--textm);">Tiada rekod bayaran dijumpai</div>` : `
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="background:var(--bg3);">
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;">Tarikh & Masa</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Customer</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Job</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">PIC</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Jenis</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Kaedah</th>
-              <th style="padding:10px 12px;text-align:left;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Ref</th>
-              <th style="padding:10px 12px;text-align:right;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Amaun</th>
-              <th style="padding:10px 12px;text-align:center;color:var(--textm);font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filtered.map((p,i) => {
-              const methodColor = methodColors[p.method] || 'var(--textm)';
-              const rowBg = i%2===0 ? 'var(--bg)' : 'var(--bg3)';
-              return `<tr style="border-bottom:1px solid var(--line);background:${rowBg};">
-                <td style="padding:9px 12px;white-space:nowrap;">
-                  <div style="font-weight:600;color:var(--text);">${p.date||'—'}</div>
-                  ${p.time?`<div style="font-size:10px;color:var(--textm);">${p.time}</div>`:''}
-                </td>
-                <td style="padding:9px 12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">${p.cust_name}</td>
-                <td style="padding:9px 12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--textd);font-size:11px;">${p.name_job||'—'}</td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:var(--bg3);color:var(--textd);">${p.pic||'—'}</span>
-                </td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;background:${p.type==='1st'?'#DBEAFE':'#FEF3C7'};color:${p.type==='1st'?'var(--blue)':'var(--amber)'};">${p.type==='1st'?'Deposit':'Baki'}</span>
-                </td>
-                <td style="padding:9px 12px;">
-                  <span style="font-size:11px;font-weight:600;color:${methodColor};">${p.method}</span>
-                </td>
-                <td style="padding:9px 12px;font-size:11px;color:var(--textm);font-family:'Fira Code',monospace;">${p.ref||'—'}</td>
-                <td style="padding:9px 12px;text-align:right;font-family:'Fira Code',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</td>
-                <td style="padding:9px 12px;text-align:center;">
-                  ${p.has_os
-                    ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">Ada OS</span>`
-                    : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--greenbg);color:var(--green);font-weight:600;">✓ Selesai</span>`
-                  }
-                </td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-          <tfoot>
-            <tr style="background:var(--bg2);border-top:2px solid var(--line);">
-              <td colspan="7" style="padding:10px 12px;font-weight:700;color:var(--text);">JUMLAH (${filtered.length} transaksi)</td>
-              <td style="padding:10px 12px;text-align:right;font-family:'Fira Code',monospace;font-weight:700;font-size:14px;color:var(--green);">${fmt(totalIn)}</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>`}
-    </div>`;
-}
-
-function showSecurityView() {
-  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
-  setAllViewsHidden();
-  document.getElementById('securityView').classList.add('active');
-  renderSecurityView();
-}
-
-function renderSecurityView() {
-  const el = document.getElementById('securityContent');
-  if (!el) return;
-
-  el.innerHTML = `
-    <div style="max-width:860px;">
-      <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px;">🛡 Security & Data Management</div>
-      <div style="font-size:12px;color:var(--textm);margin-bottom:28px;">Kawalan akses kepada admin sahaja. Semua tindakan di sini dilog dalam audit trail.</div>
-
-      <!-- Export & Backup Section -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">💾 Export & Backup Data</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Download salinan data untuk simpanan atau analisis luar.</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="exportCSV()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📊 Export CSV</button>
-          <button onclick="exportJSON()" style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">💾 Backup JSON</button>
-          <button onclick="saveBackupToSupabase(prompt('Label backup (contoh: Manual-Apr-2026):') || 'Manual-'+new Date().toISOString().slice(0,10))" style="padding:9px 18px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Backup ke Cloud</button>
-        </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--textm);">Auto backup: Setiap Isnin secara automatik bila admin login. Backup disimpan dalam Supabase.</div>
-      </div>
-
-      <!-- Restore Section -->
-      <div style="background:var(--bg2);border:1px solid var(--amberb);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--amber);margin-bottom:4px;">⚠ Restore Backup</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Upload fail JSON backup untuk pulihkan data. Sistem akan auto-backup data semasa sebelum restore.</div>
-        <label style="display:inline-block;padding:9px 18px;background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
-          📂 Pilih Fail Backup (.json)
-          <input type="file" accept=".json" style="display:none;" onchange="restoreBackup(this.files[0]).then(()=>this.value='').catch(()=>this.value='')">
-        </label>
-        <div style="margin-top:10px;font-size:11px;color:var(--amber);background:var(--amberbg);border:1px solid var(--amberb);border-radius:6px;padding:8px 12px;">
-          ⚠ Restore akan OVERWRITE semua data semasa. Sistem akan minta pengesahan 2 kali sebelum proceed.
-        </div>
-      </div>
-
-      <!-- Audit Log Section -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">📋 Audit Log</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Rekod semua tindakan edit, cipta, dan padam order dalam sistem.</div>
-        <button onclick="loadAuditLogInline()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">📋 Muatkan Audit Log</button>
-        <div id="auditLogInline" style="margin-top:16px;"></div>
-      </div>
-
-      <!-- Cloud Backups List -->
-      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">☁ Senarai Backup Cloud</div>
-        <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Semua backup yang disimpan dalam Supabase.</div>
-        <button onclick="loadCloudBackups()" style="padding:9px 18px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">☁ Muatkan Senarai</button>
-        <div id="cloudBackupsList" style="margin-top:16px;"></div>
-      </div>
-    </div>
-  `;
-}
-
-function exportCSV() {
-  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
-    orders.map(o => ({ ...o, _month: month }))
-  );
-  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
-
-  const cols = [
-    '_month','pic','status','pipeline_status','name_job','source','channel',
-    'pcs','order_date','inv_date','due_date','inv_number','inv_number_supplier',
-    'total_customer','first_payment','balance_customer','profit',
-    'nohad_amount','nohad_paid','supplier_outstanding','supplier_payment_status',
-    'cust_name','cust_tel','cust_addr','supplier_name',
-    'production_date','production_status',
-  ];
-
-  const escape = v => {
-    if (v === null || v === undefined) return '';
-    const s = String(v);
-    return s.includes(',') || s.includes('"') || s.includes('\n')
-      ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
-
-  const header = cols.join(',');
-  const rows = allOrders.map(o => cols.map(c => escape(o[c])).join(','));
-  const csv = [header, ...rows].join('\n');
-
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'DOD-orders-' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✓ CSV exported (' + allOrders.length + ' orders)');
-}
-
-function exportJSON() {
-  const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
-    orders.map(o => ({ ...o, _month: month }))
-  );
-  if (!allOrders.length) { showToast('Tiada data untuk export', true); return; }
-
-  const payload = {
-    exported_at: new Date().toISOString(),
-    exported_by: currentUser?.name || 'unknown',
-    order_count: allOrders.length,
-    orders: allOrders,
-  };
-
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'DOD-backup-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('✓ JSON backup exported (' + allOrders.length + ' orders)');
-}
-
-function diffOrder(oldObj, newObj) {
-  if (!oldObj) return null;
-  const changes = {};
-  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-  const skipKeys = ['_month'];
-  allKeys.forEach(k => {
-    if (skipKeys.includes(k)) return;
-    const ov = JSON.stringify(oldObj[k]);
-    const nv = JSON.stringify(newObj[k]);
-    if (ov !== nv) {
-      changes[k] = { old: oldObj[k], new: newObj[k] };
-    }
-  });
-  return Object.keys(changes).length ? changes : null;
-}
-
-async function logAudit(orderId, action, changes, snapshot) {
-  try {
-    const entry = {
-      order_id:   orderId || null,
-      user_name:  currentUser?.name || 'unknown',
-      action,
-      changes:    changes || null,
-      snapshot:   snapshot || null,
-      created_at: new Date().toISOString(),
-    };
-    await supaFetch('/rest/v1/audit_log', {
-      method: 'POST',
-      body: JSON.stringify(entry),
-    });
-  } catch(e) {
-    console.warn('Audit log failed (non-critical):', e);
-  }
-}
-
-function showKpiDashboard(staffFilter, monthFilter) {
-  if (staffFilter !== undefined) kpiFilterStaff = staffFilter;
-  if (monthFilter !== undefined) kpiFilterMonth = monthFilter;
-  renderKpiDashboard();
-}
-
-function setSidebarActive(id) {
-  _activeSidebarItem = id;
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  const el = document.getElementById('si_' + id);
-  if (el) el.classList.add('active');
-}
-
-window.setSidebarActive = setSidebarActive;
-window.showKpiDashboard = showKpiDashboard;
-window.exportCSV = exportCSV;
-window.exportJSON = exportJSON;
-window.showSecurityView = showSecurityView;
-window.openAddModalFromCust = openAddModalFromCust;
-window.filterProdTrackBySupplier = filterProdTrackBySupplier;
-window.loadSavedDocs = loadSavedDocs;
-window.openSavedDoc = openSavedDoc;
-window.saveDocSnapshot = saveDocSnapshot;
-window.showPaymentsView = showPaymentsView;
-window.renderPaymentsView = renderPaymentsView;
-
-
-
-function recalcOS() {
-  const rev  = parseFloat(document.getElementById('f_rev')?.value) || 0;
-  const pay1 = parseFloat(document.getElementById('f_pay1')?.value) || 0;
-  const pay2 = parseFloat(document.getElementById('f_pay2')?.value) || 0;
-  const os   = Math.max(0, rev - pay1 - pay2);
-  const el   = document.getElementById('f_cust_os_display');
-  if (el) el.value = os > 0 ? 'RM ' + os.toFixed(2) : '✓ Selesai';
-}
-
-
-async function syncUsersFromSupabase() {
-  try {
-    const rows = await supaGet('users', 'select=*');
-    if (!rows || !rows.length) return;
-    const store = {};
-    rows.forEach(u => {
-      store[u.id] = {
-        id: u.id, name: u.name, role: u.role,
-        color: u.color || '#1A5CC8', bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
-        active: u.active !== false,
-        created: u.created || new Date().toISOString(),
-        lastLogin: u.last_login || null,
-      };
-    });
-    _userStoreCache = store;
-    localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-    // Update USERS runtime object
-    Object.values(store).forEach(u => {
-      if (USERS[u.id]) USERS[u.id].role = u.role;
-    });
-  } catch(e) {
-    console.warn('User sync from Supabase failed:', e);
-  }
-}
-
-
-
-
 </script>
+
+    </div><!-- end dod-content -->
+  </div><!-- end dod-main -->
+</div><!-- end mainApp -->
 </body>
 </html>
