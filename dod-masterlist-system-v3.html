@@ -1712,7 +1712,8 @@ function showLoading(msg) {
     document.head.appendChild(style);
     document.body.appendChild(el);
   }
-  document.getElementById('supaLoadingMsg').textContent = msg || 'Memuatkan...';
+  const msgEl = document.getElementById('supaLoadingMsg');
+  if (msgEl) msgEl.textContent = msg || 'Memuatkan...';
   el.style.display = 'flex';
 }
 
