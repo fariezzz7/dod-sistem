@@ -2064,7 +2064,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','paymentsView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3181,6 +3181,152 @@ function openDoc(docType) {
 // ══════════════════════════════════════
 // KPI DASHBOARD (Sales Admin)
 // ══════════════════════════════════════
+
+function buildKomHtml(isSE, revenue, revBukan, revSek, komBukan, komSek, totalKom, layak, pcs) {
+  const fmt2 = v => 'RM '+(v||0).toLocaleString('en-MY',{minimumFractionDigits:2});
+  if (isSE) {
+    const tiers = [
+      {label:'Tier 1 (3%)',   from:0,      to:50000,   rate:0.03},
+      {label:'Tier 2 (5%)',   from:50000,  to:100000,  rate:0.05},
+      {label:'Tier 3 (7%)',   from:100000, to:200000,  rate:0.07},
+      {label:'Tier 4 (8%)',   from:200000, to:300000,  rate:0.08},
+      {label:'Tier 5 (10%)',  from:300000, to:Infinity, rate:0.10},
+    ];
+    let html = '<div style="font-size:10px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Komisyen Tiered (Sales Executive)</div>';
+    tiers.forEach(tier => {
+      const applicable = Math.max(0, Math.min(revenue, tier.to) - tier.from);
+      if (applicable <= 0) return;
+      const earned = applicable * tier.rate;
+      html += '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">'
+        + '<span style="color:var(--textd);">' + tier.label + ': ' + fmt2(applicable) + '</span>'
+        + '<span style="font-family:monospace;font-weight:600;">' + fmt2(earned) + '</span>'
+        + '</div>';
+    });
+    html += '<div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">'
+      + '<span style="color:var(--green);font-weight:600;">✓ Tiada syarat minimum PCS</span>'
+      + '<span style="font-family:monospace;font-weight:700;color:var(--green);">' + fmt2(totalKom) + '</span>'
+      + '</div>';
+    return html;
+  } else {
+    const KOMISYEN_MIN_PCS = 1000;
+    return '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+      + '<span style="color:var(--textd);">Bukan Sekolah (1%): ' + fmt2(revBukan) + '</span>'
+      + '<span style="font-family:monospace;color:var(--text);font-weight:600;">' + fmt2(komBukan) + '</span>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">'
+      + '<span style="color:var(--textd);">Sekolah (0.5%): ' + fmt2(revSek) + '</span>'
+      + '<span style="font-family:monospace;color:var(--text);font-weight:600;">' + fmt2(komSek) + '</span>'
+      + '</div>'
+      + '<div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">'
+      + '<span style="color:' + (layak?'var(--green)':'var(--red)') + ';font-weight:600;">'
+      + (layak ? '✓ Layak komisyen' : '⚠ Belum layak — perlukan ' + (KOMISYEN_MIN_PCS-pcs) + ' PCS lagi') + '</span>'
+      + '<span style="font-family:monospace;font-weight:700;color:' + (layak?'var(--green)':'var(--textm)') + ';">' + fmt2(totalKom) + '</span>'
+      + '</div>';
+  }
+}
+
+
+function buildCrHtml(picName, curMonthData) {
+  var allMonth  = curMonthData.filter(function(r){return r.pic===picName;});
+  var confirmed = allMonth.filter(function(r){return isPipelineSales(r);}).length;
+  var pending   = allMonth.filter(function(r){return (r.pipeline_status||'confirmed')==='quotation';}).length;
+  var total     = confirmed + pending;
+  var cr        = total > 0 ? Math.round(confirmed/total*100) : 0;
+  var col       = cr >= 70 ? 'var(--green)' : 'var(--amber)';
+  return '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px;">'
+    + '<span style="font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.06em;">📊 Conversion Rate</span>'
+    + '<span style="font-weight:700;color:'+col+';">'+cr+'%</span>'
+    + '</div>'
+    + '<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:4px;">'
+    + '<div style="height:100%;width:'+cr+'%;background:'+col+';border-radius:3px;"></div>'
+    + '</div>'
+    + '<div style="font-size:10px;color:var(--textm);">'+confirmed+' confirmed · '+pending+' pending · '+total+' jumlah</div>'
+    + '</div>';
+}
+
+function buildOsListHtml(picName, curMonthData) {
+  var fmt2 = function(v){return 'RM '+(v||0).toLocaleString('en-MY',{minimumFractionDigits:2});};
+  var osOrders = curMonthData
+    .filter(function(r){return r.pic===picName && isPipelineSales(r) && (r.balance_customer||0)>0;})
+    .sort(function(a,b){return (b.balance_customer||0)-(a.balance_customer||0);});
+  if (!osOrders.length) return '';
+  var shown = osOrders.slice(0,4);
+  var more  = osOrders.length - shown.length;
+  var html  = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">💸 Customer OS — Perlu Kutip</div>';
+  shown.forEach(function(r){
+    html += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,0.04);">'
+      + '<span style="color:var(--text);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(r.customer_name||r.job_name||'—')+'</span>'
+      + '<span style="font-family:monospace;font-weight:600;color:var(--red);">'+fmt2(r.balance_customer||0)+'</span>'
+      + '</div>';
+  });
+  if (more>0) html += '<div style="font-size:11px;color:var(--textm);text-align:center;padding-top:5px;">+'+more+' lagi</div>';
+  html += '</div>';
+  return html;
+}
+
+function buildTopSumberHtml(picName, curMonthData) {
+  var myOrders = curMonthData.filter(function(r){return r.pic===picName && isPipelineSales(r);});
+  var sourceMap = {};
+  myOrders.forEach(function(r){var s=r.source||'Lain'; sourceMap[s]=(sourceMap[s]||0)+1;});
+  var sources = Object.entries(sourceMap).sort(function(a,b){return b[1]-a[1];}).slice(0,4);
+  var total   = myOrders.length;
+  if (!sources.length) return '';
+  var html = '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line);">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">📍 Top Sumber Order</div>';
+  sources.forEach(function(pair){
+    var s=pair[0], n=pair[1];
+    var pct = total>0 ? Math.round(n/total*100) : 0;
+    html += '<div style="margin-bottom:6px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'
+      + '<span style="color:var(--text);font-weight:500;">'+s+'</span>'
+      + '<span style="color:var(--textd);">'+n+' order ('+pct+'%)</span>'
+      + '</div>'
+      + '<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;">'
+      + '<div style="height:100%;width:'+pct+'%;background:var(--blue);border-radius:2px;"></div>'
+      + '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function buildLeaderboardHtml(SALES_STAFF, curMonthData, loadUserStore) {
+  var fmt2 = function(v){return 'RM '+(v||0).toLocaleString('en-MY',{minimumFractionDigits:2});};
+  var store = loadUserStore();
+  var staffRevs = SALES_STAFF.map(function(p){
+    var orders = curMonthData.filter(function(r){return r.pic===p && isPipelineSales(r);});
+    var rev = orders.reduce(function(s,r){return s+(r.total_customer||0);},0);
+    var confirmed = orders.length;
+    var allOrds = curMonthData.filter(function(r){return r.pic===p;}).length;
+    var cr = allOrds>0 ? Math.round(confirmed/allOrds*100) : 0;
+    var u = Object.values(store).find(function(u){return u.name===p;});
+    var isSE = u && u.role==='sales_executive';
+    return {p:p, rev:rev, cr:cr, isSE:isSE};
+  }).sort(function(a,b){return b.rev-a.rev;});
+  
+  var maxRev  = staffRevs.length ? staffRevs[0].rev : 1;
+  var medals  = ['🥇','🥈','🥉'];
+  var colors  = ['#C8952A','var(--blue)','var(--green)'];
+  var html    = '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:20px;">'
+    + '<div style="font-size:11px;font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">🏆 Ranking Revenue</div>';
+  staffRevs.forEach(function(s,i){
+    var w = maxRev>0 ? (s.rev/maxRev*100) : 0;
+    var col = colors[i] || 'var(--textm)';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+      + '<div style="width:24px;text-align:center;font-size:14px;">'+(medals[i]||'#'+(i+1))+'</div>'
+      + '<div style="min-width:80px;font-weight:700;color:var(--text);font-size:12px;">'+s.p+(s.isSE?' ⭐':'')+'</div>'
+      + '<div style="flex:1;height:18px;background:var(--bg3);border-radius:4px;overflow:hidden;">'
+      + '<div style="height:100%;width:'+w+'%;background:'+col+';border-radius:4px;"></div>'
+      + '</div>'
+      + '<div style="font-family:monospace;font-size:11px;font-weight:700;min-width:90px;text-align:right;">'+fmt2(s.rev)+'</div>'
+      + '<div style="font-size:10px;color:var(--textm);min-width:40px;text-align:right;">'+s.cr+'% CR</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function renderKpiDashboard() {
   const isAdmin  = currentUser.role === 'admin';
   const myName   = currentUser.name;
@@ -3215,6 +3361,11 @@ function renderKpiDashboard() {
     // Color for avatar
     const STAFF_COLORS = { ANIS:'#2470F0', HAKIMAH:'#B8720A', DANIEL:'#C02840', FATHI:'#0F7A48', FARIZ:'#1A5CC8' };
     const avatarColor  = STAFF_COLORS[picName] || '#1A5CC8';
+    // Get role from user store
+    const staffUser = Object.values(loadUserStore()).find(u => u.name === picName);
+    const staffRole = staffUser?.role || 'sales';
+    const isSE      = staffRole === 'sales_executive';
+    const roleLabel = isSE ? 'Sales Executive ⭐' : 'Sales Admin';
 
     return `
     <div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;">
@@ -3223,7 +3374,7 @@ function renderKpiDashboard() {
         <div style="width:40px;height:40px;border-radius:50%;background:${avatarColor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;">${picName.slice(0,2)}</div>
         <div style="flex:1;">
           <div style="font-size:15px;font-weight:700;color:var(--text);">${picName}</div>
-          <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
+          <div style="font-size:11px;color:var(--textm);">${roleLabel} · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:'Fira Code',monospace;font-size:18px;font-weight:700;color:${layak?'var(--green)':'var(--red)'};">${fmt(totalKom)}</div>
@@ -3268,19 +3419,11 @@ function renderKpiDashboard() {
 
       <!-- Komisyen breakdown -->
       <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="color:var(--textd);">Bukan Sekolah (1%): ${fmt(revBukan)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komBukan)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="color:var(--textd);">Sekolah (0.5%): ${fmt(revSek)}</span>
-          <span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;">${fmt(komSek)}</span>
-        </div>
-        <div style="border-top:1px solid var(--line);padding-top:6px;display:flex;justify-content:space-between;">
-          <span style="color:${layak?'var(--green)':'var(--red)'};font-weight:600;">${layak?'✓ Layak komisyen':'⚠ Belum layak — perlukan '+(KOMISYEN_MIN_PCS-pcs)+' PCS lagi'}</span>
-          <span style="font-family:'Fira Code',monospace;font-weight:700;color:${layak?'var(--green)':'var(--textm)'};">${fmt(totalKom)}</span>
-        </div>
+        ${buildKomHtml(isSE, revenue, revBukan, revSek, komBukan, komSek, totalKom, layak, pcs)}
       </div>
+      ${buildCrHtml(picName, curMonthData)}
+      ${buildOsListHtml(picName, curMonthData)}
+      ${buildTopSumberHtml(picName, curMonthData)}
     </div>`;
   }
 
@@ -3316,7 +3459,8 @@ function renderKpiDashboard() {
         <div class="kpi-card-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
         <div class="kpi-card-sub">belum collect</div>
       </div>
-    </div>`;
+    </div>
+    ${buildLeaderboardHtml(SALES_STAFF, curMonthData, loadUserStore)}`;
   }
 
   // ── Render ─────────────────────────────────────────────────
@@ -5929,7 +6073,7 @@ function renderProdTrack() {
   if (prodFilterPic)    filtered = filtered.filter(o => o.pic === prodFilterPic);
 
   // Sort: overdue first, then by deadline
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   filtered.sort((a,b) => {
     const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
     const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
@@ -6018,7 +6162,7 @@ function renderProdTrack() {
 }
 
 function renderProdCard(o) {
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   const status  = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
   const dueDate = o.due_date ? new Date(o.due_date) : null;
   const prodDate= o.production_date ? new Date(o.production_date) : null;
@@ -6145,7 +6289,7 @@ function sendWANotify(orderId, month) {
 function renderHomeAlerts(role) {
   const el = document.getElementById('homeAlertBar');
   if (!el) return;
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) => orders.map(o=>({...o,_month:m})));
 
   // Production alerts
@@ -6207,7 +6351,7 @@ function renderSalesQuickStats() {
   const totalKom = layak ? (revSek*0.005 + revBukan*0.01) : 0;
 
   // Production alerts for my orders
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   const myActive = myOrders.filter(o => 
     (o.production_status||'job-submit') !== 'complete' &&
     (o.pipeline_status||'confirmed') !== 'quotation'
@@ -6310,7 +6454,7 @@ window.bulkOSReminder = bulkOSReminder;
 // ── OS REMINDER HELPERS ──────────────────────────────────────
 function _getOSDaysOverdue(c) {
   // Calculate max days overdue across all OS orders
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   let maxDays = 0;
   c.osOrders.forEach(o => {
     if (o.order_date) {
@@ -6446,7 +6590,7 @@ function renderHomePipeline(role) {
   const el = document.getElementById('homePipelineSection');
   if (!el) return;
 
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   const myName = currentUser?.name || '';
   const allOrders = Object.entries(sessionData).flatMap(([m,orders]) =>
     orders.map(o => ({...o, _month:m}))
@@ -6497,7 +6641,7 @@ function renderHomePipeline(role) {
       + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
       + (isAdmin ? '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.pic||'—')+'</td>' : '')
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.cust_name||'—')+'</td>'
-      + '<td style="padding:8px 10px;font-family:\'Fira Code\',monospace;font-size:11px;color:var(--amber);text-align:right;">'+fmt(o.total_customer||0)+'</td>'
+      + '<td style="padding:8px 10px;font-family:Fira Code,monospace;font-size:11px;color:var(--amber);text-align:right;">'+fmt(o.total_customer||0)+'</td>'
       + '<td style="padding:8px 10px;text-align:center;">'
         + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;background:'+urgBg+';color:'+urgColor+';border:1px solid '+urgColor+'44;">'+urgLabel+'</span>'
       + '</td>'
@@ -6519,27 +6663,27 @@ function renderHomePipeline(role) {
       + '<div style="display:flex;gap:16px;flex-wrap:wrap;">'
         + '<div style="text-align:right;">'
           + '<div style="font-size:10px;color:var(--textm);">Pipeline Value</div>'
-          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--amber);">'+fmt(totalPipeVal)+'</div>'
+          + '<div style="font-family:Fira Code,monospace;font-size:16px;font-weight:700;color:var(--amber);">'+fmt(totalPipeVal)+'</div>'
         + '</div>'
         + (!isAdmin ? '<div style="text-align:right;">'
           + '<div style="font-size:10px;color:var(--textm);">Potensi Komisyen</div>'
-          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--green);">'+fmt(potKom)+'</div>'
+          + '<div style="font-family:Fira Code,monospace;font-size:16px;font-weight:700;color:var(--green);">'+fmt(potKom)+'</div>'
         + '</div>' : '')
         + '<div style="text-align:right;">'
           + '<div style="font-size:10px;color:var(--textm);">Conversion Rate</div>'
-          + '<div style="font-family:\'Fira Code\',monospace;font-size:16px;font-weight:700;color:var(--blue);">'+convRate+'%</div>'
+          + '<div style="font-family:Fira Code,monospace;font-size:16px;font-weight:700;color:var(--blue);">'+convRate+'%</div>'
         + '</div>'
       + '</div>'
     + '</div>'
     + '<div style="overflow-x:auto;max-height:280px;overflow-y:auto;">'
     + '<table style="width:100%;border-collapse:collapse;">'
     + '<thead><tr style="background:var(--bg3);">'
-      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
-      + (isAdmin ? '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">PIC</th>' : '')
-      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Customer</th>'
-      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
-      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Pending</th>'
-      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+      + '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
+      + (isAdmin ? '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">PIC</th>' : '')
+      + '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Customer</th>'
+      + '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
+      + '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Pending</th>'
+      + '<th style="padding:7px 10px;font-family:Fira Code,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table></div></div>';
@@ -6575,7 +6719,7 @@ async function renderPaymentsView() {
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--textm);">Memuatkan...</div>';
 
   const fmt = v => 'RM '+(v||0).toLocaleString('en-MY',{minimumFractionDigits:2});
-  const today = getMYTToday();
+  const today = String(getMYTToday()).slice(0,10);
   const nowD  = new Date(today);
 
   // Collect ALL payment entries from confirmed+ orders
@@ -6826,7 +6970,7 @@ function pvExport() {
 
   const rows = [['Tarikh','Masa','Customer','Nama Job','PIC','Kaedah','No. Rujukan','Jenis','Amaun (RM)']];
   filtered.forEach(e=>rows.push([e.date,e.time,e.customer,e.job,e.pic,e.method,e.ref,e.type,e.amount.toFixed(2)]));
-  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = rows.map(r=>r.map(v=>['"',String(v).replace(/"/g,'""'),'"'].join('')).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -6848,6 +6992,183 @@ function recalcOS() {
   const el = document.getElementById('f_cust_os_display');
   if (el) el.value = os > 0 ? 'RM '+os.toFixed(2) : '✓ Selesai';
 }
+
+
+function showSecurityView() {
+  sbSetActive('security');
+  setAllViewsHidden();
+  document.getElementById('securityView').style.display = 'block';
+  if (typeof renderSecurityView === 'function') renderSecurityView();
+}
+
+
+// ══ SECURITY VIEW ══
+function renderSecurityView() {
+  const el = document.getElementById('securityContent');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="max-width:700px;">
+      <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;">🔒 Security & Backup</div>
+      <div style="font-size:13px;color:var(--textd);margin-bottom:24px;">Export, backup, dan restore data sistem DOD</div>
+
+      <!-- Export Section -->
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">📤 Export Data</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="secExportCSV()" style="padding:10px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+            📊 Export CSV
+          </button>
+          <button onclick="secExportJSON()" style="padding:10px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+            💾 Export JSON (Backup)
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--textm);margin-top:10px;">CSV untuk Excel/Sheets. JSON untuk backup penuh semua data order.</div>
+      </div>
+
+      <!-- Cloud Backup -->
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">☁️ Cloud Backup (Supabase)</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button onclick="secCloudBackup()" style="padding:10px 18px;background:var(--purple,#6E30C8);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+            ☁️ Backup ke Supabase
+          </button>
+          <div id="secBackupStatus" style="font-size:12px;color:var(--textm);"></div>
+        </div>
+        <div style="font-size:11px;color:var(--textm);margin-top:10px;">Simpan snapshot semua data ke Supabase sebagai backup tersedia.</div>
+      </div>
+
+      <!-- Restore -->
+      <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">⚠️ Restore Data</div>
+        <div style="font-size:12px;color:var(--textd);margin-bottom:12px;">Upload fail JSON backup untuk restore data. <strong style="color:var(--red);">Data semasa akan digantikan.</strong></div>
+        <input type="file" id="secRestoreFile" accept=".json" style="display:none;" onchange="secRestoreFromFile(this)">
+        <button onclick="document.getElementById('secRestoreFile').click()" style="padding:10px 18px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+          📂 Pilih Fail JSON untuk Restore
+        </button>
+      </div>
+
+      <!-- Audit Log -->
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;">
+        <div style="font-size:12px;font-weight:700;color:var(--textd);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;">📋 Audit Log (50 Terbaru)</div>
+        <div id="secAuditLog" style="font-size:11px;color:var(--textd);max-height:300px;overflow-y:auto;">
+          <div style="color:var(--textm);">Memuatkan...</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Load audit log
+  secLoadAuditLog();
+}
+
+function secExportCSV() {
+  const chr34 = String.fromCharCode(34);
+  const allOrders = Object.entries(sessionData).flatMap(([m,orders]) =>
+    orders.map(o => ({...o, _month:m}))
+  );
+  const headers = ['Bulan','Tarikh','PIC','Nama Job','Customer','Channel','Sumber','PCS',
+    'No Inv Supplier','No Inv DOD','Kos Supplier','Revenue','1st Pay','Customer OS',
+    'Supplier OS','Profit','Margin%','Pipeline Status','Production Status'];
+  const rows = [headers];
+  allOrders.forEach(o => {
+    const margin = o.total_customer > 0 ? ((o.profit||0)/o.total_customer*100).toFixed(1) : '0';
+    rows.push([
+      o._month, o.order_date||'', o.pic||'', o.job_name||'', o.customer_name||'',
+      o.channel||'', o.source||'', o.pcs||0,
+      o.invoice_supplier||'', o.invoice_dod||'',
+      o.nohad_amount||0, o.total_customer||0, o.first_payment||0,
+      o.balance_customer||0, o.supplier_outstanding||0, o.profit||0, margin,
+      o.pipeline_status||'confirmed', o.production_status||''
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => [chr34,String(v||'').replace(/"/g,chr34+chr34),chr34].join('')).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dod-masterlist-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  showToast('CSV berjaya diexport!');
+}
+function secExportJSON() {
+  const backup = {
+    exported_at: new Date().toISOString(),
+    version: 'DOD-v3',
+    data: sessionData
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'dod-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  showToast('JSON backup berjaya diexport!');
+}
+
+async function secCloudBackup() {
+  const statusEl = document.getElementById('secBackupStatus');
+  if (statusEl) statusEl.textContent = 'Sedang backup...';
+  try {
+    const snapshot = {
+      snapshot_at: new Date().toISOString(),
+      data: JSON.stringify(sessionData),
+      created_by: currentUser?.id || 'unknown'
+    };
+    await supaUpsert('backup_snapshots', [snapshot]);
+    if (statusEl) statusEl.textContent = '✓ Backup berjaya — ' + new Date().toLocaleTimeString('ms-MY');
+    showToast('Cloud backup berjaya!');
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '✗ Backup gagal: ' + e.message;
+    showToast('Backup gagal: ' + e.message, true);
+  }
+}
+
+function secRestoreFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!confirm('AMARAN: Ini akan gantikan SEMUA data semasa dengan data dari fail backup. Teruskan?')) return;
+  if (!confirm('Pastikan anda telah backup data semasa. Teruskan restore?')) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const backup = JSON.parse(e.target.result);
+      const data = backup.data || backup;
+      sessionData = data;
+      saveAllToLocalStorage();
+      showToast('Restore berjaya! Sistem akan refresh...');
+      setTimeout(() => location.reload(), 1500);
+    } catch(err) {
+      showToast('Gagal parse JSON: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function secLoadAuditLog() {
+  const el = document.getElementById('secAuditLog');
+  if (!el) return;
+  try {
+    const logs = await supaGet('audit_log', 'select=*&order=created_at.desc&limit=50');
+    if (!logs || !logs.length) {
+      el.innerHTML = '<div style="color:var(--textm);">Tiada log audit.</div>';
+      return;
+    }
+    el.innerHTML = logs.map(log => {
+      const time = log.created_at ? new Date(log.created_at).toLocaleString('ms-MY') : '—';
+      return '<div style="padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.04);display:flex;gap:10px;">'
+        + '<span style="color:var(--textm);white-space:nowrap;min-width:130px;">' + time + '</span>'
+        + '<span style="color:var(--blue);min-width:60px;">' + (log.user_id||'—') + '</span>'
+        + '<span style="color:var(--text);">' + (log.action||'—') + '</span>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--textm);">Gagal muatkan log: ' + e.message + '</div>';
+  }
+}
+window.renderSecurityView = renderSecurityView;
+window.secExportCSV = secExportCSV;
+window.secExportJSON = secExportJSON;
+window.secCloudBackup = secCloudBackup;
+window.secRestoreFromFile = secRestoreFromFile;
 
 </script>
 
