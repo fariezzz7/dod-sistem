@@ -1104,7 +1104,7 @@ nav { display: none !important; }
         </div>
       </div>
       <div class="kpi-row" id="kpiRow"></div>
-      <div class="kpi" id="kpiPipelineCard" style="display:none;margin-top:6px;border:1px dashed var(--amber);background:var(--amberbg);border-radius:10px;padding:10px 14px;min-width:160px;"></div>
+      <div id="kpiPipelineCard" style="display:none;border:1px solid var(--amber);background:var(--amberbg);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--amber);font-weight:600;white-space:nowrap;align-self:center;"></div>
     </div>
 
     <div class="main">
@@ -2235,6 +2235,9 @@ function showKpiView() {
   renderKpiDashboard();
 }
 
+function showKpiDashboard() { showKpiView(); }
+window.showKpiDashboard = showKpiDashboard;
+
 // ══════════════════════════════════════
 // MONTH TABS
 // ══════════════════════════════════════
@@ -2427,9 +2430,7 @@ function renderKPIs(rows) {
     const pCard = document.getElementById('kpiPipelineCard');
     if (pCard) {
       pCard.style.display = 'block';
-      pCard.innerHTML = '<div class="kpi-l">📋 Pipeline</div>'
-        + '<div class="kpi-v" style="color:var(--amber);">' + fmt(quotVal) + '</div>'
-        + '<div class="kpi-sub">' + quotRows.length + ' quotation pending</div>';
+      pCard.innerHTML = '📋 ' + fmt(quotVal) + ' &nbsp;·&nbsp; ' + quotRows.length + ' quotation pending';
     }
   } else {
     const pCard = document.getElementById('kpiPipelineCard');
@@ -3384,17 +3385,24 @@ function buildLeaderboardHtml(SALES_STAFF, curMonthData, loadUserStore) {
   return html;
 }
 
-function renderKpiDashboard() {
+function renderKpiDashboard(selMonth, selStaff) {
   const isAdmin  = currentUser.role === 'admin';
   const myName   = currentUser.name;
-  const curMonthData = sessionData[currentMonth] || [];
+
+  // Use selected month or default to currentMonth
+  const kpiMonth = selMonth || document.getElementById('kpiMonthSel')?.value || currentMonth;
+  const curMonthData = sessionData[kpiMonth] || [];
+
+  // Sales staff filter
+  const kpiStaff = selStaff || document.getElementById('kpiStaffSel')?.value || 'ALL';
 
   // Sales staff list — for admin show all, for sales show self only
-  const SALES_STAFF = isAdmin
+  const ALL_STAFF = isAdmin
     ? [...new Set(Object.values(sessionData).flatMap(orders =>
         orders.map(r => r.pic).filter(p => p && p !== 'FATHI' && p !== 'FARIZ')
       ))].sort()
     : [myName];
+  const SALES_STAFF = (isAdmin && kpiStaff !== 'ALL') ? [kpiStaff] : ALL_STAFF;
 
   const el = document.getElementById('kpiDashContent');
 
@@ -3521,6 +3529,19 @@ function renderKpiDashboard() {
   }
 
   // ── Render ─────────────────────────────────────────────────
+  // Build month options
+  const allMonths = Object.keys(sessionData).sort((a,b)=>b.localeCompare(a));
+  const allStaff  = [...new Set(Object.values(sessionData).flatMap(o=>o.map(r=>r.pic)).filter(p=>p&&!['FATHI','FARIZ'].includes(p)))].sort();
+  const filterBar = isAdmin ? `
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;">
+      <select id="kpiMonthSel" onchange="renderKpiDashboard()" style="padding:6px 12px;border:1px solid var(--line);border-radius:7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
+        ${allMonths.map(m=>'<option value="'+m+'"'+(m===kpiMonth?' selected':'')+'>'+( MONTH_LABELS[m]||m)+'</option>').join('')}
+      </select>
+      <select id="kpiStaffSel" onchange="renderKpiDashboard()" style="padding:6px 12px;border:1px solid var(--line);border-radius:7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;">
+        <option value="ALL" ${kpiStaff==='ALL'?'selected':''}>Semua Staff</option>
+        ${allStaff.map(s=>'<option value="'+s+'"'+(s===kpiStaff?' selected':'')+'>'+s+'</option>').join('')}
+      </select>
+    </div>` : '';
   const backBtn = `<button onclick="showMasterlistView()" style="background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:20px;">← Kembali ke Sales List</button>`;
 
   const title = isAdmin
@@ -3529,7 +3550,7 @@ function renderKpiDashboard() {
     : `<div class="kpi-dash-title">Dashboard KPI Saya</div>
        <div class="kpi-dash-sub">Bulan: ${MONTH_LABELS[currentMonth]||currentMonth} · PIC: ${myName}</div>`;
 
-  el.innerHTML = backBtn + title +
+  el.innerHTML = backBtn + filterBar + title +
     (isAdmin ? buildAdminSummary() : '') +
     SALES_STAFF.map(buildStaffKpi).join('');
 }
@@ -4541,6 +4562,32 @@ function loadDashInputValues() {
   updateLeadsTotal();
   document.getElementById('dashSaveStatus').textContent = saved.spend ? '✓ Data '+m+' ada' : '';
 }
+
+function getSalesStaffList() {
+  const fromData = [...new Set(
+    Object.values(sessionData).flatMap(orders =>
+      orders.map(o => o.pic).filter(p => p && !['FATHI','FARIZ'].includes(p))
+    )
+  )].sort();
+  const defaults = ['ANIS','HAKIMAH','DANIEL'];
+  return [...new Set([...defaults, ...fromData])];
+}
+
+function updateLeadsTotal() {
+  const staff = ['ANIS','HAKIMAH','DANIEL'];
+  let total = 0;
+  staff.forEach(name => {
+    const el = document.getElementById('dashLeads_'+name);
+    total += parseFloat(el?.value)||0;
+  });
+  const display = document.getElementById('dashLeadsTotalDisplay');
+  if (display) display.textContent = total;
+  const legacy = document.getElementById('dashLeadsInput');
+  if (legacy) legacy.value = total;
+}
+window.getSalesStaffList = getSalesStaffList;
+window.updateLeadsTotal  = updateLeadsTotal;
+
 function saveDashInput() {
   const m = document.getElementById('dashInputMonth').value;
   const spend = parseFloat(document.getElementById('dashAdsInput').value) || 0;
@@ -6852,7 +6899,11 @@ async function renderPaymentsView() {
       e.job.toLowerCase().includes(selSearch.toLowerCase()) ||
       e.customer.toLowerCase().includes(selSearch.toLowerCase());
     return matchMonth && matchMethod && matchSearch;
-  }).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  });
+  const sortDir = el.dataset.filterSort || 'desc';
+  filtered.sort((a,b) => sortDir === 'asc'
+    ? (a.date+a.time).localeCompare(b.date+b.time)
+    : (b.date+b.time).localeCompare(a.date+a.time));
 
   // Summary for filtered month
   const monthTotal   = filtered.reduce((s,e)=>s+e.amount,0);
@@ -6884,6 +6935,10 @@ async function renderPaymentsView() {
         style="flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;"
         oninput="pvFilter()">
       ${noRefCount > 0 ? `<span style="font-size:11px;padding:4px 10px;background:var(--redbg);color:var(--red);border-radius:6px;font-weight:600;">⚠ ${noRefCount} bayaran tiada rujukan</span>` : ''}
+      <select id="pv_sort" onchange="pvFilter()" style="padding:7px 12px;border:1px solid var(--line);border-radius:7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);background:#fff;cursor:pointer;">
+        <option value="desc">Terbaru Dulu</option>
+        <option value="asc">Terlama Dulu</option>
+      </select>
       <button onclick="pvExport()" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">⬇ Export CSV</button>
     </div>
 
@@ -7004,6 +7059,7 @@ function pvFilter() {
   el.dataset.filterMonth  = document.getElementById('pv_month')?.value  || '';
   el.dataset.filterMethod = document.getElementById('pv_method')?.value || 'ALL';
   el.dataset.filterSearch = document.getElementById('pv_search')?.value || '';
+  el.dataset.filterSort   = document.getElementById('pv_sort')?.value   || 'desc';
   renderPaymentsView();
 }
 
