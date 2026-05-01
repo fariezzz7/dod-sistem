@@ -2083,6 +2083,10 @@ async function supaUpsert(table, data) {
         // Clean empty dates to null
         if (['order_date','inv_date','due_date','production_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
         if (k === 'production_status' && !v) v = 'job-submit';
+        // Stringify complex objects (items, payments arrays)
+        if ((k === 'items' || k === 'payments') && Array.isArray(v)) {
+          v = v.length > 0 ? JSON.stringify(v) : null;
+        }
         r[k] = v !== undefined ? v : null;
       });
       return r;
@@ -2151,8 +2155,13 @@ const PIC_BG    = { 'ANIS':'#EEF4FF','HAKIMAH':'#FFF8EC','FATHI':'#EDFAF3','FARI
   'NADIA':'#FFF0F3','ZUL':'#F4EEFF','AIDI':'#EDFAFA','DANIEL':'#FFF2E8','DANIAL':'#FFF2E8','SALES ADMIN 1':'#F4F6FA' };
 
 const MONTH_LABELS = {
-  'DEC 2025':'Disember 2025','JAN 2026':'Januari 2026','FEB 2026':'Februari 2026',
-  'MAC 2026':'Mac 2026','APRIL 2026':'April 2026'
+  'DECEMBER 2025':'Disember 2025','JAN 2026':'Januari 2026','FEB 2026':'Februari 2026',
+  'MAC 2026':'Mac 2026','APRIL 2026':'April 2026','MEI 2026':'Mei 2026','JUN 2026':'Jun 2026',
+  'JUL 2026':'Julai 2026','OGOS 2026':'Ogos 2026','SEPTEMBER 2026':'September 2026',
+  'OKTOBER 2026':'Oktober 2026','NOVEMBER 2026':'November 2026','DESEMBER 2026':'Disember 2026',
+  'JANUARY 2026':'Januari 2026','FEBRUARY 2026':'Februari 2026','MARCH 2026':'Mac 2026',
+  'MAY 2026':'Mei 2026','JUNE 2026':'Jun 2026','JULY 2026':'Julai 2026','AUGUST 2026':'Ogos 2026',
+  'OCTOBER 2026':'Oktober 2026','DECEMBER 2026':'Disember 2026'
 };
 
 const BOARD_COLS = [
@@ -2271,6 +2280,11 @@ async function initApp() {
   }
   setupNavForRole();
   updateNavDate();
+  // Designer goes straight to jobboard
+  if (currentUser.role === 'designer') {
+    openJobBoard();
+    return;
+  }
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
@@ -2647,7 +2661,19 @@ function buildMonthTabs() {
     }
   });
 
-  // Note: "Bulan Baru" button removed — months now auto-generate when order dates are added
+  if (currentUser.role === 'admin') {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'sb-month-btn';
+    addBtn.style.cssText = 'color:var(--green);';
+    const dot = document.createElement('span');
+    dot.className = 'sb-month-dot new';
+    addBtn.appendChild(dot);
+    const label = document.createElement('span');
+    label.textContent = '＋ Bulan Baru';
+    addBtn.appendChild(label);
+    addBtn.onclick = openAddMonthModal;
+    sbList.appendChild(addBtn);
+  }
 }
 
 function selectMonth(m) {
@@ -3331,49 +3357,89 @@ function saveOrder() {
   const channel    = ['ONLINE','NEW ONLINE','REPEAT ONLINE'].includes(src) ? 'ONLINE' : 'OFFLINE';
 
   if (editingId) {
+    // Find which month the order is currently in
+    let currentOrderMonth = null;
+    let oldOrderData = null;
     for (const m of Object.keys(sessionData)) {
       const idx = sessionData[m].findIndex(r => r.id === editingId);
       if (idx >= 0) {
-        const old = sessionData[m][idx];
-        const editItems = getItemsData();
-        sessionData[m][idx] = { ...old, pic, inv_number:inv, inv_number_supplier:invSup, name_job:name, source:src, channel, pcs,
-          order_date:orderDate, inv_date:invdate, due_date:duedate,
-          cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
-          product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
-          supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
-          luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
-          total_customer:rev, first_payment:pay1, balance_customer:custOS,
-          supplier_outstanding:supOS, profit, items:editItems, payments:getPaymentRecordsData(),
-          production_date:prodDate, production_status:prodStatus,
-          pipeline_status:pipelineStatus };
+        currentOrderMonth = m;
+        oldOrderData = sessionData[m][idx];
         break;
       }
     }
-    showToast('Order dikemaskini ✓');
-    // Update currentDetailRow to reflect edited data
-    if (currentDetailRow && currentDetailRow.id === editingId) {
-      for (const m of Object.keys(sessionData)) {
-        const found = sessionData[m].find(r => r.id === editingId);
-        if (found) { currentDetailRow = found; break; }
-      }
-    }
-    // Sync edit to Supabase + audit log
-    (() => {
-      const months2 = Object.keys(sessionData);
-      for (const m2 of months2) {
-        const found = sessionData[m2].find(r => r.id === editingId);
-        if (found) {
-          supaUpsert('orders', {...found, month: m2}).then(() => {
-            const changes = diffOrder(_preEditSnapshot, found);
-            if (changes) logAudit(found.id, 'edit', changes, null);
-          }).catch(e => console.warn('Sync failed:', e));
-          break;
+    
+    if (currentOrderMonth && oldOrderData) {
+      // Determine target month — extract from order_date if provided
+      let targetMonth = currentOrderMonth;
+      if (orderDate) {
+        const d = new Date(orderDate);
+        if (!isNaN(d.getTime())) {
+          const monthNum = d.getMonth();
+          const yearNum = d.getFullYear();
+          const MONTH_NAMES = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+          targetMonth = MONTH_NAMES[monthNum] + ' ' + yearNum;
+          
+          // Auto-create month if it doesn't exist
+          if (!sessionData[targetMonth]) {
+            sessionData[targetMonth] = [];
+            MONTH_LABELS[targetMonth] = targetMonth.slice(0,3).toUpperCase() + ' ' + yearNum;
+          }
         }
       }
-    })();
-  } else {
+      
+      const editItems = getItemsData();
+      const updatedOrder = { ...oldOrderData, pic, inv_number:inv, inv_number_supplier:invSup, name_job:name, source:src, channel, pcs,
+        order_date:orderDate, inv_date:invdate, due_date:duedate,
+        cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
+        product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
+        supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
+        luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
+        total_customer:rev, first_payment:pay1, balance_customer:custOS,
+        supplier_outstanding:supOS, profit, items:editItems, payments:getPaymentRecordsData(),
+        production_date:prodDate, production_status:prodStatus,
+        pipeline_status:pipelineStatus };
+      
+      // If month changed, remove from old month and add to new month
+      if (targetMonth !== currentOrderMonth) {
+        const oldIdx = sessionData[currentOrderMonth].findIndex(r => r.id === editingId);
+        if (oldIdx >= 0) {
+          sessionData[currentOrderMonth].splice(oldIdx, 1);
+        }
+        sessionData[targetMonth].unshift(updatedOrder);
+        showToast(`Order dipindah ke ${MONTH_LABELS[targetMonth] || targetMonth} ✓`);
+      } else {
+        // Same month — just update
+        const idx = sessionData[currentOrderMonth].findIndex(r => r.id === editingId);
+        if (idx >= 0) {
+          sessionData[currentOrderMonth][idx] = updatedOrder;
+        }
+        showToast('Order dikemaskini ✓');
+      }
+      
+      // Update currentDetailRow to reflect edited data
+      if (currentDetailRow && currentDetailRow.id === editingId) {
+        currentDetailRow = updatedOrder;
+      }
+      
+      // Sync edit to Supabase + audit log
+      (() => {
+        const months2 = Object.keys(sessionData);
+        for (const m2 of months2) {
+          const found = sessionData[m2].find(r => r.id === editingId);
+          if (found) {
+            supaUpsert('orders', {...found, month: m2}).then(() => {
+              const changes = diffOrder(_preEditSnapshot, found);
+              if (changes) logAudit(found.id, 'edit', changes, null);
+              buildMonthTabs(); // Refresh tabs in case month changed
+            }).catch(e => console.warn('Sync failed:', e));
+            break;
+          }
+        }
+      })();
+    } else {
     // Auto-generate month from order date if provided, else use currentMonth
-    let targetMonth = currentMonth || (Object.keys(sessionData).length > 0 ? Object.keys(sessionData)[Object.keys(sessionData).length-1] : 'JAN 2026');
+    let targetMonth = currentMonth || (Object.keys(sessionData).length > 0 ? Object.keys(sessionData)[Object.keys(sessionData).length-1] : 'JANUARY 2026');
     
     if (orderDate) {
       // Parse order date (format: YYYY-MM-DD) and convert to month key
@@ -3387,7 +3453,7 @@ function saveOrder() {
         // Auto-create month if it doesn't exist
         if (!sessionData[targetMonth]) {
           sessionData[targetMonth] = [];
-          MONTH_LABELS[targetMonth] = targetMonth.slice(0,3).toUpperCase();
+          MONTH_LABELS[targetMonth] = targetMonth.slice(0,3).toUpperCase() + ' ' + yearNum;
           buildMonthTabs(); // Refresh tabs with new month
         }
       }
@@ -4271,23 +4337,17 @@ function renderHomeTrend() {
   const last6  = months.slice(-6);
   const revs   = last6.map(m => sessionData[m].reduce((s,o) => s+(o.total_customer||0),0));
   const maxRev = Math.max(...revs, 1);
-  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun','JUL 2026':'Jul','OGOS 2026':'Ogo','SEPTEMBER 2026':'Sep','OKTOBER 2026':'Okt','NOVEMBER 2026':'Nov','DECEMBER 2026':'Dis'};
+  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun'};
 
-  document.getElementById('homeTrendBars').innerHTML = `
-    <div style="display:flex;gap:12px;align-items:flex-end;justify-content:space-around;width:100%;height:160px;">
-      ${last6.map((m,i) => {
-        const rev = revs[i];
-        const pct = Math.max((rev/maxRev)*100, 8);
-        const opacity = 0.5 + 0.5*(rev/maxRev);
-        return `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;">
-            <div style="font-family:'Fira Code',monospace;font-size:11px;font-weight:600;color:var(--blue);">RM${(rev/1000).toFixed(1)}K</div>
-            <div style="width:100%;background:var(--bg4);border-radius:4px;position:relative;height:${pct}px;background:linear-gradient(180deg,rgba(26,92,200,${opacity}) 0%,rgba(26,92,200,${opacity*0.6}) 100%);box-shadow:0 2px 8px rgba(26,92,200,${opacity*0.3});transition:all .3s ease;" title="${rev>0?fmt(rev):'RM0'}"></div>
-            <div style="font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);font-weight:500;">${MONTH_SHORT[m]||m.slice(0,3)}</div>
-          </div>
-        `;
-      }).join('')}
+  document.getElementById('homeTrendBars').innerHTML = last6.map((m,i) => {
+    const rev = revs[i];
+    const pct = Math.max((rev/maxRev)*100, 4);
+    return `<div class="trend-bar-wrap">
+      <div class="trend-bar-val">${rev>0?'RM'+(rev/1000).toFixed(0)+'K':''}</div>
+      <div class="trend-bar" style="height:${pct}%;background:var(--blue);opacity:${0.4+0.6*(rev/maxRev)};"></div>
+      <div class="trend-bar-label">${MONTH_SHORT[m]||m.slice(0,3)}</div>
     </div>`;
+  }).join('');
 }
 
 function renderHomeRecent() {
