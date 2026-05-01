@@ -1912,25 +1912,122 @@ tr:hover .row-actions{opacity:1;}
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<!-- Tweaks panel disabled - optional feature not required for core functionality -->
-<!-- <script type="text/babel" src="../tweaks-panel.jsx"></script> -->
+<script type="text/babel" src="../tweaks-panel.jsx"></script>
 
 <div id="tweaks-root"></div>
 <script type="text/babel">
-/*
-TWEAKS PANEL DISABLED - Optional feature
-The useTweaks hook is not available in this deployment.
-This panel is not essential for core masterlist functionality.
-*/
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "sidebarWidth": 200,
+  "sidebarCollapsed": false,
+  "accentColor": "#1A5CC8",
+  "density": "comfortable",
+  "tableSize": "large"
+}/*EDITMODE-END*/;
 
-// Stub - prevents errors if anything references DODTweaks
-const DODTweaks = () => null;
+function DODTweaks() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
-// Don't render the tweaks panel
-// ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<DODTweaks />);
+  // Apply tweaks to page
+  React.useEffect(() => {
+    // Sidebar width
+    const sb = document.getElementById('appSidebar');
+    const content = document.getElementById('appContent');
+    if (sb && !sb.classList.contains('collapsed')) {
+      sb.style.width = tweaks.sidebarWidth + 'px';
+      if (content) { content.style.marginLeft = tweaks.sidebarWidth + 'px'; content.style.width = 'calc(100% - ' + tweaks.sidebarWidth + 'px)'; }
+    }
+
+    // Accent color
+    document.documentElement.style.setProperty('--blue', tweaks.accentColor);
+    // Derive lighter versions from accent
+    document.documentElement.style.setProperty('--bluehi', tweaks.accentColor);
+    document.documentElement.style.setProperty('--bluebg', tweaks.accentColor + '14');
+    document.documentElement.style.setProperty('--blueb', tweaks.accentColor + '44');
+    document.documentElement.style.setProperty('--bluew', tweaks.accentColor + '18');
+
+    // Table density
+    const tblCss = document.getElementById('tweakDensityCss') || (() => {
+      const s = document.createElement('style'); s.id = 'tweakDensityCss'; document.head.appendChild(s); return s;
+    })();
+    if (tweaks.density === 'compact') {
+      tblCss.textContent = 'table.data tbody td { padding: 5px 8px !important; } table.data thead th { padding: 6px 8px !important; } .kpi { padding: 10px 12px !important; }';
+    } else if (tweaks.density === 'comfortable') {
+      tblCss.textContent = 'table.data tbody td { padding: 13px 12px !important; } table.data thead th { padding: 12px 12px !important; } .kpi { padding: 18px 20px !important; }';
+    } else {
+      tblCss.textContent = '';
+    }
+
+    // Font size
+    const fontCss = document.getElementById('tweakFontCss') || (() => {
+      const s = document.createElement('style'); s.id = 'tweakFontCss'; document.head.appendChild(s); return s;
+    })();
+    if (tweaks.tableSize === 'small') {
+      fontCss.textContent = 'table.data { font-size: 11px !important; } .kpi-v { font-size: 13px !important; }';
+    } else if (tweaks.tableSize === 'large') {
+      fontCss.textContent = 'table.data { font-size: 14px !important; } .kpi-v { font-size: 17px !important; }';
+    } else {
+      fontCss.textContent = '';
+    }
+  }, [tweaks]);
+
+  return (
+    <TweaksPanel title="Tweaks — DOD UI">
+      <TweakSection label="Sidebar">
+        <TweakSlider
+          label="Lebar Sidebar"
+          value={tweaks.sidebarWidth}
+          min={160} max={300} step={10}
+          onChange={v => setTweak('sidebarWidth', v)}
+        />
+      </TweakSection>
+
+      <TweakSection label="Warna Tema">
+        <TweakColor
+          label="Warna Aksen"
+          value={tweaks.accentColor}
+          onChange={v => setTweak('accentColor', v)}
+        />
+      </TweakSection>
+
+      <TweakSection label="Ketumpatan Data">
+        <TweakRadio
+          label="Density Table"
+          value={tweaks.density}
+          options={[
+            { label: 'Compact', value: 'compact' },
+            { label: 'Normal', value: 'normal' },
+            { label: 'Comfortable', value: 'comfortable' }
+          ]}
+          onChange={v => setTweak('density', v)}
+        />
+      </TweakSection>
+
+      <TweakSection label="Saiz Teks">
+        <TweakRadio
+          label="Saiz Teks Table"
+          value={tweaks.tableSize}
+          options={[
+            { label: 'Kecil', value: 'small' },
+            { label: 'Normal', value: 'normal' },
+            { label: 'Besar', value: 'large' }
+          ]}
+          onChange={v => setTweak('tableSize', v)}
+        />
+      </TweakSection>
+
+      <TweakSection label="Tindakan Pantas">
+        <TweakButton label="🏠 Home" onClick={() => { sbNav && sbNav('home'); }} />
+        <TweakButton label="📋 Masterlist" onClick={() => { sbNav && sbNav('masterlist'); }} />
+        <TweakButton label="📊 Dashboard" onClick={() => { sbNav && sbNav('dashboard'); }} />
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<DODTweaks />);
 </script>
 
-
+</body>
 <script>
 // ══════════════════════════════════════
 // DATA & CONFIG
@@ -1976,7 +2073,9 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','payments'];
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status',
+      'pay1_date','pay1_time','pay1_method','pay1_ref',
+      'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -2052,13 +2151,8 @@ const PIC_BG    = { 'ANIS':'#EEF4FF','HAKIMAH':'#FFF8EC','FATHI':'#EDFAF3','FARI
   'NADIA':'#FFF0F3','ZUL':'#F4EEFF','AIDI':'#EDFAFA','DANIEL':'#FFF2E8','DANIAL':'#FFF2E8','SALES ADMIN 1':'#F4F6FA' };
 
 const MONTH_LABELS = {
-  'DECEMBER 2025':'Disember 2025','JANUARY 2026':'Januari 2026','FEBRUARY 2026':'Februari 2026',
-  'MARCH 2026':'Mac 2026','APRIL 2026':'April 2026','MAY 2026':'Mei 2026','JUNE 2026':'Jun 2026',
-  'JULY 2026':'Julai 2026','AUGUST 2026':'Ogos 2026','SEPTEMBER 2026':'September 2026',
-  'OCTOBER 2026':'Oktober 2026','NOVEMBER 2026':'November 2026',
-  // Alternative formats for compatibility
   'DEC 2025':'Disember 2025','JAN 2026':'Januari 2026','FEB 2026':'Februari 2026',
-  'MAC 2026':'Mac 2026'
+  'MAC 2026':'Mac 2026','APRIL 2026':'April 2026'
 };
 
 const BOARD_COLS = [
@@ -3254,33 +3348,83 @@ function saveOrder() {
   const channel    = ['ONLINE','NEW ONLINE','REPEAT ONLINE'].includes(src) ? 'ONLINE' : 'OFFLINE';
 
   if (editingId) {
+    // Find current month and order
+    let currentMonth = null;
+    let currentIdx = null;
+    let oldOrder = null;
+    
     for (const m of Object.keys(sessionData)) {
       const idx = sessionData[m].findIndex(r => r.id === editingId);
       if (idx >= 0) {
-        const old = sessionData[m][idx];
-        const editItems = getItemsData();
-        sessionData[m][idx] = { ...old, pic, inv_number:inv, inv_number_supplier:invSup, name_job:name, source:src, channel, pcs,
-          order_date:orderDate, inv_date:invdate, due_date:duedate,
-          cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
-          product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
-          supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
-          luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
-          total_customer:rev, first_payment:pay1, balance_customer:custOS,
-          supplier_outstanding:supOS, profit, items:editItems, payments:getPaymentRecordsData(),
-          production_date:prodDate, production_status:prodStatus,
-          pipeline_status:pipelineStatus };
+        currentMonth = m;
+        currentIdx = idx;
+        oldOrder = sessionData[m][idx];
         break;
       }
     }
-    showToast('Order dikemaskini ✓');
-    // Update currentDetailRow to reflect edited data
-    if (currentDetailRow && currentDetailRow.id === editingId) {
-      for (const m of Object.keys(sessionData)) {
-        const found = sessionData[m].find(r => r.id === editingId);
-        if (found) { currentDetailRow = found; break; }
+    
+    if (!currentMonth) {
+      showToast('Order tidak dijumpai', true);
+      return;
+    }
+    
+    // Determine target month from order_date
+    let targetMonth = currentMonth;
+    if (orderDate && orderDate.length >= 10) {
+      try {
+        const dateObj = new Date(orderDate + 'T00:00:00Z');
+        if (!isNaN(dateObj.getTime())) {
+          const year = dateObj.getUTCFullYear();
+          const monthIdx = dateObj.getUTCMonth();
+          const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+          targetMonth = MONTH_NAMES[monthIdx] + ' ' + year;
+          
+          // Auto-create month if needed
+          if (!sessionData[targetMonth]) {
+            sessionData[targetMonth] = [];
+            MONTH_LABELS[targetMonth] = targetMonth;
+            buildMonthTabs();
+          }
+        }
+      } catch(e) {
+        console.warn('Date parse error:', e);
       }
     }
-    // Sync edit to Supabase + audit log
+    
+    // Build updated order
+    const editItems = getItemsData();
+    const updatedOrder = { ...oldOrder,
+      pic, inv_number:inv, inv_number_supplier:invSup, name_job:name, source:src, channel, pcs,
+      order_date:orderDate, inv_date:invdate, due_date:duedate,
+      cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
+      product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
+      supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
+      luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
+      total_customer:rev, first_payment:pay1, balance_customer:custOS,
+      supplier_outstanding:supOS, profit, items:editItems,
+      production_date:prodDate, production_status:prodStatus,
+      pipeline_status:pipelineStatus
+    };
+    
+    // If month changed, move order to new month
+    if (targetMonth !== currentMonth) {
+      sessionData[currentMonth].splice(currentIdx, 1);
+      sessionData[targetMonth].unshift(updatedOrder);
+      showToast(`Order dipindah ke ${MONTH_LABELS[targetMonth] || targetMonth} ✓`);
+      buildMonthTabs();
+      selectMonth(targetMonth);
+    } else {
+      // Same month, just update
+      sessionData[currentMonth][currentIdx] = updatedOrder;
+      showToast('Order dikemaskini ✓');
+    }
+    
+    // Update currentDetailRow
+    if (currentDetailRow && currentDetailRow.id === editingId) {
+      currentDetailRow = updatedOrder;
+    }
+    
+    // Sync to Supabase
     (() => {
       const months2 = Object.keys(sessionData);
       for (const m2 of months2) {
@@ -3289,14 +3433,39 @@ function saveOrder() {
           supaUpsert('orders', {...found, month: m2}).then(() => {
             const changes = diffOrder(_preEditSnapshot, found);
             if (changes) logAudit(found.id, 'edit', changes, null);
-          }).catch(e => console.warn('Sync failed:', e));
+          }).catch(e => {
+            console.warn('Sync failed:', e);
+            showToast('⚠ Data saved locally (Supabase error)', false);
+          });
           break;
         }
       }
     })();
   } else {
-    const months = Object.keys(sessionData);
-    const targetMonth = currentMonth || months[months.length-1];
+    // Auto-detect target month from order_date
+    let targetMonth = currentMonth || (Object.keys(sessionData).length > 0 ? Object.keys(sessionData)[Object.keys(sessionData).length-1] : 'JANUARY 2026');
+    
+    if (orderDate && orderDate.length >= 10) {
+      try {
+        const dateObj = new Date(orderDate + 'T00:00:00Z');
+        if (!isNaN(dateObj.getTime())) {
+          const year = dateObj.getUTCFullYear();
+          const monthIdx = dateObj.getUTCMonth();
+          const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+          targetMonth = MONTH_NAMES[monthIdx] + ' ' + year;
+          
+          // Auto-create bulan jika belum ada
+          if (!sessionData[targetMonth]) {
+            sessionData[targetMonth] = [];
+            MONTH_LABELS[targetMonth] = targetMonth;
+            buildMonthTabs();
+          }
+        }
+      } catch(e) {
+        console.warn('Date parse error:', e);
+      }
+    }
+    
     const newId = targetMonth + '_' + Date.now();
     const newItems = getItemsData();
     sessionData[targetMonth].unshift({
@@ -3307,7 +3476,7 @@ function saveOrder() {
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
       luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
-      supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems, payments:getPaymentRecordsData(),
+      supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus
     });
