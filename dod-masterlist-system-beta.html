@@ -1916,115 +1916,10 @@ tr:hover .row-actions{opacity:1;}
 
 <div id="tweaks-root"></div>
 <script type="text/babel">
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "sidebarWidth": 200,
-  "sidebarCollapsed": false,
-  "accentColor": "#1A5CC8",
-  "density": "comfortable",
-  "tableSize": "large"
-}/*EDITMODE-END*/;
-
-function DODTweaks() {
-  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
-
-  // Apply tweaks to page
-  React.useEffect(() => {
-    // Sidebar width
-    const sb = document.getElementById('appSidebar');
-    const content = document.getElementById('appContent');
-    if (sb && !sb.classList.contains('collapsed')) {
-      sb.style.width = tweaks.sidebarWidth + 'px';
-      if (content) { content.style.marginLeft = tweaks.sidebarWidth + 'px'; content.style.width = 'calc(100% - ' + tweaks.sidebarWidth + 'px)'; }
-    }
-
-    // Accent color
-    document.documentElement.style.setProperty('--blue', tweaks.accentColor);
-    // Derive lighter versions from accent
-    document.documentElement.style.setProperty('--bluehi', tweaks.accentColor);
-    document.documentElement.style.setProperty('--bluebg', tweaks.accentColor + '14');
-    document.documentElement.style.setProperty('--blueb', tweaks.accentColor + '44');
-    document.documentElement.style.setProperty('--bluew', tweaks.accentColor + '18');
-
-    // Table density
-    const tblCss = document.getElementById('tweakDensityCss') || (() => {
-      const s = document.createElement('style'); s.id = 'tweakDensityCss'; document.head.appendChild(s); return s;
-    })();
-    if (tweaks.density === 'compact') {
-      tblCss.textContent = 'table.data tbody td { padding: 5px 8px !important; } table.data thead th { padding: 6px 8px !important; } .kpi { padding: 10px 12px !important; }';
-    } else if (tweaks.density === 'comfortable') {
-      tblCss.textContent = 'table.data tbody td { padding: 13px 12px !important; } table.data thead th { padding: 12px 12px !important; } .kpi { padding: 18px 20px !important; }';
-    } else {
-      tblCss.textContent = '';
-    }
-
-    // Font size
-    const fontCss = document.getElementById('tweakFontCss') || (() => {
-      const s = document.createElement('style'); s.id = 'tweakFontCss'; document.head.appendChild(s); return s;
-    })();
-    if (tweaks.tableSize === 'small') {
-      fontCss.textContent = 'table.data { font-size: 11px !important; } .kpi-v { font-size: 13px !important; }';
-    } else if (tweaks.tableSize === 'large') {
-      fontCss.textContent = 'table.data { font-size: 14px !important; } .kpi-v { font-size: 17px !important; }';
-    } else {
-      fontCss.textContent = '';
-    }
-  }, [tweaks]);
-
-  return (
-    <TweaksPanel title="Tweaks — DOD UI">
-      <TweakSection label="Sidebar">
-        <TweakSlider
-          label="Lebar Sidebar"
-          value={tweaks.sidebarWidth}
-          min={160} max={300} step={10}
-          onChange={v => setTweak('sidebarWidth', v)}
-        />
-      </TweakSection>
-
-      <TweakSection label="Warna Tema">
-        <TweakColor
-          label="Warna Aksen"
-          value={tweaks.accentColor}
-          onChange={v => setTweak('accentColor', v)}
-        />
-      </TweakSection>
-
-      <TweakSection label="Ketumpatan Data">
-        <TweakRadio
-          label="Density Table"
-          value={tweaks.density}
-          options={[
-            { label: 'Compact', value: 'compact' },
-            { label: 'Normal', value: 'normal' },
-            { label: 'Comfortable', value: 'comfortable' }
-          ]}
-          onChange={v => setTweak('density', v)}
-        />
-      </TweakSection>
-
-      <TweakSection label="Saiz Teks">
-        <TweakRadio
-          label="Saiz Teks Table"
-          value={tweaks.tableSize}
-          options={[
-            { label: 'Kecil', value: 'small' },
-            { label: 'Normal', value: 'normal' },
-            { label: 'Besar', value: 'large' }
-          ]}
-          onChange={v => setTweak('tableSize', v)}
-        />
-      </TweakSection>
-
-      <TweakSection label="Tindakan Pantas">
-        <TweakButton label="🏠 Home" onClick={() => { sbNav && sbNav('home'); }} />
-        <TweakButton label="📋 Masterlist" onClick={() => { sbNav && sbNav('masterlist'); }} />
-        <TweakButton label="📊 Dashboard" onClick={() => { sbNav && sbNav('dashboard'); }} />
-      </TweakSection>
-    </TweaksPanel>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<DODTweaks />);
+// TWEAKS PANEL DISABLED — useTweaks hook not available
+// Keeping as stub to prevent errors
+const DODTweaks = () => null;
+// ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<DODTweaks />);
 </script>
 
 </body>
@@ -2156,7 +2051,7 @@ const MONTH_LABELS = {
   'JULY 2026':'Julai 2026','AUGUST 2026':'Ogos 2026','SEPTEMBER 2026':'September 2026',
   'OCTOBER 2026':'Oktober 2026','NOVEMBER 2026':'November 2026','DECEMBER 2026':'Disember 2026',
   'DEC 2025':'Disember 2025','JAN 2026':'Januari 2026','FEB 2026':'Februari 2026',
-  'MAC 2026':'Mac 2026'
+  'MAC 2026':'Mac 2026','MEI 2026':'Mei 2026'
 };
 
 const BOARD_COLS = [
