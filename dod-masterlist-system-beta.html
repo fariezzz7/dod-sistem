@@ -906,9 +906,29 @@ nav { display: none !important; }
           <label>Ads Spend (RM)</label>
           <input type="number" id="dashAdsInput" placeholder="0.00" step="0.01" min="0">
         </div>
-        <div class="dash-input-field">
-          <label>Jumlah Leads</label>
-          <input type="number" id="dashLeadsInput" placeholder="0" min="0">
+        <div class="dash-input-field" style="min-width:280px;">
+          <label style="font-weight:700;color:var(--text);margin-bottom:6px;display:block;font-size:12px;">Leads Per Staff</label>
+          <div id="dashLeadsStaffInputs" style="display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;min-width:70px;font-weight:600;">ANIS</span>
+              <input type="number" id="dashLeads_ANIS" placeholder="0" min="0" oninput="updateLeadsTotal()"
+                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;min-width:70px;font-weight:600;">HAKIMAH</span>
+              <input type="number" id="dashLeads_HAKIMAH" placeholder="0" min="0" oninput="updateLeadsTotal()"
+                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;min-width:70px;font-weight:600;">DANIEL</span>
+              <input type="number" id="dashLeads_DANIEL" placeholder="0" min="0" oninput="updateLeadsTotal()"
+                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+            </div>
+            <div style="font-size:11px;color:var(--textm);padding-top:4px;border-top:1px solid var(--line);display:flex;justify-content:space-between;">
+              <span>Total:</span><span id="dashLeadsTotalDisplay" style="font-weight:700;">0</span>
+            </div>
+          </div>
+          <input type="hidden" id="dashLeadsInput" value="0">
         </div>
         <button class="dash-save-btn" onclick="saveDashInput()">💾 Simpan</button>
         <div style="font-size:11px;color:var(--textm);" id="dashSaveStatus"></div>
@@ -1159,6 +1179,7 @@ nav { display: none !important; }
   </div>
 
   <!-- DESIGNER BOARD VIEW -->
+  <div id="securityView" style="display:none;padding:24px 28px;"><div id="securityContent"></div></div>
   <div id="paymentsView" style="display:none;padding:24px 28px;"><div id="paymentsContent"></div></div>
   <div id="designerView">
     <div class="board-wrap">
@@ -2085,9 +2106,14 @@ function showMasterlistViewFull() {
     showToast('Akses ditolak — Sales data tidak tersedia untuk Designer.', true);
     return;
   }
+  sbSetActive('masterlist');
   setAllViewsHidden();
   document.getElementById('masterlistView').style.display = 'block';
-  if (!document.getElementById('tableBody').innerHTML) renderAll();
+  // Show month tabs
+  const tabs = document.getElementById('dodNavTabs') || document.getElementById('navTabs');
+  if (tabs) tabs.style.display = 'flex';
+  buildMonthTabs();
+  renderAll();
 }
 
 function showDashboardView() {
@@ -4402,7 +4428,7 @@ function buildDashSeries() {
   return allMonths.map(m => {
     const hist = DASH_HISTORICAL[m];
     const ml   = sessionData[m];
-    const ads  = adsData[m] || { spend:0, leads:0 };
+    const ads  = adsData[m] || { spend:0, leads:0, leadsStaff:{} };
 
     let sales=0, pcs=0, profit=0, margin=0;
     let onlineRev=0, offlineRev=0;
@@ -4414,15 +4440,17 @@ function buildDashSeries() {
       profit = hist.profit;
       margin = hist.margin;
     } else if (ml) {
-      sales   = ml.reduce((s,o) => s+(o.total_customer||0), 0);
-      pcs     = ml.reduce((s,o) => s+(o.pcs||0), 0);
-      profit  = ml.reduce((s,o) => s+(o.profit||0), 0);
+      // Exclude Quotation — dashboard hanya kira Confirmed ke atas
+      const mlSales = ml.filter(o => isPipelineSales(o));
+      sales   = mlSales.reduce((s,o) => s+(o.total_customer||0), 0);
+      pcs     = mlSales.reduce((s,o) => s+(o.pcs||0), 0);
+      profit  = mlSales.reduce((s,o) => s+(o.profit||0), 0);
       margin  = sales > 0 ? (profit/sales*100) : 0;
-      onlineRev  = ml.filter(o=>o.channel==='ONLINE').reduce((s,o)=>s+(o.total_customer||0),0);
-      offlineRev = ml.filter(o=>o.channel==='OFFLINE').reduce((s,o)=>s+(o.total_customer||0),0);
+      onlineRev  = mlSales.filter(o=>o.channel==='ONLINE').reduce((s,o)=>s+(o.total_customer||0),0);
+      offlineRev = mlSales.filter(o=>o.channel==='OFFLINE').reduce((s,o)=>s+(o.total_customer||0),0);
 
-      // Staff breakdown
-      ml.forEach(o => {
+      // Staff breakdown — exclude Quotation
+      mlSales.forEach(o => {
         const p = (o.pic||'').toUpperCase();
         if (!p || p === 'TOTAL') return;
         if (!staffMap[p]) staffMap[p] = { orders:0, pcs:0, revenue:0, profit:0 };
@@ -4446,7 +4474,7 @@ function buildDashSeries() {
     return {
       key:m, label: LABELS[m] || m.slice(0,3)+' '+m.slice(-2),
       sales, pcs, profit, margin, onlineRev, offlineRev,
-      adsSpend: ads.spend, leads: ads.leads, roas, cpl,
+      adsSpend: ads.spend, leads: ads.leads, leadsStaff: ads.leadsStaff||{}, roas, cpl,
       staffMap, isHistorical: !!hist,
     };
   });
@@ -4470,46 +4498,42 @@ function populateDashMonthSelect() {
 function loadDashInputValues() {
   const m = document.getElementById('dashInputMonth').value;
   const adsData = loadAdsData();
-  const saved = adsData[m] || { spend:0, leads:0 };
-  document.getElementById('dashAdsInput').value   = saved.spend || '';
-  document.getElementById('dashLeadsInput').value = saved.leads || '';
-  document.getElementById('dashSaveStatus').textContent = saved.spend ? `✓ Data ${m} ada` : '';
-}
+  const saved = adsData[m] || { spend:0, leads:0, leadsStaff:{} };
+  document.getElementById('dashAdsInput').value = saved.spend || '';
 
+  // Populate per-staff leads
+  const staff = ['ANIS','HAKIMAH','DANIEL'];
+  staff.forEach(name => {
+    const el = document.getElementById('dashLeads_'+name);
+    if (el) el.value = (saved.leadsStaff && saved.leadsStaff[name]) || '';
+  });
+  updateLeadsTotal();
+  document.getElementById('dashSaveStatus').textContent = saved.spend ? '✓ Data '+m+' ada' : '';
+}
 function saveDashInput() {
   const m = document.getElementById('dashInputMonth').value;
   const spend = parseFloat(document.getElementById('dashAdsInput').value) || 0;
-  const leads = parseInt(document.getElementById('dashLeadsInput').value)  || 0;
+
+  // Collect per-staff leads
+  const salesStaff = getSalesStaffList();
+  const leadsStaff = {};
+  let totalLeads = 0;
+  salesStaff.forEach(name => {
+    const el = document.getElementById('dashLeads_'+name);
+    const val = parseInt(el?.value)||0;
+    leadsStaff[name] = val;
+    totalLeads += val;
+  });
+
   const adsData = loadAdsData();
-  adsData[m] = { spend, leads };
+  adsData[m] = { spend, leads: totalLeads, leadsStaff };
   saveAdsData(adsData);
-  document.getElementById('dashSaveStatus').textContent = `✓ Disimpan — ${m}`;
-  document.getElementById('dashSaveStatus').style.color = 'var(--green)';
-  initDashboard(); // re-render charts
+
+  const status = document.getElementById('dashSaveStatus');
+  if (status) status.textContent = '✓ Disimpan — ' + m;
+  showToast('Data ads disimpan!');
 }
-
-// ── Chart colour palette (light theme) ─────────────────────
-const DC = {
-  blue:    '#1A5CC8', blueA:  'rgba(26,92,200,0.75)',   blueFill:'rgba(26,92,200,0.10)',
-  green:   '#0F7A48', greenA: 'rgba(15,122,72,0.75)',   greenFill:'rgba(15,122,72,0.10)',
-  amber:   '#B8720A', amberA: 'rgba(184,114,10,0.75)',  amberFill:'rgba(184,114,10,0.10)',
-  purple:  '#6E30C8', purpleA:'rgba(110,48,200,0.75)',  purpleFill:'rgba(110,48,200,0.10)',
-  teal:    '#0E7A7A', tealA:  'rgba(14,122,122,0.75)',  tealFill:'rgba(14,122,122,0.10)',
-  red:     '#C02840', redA:   'rgba(192,40,64,0.75)',   redFill:'rgba(192,40,64,0.10)',
-  grid:    'rgba(0,0,0,0.06)',
-  tick:    '#9AA0B8',
-};
-
-const CHART_DEFAULTS = {
-  responsive: true,
-  maintainAspectRatio: true,
-  plugins: { legend:{ display:false }, tooltip:{ backgroundColor:'#fff', titleColor:'#1A2040', bodyColor:'#5A6480', borderColor:'rgba(0,0,0,0.1)', borderWidth:1, padding:10, cornerRadius:8 } },
-  scales: {
-    x: { grid:{ color:DC.grid }, ticks:{ color:DC.tick, font:{ family:"'Fira Code',monospace", size:9 } } },
-    y: { grid:{ color:DC.grid }, ticks:{ color:DC.tick, font:{ family:"'Fira Code',monospace", size:9 } } },
-  },
-};
-
+window.saveDashInput = saveDashInput;
 function destroyChart(id) {
   if (DASH_CHARTS[id]) { DASH_CHARTS[id].destroy(); delete DASH_CHARTS[id]; }
 }
@@ -5279,9 +5303,9 @@ const ITEM_CATALOGUE = [
 ];
 const ITEM_TYPES = ITEM_CATALOGUE.map(i => i.desc);
 
-function addItemRow(desc='', qty=0, price=0) {
+function addItemRow(desc='', qty=0, price=0, addon=false) {
   const id = 'ir_' + (++itemRowId);
-  itemRows.push({ id, desc, qty, price });
+  itemRows.push({ id, desc, qty, price, addon });
   renderItemRows();
   // Focus new desc field
   setTimeout(() => {
@@ -5300,7 +5324,7 @@ function renderItemRows() {
   const tbody = document.getElementById('itemsBody');
   if (!tbody) return;
   tbody.innerHTML = itemRows.map((row, i) => `
-    <tr>
+    <tr style="${row.addon ? 'background:rgba(200,149,42,0.05);' : ''}">
       <td class="td-no">${i+1}</td>
       <td class="td-desc">
         <input type="text" id="id_${row.id}" value="${escHtmlForm(row.desc)}"
@@ -5310,7 +5334,7 @@ function renderItemRows() {
       </td>
       <td class="td-qty">
         <input type="number" id="iq_${row.id}" value="${row.qty||''}"
-          placeholder="0" min="0"
+          placeholder="0" min="0" ${row.addon ? 'style="color:var(--textm);"' : ''}
           oninput="updateItemField('${row.id}','qty',this.value);recalcItems()">
       </td>
       <td class="td-price">
@@ -5320,6 +5344,14 @@ function renderItemRows() {
       </td>
       <td class="td-total" id="it_${row.id}">
         ${row.qty && row.price ? fmt(row.qty * row.price) : '—'}
+      </td>
+      <td style="padding:4px 6px;text-align:center;">
+        <button type="button"
+          onclick="toggleItemAddon('${row.id}')"
+          title="${row.addon ? 'Tukar ke Item Utama' : 'Tukar ke Addon (tak kira PCS)'}"
+          style="font-size:9px;padding:2px 6px;border-radius:4px;border:1px solid ${row.addon ? 'var(--amber)' : 'var(--line)'};background:${row.addon ? 'var(--amberbg)' : 'var(--bg3)'};color:${row.addon ? 'var(--amber)' : 'var(--textm)'};cursor:pointer;font-weight:700;white-space:nowrap;">
+          ${row.addon ? 'ADDON' : 'ITEM'}
+        </button>
       </td>
       <td class="td-del">
         <button type="button" class="item-del-btn" onclick="removeItemRow('${row.id}')"
@@ -5353,7 +5385,8 @@ function updateItemField(id, field, val) {
 }
 
 function recalcItems() {
-  const totalPcs = itemRows.reduce((s,r) => s + (parseFloat(r.qty)||0), 0);
+  // Only count non-addon items for PCS
+  const totalPcs = itemRows.filter(r=>!r.addon).reduce((s,r) => s + (parseFloat(r.qty)||0), 0);
   const totalAmt = itemRows.reduce((s,r) => s + (parseFloat(r.qty)||0)*(parseFloat(r.price)||0), 0);
   
   // Update summary display
@@ -5389,6 +5422,7 @@ function getItemsData() {
     // Lookup SKU from catalogue if not already stored
     const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === (r.desc||'').toLowerCase());
     return {
+      addon: r.addon||false,
       sku:   r.sku || (cat ? cat.sku : ''),
       desc:  r.desc || '',
       qty:   parseFloat(r.qty)||0,
@@ -5404,7 +5438,7 @@ function loadItemsData(items) {
   if (items && items.length) {
     items.forEach(item => {
       const id = 'ir_' + (++itemRowId);
-      itemRows.push({ id, desc: item.desc||'', qty: item.qty||0, price: item.price||0 });
+      itemRows.push({ id, desc: item.desc||'', qty: item.qty||0, price: item.price||0, addon: item.addon||false });
     });
   }
   renderItemRows();
@@ -7169,6 +7203,30 @@ window.secExportCSV = secExportCSV;
 window.secExportJSON = secExportJSON;
 window.secCloudBackup = secCloudBackup;
 window.secRestoreFromFile = secRestoreFromFile;
+
+
+// ══ Window exports ══
+window.showSecurityView = showSecurityView;
+window.showHomeView = showHomeView;
+window.showMasterlistViewFull = showMasterlistViewFull;
+window.showCustomerView = showCustomerView;
+window.showKpiView = showKpiView;
+window.showProdTrackView = showProdTrackView;
+window.showSupplierDirView = showSupplierDirView;
+window.showSupplierOSView = showSupplierOSView;
+window.showDashboardView = showDashboardView;
+window.showUserMgmtView = showUserMgmtView;
+window.openJobBoard = openJobBoard;
+
+
+function toggleItemAddon(id) {
+  const row = itemRows.find(r => r.id === id);
+  if (row) {
+    row.addon = !row.addon;
+    renderItemRows();
+    recalcItems();
+  }
+}
 
 </script>
 
