@@ -899,40 +899,48 @@ nav { display: none !important; }
       </div>
 
       <!-- Manual input bar -->
-      <div class="dash-input-bar">
-        <div class="dash-input-bar-label">Input Manual Bulanan</div>
-        <select class="dash-month-select" id="dashInputMonth"></select>
-        <div class="dash-input-field">
-          <label>Ads Spend (RM)</label>
-          <input type="number" id="dashAdsInput" placeholder="0.00" step="0.01" min="0">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin-bottom:16px;">
+        <!-- Row 1: Bulan + Ads Spend -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
+          <div style="font-size:10px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.1em;">Input Manual Bulanan</div>
+          <select class="dash-month-select" id="dashInputMonth" style="padding:6px 12px;border:1px solid var(--line);border-radius:7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;"></select>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label style="font-size:12px;color:var(--textd);font-weight:600;white-space:nowrap;">Ads Spend (RM)</label>
+            <input type="number" id="dashAdsInput" placeholder="0.00" step="0.01" min="0"
+              style="width:120px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;font-size:12px;">
+          </div>
+          <button class="dash-save-btn" onclick="saveDashInput()" style="padding:7px 16px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;">💾 Simpan</button>
+          <div style="font-size:11px;color:var(--green);" id="dashSaveStatus"></div>
         </div>
-        <div class="dash-input-field" style="min-width:280px;">
-          <label style="font-weight:700;color:var(--text);margin-bottom:6px;display:block;font-size:12px;">Leads Per Staff</label>
-          <div id="dashLeadsStaffInputs" style="display:flex;flex-direction:column;gap:5px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11px;min-width:70px;font-weight:600;">ANIS</span>
+        <!-- Row 2: Leads per staff -->
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--textm);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Leads Per Staff (Bulan ini)</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end;">
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--textd);display:block;margin-bottom:4px;">ANIS</label>
               <input type="number" id="dashLeads_ANIS" placeholder="0" min="0" oninput="updateLeadsTotal()"
-                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+                style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:'Fira Code',monospace;font-weight:600;">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11px;min-width:70px;font-weight:600;">HAKIMAH</span>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--textd);display:block;margin-bottom:4px;">HAKIMAH</label>
               <input type="number" id="dashLeads_HAKIMAH" placeholder="0" min="0" oninput="updateLeadsTotal()"
-                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+                style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:'Fira Code',monospace;font-weight:600;">
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11px;min-width:70px;font-weight:600;">DANIEL</span>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--textd);display:block;margin-bottom:4px;">DANIEL</label>
               <input type="number" id="dashLeads_DANIEL" placeholder="0" min="0" oninput="updateLeadsTotal()"
-                style="flex:1;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+                style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:'Fira Code',monospace;font-weight:600;">
             </div>
-            <div style="font-size:11px;color:var(--textm);padding-top:4px;border-top:1px solid var(--line);display:flex;justify-content:space-between;">
-              <span>Total:</span><span id="dashLeadsTotalDisplay" style="font-weight:700;">0</span>
+            <div>
+              <label style="font-size:11px;font-weight:700;color:var(--textm);display:block;margin-bottom:4px;">Total</label>
+              <div id="dashLeadsTotalDisplay"
+                style="width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:'Fira Code',monospace;font-weight:800;background:var(--bg3);color:var(--blue);">0</div>
             </div>
           </div>
-          <input type="hidden" id="dashLeadsInput" value="0">
         </div>
-        <button class="dash-save-btn" onclick="saveDashInput()">💾 Simpan</button>
-        <div style="font-size:11px;color:var(--textm);" id="dashSaveStatus"></div>
+        <input type="hidden" id="dashLeadsInput" value="0">
       </div>
+
 
       <!-- KPI Strip -->
       <div class="dash-kpi-strip" id="dashKpiStrip"></div>
@@ -1096,6 +1104,7 @@ nav { display: none !important; }
         </div>
       </div>
       <div class="kpi-row" id="kpiRow"></div>
+      <div class="kpi" id="kpiPipelineCard" style="display:none;margin-top:6px;border:1px dashed var(--amber);background:var(--amberbg);border-radius:10px;padding:10px 14px;min-width:160px;"></div>
     </div>
 
     <div class="main">
@@ -2085,15 +2094,15 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','paymentsView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView',
+   'dashboardView','userMgmtView','supplierDirView','supplierOSView',
+   'prodTrackView','securityView','paymentsView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
-  // Hide month tabs by default — only shown in masterlist view
   const tabs = document.getElementById('dodNavTabs') || document.getElementById('navTabs');
   if (tabs) tabs.style.display = 'none';
 }
-
 function showHomeView() {
   sbSetActive('home');
   setAllViewsHidden();
@@ -2395,8 +2404,8 @@ function renderKPIs(rows) {
   const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
   const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
   const totalCost = rows.reduce((s,r)=>s+(r.total_supplier||0),0);
-  const custOS    = rows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const supOS     = rows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
+  const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
+  const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
   const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
   const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
 
@@ -2411,6 +2420,21 @@ function renderKPIs(rows) {
     <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
     ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
   `;
+
+  // Pipeline Quotation Card
+  const pipelineEl = document.getElementById('homePipelineSection') || document.getElementById('pipelineCard');
+  if (quotRows.length > 0) {
+    const pCard = document.getElementById('kpiPipelineCard');
+    if (pCard) {
+      pCard.style.display = 'block';
+      pCard.innerHTML = '<div class="kpi-l">📋 Pipeline</div>'
+        + '<div class="kpi-v" style="color:var(--amber);">' + fmt(quotVal) + '</div>'
+        + '<div class="kpi-sub">' + quotRows.length + ' quotation pending</div>';
+    }
+  } else {
+    const pCard = document.getElementById('kpiPipelineCard');
+    if (pCard) pCard.style.display = 'none';
+  }
 }
 
 // ══════════════════════════════════════
@@ -2600,8 +2624,15 @@ function showDetail(id) {
       <button class="dp-doc-btn" onclick="openDoc('receipt')">✅ Receipt</button>
       ${isAdmin?`<button class="dp-doc-btn" onclick="openDoc('po')">📦 PO Supplier</button>`:''}
     </div>
+
+    <div style="margin-top:14px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;">DOKUMEN TERSIMPAN</div>
+    <div id="savedDocsList" style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:11px;color:var(--textm);">Memuatkan...</div>
+    </div>
   `;
 
+  // Load saved docs for this order
+  loadSavedDocs(r.id);
   document.getElementById('detailActions').innerHTML = `
     ${canEdit?`<button class="btn-edit-detail" onclick="openEditFromDetail()">✏️ Edit Order</button>`:'<div style="flex:1"></div>'}
     <button style="padding:10px 12px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .12s;"
@@ -4810,11 +4841,21 @@ function initDashboard() {
 
 async function _renderDashboard() {
   populateDashMonthSelect();
-  // Load fresh ads data from Supabase
+
+  // If sessionData is empty, load from Supabase first
+  const hasData = Object.values(sessionData).some(orders => orders.length > 0);
+  if (!hasData) {
+    try {
+      await loadOrdersFromSupabase();
+    } catch(e) { console.warn('Dashboard: data load failed', e); }
+  }
+
+  // Load fresh ads data
   try {
     const freshAds = await loadAdsDataAsync();
     localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(freshAds));
   } catch(e) {}
+
   const series = buildDashSeries();
   renderDashKpi(series);
   renderDashCharts(series);
@@ -7227,6 +7268,87 @@ function toggleItemAddon(id) {
     recalcItems();
   }
 }
+
+
+// ══ SAVED DOCUMENTS ══
+async function saveDocSnapshot(orderId, docType, invNumber, htmlContent) {
+  try {
+    const snapshot = {
+      order_id:     orderId,
+      doc_type:     docType,
+      inv_number:   invNumber || '',
+      generated_by: currentUser?.id || 'unknown',
+      generated_at: new Date().toISOString(),
+      snapshot:     JSON.stringify({ html: htmlContent }),
+      notes:        ''
+    };
+    await supaUpsert('documents', [snapshot]);
+    // Reload saved docs list
+    loadSavedDocs(orderId);
+  } catch(e) {
+    console.warn('saveDocSnapshot failed:', e);
+  }
+}
+
+async function loadSavedDocs(orderId) {
+  const el = document.getElementById('savedDocsList');
+  if (!el) return;
+  try {
+    const docs = await supaGet('documents',
+      'select=*&order=generated_at.desc&order_id=eq.' + encodeURIComponent(orderId)
+    );
+    if (!docs || !docs.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--textm);">Tiada dokumen tersimpan.</div>';
+      return;
+    }
+    const typeLabel = {invoice:'Invoice',quotation:'Quotation',receipt:'Receipt',po:'PO Supplier'};
+    const typeIcon  = {invoice:'🧾',quotation:'📋',receipt:'✅',po:'📦'};
+    el.innerHTML = '';
+    docs.forEach(d => {
+      const ts = d.generated_at ? new Date(d.generated_at).toLocaleString('ms-MY',{
+        day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'
+      }) : '—';
+      const label = (typeLabel[d.doc_type]||d.doc_type) + (d.inv_number ? ' · '+d.inv_number : '');
+      const icon  = typeIcon[d.doc_type] || '📄';
+      const row   = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--line);';
+      row.innerHTML = '<span style="font-size:14px;">' + icon + '</span>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--text);">' + label + '</div>'
+        + '<div style="font-size:10px;color:var(--textm);">' + ts + ' · ' + (d.generated_by||'—') + '</div>'
+        + '</div>';
+      const btn = document.createElement('button');
+      btn.textContent = 'Buka';
+      btn.style.cssText = 'padding:4px 10px;font-size:11px;font-weight:600;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;';
+      btn.onclick = function() { openSavedDoc(d.id); };
+      row.appendChild(btn);
+      el.appendChild(row);
+    });
+  } catch(e) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--textm);">Gagal muatkan dokumen.</div>';
+  }
+}
+
+async function openSavedDoc(docId) {
+  try {
+    const docs = await supaGet('documents', 'select=*&id=eq.' + encodeURIComponent(docId));
+    if (!docs || !docs.length) { showToast('Dokumen tidak dijumpai', true); return; }
+    const d = docs[0];
+    const snap = JSON.parse(d.snapshot || '{}');
+    if (snap.html) {
+      const w = window.open('', '_blank');
+      w.document.write(snap.html);
+      w.document.close();
+    } else {
+      showToast('Dokumen tiada kandungan', true);
+    }
+  } catch(e) {
+    showToast('Gagal buka dokumen: ' + e.message, true);
+  }
+}
+window.loadSavedDocs = loadSavedDocs;
+window.saveDocSnapshot = saveDocSnapshot;
+window.openSavedDoc = openSavedDoc;
 
 </script>
 
