@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEwklEQVR4nO1WXWwUVRQ+987szOzOzG7/pQ92aQETYssSIUJNgNaEECEpDVgeAYOlqAlC1QT8wQRIsOLPmxSEF+GhBUpQecGkWoM0qfbHUIECAdopKy2xsMB2d6Zz7z0+XMBSWvpgSDThPNxMzvnOd879OecMQUR4kkKfKPvTAP+JAKoQYlwDIiKioiiEEPk9FkEIJQQAGGOEEELIuDxk0mfquq5hGOOaPM/Tdf3x7mRRWfmjWlVR8/OnlJWXraqqOnnyh127dkUyMlAgAgIAAUIpvXVraOPGt1etqmpqOtbc3ByPx33GHh9sHJkx47lTp375/Isvx6QFANu2fdze3lEya9YkFMGQpRshI2Q9euG6EQKgmqadP39+y5ato03V62scxwmHIwBgBM2JaIMhi1AloAYCKHhdXd20okIhBCGUMb+9vWNPfX0qlebMf7ag4Ldf21pbWwEIIUQIvnDhwrLyl7vPnNGNoKLQmpqa0tL5WkBDFITQwcGBTZtqGeeICHnP5Ac0nVBaWbkCH5aOjo6srGzdCAHAV3v2jDY1NDbK3E3Lbmn5eYzjmrWvASGaHgxHMuH7EycoVYIhCwA+qfsUEV3XZYy5rouI23fsBABCSMXySsaY53nSunrNWvkuN22uHeOyd98+eUQA8M3BQ4CI77z7HgDY4QzLss+dO4eIjDHGGOe8uflHeabz5r+EiEIIzjkiLl68ROqbmo4xxnzfl3rHcbKzcyw7DADr1lUjIviMpdPp54tLpENh0fShv4Y4557nCSEOHz4i9YvKyhGRc84YQ8SK5ZVyB/V798kdcM7v3LkTm/2CxEejhYlEgjGmUkIMw2hsbGhsaNCNYDJ5N/5nPCs7S9M0AKiv30sVVXBWUlwMAA/KPhaLffftcUUN7P96//rq12W5DQ4OLn1lSVXVq56brqhYHolEOOeA44kQore3d/XqNQAQMm0A6Or6fTTgypUrihKQB71i5cpLly4JIcalInPmvgiIAgXnggAggKIoiOLq1d7biZuWnZG8m/jgw4+WLVu6oWaDbgQJgOumdu/+7OzZs7W1my07krx727LD04qmUUXhnN8joZRSChM0KAAAqgSAKADwxptv3bhxIxqdCgAARJZxbm5ef3//lq3vSyxVtAmJsnPyJEjSyZVQVTdCsdjs/QcOdHZ2FhRMBQBCA/eRKgDk5OSdPt168NChOXPmGsEQAAWg9zMgsi9YdoT09PQMDAwoiuq6rm1byeSwaZrDw8mCaHTG9OkA8FNLi+DcNK1UKmWapjfiAaJAZL6v6/qCBQsAwHGceDzueSOaphFChBAIKDjPzMy6166PHD3a19fHGNc1Tfb2WGy24zhtbW0ls0ouX76cPyUfAFzXHbp5s6iwMJ1OG8Fg/Nq1kGlev3595syZfb1980vndXZ2GbruM4aIO3dsBwBVFsjFCxcDWiCRSETC4VQqpWkBy7KSyWQ4HDZNs7S0tLv7D0oJpTQ3Nzc6Napp2oWeC2nX5ULYltXvOCP+SGp42LYs13V1Xc/KzPR9n8hpJS9DCEEplStjTFVVRBw9p6RpwsucQB6aaJJxzCqpFUWB+4VGCAX4xyqRMhUhxAO9zGbykfkv5f//2/I0wKTyNxyCw6cNtTIsAAAAAElFTkSuQmCC">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DOD — Masterlist Invoice System v3</title>
@@ -1076,14 +1077,7 @@ tr:hover .row-actions{opacity:1;}
             <label>DANIEL</label>
             <input type="number" id="dashLeadsDaniel" placeholder="0" min="0" style="width:80px;">
           </div>
-          <div class="dash-input-field" style="min-width:80px;">
-            <label>FATHI</label>
-            <input type="number" id="dashLeadsFathi" placeholder="0" min="0" style="width:80px;">
-          </div>
-          <div class="dash-input-field" style="min-width:80px;">
-            <label>FARIZ</label>
-            <input type="number" id="dashLeadsFariz" placeholder="0" min="0" style="width:80px;">
-          </div>
+          <!-- Fathi & Fariz dibuang — bukan sales admin/exec -->
         </div>
         <button class="dash-save-btn" onclick="saveDashInput()">💾 Simpan</button>
         <div style="font-size:11px;color:var(--textm);" id="dashSaveStatus"></div>
@@ -4804,8 +4798,26 @@ function loadAdsData() {
 async function loadAdsDataAsync() {
   try {
     const rows = await supaGet('ads_data', 'select=*');
+    // Mula dengan data local (preserve staffLeads yang ada)
+    const localRaw = localStorage.getItem(DASH_ADS_STORAGE);
+    const localAds = localRaw ? JSON.parse(localRaw) : {};
     const ads = { ...DASH_ADS_SEED };
-    rows.forEach(r => { ads[r.month] = { spend: parseFloat(r.spend)||0, leads: parseInt(r.leads)||0 }; });
+    rows.forEach(r => {
+      // Parse staffLeads dari Supabase, fallback ke local jika ada
+      let staffLeads = {};
+      try { staffLeads = r.staff_leads ? JSON.parse(r.staff_leads) : {}; } catch(e) {}
+      // Merge: Supabase spend/leads + staffLeads (Supabase priority, local sebagai fallback)
+      const localStaff = (localAds[r.month] || {}).staffLeads || {};
+      ads[r.month] = {
+        spend: parseFloat(r.spend)||0,
+        leads: parseInt(r.leads)||0,
+        staffLeads: Object.keys(staffLeads).length ? staffLeads : localStaff
+      };
+    });
+    // Preserve any local months not in Supabase yet
+    Object.keys(localAds).forEach(m => {
+      if (!ads[m]) ads[m] = localAds[m];
+    });
     localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(ads));
     return ads;
   } catch(e) {
@@ -4816,9 +4828,10 @@ async function loadAdsDataAsync() {
 
 function saveAdsData(data) {
   localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(data));
-  // Sync to Supabase
+  // Sync to Supabase — termasuk staffLeads sebagai JSON string
   const rows = Object.entries(data).map(([month, v]) => ({
-    month, spend: v.spend || 0, leads: v.leads || 0
+    month, spend: v.spend || 0, leads: v.leads || 0,
+    staff_leads: JSON.stringify(v.staffLeads || {})
   }));
   if (rows.length) {
     supaUpsert('ads_data', rows).catch(e => console.warn('Ads sync failed:', e));
@@ -4852,15 +4865,17 @@ function buildDashSeries() {
       profit = hist.profit;
       margin = hist.margin;
     } else if (ml) {
-      sales   = ml.reduce((s,o) => s+(o.total_customer||0), 0);
-      pcs     = ml.reduce((s,o) => s+(o.pcs||0), 0);
-      profit  = ml.reduce((s,o) => s+(o.profit||0), 0);
+      // Hanya kira orders confirmed ke atas — Quotation dikecualikan
+      const confirmedOrders = ml.filter(o => (o.pipeline_status||'confirmed') !== 'quotation');
+      sales   = confirmedOrders.reduce((s,o) => s+(o.total_customer||0), 0);
+      pcs     = confirmedOrders.reduce((s,o) => s+(o.pcs||0), 0);
+      profit  = confirmedOrders.reduce((s,o) => s+(o.profit||0), 0);
       margin  = sales > 0 ? (profit/sales*100) : 0;
-      onlineRev  = ml.filter(o=>o.channel==='ONLINE').reduce((s,o)=>s+(o.total_customer||0),0);
-      offlineRev = ml.filter(o=>o.channel==='OFFLINE').reduce((s,o)=>s+(o.total_customer||0),0);
+      onlineRev  = confirmedOrders.filter(o=>o.channel==='ONLINE').reduce((s,o)=>s+(o.total_customer||0),0);
+      offlineRev = confirmedOrders.filter(o=>o.channel==='OFFLINE').reduce((s,o)=>s+(o.total_customer||0),0);
 
-      // Staff breakdown
-      ml.forEach(o => {
+      // Staff breakdown — confirmed orders sahaja
+      confirmedOrders.forEach(o => {
         const p = (o.pic||'').toUpperCase();
         if (!p || p === 'TOTAL') return;
         if (!staffMap[p]) staffMap[p] = { orders:0, pcs:0, revenue:0, profit:0 };
@@ -4913,7 +4928,7 @@ function loadDashInputValues() {
   document.getElementById('dashAdsInput').value   = saved.spend || '';
   document.getElementById('dashLeadsInput').value = saved.leads || '';
   const sl = saved.staffLeads || {};
-  ['Anis','Hakimah','Daniel','Fathi','Fariz'].forEach(name => {
+  ['Anis','Hakimah','Daniel'].forEach(name => {
     const el = document.getElementById('dashLeads' + name);
     if (el) el.value = sl[name.toUpperCase()] || '';
   });
@@ -4928,15 +4943,14 @@ function saveDashInput() {
     ANIS:    parseInt(document.getElementById('dashLeadsAnis')?.value)    || 0,
     HAKIMAH: parseInt(document.getElementById('dashLeadsHakimah')?.value) || 0,
     DANIEL:  parseInt(document.getElementById('dashLeadsDaniel')?.value)  || 0,
-    FATHI:   parseInt(document.getElementById('dashLeadsFathi')?.value)   || 0,
-    FARIZ:   parseInt(document.getElementById('dashLeadsFariz')?.value)   || 0,
   };
   const adsData = loadAdsData();
   adsData[m] = { spend, leads, staffLeads };
   saveAdsData(adsData);
   document.getElementById('dashSaveStatus').textContent = `✓ Disimpan — ${m}`;
   document.getElementById('dashSaveStatus').style.color = 'var(--green)';
-  initDashboard(); // re-render charts
+  // Re-render dashboard dengan data baru
+  _renderDashboard();
 }
 
 // ── Chart colour palette (light theme) ─────────────────────
@@ -5267,10 +5281,9 @@ function initDashboard() {
 
 async function _renderDashboard() {
   populateDashMonthSelect();
-  // Load fresh ads data from Supabase
+  // Load fresh ads data dari Supabase (merge dengan staffLeads local)
   try {
-    const freshAds = await loadAdsDataAsync();
-    localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(freshAds));
+    await loadAdsDataAsync(); // update localStorage dengan merge betul
   } catch(e) {}
   const series = buildDashSeries();
   renderDashKpi(series);
