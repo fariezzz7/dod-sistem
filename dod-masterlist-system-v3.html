@@ -2144,10 +2144,7 @@ async function doLogin() {
 function doLogout() {
   currentUser = null;
   localStorage.removeItem('dod_session');
-  document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('ls-pass').value = '';
-  document.getElementById('ls-user').value = '';
+  window.location.href = 'dod-login.html';
 }
 
 function openJobBoard(params) {
