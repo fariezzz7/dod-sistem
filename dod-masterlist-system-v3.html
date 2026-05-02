@@ -2176,11 +2176,6 @@ async function initApp() {
   }
   setupNavForRole();
   updateNavDate();
-  // Designer goes straight to jobboard
-  if (currentUser.role === 'designer') {
-    openJobBoard();
-    return;
-  }
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
