@@ -4797,8 +4797,26 @@ function loadAdsData() {
 async function loadAdsDataAsync() {
   try {
     const rows = await supaGet('ads_data', 'select=*');
+    // Mula dengan data local (preserve staffLeads yang ada)
+    const localRaw = localStorage.getItem(DASH_ADS_STORAGE);
+    const localAds = localRaw ? JSON.parse(localRaw) : {};
     const ads = { ...DASH_ADS_SEED };
-    rows.forEach(r => { ads[r.month] = { spend: parseFloat(r.spend)||0, leads: parseInt(r.leads)||0 }; });
+    rows.forEach(r => {
+      // Parse staffLeads dari Supabase, fallback ke local jika ada
+      let staffLeads = {};
+      try { staffLeads = r.staff_leads ? JSON.parse(r.staff_leads) : {}; } catch(e) {}
+      // Merge: Supabase spend/leads + staffLeads (Supabase priority, local sebagai fallback)
+      const localStaff = (localAds[r.month] || {}).staffLeads || {};
+      ads[r.month] = {
+        spend: parseFloat(r.spend)||0,
+        leads: parseInt(r.leads)||0,
+        staffLeads: Object.keys(staffLeads).length ? staffLeads : localStaff
+      };
+    });
+    // Preserve any local months not in Supabase yet
+    Object.keys(localAds).forEach(m => {
+      if (!ads[m]) ads[m] = localAds[m];
+    });
     localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(ads));
     return ads;
   } catch(e) {
@@ -4809,9 +4827,10 @@ async function loadAdsDataAsync() {
 
 function saveAdsData(data) {
   localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(data));
-  // Sync to Supabase
+  // Sync to Supabase — termasuk staffLeads sebagai JSON string
   const rows = Object.entries(data).map(([month, v]) => ({
-    month, spend: v.spend || 0, leads: v.leads || 0
+    month, spend: v.spend || 0, leads: v.leads || 0,
+    staff_leads: JSON.stringify(v.staffLeads || {})
   }));
   if (rows.length) {
     supaUpsert('ads_data', rows).catch(e => console.warn('Ads sync failed:', e));
@@ -5261,10 +5280,9 @@ function initDashboard() {
 
 async function _renderDashboard() {
   populateDashMonthSelect();
-  // Load fresh ads data from Supabase
+  // Load fresh ads data dari Supabase (merge dengan staffLeads local)
   try {
-    const freshAds = await loadAdsDataAsync();
-    localStorage.setItem(DASH_ADS_STORAGE, JSON.stringify(freshAds));
+    await loadAdsDataAsync(); // update localStorage dengan merge betul
   } catch(e) {}
   const series = buildDashSeries();
   renderDashKpi(series);
