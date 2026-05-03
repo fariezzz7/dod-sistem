@@ -2320,7 +2320,7 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
-    sbHide('sbKpi');
+    sbShow('sbKpi');
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -3855,15 +3855,15 @@ function renderKpiDashboard() {
   const staffOpts = isAdmin ? `<option value="ALL">Semua Staff</option>` +
     allStaff.map(s => `<option value="${s}" ${s === kpiFilterStaff ? 'selected' : ''}>${s}</option>`).join('') : '';
 
-  const filterBar = isAdmin ? `
+  const filterBar = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
       <select onchange="showKpiDashboard(undefined, this.value)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
         ${monthOpts}
       </select>
-      <select onchange="showKpiDashboard(this.value, undefined)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
+      ${isAdmin ? `<select onchange="showKpiDashboard(this.value, undefined)" style="font-size:11px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;color:var(--text);cursor:pointer;">
         ${staffOpts}
-      </select>
-    </div>` : '';
+      </select>` : ''}
+    </div>`;
 
   const title = isAdmin
     ? `<div class="kpi-dash-title">Dashboard KPI Sales Team</div>
