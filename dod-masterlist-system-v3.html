@@ -314,6 +314,89 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   body{padding-top:48px;}
 }
 
+/* ══════════════════════════════════════
+   CALENDAR VIEW
+══════════════════════════════════════ */
+#calendarView{display:none;padding:24px 28px;}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cal-month-center{display:flex;align-items:center;gap:12px;}
+.cal-month-title{font-family:'Fira Code',monospace;font-size:16px;font-weight:600;color:var(--text);min-width:200px;text-align:center;}
+.cal-nav-btn{background:var(--bg2);border:1px solid var(--line);color:var(--textd);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cal-nav-btn:hover{background:var(--bg4);color:var(--text);}
+.cal-today-btn{background:var(--bluebg);border:1px solid var(--blueb);color:var(--blue);padding:5px 12px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Fira Code',monospace;transition:all .15s;}
+.cal-today-btn:hover{background:var(--blue);color:#fff;}
+.cal-legend{display:flex;align-items:center;gap:14px;}
+.cal-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--textd);}
+.cal-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cal-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.cal-stat{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.cal-stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.cal-stat-num{font-family:'Fira Code',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1;}
+.cal-stat-lbl{font-size:10px;color:var(--textm);margin-top:2px;}
+.cal-grid-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.cal-hdr{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);}
+.cal-hdr-day{padding:10px 0;text-align:center;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--textm);}
+.cal-hdr-day.sat{color:var(--red);opacity:0.65;}
+.cal-body-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-cell{min-height:96px;border-right:1px solid rgba(0,0,0,0.05);border-bottom:1px solid rgba(0,0,0,0.05);padding:7px 6px 5px;cursor:pointer;transition:background .1s;position:relative;overflow:hidden;}
+.cal-cell:hover{background:var(--bg3);}
+.cal-cell.other-mo{background:rgba(0,0,0,0.013);}
+.cal-cell.other-mo .cal-dnum{color:var(--textm);opacity:0.45;}
+.cal-cell.is-today{background:var(--bluebg);}
+.cal-cell.is-today .cal-dnum{background:var(--blue);color:#fff;border-radius:6px;}
+.cal-cell.is-holiday{background:repeating-linear-gradient(-45deg,rgba(192,40,64,0.025),rgba(192,40,64,0.025) 4px,transparent 4px,transparent 10px);}
+.cal-cell.is-holiday::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
+.cal-cell.is-weekend{background:rgba(0,0,0,0.01);}
+.cal-cell:nth-child(7n){border-right:none;}
+.cal-dnum{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-size:11px;font-weight:600;color:var(--textd);margin-bottom:3px;}
+.cal-evts{display:flex;flex-direction:column;gap:2px;}
+.cal-evt{font-size:9px;padding:2px 5px;border-radius:3px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-evt.e-submit{background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);}
+.cal-evt.e-due{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
+.cal-evt.e-holiday{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
+.cal-evt.e-note{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);}
+.cal-more-lbl{font-size:9px;color:var(--textm);font-family:'Fira Code',monospace;padding:1px 3px;cursor:pointer;}
+.cal-more-lbl:hover{color:var(--blue);}
+#calPanel{position:fixed;top:0;right:-460px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--line);z-index:320;display:flex;flex-direction:column;transition:right .26s cubic-bezier(0.4,0,0.2,1);box-shadow:-4px 0 24px rgba(0,0,0,0.08);}
+#calPanel.open{right:0;}
+#calPanelOverlay{display:none;position:fixed;inset:0;background:rgba(26,32,64,0.15);backdrop-filter:blur(1px);z-index:319;}
+#calPanelOverlay.show{display:block;}
+.cpanel-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.cpanel-date{font-family:'Fira Code',monospace;font-size:14px;font-weight:600;color:var(--text);}
+.cpanel-day{font-size:11px;color:var(--textm);margin-top:1px;}
+.cpanel-close{background:var(--bg3);border:1px solid var(--line);color:var(--textd);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.cpanel-close:hover{background:var(--redbg);color:var(--red);}
+.cpanel-body{flex:1;overflow-y:auto;padding:14px 18px;}
+.cpanel-sec-title{font-family:'Fira Code',monospace;font-size:8.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;margin-top:16px;display:flex;align-items:center;gap:8px;}
+.cpanel-sec-title::after{content:'';flex:1;height:1px;background:var(--line);}
+.cpanel-sec-title:first-child{margin-top:0;}
+.cpanel-empty{font-size:12px;color:var(--textm);padding:24px 0;text-align:center;font-style:italic;}
+.cp-order{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:7px;transition:border-color .15s;}
+.cp-order:hover{border-color:var(--blueb);}
+.cp-order-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px;}
+.cp-order-name{font-weight:600;font-size:12px;color:var(--text);line-height:1.3;flex:1;}
+.cp-order-badge{font-family:'Fira Code',monospace;font-size:8px;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.cp-order-badge.bs{background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);}
+.cp-order-badge.bd{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
+.cp-order-badge.bov{background:var(--redbg);color:var(--red);border:2px solid var(--red);}
+.cp-order-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cp-order-tag{font-size:10px;color:var(--textd);}
+.cp-pic-chip{font-size:9px;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--bg4);}
+.cp-event-card{border-radius:8px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
+.cp-event-card.ev-holiday{background:var(--redbg);border:1px solid var(--redb);}
+.cp-event-card.ev-note{background:var(--amberbg);border:1px solid var(--amberb);}
+.cp-event-title{font-weight:600;font-size:12px;}
+.cp-event-del{background:none;border:none;cursor:pointer;font-size:13px;opacity:0.45;transition:opacity .15s;padding:2px;}
+.cp-event-del:hover{opacity:1;}
+.cpanel-footer{border-top:1px solid var(--line);padding:12px 18px;flex-shrink:0;}
+.cpanel-footer-lbl{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--textm);margin-bottom:7px;}
+.cpanel-add-row{display:flex;gap:6px;}
+.cpanel-add-inp{flex:1;background:var(--bg3);border:1px solid var(--line);padding:7px 10px;border-radius:7px;font-size:12px;color:var(--text);outline:none;font-family:'Plus Jakarta Sans',sans-serif;}
+.cpanel-add-inp:focus{border-color:var(--blue);background:#fff;}
+.cpanel-add-sel{background:var(--bg3);border:1px solid var(--line);padding:7px 8px;border-radius:7px;font-size:11px;color:var(--text);outline:none;cursor:pointer;}
+.cpanel-add-btn{background:var(--blue);color:#fff;border:none;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.cpanel-add-btn:hover{background:var(--bluehi);}
+
 /* Tooltip on collapsed sidebar */
 #appSidebar.collapsed .sb-item{position:relative;}
 #appSidebar.collapsed .sb-item:hover::after{
@@ -966,6 +1049,11 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Security</span>
   </button>
 
+  <button class="sb-item" id="sbCalendar" data-tip="Kalendar" onclick="sbNav('calendar')" style="display:none;">
+    <span class="sb-item-icon">📅</span>
+    <span class="sb-item-label">Kalendar</span>
+  </button>
+
   <button class="sb-item" id="sbChgPw" data-tip="Tukar Password" onclick="openChpwModal(false)">
     <span class="sb-item-icon">🔒</span>
     <span class="sb-item-label">Tukar Password</span>
@@ -1237,6 +1325,81 @@ tr:hover .row-actions{opacity:1;}
   <!-- PENERIMAAN (Wang Masuk) -->
   <div id="penerimaanView" style="display:none;padding:24px 28px;">
     <div id="penerimaanContent"></div>
+  </div>
+
+  <!-- CALENDAR VIEW -->
+  <div id="calendarView">
+    <!-- Stats -->
+    <div class="cal-stats-bar">
+      <div class="cal-stat">
+        <div class="cal-stat-icon" style="background:var(--bluebg);">💰</div>
+        <div><div class="cal-stat-num" id="calStatSubmit">—</div><div class="cal-stat-lbl">Deposit Masuk</div></div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-icon" style="background:var(--redbg);">🔴</div>
+        <div><div class="cal-stat-num" id="calStatDue">—</div><div class="cal-stat-lbl">Tarikh Due</div></div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-icon" style="background:var(--amberbg);">⚠️</div>
+        <div><div class="cal-stat-num" id="calStatOverdue">—</div><div class="cal-stat-lbl">Overdue Hari Ini</div></div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-icon" style="background:var(--greenbg);">⛔</div>
+        <div><div class="cal-stat-num" id="calStatHoliday">—</div><div class="cal-stat-lbl">Cuti Bulan Ini</div></div>
+      </div>
+    </div>
+    <!-- Month Nav -->
+    <div class="cal-month-nav">
+      <div class="cal-month-center">
+        <button class="cal-nav-btn" onclick="calChangeMonth(-1)">‹</button>
+        <div class="cal-month-title" id="calMonthTitle">—</div>
+        <button class="cal-nav-btn" onclick="calChangeMonth(1)">›</button>
+        <button class="cal-today-btn" onclick="calGoToday()">Hari Ini</button>
+      </div>
+      <div class="cal-legend">
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--blue);"></div>Deposit Masuk</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--red);"></div>Tarikh Due</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--amber);"></div>Nota</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#bbb;"></div>Cuti</div>
+      </div>
+    </div>
+    <!-- Grid -->
+    <div class="cal-grid-wrap">
+      <div class="cal-hdr">
+        <div class="cal-hdr-day">Ahad</div>
+        <div class="cal-hdr-day">Isnin</div>
+        <div class="cal-hdr-day">Selasa</div>
+        <div class="cal-hdr-day">Rabu</div>
+        <div class="cal-hdr-day">Khamis</div>
+        <div class="cal-hdr-day">Jumaat</div>
+        <div class="cal-hdr-day sat">Sabtu</div>
+      </div>
+      <div class="cal-body-grid" id="calBodyGrid"></div>
+    </div>
+  </div>
+
+  <!-- CALENDAR SIDE PANEL -->
+  <div id="calPanelOverlay" onclick="calClosePanel()"></div>
+  <div id="calPanel">
+    <div class="cpanel-hdr">
+      <div>
+        <div class="cpanel-date" id="cpanelDate">—</div>
+        <div class="cpanel-day" id="cpanelDay">—</div>
+      </div>
+      <button class="cpanel-close" onclick="calClosePanel()">✕</button>
+    </div>
+    <div class="cpanel-body" id="cpanelBody"></div>
+    <div class="cpanel-footer" id="cpanelFooter" style="display:none;">
+      <div class="cpanel-footer-lbl">Tambah Event (Admin)</div>
+      <div class="cpanel-add-row">
+        <input type="text" class="cpanel-add-inp" id="calAddTitle" placeholder="Nama cuti / nota...">
+        <select class="cpanel-add-sel" id="calAddType">
+          <option value="holiday">⛔ Cuti</option>
+          <option value="note">📌 Nota</option>
+        </select>
+        <button class="cpanel-add-btn" onclick="calAddEvent()">Tambah</button>
+      </div>
+    </div>
   </div>
 
   <!-- CUSTOMER VIEW -->
@@ -1970,7 +2133,8 @@ async function supaUpsert(table, data) {
       'cust_name','cust_tel','cust_email','cust_addr',
       'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
-      'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref'];
+      'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
+      'payments'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -2223,7 +2387,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2321,6 +2485,7 @@ function setupNavForRole() {
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
     sbShow('sbKpi');
+    sbShow('sbCalendar');
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -2331,6 +2496,7 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
+    sbShow('sbCalendar');
     sbHide('sbDashboard');
     sbHide('sbSupplierDir');
     sbHide('sbSupplierOS');
@@ -2415,6 +2581,12 @@ function sbNav(view) {
       const sbPen = document.getElementById('sbPenerimaan');
       if (sbPen) sbPen.classList.add('active');
       showPenerimaanView();
+      showSbMonths(false);
+      break;
+    case 'calendar':
+      const sbCal = document.getElementById('sbCalendar');
+      if (sbCal) sbCal.classList.add('active');
+      showCalendarView();
       showSbMonths(false);
       break;
   }
@@ -2961,6 +3133,21 @@ function showDetail(id) {
     <div class="dp-field"><div class="dp-key">Revenue</div><div class="dp-val" style="color:var(--amber);font-weight:700">${fmt(r.total_customer)}</div></div>
     <div class="dp-field"><div class="dp-key">1st Payment</div><div class="dp-val" style="color:var(--green)">${fmt(r.first_payment)}</div></div>
     ${isCustOS?`<div class="dp-field"><div class="dp-key">Cust OS</div><div class="dp-val" style="color:var(--red);font-weight:700">${fmt(r.balance_customer)}</div></div>`:''}
+    ${(Array.isArray(r.payments) && r.payments.length) ? `
+    <div style="margin:10px 0 6px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">REKOD BAYARAN</div>
+    ${r.payments.map(p => `
+      <div style="background:var(--bg3);border-radius:7px;padding:8px 12px;margin-bottom:6px;font-size:11px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:700;color:${p.type==='deposit'?'var(--green)':'var(--blue)'};">${p.type==='deposit'?'Deposit':'Balance'}</span>
+          <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--amber);">RM ${parseFloat(p.amount||0).toFixed(2)}</span>
+        </div>
+        <div style="color:var(--textd);display:flex;flex-wrap:wrap;gap:6px;">
+          ${p.method?`<span>📱 ${p.method}</span>`:''}
+          ${p.date?`<span>📅 ${p.date}${p.time?' '+p.time:''}</span>`:''}
+          ${p.ref?`<span style="font-family:'Fira Code',monospace;">🔖 ${p.ref}</span>`:''}
+          ${p.note?`<span>📝 ${p.note}</span>`:''}
+        </div>
+      </div>`).join('')}` : ''}
     ${isAdmin?`<div class="dp-field"><div class="dp-key">Kos Supplier</div><div class="dp-val" style="color:var(--red)">${fmt(r.total_supplier)}</div></div>
     ${isSupOS?`<div class="dp-field"><div class="dp-key">Sup OS</div><div class="dp-val" style="color:var(--orange)">${fmt(r.supplier_outstanding)}</div></div>`:''}`:''}
 
@@ -3279,7 +3466,8 @@ function saveOrder() {
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
-      pipeline_status:pipelineStatus
+      pipeline_status:pipelineStatus,
+      payments: getPaymentRecordsData()
     };
     
     // If month changed, move order to new month
@@ -3354,7 +3542,8 @@ function saveOrder() {
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
-      pipeline_status:pipelineStatus
+      pipeline_status:pipelineStatus,
+      payments: getPaymentRecordsData()
     });
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
@@ -6475,6 +6664,7 @@ async function loadSuppliers() {
         products: Array.isArray(r.products) ? r.products : (r.products ? JSON.parse(r.products) : []),
       }));
       localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
+      refreshSupplierDatalist();
       return;
     }
   } catch(e) {
@@ -6485,6 +6675,7 @@ async function loadSuppliers() {
     const raw = localStorage.getItem('dod_suppliers_v1');
     if (raw) SUPPLIERS = JSON.parse(raw);
   } catch(e) {}
+  refreshSupplierDatalist();
 }
 
 async function saveSuppliers() {
@@ -6566,7 +6757,19 @@ function saveSupplier() {
   saveSuppliers().then(() => {
     closeSupModal();
     renderSupplierDir();
+    refreshSupplierDatalist();
     showToast('Supplier dikemaskini ✓');
+  });
+}
+
+function refreshSupplierDatalist() {
+  const dl = document.getElementById('supplierList');
+  if (!dl) return;
+  dl.innerHTML = '';
+  SUPPLIERS.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    dl.appendChild(opt);
   });
 }
 
@@ -8434,6 +8637,289 @@ function getTieredBreakdown(revenue) {
     return { label: t.label, base: chunk, kom: chunk * t.rate };
   });
 }
+
+// ══════════════════════════════════════
+// CALENDAR MODULE
+// ══════════════════════════════════════
+const CAL_MONTHS = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+const CAL_DAYS   = ['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calEvents = [];
+let calSelectedDate = null;
+let calEventsLoaded = false;
+
+function showCalendarView() {
+  setAllViewsHidden();
+  document.getElementById('calendarView').style.display = 'block';
+  if (currentUser.role === 'admin') {
+    document.getElementById('cpanelFooter').style.display = 'block';
+  }
+  if (!calEventsLoaded) {
+    loadCalendarEvents().then(() => renderCalendar());
+  } else {
+    renderCalendar();
+  }
+}
+
+async function loadCalendarEvents() {
+  try {
+    const res = await supaFetch('calendar_events?select=*&order=event_date.asc');
+    calEvents = res || [];
+    calEventsLoaded = true;
+  } catch(e) {
+    calEvents = [];
+    calEventsLoaded = true;
+  }
+}
+
+function renderCalendar() {
+  const label = `${CAL_MONTHS[calMonth]} ${calYear}`;
+  document.getElementById('calMonthTitle').textContent = label;
+
+  const todayStr = calFmtDate(new Date());
+  const firstDay  = new Date(calYear, calMonth, 1).getDay();
+  const daysInMo  = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays  = new Date(calYear, calMonth, 0).getDate();
+
+  // Build maps from sessionData (all months)
+  const submitMap = {};
+  const dueMap    = {};
+  Object.values(sessionData || {}).flat().forEach(o => {
+    if (o.inv_date) {
+      const k = o.inv_date.substring(0,10);
+      if (!submitMap[k]) submitMap[k] = [];
+      submitMap[k].push(o);
+    }
+    if (o.due_date) {
+      const k = o.due_date.substring(0,10);
+      if (!dueMap[k]) dueMap[k] = [];
+      dueMap[k].push(o);
+    }
+  });
+  const eventMap = {};
+  calEvents.forEach(e => {
+    const k = e.event_date.substring(0,10);
+    if (!eventMap[k]) eventMap[k] = [];
+    eventMap[k].push(e);
+  });
+
+  // Stats
+  let cSubmit=0, cDue=0, cOverdue=0, cHoliday=0;
+  for (let d=1; d<=daysInMo; d++) {
+    const k = `${calYear}-${calPad(calMonth+1)}-${calPad(d)}`;
+    if (submitMap[k]) cSubmit += submitMap[k].length;
+    if (dueMap[k])    cDue    += dueMap[k].length;
+    if (eventMap[k])  cHoliday += eventMap[k].filter(e=>e.event_type==='holiday').length;
+  }
+  Object.values(sessionData||{}).flat().forEach(o => {
+    if (o.due_date && o.due_date < todayStr && o.pipeline_status !== 'completed') cOverdue++;
+  });
+  document.getElementById('calStatSubmit').textContent  = cSubmit;
+  document.getElementById('calStatDue').textContent     = cDue;
+  document.getElementById('calStatOverdue').textContent = cOverdue;
+  document.getElementById('calStatHoliday').textContent = cHoliday;
+
+  // Render cells
+  const total = Math.ceil((firstDay + daysInMo) / 7) * 7;
+  let html = '';
+  for (let i=0; i<total; i++) {
+    let day, mo, yr, isCurrentMo;
+    if (i < firstDay) {
+      day=prevDays-firstDay+i+1; mo=calMonth===0?11:calMonth-1; yr=calMonth===0?calYear-1:calYear; isCurrentMo=false;
+    } else if (i >= firstDay+daysInMo) {
+      day=i-firstDay-daysInMo+1; mo=calMonth===11?0:calMonth+1; yr=calMonth===11?calYear+1:calYear; isCurrentMo=false;
+    } else {
+      day=i-firstDay+1; mo=calMonth; yr=calYear; isCurrentMo=true;
+    }
+    const dk = `${yr}-${calPad(mo+1)}-${calPad(day)}`;
+    const isToday   = dk===todayStr;
+    const isSat     = (i%7===6);
+    const isSun     = (i%7===0);
+    const submits   = submitMap[dk]||[];
+    const dues      = dueMap[dk]||[];
+    const events    = eventMap[dk]||[];
+    const isHoliday = events.some(e=>e.event_type==='holiday');
+
+    let cls = 'cal-cell';
+    if (!isCurrentMo) cls += ' other-mo';
+    if (isToday)      cls += ' is-today';
+    if (isHoliday)    cls += ' is-holiday';
+    if (isSat||isSun) cls += ' is-weekend';
+
+    let evHtml=''; let shown=0; const maxShow=3;
+    const totalItems=events.length+submits.length+dues.length;
+    events.slice(0,maxShow-shown).forEach(ev=>{
+      const ec=ev.event_type==='holiday'?'e-holiday':'e-note';
+      const ico=ev.event_type==='holiday'?'⛔':'📌';
+      evHtml+=`<div class="cal-evt ${ec}">${ico} ${calTrunc(ev.title,16)}</div>`;
+      shown++;
+    });
+    submits.slice(0,maxShow-shown).forEach(o=>{
+      evHtml+=`<div class="cal-evt e-submit">💰 ${calTrunc(o.name_job,16)}</div>`;
+      shown++;
+    });
+    dues.slice(0,maxShow-shown).forEach(o=>{
+      evHtml+=`<div class="cal-evt e-due">🔴 ${calTrunc(o.name_job,16)}</div>`;
+      shown++;
+    });
+    const rem=totalItems-shown;
+    if(rem>0) evHtml+=`<div class="cal-more-lbl">+${rem} lagi</div>`;
+
+    html+=`<div class="${cls}" onclick="calOpenPanel('${dk}')">
+      <div class="cal-dnum">${day}</div>
+      <div class="cal-evts">${evHtml}</div>
+    </div>`;
+  }
+  document.getElementById('calBodyGrid').innerHTML = html;
+}
+
+function calOpenPanel(dk) {
+  calSelectedDate = dk;
+  const [y,m,d] = dk.split('-').map(Number);
+  const dateObj = new Date(y,m-1,d);
+  document.getElementById('cpanelDate').textContent = `${d} ${CAL_MONTHS[m-1]} ${y}`;
+  document.getElementById('cpanelDay').textContent  = CAL_DAYS[dateObj.getDay()];
+  calRenderPanel(dk);
+  document.getElementById('calPanel').classList.add('open');
+  document.getElementById('calPanelOverlay').classList.add('show');
+}
+
+function calClosePanel() {
+  document.getElementById('calPanel').classList.remove('open');
+  document.getElementById('calPanelOverlay').classList.remove('show');
+  calSelectedDate = null;
+}
+
+function calRenderPanel(dk) {
+  const todayStr = calFmtDate(new Date());
+  // Build maps
+  const submitMap={}, dueMap={};
+  Object.values(sessionData||{}).flat().forEach(o=>{
+    if(o.inv_date){const k=o.inv_date.substring(0,10);if(!submitMap[k])submitMap[k]=[];submitMap[k].push(o);}
+    if(o.due_date){const k=o.due_date.substring(0,10);if(!dueMap[k])dueMap[k]=[];dueMap[k].push(o);}
+  });
+  const eventMap={};
+  calEvents.forEach(e=>{const k=e.event_date.substring(0,10);if(!eventMap[k])eventMap[k]=[];eventMap[k].push(e);});
+
+  const submits = submitMap[dk]||[];
+  const dues    = dueMap[dk]||[];
+  const events  = eventMap[dk]||[];
+  let html='';
+
+  if (events.length) {
+    html+=`<div class="cpanel-sec-title">Cuti & Nota</div>`;
+    events.forEach(ev=>{
+      const canDel = currentUser.role==='admin';
+      html+=`<div class="cp-event-card ev-${ev.event_type}">
+        <div class="cp-event-title">${ev.event_type==='holiday'?'⛔':'📌'} ${ev.title}</div>
+        ${canDel?`<button class="cp-event-del" onclick="calDeleteEvent('${ev.id}','${dk}')">🗑</button>`:''}
+      </div>`;
+    });
+  }
+  if (submits.length) {
+    html+=`<div class="cpanel-sec-title">💰 Deposit Masuk (${submits.length})</div>`;
+    submits.forEach(o=>{ html+=calOrderCard(o,'submit',dk,todayStr,dueMap); });
+  }
+  if (dues.length) {
+    html+=`<div class="cpanel-sec-title">🔴 Tarikh Due (${dues.length})</div>`;
+    dues.forEach(o=>{
+      const isOv = o.due_date && o.due_date<todayStr && o.pipeline_status!=='completed';
+      html+=calOrderCard(o,isOv?'overdue':'due',dk,todayStr,submitMap);
+    });
+  }
+  if (!submits.length && !dues.length && !events.length) {
+    html=`<div class="cpanel-empty">Tiada aktiviti pada hari ini.</div>`;
+  }
+  document.getElementById('cpanelBody').innerHTML = html;
+}
+
+function calOrderCard(o, type, dk, todayStr, otherMap) {
+  const isOv = type==='overdue';
+  let badgeCls='bs', badgeTxt='SUBMIT';
+  if(type==='due'||type==='overdue'){badgeCls='bd';badgeTxt='DUE';}
+  if(isOv){badgeCls='bov';badgeTxt='⚠ OVERDUE';}
+  const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
+  const pcs  = o.pcs?`${o.pcs} pcs`:'';
+  const dep  = o.first_payment>0?`RM${fmt(o.first_payment)} deposit`:'';
+  const tot  = o.total_customer>0?`RM${fmt(o.total_customer)} total`:'';
+  const style = isOv?'border-color:var(--red);background:var(--redbg);':'';
+  return `<div class="cp-order" style="${style}">
+    <div class="cp-order-top">
+      <div class="cp-order-name">${o.name_job||'—'}</div>
+      <div class="cp-order-badge ${badgeCls}">${badgeTxt}</div>
+    </div>
+    <div class="cp-order-meta">
+      ${o.pic?`<div class="cp-pic-chip" style="color:${picColor};">${o.pic}</div>`:''}
+      ${pcs?`<div class="cp-order-tag">📦 ${pcs}</div>`:''}
+      ${dep?`<div class="cp-order-tag">💰 ${dep}</div>`:''}
+      ${tot?`<div class="cp-order-tag">💵 ${tot}</div>`:''}
+      ${o.pipeline_status?`<div class="cp-order-tag">🔄 ${o.pipeline_status}</div>`:''}
+    </div>
+  </div>`;
+}
+
+async function calAddEvent() {
+  if (!calSelectedDate || currentUser.role!=='admin') return;
+  const title = document.getElementById('calAddTitle').value.trim();
+  const type  = document.getElementById('calAddType').value;
+  if (!title) { showToast('Sila masukkan nama event.', true); return; }
+  try {
+    const res = await supaFetch('calendar_events', {
+      method:'POST',
+      body: JSON.stringify({event_date:calSelectedDate, event_type:type, title, created_by:currentUser.id}),
+      headers:{'Prefer':'return=representation'}
+    });
+    const newEv = Array.isArray(res)?res[0]:res;
+    if (newEv) calEvents.push(newEv);
+    document.getElementById('calAddTitle').value='';
+    calRenderPanel(calSelectedDate);
+    renderCalendar();
+    showToast(`✅ "${title}" ditambah.`);
+  } catch(e) {
+    if (e.message&&(e.message.includes('does not exist')||e.message.includes('42P01'))) {
+      showToast('⚠ Sila buat table calendar_events dalam Supabase terlebih dahulu.', true);
+      calShowTableSQL();
+    } else {
+      showToast('❌ Gagal tambah: '+e.message, true);
+    }
+  }
+}
+
+async function calDeleteEvent(evId, dk) {
+  if (currentUser.role!=='admin') return;
+  if (!confirm('Padam event ini?')) return;
+  try {
+    await supaFetch(`calendar_events?id=eq.${evId}`, {method:'DELETE',headers:{'Prefer':''}});
+    calEvents = calEvents.filter(e=>String(e.id)!==String(evId));
+    calRenderPanel(dk);
+    renderCalendar();
+    showToast('🗑 Event dipadam.');
+  } catch(e) { showToast('❌ Gagal padam: '+e.message, true); }
+}
+
+function calShowTableSQL() {
+  alert(`Jalankan SQL ini dalam Supabase → SQL Editor:\n\nCREATE TABLE calendar_events (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  event_date date NOT NULL,\n  event_type text NOT NULL DEFAULT 'holiday',\n  title text NOT NULL,\n  created_by text,\n  created_at timestamptz DEFAULT now()\n);\nALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "Allow all" ON calendar_events FOR ALL USING (true);`);
+}
+
+function calChangeMonth(dir) {
+  calMonth += dir;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCalendar();
+}
+
+function calGoToday() {
+  const n=new Date();
+  calYear=n.getFullYear(); calMonth=n.getMonth();
+  renderCalendar();
+}
+
+function calFmtDate(d){ return `${d.getFullYear()}-${calPad(d.getMonth()+1)}-${calPad(d.getDate())}`; }
+function calPad(n){ return String(n).padStart(2,'0'); }
+function calTrunc(s,n){ return s&&s.length>n?s.substring(0,n)+'…':(s||''); }
+
+// supaFetch defined at top of script — no duplicate needed
 
 </script>
 </body>
