@@ -8901,20 +8901,7 @@ function calFmtDate(d){ return `${d.getFullYear()}-${calPad(d.getMonth()+1)}-${c
 function calPad(n){ return String(n).padStart(2,'0'); }
 function calTrunc(s,n){ return s&&s.length>n?s.substring(0,n)+'…':(s||''); }
 
-// supaFetch helper — reuse existing pattern from masterlist
-async function supaFetch(path, opts={}) {
-  const url = `${SUPA_URL}/rest/v1/${path}`;
-  const headers = {
-    'apikey': SUPA_KEY,
-    'Authorization': `Bearer ${SUPA_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
-    ...(opts.headers||{})
-  };
-  const res = await fetch(url, {method:opts.method||'GET', headers, body:opts.body});
-  if (!res.ok) { const e=await res.text(); throw new Error(e); }
-  return res.status===204?null:res.json();
-}
+// supaFetch defined at top of script — no duplicate needed
 
 </script>
 </body>
