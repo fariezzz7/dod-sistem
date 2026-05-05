@@ -3467,7 +3467,7 @@ function saveOrder() {
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
-      payments: getPaymentRecords()
+      payments: getPaymentRecordsData()
     };
     
     // If month changed, move order to new month
@@ -3543,7 +3543,7 @@ function saveOrder() {
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
-      payments: getPaymentRecords()
+      payments: getPaymentRecordsData()
     });
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
