@@ -3219,27 +3219,29 @@ async function generateInvNumber() {
   const yyyy = now.getFullYear();
   const mm   = String(now.getMonth() + 1).padStart(2, '0');
   const prefix = 'DOD-' + yyyy + mm + '-';
-  try {
-    // Count orders this month from Supabase
-    const monthKey = Object.keys(sessionData).find(m => {
-      // Match current month in sessionData
-      const parts = m.split(' ');
-      const MONTHS = {JAN:1,FEB:2,MAC:3,APRIL:4,MEI:5,JUN:6,JUL:7,OGO:8,SEP:9,OKT:10,NOV:11,DIS:12,'DEC 2025':12};
-      const mNum = MONTHS[parts[0]];
-      const mYear = parseInt(parts[1]);
-      return mNum === (now.getMonth()+1) && mYear === yyyy;
+
+  function maxSeq(invNumbers) {
+    let max = 0;
+    invNumbers.forEach(n => {
+      if (n && n.startsWith(prefix)) {
+        const seq = parseInt(n.replace(prefix, ''), 10);
+        if (!isNaN(seq) && seq > max) max = seq;
+      }
     });
-    const curMonthOrders = sessionData[monthKey] || [];
-    // Also check Supabase for accurate count
-    const res = await supaFetch('/rest/v1/orders?select=id&month=eq.' + encodeURIComponent(monthKey || '') + '&limit=1000');
-    const count = (res || curMonthOrders).length + 1;
-    return prefix + String(count).padStart(4, '0');
+    return max;
+  }
+
+  try {
+    const res = await supaFetch('/rest/v1/orders?select=inv_number&inv_number=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
+    const supaMax = maxSeq((res || []).map(r => r.inv_number));
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const localMax = maxSeq(allLocal);
+    const next = Math.max(supaMax, localMax) + 1;
+    return prefix + String(next).padStart(4, '0');
   } catch(e) {
-    // Fallback: use local count
-    const now2 = new Date();
-    const m2Key = Object.keys(sessionData).pop() || '';
-    const count = (sessionData[m2Key] || []).length + 1;
-    return prefix + String(count).padStart(4, '0');
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const localMax = maxSeq(allLocal);
+    return prefix + String(localMax + 1).padStart(4, '0');
   }
 }
 
