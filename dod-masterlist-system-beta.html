@@ -2133,7 +2133,8 @@ async function supaUpsert(table, data) {
       'cust_name','cust_tel','cust_email','cust_addr',
       'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
-      'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref'];
+      'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
+      'payments'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -3132,6 +3133,21 @@ function showDetail(id) {
     <div class="dp-field"><div class="dp-key">Revenue</div><div class="dp-val" style="color:var(--amber);font-weight:700">${fmt(r.total_customer)}</div></div>
     <div class="dp-field"><div class="dp-key">1st Payment</div><div class="dp-val" style="color:var(--green)">${fmt(r.first_payment)}</div></div>
     ${isCustOS?`<div class="dp-field"><div class="dp-key">Cust OS</div><div class="dp-val" style="color:var(--red);font-weight:700">${fmt(r.balance_customer)}</div></div>`:''}
+    ${(Array.isArray(r.payments) && r.payments.length) ? `
+    <div style="margin:10px 0 6px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">REKOD BAYARAN</div>
+    ${r.payments.map(p => `
+      <div style="background:var(--bg3);border-radius:7px;padding:8px 12px;margin-bottom:6px;font-size:11px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-weight:700;color:${p.type==='deposit'?'var(--green)':'var(--blue)'};">${p.type==='deposit'?'Deposit':'Balance'}</span>
+          <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--amber);">RM ${parseFloat(p.amount||0).toFixed(2)}</span>
+        </div>
+        <div style="color:var(--textd);display:flex;flex-wrap:wrap;gap:6px;">
+          ${p.method?`<span>📱 ${p.method}</span>`:''}
+          ${p.date?`<span>📅 ${p.date}${p.time?' '+p.time:''}</span>`:''}
+          ${p.ref?`<span style="font-family:'Fira Code',monospace;">🔖 ${p.ref}</span>`:''}
+          ${p.note?`<span>📝 ${p.note}</span>`:''}
+        </div>
+      </div>`).join('')}` : ''}
     ${isAdmin?`<div class="dp-field"><div class="dp-key">Kos Supplier</div><div class="dp-val" style="color:var(--red)">${fmt(r.total_supplier)}</div></div>
     ${isSupOS?`<div class="dp-field"><div class="dp-key">Sup OS</div><div class="dp-val" style="color:var(--orange)">${fmt(r.supplier_outstanding)}</div></div>`:''}`:''}
 
@@ -3450,7 +3466,8 @@ function saveOrder() {
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
-      pipeline_status:pipelineStatus
+      pipeline_status:pipelineStatus,
+      payments: getPaymentRecords()
     };
     
     // If month changed, move order to new month
@@ -3525,7 +3542,8 @@ function saveOrder() {
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
-      pipeline_status:pipelineStatus
+      pipeline_status:pipelineStatus,
+      payments: getPaymentRecords()
     });
     showToast('Order baru ditambah ✓');
     // Sync to Supabase — order baru di unshift (index 0), month = targetMonth
@@ -8901,7 +8919,20 @@ function calFmtDate(d){ return `${d.getFullYear()}-${calPad(d.getMonth()+1)}-${c
 function calPad(n){ return String(n).padStart(2,'0'); }
 function calTrunc(s,n){ return s&&s.length>n?s.substring(0,n)+'…':(s||''); }
 
-// supaFetch defined at top of script — no duplicate needed
+// supaFetch helper — reuse existing pattern from masterlist
+async function supaFetch(path, opts={}) {
+  const url = `${SUPA_URL}/rest/v1/${path}`;
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${SUPA_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...(opts.headers||{})
+  };
+  const res = await fetch(url, {method:opts.method||'GET', headers, body:opts.body});
+  if (!res.ok) { const e=await res.text(); throw new Error(e); }
+  return res.status===204?null:res.json();
+}
 
 </script>
 </body>
