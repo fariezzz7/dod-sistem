@@ -6380,43 +6380,104 @@ function showSupplierDirView() {
   renderSupplierDir();
 }
 
-function renderSupplierDir() {
+// Global month filter for Supplier Directory
+let _supDirMonth = 'ALL';
+
+function renderSupplierDir(filterMonth) {
+  if (filterMonth !== undefined) _supDirMonth = filterMonth;
+  const activeMonth = _supDirMonth;
+
+  // Build month list from sessionData
+  const allMonths = Object.keys(sessionData);
+
+  // Helper: match order to supplier
+  function matchesSup(r, s) {
+    const oSup = (r.supplier_name || 'NOHAD SDN BHD').toUpperCase();
+    return oSup === s.name.toUpperCase() || oSup.includes(s.short.toUpperCase());
+  }
+
+  // Helper: get orders for this supplier filtered by month
+  function getSupOrders(s) {
+    const base = activeMonth === 'ALL'
+      ? Object.values(sessionData).flat()
+      : (sessionData[activeMonth] || []);
+    return base.filter(r => matchesSup(r, s));
+  }
+
   const el = document.getElementById('supplierDirContent');
   el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-size:20px;font-weight:700;color:var(--text);">🏭 Supplier Directory</div>
         <div style="font-size:12px;color:var(--textm);margin-top:2px;">Maklumat & produk semua supplier DOD</div>
       </div>
-      <button onclick="openSupModal()" style="background:var(--blue);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">＋ Tambah Supplier</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <!-- Month filter dropdown -->
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);">Bulan</span>
+          <select onchange="renderSupplierDir(this.value)"
+            style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+            <option value="ALL" ${activeMonth==='ALL'?'selected':''}>Semua Bulan</option>
+            ${allMonths.map(m => `<option value="${m}" ${activeMonth===m?'selected':''}>${MONTH_LABELS[m]||m}</option>`).join('')}
+          </select>
+        </div>
+        <button onclick="openSupModal()" style="background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">＋ Tambah Supplier</button>
+      </div>
     </div>
+
+    <!-- Cards grid -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
       ${SUPPLIERS.map(s => {
-        // Calculate total OS to this supplier
-        const allOrders = Object.values(sessionData).flat();
-        const supOrders = allOrders.filter(r =>
-          (r.supplier_name||'NOHAD SDN BHD').toUpperCase().includes(s.short.toUpperCase()) ||
-          (r.supplier_name||'').toUpperCase() === s.name.toUpperCase()
-        );
-        const totalOS = supOrders
+        const supOrders = getSupOrders(s);
+        const totalOrders = supOrders.length;
+        const totalPCS    = supOrders.reduce((sum,r) => sum + (r.pcs||0), 0);
+        const totalKos    = supOrders.reduce((sum,r) => sum + (r.nohad_amount||0), 0);
+        const totalOS     = supOrders
           .filter(r => r.supplier_payment_status !== 'PAYMENT DONE')
           .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0);
-        const totalOrders = supOrders.length;
+
+        // Last order date
+        const datesWithData = supOrders.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
+        const lastDate = datesWithData.length ? datesWithData[datesWithData.length-1] : null;
 
         return `
         <div style="background:var(--bg2);border:1px solid var(--line);border-top:3px solid ${s.color};border-radius:12px;padding:20px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);">
-            <div style="width:42px;height:42px;border-radius:10px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:18px;">🏭</div>
-            <div style="flex:1;">
-              <div style="font-size:14px;font-weight:700;color:var(--text);">${s.name}</div>
+
+          <!-- Name + actions row -->
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);">
+            <div style="width:42px;height:42px;flex-shrink:0;border-radius:10px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:18px;">🏭</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;">${s.name}</div>
               ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
             </div>
-            <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);white-space:nowrap;">✏️ Edit</button>
-            <div style="text-align:right;">
-              <div style="font-size:11px;color:var(--textm);">${totalOrders} order</div>
-              <div style="font-size:12px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS)+' OS':'✓ Clear'}</div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
+              <button onclick="event.stopPropagation();deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:4px 9px;background:var(--redbg);border:1px solid var(--redb);border-radius:5px;cursor:pointer;color:var(--red);">🗑</button>
             </div>
           </div>
+
+          <!-- Stats strip -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;">
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:var(--text);">${totalOrders}</div>
+              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">Order</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:var(--text);">${totalPCS.toLocaleString('en-MY')}</div>
+              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">PCS</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--blue);">RM${totalKos>=1000?(totalKos/1000).toFixed(1)+'K':totalKos.toFixed(0)}</div>
+              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">Kos</div>
+            </div>
+            <div style="background:${totalOS>0?'var(--redbg)':'var(--greenbg)'};border-radius:8px;padding:8px 6px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?'RM'+(totalOS>=1000?(totalOS/1000).toFixed(1)+'K':totalOS.toFixed(0)):'✓'}</div>
+              <div style="font-size:9px;color:${totalOS>0?'var(--red)':'var(--green)'};margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">${totalOS>0?'OS':'Clear'}</div>
+            </div>
+          </div>
+
+          ${lastDate ? `<div style="font-size:10px;color:var(--textm);margin-bottom:10px;">📅 Last order: <span style="color:var(--textd);font-weight:500;">${lastDate}</span></div>` : ''}
 
           ${s.tel || s.email ? `
           <div style="margin-bottom:10px;font-size:12px;color:var(--textd);">
@@ -6512,26 +6573,18 @@ function renderSupplierOS(filterSupplier) {
       </div>
     </div>
 
-    <!-- Filter by supplier -->
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:20px;padding:12px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-      <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-right:4px;">Filter Supplier</span>
-      <button onclick="renderSupplierOS('ALL')"
-        class="fbtn ${activeFilter==='ALL'?'on':''}"
-        style="font-size:11px;">
-        Semua <span style="font-family:'Fira Code',monospace;font-size:9px;opacity:.6;">(${allOrders.length})</span>
-      </button>
-      ${supplierNames.map(name => {
-        const supInfo = SUPPLIERS.find(s => s.name===name || name.toUpperCase().includes(s.short.toUpperCase()));
-        const color = supInfo ? supInfo.color : '#9AA0B8';
-        const count = bySupplier[name].length;
-        const supOS = bySupplier[name].reduce((s,r)=>s+(r.supplier_outstanding||0),0);
-        const isActive = activeFilter === name;
-        const shortName = name.replace(/SDN BHD/gi,'').replace(/TRADING/gi,'').trim();
-        return `<button onclick="renderSupplierOS('${name.replace(/'/g,"\\'")}')"
-          class="fbtn ${isActive?'on':''}"
-          style="font-size:11px;${isActive?'background:'+color+'!important;color:#fff!important;border-color:'+color+'!important;':''}"
-        >${shortName} <span style="font-family:'Fira Code',monospace;font-size:9px;opacity:.7;">${count} · ${fmt(supOS)}</span></button>`;
-      }).join('')}
+    <!-- Filter by supplier - DROPDOWN -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);white-space:nowrap;">Filter Supplier</span>
+      <select onchange="renderSupplierOS(this.value)" style="flex:1;max-width:320px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+        <option value="ALL" ${activeFilter==='ALL'?'selected':''}>Semua (${allOrders.length} invois · RM ${fmt(totalOS)})</option>
+        ${supplierNames.map(name => {
+          const count = bySupplier[name].length;
+          const supOS = bySupplier[name].reduce((s,r)=>s+(r.supplier_outstanding||0),0);
+          const shortName = name.replace(/SDN BHD/gi,'').replace(/TRADING/gi,'').trim();
+          return `<option value="${name}" ${activeFilter===name?'selected':''}>${shortName} — ${count} invois · RM ${fmt(supOS)}</option>`;
+        }).join('')}
+      </select>
     </div>
 
     ${filteredGroups.length === 0 ? `
@@ -6813,7 +6866,37 @@ function refreshSupplierDatalist() {
   }
 }
 
-// ── PAYMENT FUNCTIONS ─────────────────────────────────────────
+// ── DELETE SUPPLIER ─────────────────────────────────────────
+async function deleteSupplier(supId, supName) {
+  // Step 1: Confirm intent
+  if (!confirm(`Padam supplier "${supName}"?\n\nINI AKAN PADAM SUPPLIER DARI DIRECTORY SAHAJA.\nData order sedia ada tidak terjejas.`)) return;
+
+  // Step 2: Security PIN
+  const pin = prompt('Masukkan PIN keselamatan untuk padam:');
+  if (pin === null) return; // cancelled
+  if (String(pin).trim() !== '7747') {
+    showToast('❌ PIN salah. Supplier tidak dipadam.', true);
+    return;
+  }
+
+  // Step 3: Delete from Supabase
+  try {
+    await supaFetch(`/rest/v1/suppliers?id=eq.${supId}`, { method: 'DELETE', headers: { 'Prefer': '' } });
+  } catch(e) {
+    console.warn('Supabase delete supplier failed:', e);
+  }
+
+  // Step 4: Remove from local SUPPLIERS array
+  SUPPLIERS = SUPPLIERS.filter(s => String(s.id) !== String(supId));
+  localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
+
+  // Step 5: Refresh all UI
+  refreshSupplierDatalist();
+  renderSupplierDir();
+  renderSupplierOS();
+  showToast(`🗑 Supplier "${supName}" dipadam.`);
+}
+window.deleteSupplier = deleteSupplier;
 let _payTarget = null; // { orderId, month }
 
 function openPayModal(orderId, month) {
