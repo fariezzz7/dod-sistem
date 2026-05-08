@@ -1770,6 +1770,35 @@ tr:hover .row-actions{opacity:1;}
             <label class="fl">Kos Supplier — Dah Bayar (RM)</label>
             <input class="fi highlight" type="number" id="f_nohad_paid" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
           </div>
+        </div>
+
+        <!-- Supplier Kedua (optional) -->
+        <div id="sup2Section" style="margin-top:10px;padding:10px 12px;background:var(--bg3);border:1px dashed var(--line);border-radius:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:600;color:var(--textm);">🏭 Supplier Kedua (Pilihan)</span>
+            <button type="button" id="btnToggleSup2" onclick="toggleSup2()" style="font-size:10px;padding:3px 9px;background:var(--bg2);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">+ Tambah</button>
+          </div>
+          <div id="sup2Fields" style="display:none;">
+            <div class="form-grid">
+              <div class="form-field full">
+                <label class="fl">Nama Supplier Kedua</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                  <input class="fi" type="text" id="f_supplier2_name" placeholder="Nama supplier kedua" list="supplierList" style="flex:1;min-width:160px;" oninput="recalc();autoUpdateSupStatus()">
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="fl">Kos Supplier Kedua — Jumlah (RM)</label>
+                <input class="fi" type="number" id="f_sup2_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
+              </div>
+              <div class="form-field">
+                <label class="fl">Kos Supplier Kedua — Dah Bayar (RM)</label>
+                <input class="fi highlight" type="number" id="f_sup2_paid" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:10px;">
           <div class="form-field">
             <label class="fl">Kos Lain — Jumlah (RM)</label>
             <input class="fi" type="number" id="f_luar_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
@@ -2829,7 +2858,12 @@ function renderAll() {
   else if (sortField === 'revenue') rows.sort((a,b) => (b.total_customer||0)-(a.total_customer||0));
   else if (sortField === 'profit') rows.sort((a,b) => (b.profit||0)-(a.profit||0));
   else if (sortField === 'production') rows.sort((a,b) => (urgOrder[getProdUrgency(a)]||3) - (urgOrder[getProdUrgency(b)]||3));
-  else rows.sort((a,b) => (b.order_date||'') < (a.order_date||'') ? -1 : 1);
+  else rows.sort((a,b) => {
+    const dateDiff = (b.order_date||'').localeCompare(a.order_date||'');
+    if (dateDiff !== 0) return dateDiff;
+    // Same date — newer id (timestamp-based) goes first
+    return String(b.id||'').localeCompare(String(a.id||''));
+  });
 
   renderKPIs(rows);
   renderTable(rows);
@@ -3187,7 +3221,7 @@ async function openAddModal() {
   clearForm();
   document.getElementById('modalTitle').textContent = 'Tambah Order Baru';
   document.getElementById('modalSubtitle').textContent = 'Profit dikira automatik';
-  const today = new Date().toISOString().split('T')[0];
+  const today = getMYTDateStr();
   document.getElementById('f_order_date').value = today;
   document.getElementById('f_invdate').value = today;
   // Auto-set PIC to current user if sales role
@@ -3204,9 +3238,9 @@ async function openAddModal() {
 }
 
 async function generateInvNumber() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const mytStr = getMYTDateStr(); // YYYY-MM-DD in MYT
+  const yyyy = mytStr.slice(0,4);
+  const mm   = mytStr.slice(5,7);
   const prefix = 'DOD-' + yyyy + mm + '-';
 
   function maxSeq(invNumbers) {
@@ -3221,14 +3255,14 @@ async function generateInvNumber() {
   }
 
   try {
-    const res = await supaFetch('/rest/v1/orders?select=inv_number&inv_number=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
-    const supaMax = maxSeq((res || []).map(r => r.inv_number));
-    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const res = await supaFetch('/rest/v1/orders?select=inv_number_supplier&inv_number_supplier=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
+    const supaMax = maxSeq((res || []).map(r => r.inv_number_supplier));
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number_supplier);
     const localMax = maxSeq(allLocal);
     const next = Math.max(supaMax, localMax) + 1;
     return prefix + String(next).padStart(4, '0');
   } catch(e) {
-    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number_supplier);
     const localMax = maxSeq(allLocal);
     return prefix + String(localMax + 1).padStart(4, '0');
   }
@@ -3263,6 +3297,25 @@ function openEditModalById(id) {
   document.getElementById('f_luar_paid').value = r.luar_paid || '';
   document.getElementById('f_sup_status').value = r.supplier_payment_status || 'OUTSTANDING';
   document.getElementById('f_supplier_name').value = r.supplier_name || 'NOHAD SDN BHD';
+  // Load supplier2 if exists
+  const sup2NameEl = document.getElementById('f_supplier2_name');
+  const sup2AmtEl  = document.getElementById('f_sup2_amt');
+  const sup2PaidEl = document.getElementById('f_sup2_paid');
+  const sup2Fields = document.getElementById('sup2Fields');
+  const btnSup2    = document.getElementById('btnToggleSup2');
+  if (r.supplier2_name || r.supplier2_amount) {
+    if (sup2Fields) sup2Fields.style.display = '';
+    if (btnSup2) btnSup2.textContent = '− Sembunyikan';
+    if (sup2NameEl) sup2NameEl.value = r.supplier2_name || '';
+    if (sup2AmtEl)  sup2AmtEl.value  = r.supplier2_amount || '';
+    if (sup2PaidEl) sup2PaidEl.value = r.supplier2_paid || '';
+  } else {
+    if (sup2Fields) sup2Fields.style.display = 'none';
+    if (btnSup2) btnSup2.textContent = '+ Tambah';
+    if (sup2NameEl) sup2NameEl.value = '';
+    if (sup2AmtEl)  sup2AmtEl.value  = '';
+    if (sup2PaidEl) sup2PaidEl.value = '';
+  }
   document.getElementById('f_inv_cust').value = r.total_customer || '';
   document.getElementById('f_pay1').value = r.first_payment || '';
   // Calculate deposit pct from existing data
@@ -3297,8 +3350,14 @@ function openEditModal(safeR) {
 function clearForm() {
   ['f_order_date','f_pic','f_source','f_name','f_inv','f_inv_supplier','f_pcs','f_invdate','f_duedate',
    'f_cust_name','f_cust_tel','f_cust_email','f_cust_addr','f_supplier_name','f_color',
-   'f_sizes','f_design_notes','f_prod_date','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_inv_cust','f_pay1'
+   'f_sizes','f_design_notes','f_prod_date','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid',
+   'f_supplier2_name','f_sup2_amt','f_sup2_paid','f_inv_cust','f_pay1'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  // Reset supplier2 section to hidden
+  const s2f = document.getElementById('sup2Fields');
+  const s2b = document.getElementById('btnToggleSup2');
+  if (s2f) s2f.style.display = 'none';
+  if (s2b) s2b.textContent = '+ Tambah';
   recalc();
   clearItemRows(); // clear item breakdown
   clearPaymentRecords(); // clear payment records
@@ -3325,17 +3384,43 @@ function closeModal() {
   editingId = null;
 }
 
+// ── SUPPLIER 2 TOGGLE ────────────────────────────────────────
+function toggleSup2() {
+  const fields = document.getElementById('sup2Fields');
+  const btn = document.getElementById('btnToggleSup2');
+  if (!fields) return;
+  const isShowing = fields.style.display !== 'none';
+  if (isShowing) {
+    fields.style.display = 'none';
+    btn.textContent = '+ Tambah';
+    // Clear supplier2 fields when hiding
+    const n = document.getElementById('f_supplier2_name');
+    const a = document.getElementById('f_sup2_amt');
+    const p = document.getElementById('f_sup2_paid');
+    if (n) n.value = '';
+    if (a) a.value = '';
+    if (p) p.value = '';
+    recalc(); autoUpdateSupStatus();
+  } else {
+    fields.style.display = '';
+    btn.textContent = '− Sembunyikan';
+  }
+}
+window.toggleSup2 = toggleSup2;
+
 function recalc() {
   const nohadAmt  = parseFloat(document.getElementById('f_nohad_amt').value)||0;
   const nohadPaid = parseFloat(document.getElementById('f_nohad_paid').value)||0;
   const luarAmt   = parseFloat(document.getElementById('f_luar_amt').value)||0;
   const luarPaid  = parseFloat(document.getElementById('f_luar_paid').value)||0;
+  const sup2Amt   = parseFloat(document.getElementById('f_sup2_amt')?.value)||0;
+  const sup2Paid  = parseFloat(document.getElementById('f_sup2_paid')?.value)||0;
   const rev       = parseFloat(document.getElementById('f_inv_cust').value)||0;
   const pay1      = parseFloat(document.getElementById('f_pay1').value)||0;
   const pcs       = parseFloat(document.getElementById('f_pcs').value)||0;
 
-  const totalCost = nohadAmt + luarAmt;
-  const supOS     = Math.max(0,(nohadAmt-nohadPaid)+(luarAmt-luarPaid));
+  const totalCost = nohadAmt + luarAmt + sup2Amt;
+  const supOS     = Math.max(0,(nohadAmt-nohadPaid)+(luarAmt-luarPaid)+(sup2Amt-sup2Paid));
   // Use payment records total if available
   const totalPayRec = paymentRecords.reduce((s,r) => s+(parseFloat(r.amount)||0), 0);
   const effectivePaid = totalPayRec > 0 ? totalPayRec : pay1;
@@ -3379,10 +3464,13 @@ function saveOrder() {
   const nohadPaid  = parseFloat(document.getElementById('f_nohad_paid').value)||0;
   const luarAmt    = parseFloat(document.getElementById('f_luar_amt').value)||0;
   const luarPaid   = parseFloat(document.getElementById('f_luar_paid').value)||0;
+  const sup2Name   = document.getElementById('f_supplier2_name')?.value.trim() || '';
+  const sup2Amt    = parseFloat(document.getElementById('f_sup2_amt')?.value)||0;
+  const sup2Paid   = parseFloat(document.getElementById('f_sup2_paid')?.value)||0;
   const rev        = parseFloat(document.getElementById('f_inv_cust').value)||0;
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
   // Auto-calculate status: only PAYMENT DONE if amounts match AND total > 0
-  const supStatus = (nohadAmt + luarAmt) > 0 && (nohadPaid + luarPaid) >= (nohadAmt + luarAmt)
+  const supStatus = (nohadAmt + luarAmt + sup2Amt) > 0 && (nohadPaid + luarPaid + sup2Paid) >= (nohadAmt + luarAmt + sup2Amt)
     ? 'PAYMENT DONE'
     : 'OUTSTANDING';
   const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
@@ -3392,8 +3480,8 @@ function saveOrder() {
 
   if (!name) { showToast('Sila isi Nama Job', true); return; }
 
-  const totalCost  = nohadAmt + luarAmt;
-  const supOS      = Math.max(0,(nohadAmt-nohadPaid)+(luarAmt-luarPaid));
+  const totalCost  = nohadAmt + luarAmt + sup2Amt;
+  const supOS      = Math.max(0,(nohadAmt-nohadPaid)+(luarAmt-luarPaid)+(sup2Amt-sup2Paid));
   // Use total from payment records if available, else fall back to pay1
   const totalPaymentsFromRecords = paymentRecords.reduce((s,r) => s + (parseFloat(r.amount)||0), 0);
   const effectivePaid = totalPaymentsFromRecords > 0 ? totalPaymentsFromRecords : pay1;
@@ -3453,7 +3541,8 @@ function saveOrder() {
       cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
       product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
-      luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
+      luar_amount:luarAmt, luar_paid:luarPaid, supplier2_name:sup2Name, supplier2_amount:sup2Amt, supplier2_paid:sup2Paid,
+      total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
@@ -3529,7 +3618,8 @@ function saveOrder() {
       cust_name:custName, cust_tel:custTel, cust_email:custEmail, cust_addr:custAddr,
       product_type:prodType, unit_price:unitPrice, color_main:colorMain, sizes, design_notes:designNotes,
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
-      luar_amount:luarAmt, luar_paid:luarPaid, total_supplier:totalCost,
+      luar_amount:luarAmt, luar_paid:luarPaid, supplier2_name:sup2Name, supplier2_amount:sup2Amt, supplier2_paid:sup2Paid,
+      total_supplier:totalCost,
       total_customer:rev, first_payment:pay1, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
@@ -3667,24 +3757,66 @@ function openDoc(docType) {
 
   let payload;
   if (isSupplier) {
-    payload = {
-      type: 'po',
-      inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
-      inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
-      due_date: r.due_date || '',
-      cust_name: r.supplier_name || 'NOHAD SDN BHD',
-      cust_tel: '', cust_addr: '',
-      name_job: r.name_job || '',
-      items: custItems,
-      total: r.nohad_amount || 0,
-      paid: r.nohad_paid || 0,
-      balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
-    };
+    // If order has supplier2, ask which supplier PO to generate
+    if (r.supplier2_name && r.supplier2_amount > 0) {
+      const choice = confirm(
+        `Order ini ada 2 supplier:\n\n` +
+        `1. ${r.supplier_name || 'NOHAD SDN BHD'} — RM ${fmt(r.nohad_amount || 0)}\n` +
+        `2. ${r.supplier2_name} — RM ${fmt(r.supplier2_amount || 0)}\n\n` +
+        `Klik OK untuk Supplier 1 (${r.supplier_name || 'NOHAD SDN BHD'})\nKlik Cancel untuk Supplier 2 (${r.supplier2_name})`
+      );
+      if (choice) {
+        // PO for supplier 1
+        payload = {
+          type: 'po',
+          inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
+          inv_date: r.inv_date || r.order_date || getMYTDateStr(),
+          due_date: r.due_date || '',
+          cust_name: r.supplier_name || 'NOHAD SDN BHD',
+          cust_tel: '', cust_addr: '',
+          name_job: r.name_job || '',
+          items: custItems,
+          total: r.nohad_amount || 0,
+          paid: r.nohad_paid || 0,
+          balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
+        };
+      } else {
+        // PO for supplier 2
+        payload = {
+          type: 'po',
+          inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || '') + '-S2',
+          inv_date: r.inv_date || r.order_date || getMYTDateStr(),
+          due_date: r.due_date || '',
+          cust_name: r.supplier2_name,
+          cust_tel: '', cust_addr: '',
+          name_job: r.name_job || '',
+          items: [{ desc: r.name_job || '', qty: r.pcs || 0, price: 0, total: r.supplier2_amount || 0 }],
+          total: r.supplier2_amount || 0,
+          paid: r.supplier2_paid || 0,
+          balance: Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0)),
+        };
+      }
+    } else {
+      // Single supplier PO (original behaviour)
+      payload = {
+        type: 'po',
+        inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
+        inv_date: r.inv_date || r.order_date || getMYTDateStr(),
+        due_date: r.due_date || '',
+        cust_name: r.supplier_name || 'NOHAD SDN BHD',
+        cust_tel: '', cust_addr: '',
+        name_job: r.name_job || '',
+        items: custItems,
+        total: r.nohad_amount || 0,
+        paid: r.nohad_paid || 0,
+        balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
+      };
+    }
   } else {
     payload = {
       type: docType,
       inv_number: r.inv_number_supplier || r.inv_number || '',
-      inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+      inv_date: r.inv_date || r.order_date || getMYTDateStr(),
       due_date: r.due_date || '',
       cust_name: r.cust_name || '',
       cust_tel: r.cust_tel || '',
@@ -3698,6 +3830,7 @@ function openDoc(docType) {
     };
   }
 
+  if (!payload) return; // User cancelled supplier selection
   localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
   window.open('dod-document-generator.html', '_blank');
 
@@ -4285,8 +4418,8 @@ function getAllOrders() {
 function renderHomeKpi() {
   const all = getAllOrders();
   const now = new Date();
-  const todayStr = now.toISOString().slice(0,10);
-  const ystStr   = new Date(now - 86400000).toISOString().slice(0,10);
+  const todayStr = getMYTDateStr();
+  const ystStr   = getMYTDateStr(new Date(now - 86400000));
 
   const months    = Object.keys(sessionData);
   const curMonth  = months[months.length-1];
@@ -4314,7 +4447,7 @@ function renderHomeKpi() {
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
-  const weekAgo7    = new Date(now - 6*86400000).toISOString().slice(0,10);
+  const weekAgo7    = getMYTDateStr(new Date(now - 6*86400000));
   const todayOrders = allSales.filter(o => o.order_date === todayStr);
   const todayRev    = todayOrders.reduce((s,o) => s+(o.total_customer||0), 0);
   const ystOrders   = allSales.filter(o => o.order_date === ystStr);
@@ -6430,12 +6563,22 @@ function renderSupplierDir(filterMonth) {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
       ${SUPPLIERS.map(s => {
         const supOrders = getSupOrders(s);
-        const totalOrders = supOrders.length;
+        // Also get orders where this supplier appears as supplier2
+        const baseOrders = activeMonth === 'ALL' ? Object.values(sessionData).flat() : (sessionData[activeMonth] || []);
+        const asSup2 = baseOrders.filter(r => {
+          const s2 = (r.supplier2_name||'').toUpperCase();
+          return s2.length > 0 && (s2 === s.name.toUpperCase() || s2.includes(s.short.toUpperCase()));
+        });
+        const totalOrders = supOrders.length + asSup2.filter(r => !supOrders.includes(r)).length;
         const totalPCS    = supOrders.reduce((sum,r) => sum + (r.pcs||0), 0);
-        const totalKos    = supOrders.reduce((sum,r) => sum + (r.nohad_amount||0), 0);
+        const totalKos    = supOrders.reduce((sum,r) => sum + (r.nohad_amount||0), 0)
+                          + asSup2.reduce((sum,r) => sum + (r.supplier2_amount||0), 0);
+        // OS: from supplier1 role (supplier_outstanding covers nohad+luar)
+        // For supplier2, calculate manually from supplier2_amount vs supplier2_paid
         const totalOS     = supOrders
           .filter(r => r.supplier_payment_status !== 'PAYMENT DONE')
-          .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0);
+          .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0)
+          + asSup2.reduce((sum,r) => sum + Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0)), 0);
 
         // Last order date
         const datesWithData = supOrders.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
@@ -6528,12 +6671,14 @@ function renderSupplierOS(filterSupplier) {
       if (os > 0) return true;
       const nohadOS = Math.max(0, (r.nohad_amount||0) - (r.nohad_paid||0));
       const luarOS  = Math.max(0, (r.luar_amount||0) - (r.luar_paid||0));
-      return (nohadOS + luarOS) > 0;
+      const sup2OS  = Math.max(0, (r.supplier2_amount||0) - (r.supplier2_paid||0));
+      return (nohadOS + luarOS + sup2OS) > 0;
     })
     .map(r => {
       const nohadOS = Math.max(0, (r.nohad_amount||0) - (r.nohad_paid||0));
       const luarOS  = Math.max(0, (r.luar_amount||0) - (r.luar_paid||0));
-      const calcOS  = nohadOS + luarOS;
+      const sup2OS  = Math.max(0, (r.supplier2_amount||0) - (r.supplier2_paid||0));
+      const calcOS  = nohadOS + luarOS + sup2OS;
       return calcOS !== (r.supplier_outstanding||0)
         ? { ...r, supplier_outstanding: calcOS }
         : r;
@@ -6542,12 +6687,19 @@ function renderSupplierOS(filterSupplier) {
 
   const totalOS = allOrders.reduce((s,r) => s + (r.supplier_outstanding||0), 0);
 
-  // Group by supplier
+  // Group by supplier — include supplier2 as separate supplier group if it has OS
   const bySupplier = {};
   allOrders.forEach(r => {
     const sup = r.supplier_name || 'NOHAD SDN BHD';
     if (!bySupplier[sup]) bySupplier[sup] = [];
     bySupplier[sup].push(r);
+    // If there's supplier2 OS, also show under supplier2 name
+    const s2OS = Math.max(0, (r.supplier2_amount||0) - (r.supplier2_paid||0));
+    if (r.supplier2_name && s2OS > 0) {
+      if (!bySupplier[r.supplier2_name]) bySupplier[r.supplier2_name] = [];
+      // Add a virtual entry for supplier2 tracking
+      bySupplier[r.supplier2_name].push({ ...r, _isSup2: true, supplier_outstanding: s2OS });
+    }
   });
 
   // Build filter options from actual suppliers with OS
@@ -6667,7 +6819,7 @@ function generateOSReminder(custIndex) {
     price: parseFloat(o.balance_customer)||0,
     total: parseFloat(o.balance_customer)||0,
   }));
-  const today = new Date().toISOString().slice(0,10);
+  const today = getMYTDateStr();
   const payload = {
     type: 'invoice',
     inv_number: 'OS-REMINDER-' + today,
@@ -7392,7 +7544,7 @@ function bulkOSReminder() {
     total: c.totalOS,
   }));
   const totalOS = customers.reduce((s,c) => s+c.totalOS, 0);
-  const today = new Date().toISOString().slice(0,10);
+  const today = getMYTDateStr();
   const payload = {
     type: 'invoice',
     inv_number: 'BULK-OS-' + today,
@@ -7426,8 +7578,8 @@ function _getOSDaysOverdue(c) {
 
 function _buildOSPayload(c, level) {
   const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
-  const todayFmt = today.toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
+  const todayStr = getMYTDateStr();
+  const todayFmt = new Date(todayStr + 'T00:00:00+08:00').toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
   const daysOverdue = _getOSDaysOverdue(c);
   const totalOS = c.osOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
 
@@ -7486,7 +7638,7 @@ function _buildOSPayload(c, level) {
     type: 'letter',
     inv_number: cfg.num,
     inv_date: todayStr,
-    due_date: deadline.toISOString().slice(0,10),
+    due_date: getMYTDateStr(deadline),
     cust_name: c.name,
     cust_tel: c.tel,
     cust_addr: c.addr || '',
@@ -7667,7 +7819,7 @@ function addPaymentRecord(type='deposit', amount=0, method='Transfer', date='', 
     type: type || 'deposit',
     amount: amount || 0,
     method: method || 'Transfer',
-    date: date || now.toISOString().slice(0,10),
+    date: date || getMYTDateStr(),
     time: time || now.toTimeString().slice(0,5),
     ref: ref || '',
     note: note || '',
@@ -8004,8 +8156,10 @@ function autoUpdateSupStatus() {
   const nohadPaid = parseFloat(document.getElementById('f_nohad_paid')?.value) || 0;
   const luarAmt   = parseFloat(document.getElementById('f_luar_amt')?.value) || 0;
   const luarPaid  = parseFloat(document.getElementById('f_luar_paid')?.value) || 0;
-  const total     = nohadAmt + luarAmt;
-  const paid      = nohadPaid + luarPaid;
+  const sup2Amt   = parseFloat(document.getElementById('f_sup2_amt')?.value) || 0;
+  const sup2Paid  = parseFloat(document.getElementById('f_sup2_paid')?.value) || 0;
+  const total     = nohadAmt + luarAmt + sup2Amt;
+  const paid      = nohadPaid + luarPaid + sup2Paid;
   const el = document.getElementById('f_sup_status');
   if (!el) return;
   // Only PAYMENT DONE if total > 0 and fully paid
@@ -8192,9 +8346,10 @@ async function restoreBackup(file) {
 async function checkWeeklyBackup() {
   const lastKey = 'dod_last_backup';
   const last = localStorage.getItem(lastKey);
-  const now = new Date();
-  const isMonday = now.getDay() === 1;
-  const today = now.toISOString().slice(0,10);
+  const mytStr = getMYTDateStr();
+  const mytDate = new Date(mytStr + 'T00:00:00+08:00');
+  const isMonday = mytDate.getDay() === 1;
+  const today = mytStr;
 
   if (isMonday && last !== today) {
     localStorage.setItem(lastKey, today);
@@ -8463,6 +8618,16 @@ function getMYTToday() {
   const myt = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
   myt.setHours(0, 0, 0, 0);
   return myt;
+}
+
+// Returns YYYY-MM-DD string in MYT (UTC+8), not UTC
+function getMYTDateStr(date) {
+  const d = date || new Date();
+  const myt = new Date(d.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
+  const yyyy = myt.getFullYear();
+  const mm   = String(myt.getMonth() + 1).padStart(2, '0');
+  const dd   = String(myt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function calcDeadline() {
