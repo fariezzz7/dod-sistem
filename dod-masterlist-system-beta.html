@@ -1304,10 +1304,7 @@ tr:hover .row-actions{opacity:1;}
   <!-- PRODUCTION TRACKER -->
   <div id="prodTrackView" style="display:none;padding:24px 28px;">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;" id="prodKilangFilter">
-    <button class="fbtn on" onclick="filterProdTrackBySupplier('ALL',this)" style="font-size:11px;">Semua Kilang</button>
-    <button class="fbtn" onclick="filterProdTrackBySupplier('NOHAD',this)" style="font-size:11px;">🏭 Nohad</button>
-    <button class="fbtn" onclick="filterProdTrackBySupplier('IKHTIAR',this)" style="font-size:11px;">📦 Ikhtiar Jaya</button>
-    <button class="fbtn" onclick="filterProdTrackBySupplier('BROTHER',this)" style="font-size:11px;">🛠 Brother Trading</button>
+    <button class="fbtn on all-btn" onclick="filterProdTrackBySupplier('ALL',this)" style="font-size:11px;">Semua Kilang</button>
   </div>
   <div id="prodTrackContent"></div>
   </div>
@@ -1489,9 +1486,6 @@ tr:hover .row-actions{opacity:1;}
             <div class="filter-label">Kilang / Supplier</div>
             <select class="fsel" id="supplierFilter" onchange="applyFilters()">
               <option value="ALL">Semua Kilang</option>
-              <option>NOHAD SDN BHD</option>
-              <option>IKHTIAR JAYA</option>
-              <option>BROTHER TRADING</option>
             </select>
           </div>
           <div class="filter-group">
@@ -1765,9 +1759,7 @@ tr:hover .row-actions{opacity:1;}
             <label class="fl">Nama Supplier</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
               <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;">
-              <button type="button" onclick="setSupplier('NOHAD SDN BHD')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Nohad</button>
-              <button type="button" onclick="setSupplier('IKHTIAR JAYA')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Ikhtiar Jaya</button>
-              <button type="button" onclick="setSupplier('BROTHER TRADING')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">Brother Trading</button>
+              <div id="supplierShortcuts" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;"></div>
             </div>
           </div>
           <div class="form-field">
@@ -1950,9 +1942,6 @@ tr:hover .row-actions{opacity:1;}
 
 
 <datalist id="supplierList">
-  <option value="NOHAD SDN BHD">
-  <option value="IKHTIAR JAYA">
-  <option value="BROTHER TRADING">
 </datalist>
 <datalist id="itemTypesList">
   <option value="Sublimation Adult Short Sleeve">
@@ -3219,27 +3208,29 @@ async function generateInvNumber() {
   const yyyy = now.getFullYear();
   const mm   = String(now.getMonth() + 1).padStart(2, '0');
   const prefix = 'DOD-' + yyyy + mm + '-';
-  try {
-    // Count orders this month from Supabase
-    const monthKey = Object.keys(sessionData).find(m => {
-      // Match current month in sessionData
-      const parts = m.split(' ');
-      const MONTHS = {JAN:1,FEB:2,MAC:3,APRIL:4,MEI:5,JUN:6,JUL:7,OGO:8,SEP:9,OKT:10,NOV:11,DIS:12,'DEC 2025':12};
-      const mNum = MONTHS[parts[0]];
-      const mYear = parseInt(parts[1]);
-      return mNum === (now.getMonth()+1) && mYear === yyyy;
+
+  function maxSeq(invNumbers) {
+    let max = 0;
+    invNumbers.forEach(n => {
+      if (n && n.startsWith(prefix)) {
+        const seq = parseInt(n.replace(prefix, ''), 10);
+        if (!isNaN(seq) && seq > max) max = seq;
+      }
     });
-    const curMonthOrders = sessionData[monthKey] || [];
-    // Also check Supabase for accurate count
-    const res = await supaFetch('/rest/v1/orders?select=id&month=eq.' + encodeURIComponent(monthKey || '') + '&limit=1000');
-    const count = (res || curMonthOrders).length + 1;
-    return prefix + String(count).padStart(4, '0');
+    return max;
+  }
+
+  try {
+    const res = await supaFetch('/rest/v1/orders?select=inv_number&inv_number=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
+    const supaMax = maxSeq((res || []).map(r => r.inv_number));
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const localMax = maxSeq(allLocal);
+    const next = Math.max(supaMax, localMax) + 1;
+    return prefix + String(next).padStart(4, '0');
   } catch(e) {
-    // Fallback: use local count
-    const now2 = new Date();
-    const m2Key = Object.keys(sessionData).pop() || '';
-    const count = (sessionData[m2Key] || []).length + 1;
-    return prefix + String(count).padStart(4, '0');
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const localMax = maxSeq(allLocal);
+    return prefix + String(localMax + 1).padStart(4, '0');
   }
 }
 
@@ -6763,14 +6754,63 @@ function saveSupplier() {
 }
 
 function refreshSupplierDatalist() {
+  // 1. Update datalist for order form autocomplete
   const dl = document.getElementById('supplierList');
-  if (!dl) return;
-  dl.innerHTML = '';
-  SUPPLIERS.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.name;
-    dl.appendChild(opt);
-  });
+  if (dl) {
+    dl.innerHTML = '';
+    SUPPLIERS.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      dl.appendChild(opt);
+    });
+  }
+
+  // 2. Update supplierFilter dropdown in masterlist filter bar
+  const sel = document.getElementById('supplierFilter');
+  if (sel) {
+    const cur = sel.value; // preserve current selection
+    sel.innerHTML = '<option value="ALL">Semua Kilang</option>';
+    SUPPLIERS.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+    // Restore selection if still valid
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+
+  // 3. Update production tracker supplier filter buttons
+  const btnBar = document.getElementById('prodKilangFilter');
+  if (btnBar) {
+    // Remove all non-"ALL" buttons first
+    [...btnBar.querySelectorAll('.fbtn:not(.all-btn)')].forEach(b => b.remove());
+    const ICONS = { 'NOHAD': '🏭', 'IKHTIAR': '📦', 'BROTHER': '🛠' };
+    SUPPLIERS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'fbtn';
+      btn.style.fontSize = '11px';
+      // Pick icon by partial name match, fallback to 🏭
+      const key = Object.keys(ICONS).find(k => s.name.toUpperCase().includes(k));
+      btn.textContent = (key ? ICONS[key] : '🏭') + ' ' + (s.short || s.name);
+      btn.onclick = function() { filterProdTrackBySupplier(s.name, this); };
+      btnBar.appendChild(btn);
+    });
+  }
+
+  // 4. Rebuild supplier shortcut buttons in order form
+  const shortcutContainer = document.getElementById('supplierShortcuts');
+  if (shortcutContainer) {
+    shortcutContainer.innerHTML = '';
+    SUPPLIERS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.cssText = 'font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);';
+      btn.textContent = s.short || s.name;
+      btn.onclick = () => setSupplier(s.name);
+      shortcutContainer.appendChild(btn);
+    });
+  }
 }
 
 // ── PAYMENT FUNCTIONS ─────────────────────────────────────────
@@ -6886,7 +6926,9 @@ function renderProdTrack() {
     orders.map(o => ({ ...o, _month: month }))
   ).filter(o => {
     if (supF === 'ALL') return true;
-    return (o.supplier_name||'NOHAD SDN BHD').toUpperCase().includes(supF);
+    const oSup = (o.supplier_name || 'NOHAD SDN BHD').toUpperCase();
+    // Support both full name exact match and legacy partial keyword match
+    return oSup === supF || oSup.includes(supF);
   });
 
   // Only show orders with production tracking (exclude no status = treat as job-submit)
