@@ -1826,13 +1826,13 @@ tr:hover .row-actions{opacity:1;}
           <div class="form-field">
             <label class="fl">% Deposit</label>
             <div style="display:flex;gap:6px;align-items:center;">
-              <input class="fi" type="number" id="f_deposit_pct" value="70" min="0" max="100" step="5"
+              <input class="fi" type="number" id="f_deposit_pct" value="0" min="0" max="100" step="5"
                 style="width:70px;flex-shrink:0;" oninput="recalcDeposit()">
               <span style="font-size:12px;color:var(--textm);">%</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                <button type="button" onclick="setDepositPct(0)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">0%</button>
+                <button type="button" onclick="setDepositPct(0)" style="font-size:10px;padding:3px 8px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:4px;cursor:pointer;color:var(--blue);font-weight:700;">0%</button>
                 <button type="button" onclick="setDepositPct(50)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">50%</button>
-                <button type="button" onclick="setDepositPct(70)" style="font-size:10px;padding:3px 8px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:4px;cursor:pointer;color:var(--blue);font-weight:700;">70%</button>
+                <button type="button" onclick="setDepositPct(70)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">70%</button>
                 <button type="button" onclick="setDepositPct(100)" style="font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;cursor:pointer;color:var(--textd);">100%</button>
               </div>
             </div>
@@ -3367,16 +3367,16 @@ function clearForm() {
   const defPipeline = 'quotation'; // Default sentiasa Quotation untuk order baru
   const ppEl = document.getElementById('f_pipeline_status');
   if (ppEl) ppEl.value = defPipeline;
-  // Reset deposit to 70%
+  // Reset deposit to 0% — only update if sales admin adds payment record
   const dPct = document.getElementById('f_deposit_pct');
-  if (dPct) dPct.value = 70;
+  if (dPct) dPct.value = 0;
   const osEl = document.getElementById('f_cust_os_display');
   if (osEl) osEl.value = '—';
   // Clear manual flag on f_pay1
   const pay1El = document.getElementById('f_pay1');
-  if (pay1El) delete pay1El.dataset.manual;
-  // Reset deposit button highlight
-  setTimeout(() => setDepositPct(70), 50);
+  if (pay1El) { pay1El.value = '0'; delete pay1El.dataset.manual; }
+  // Reset deposit button highlight to 0%
+  setTimeout(() => setDepositPct(0), 50);
 }
 
 function closeModal() {
