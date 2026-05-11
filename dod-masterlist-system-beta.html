@@ -7850,7 +7850,15 @@ function syncPaymentToForm() {
 
   // Sync f_pay1 (hidden) with deposit total for legacy compat
   const pay1El = document.getElementById('f_pay1');
-  if (pay1El) { pay1El.value = depositTotal > 0 ? depositTotal.toFixed(2) : '0'; }
+  if (pay1El) {
+    if (depositTotal > 0) {
+      pay1El.value = depositTotal.toFixed(2);
+      pay1El.dataset.manual = '1'; // block recalcDeposit from overriding with auto-calc
+    } else {
+      pay1El.value = '0';
+      delete pay1El.dataset.manual; // release control back to deposit calculator
+    }
+  }
 
   renderPaymentRecordsSummary();
   recalc();
