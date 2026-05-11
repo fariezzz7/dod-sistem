@@ -2858,7 +2858,12 @@ function renderAll() {
   else if (sortField === 'revenue') rows.sort((a,b) => (b.total_customer||0)-(a.total_customer||0));
   else if (sortField === 'profit') rows.sort((a,b) => (b.profit||0)-(a.profit||0));
   else if (sortField === 'production') rows.sort((a,b) => (urgOrder[getProdUrgency(a)]||3) - (urgOrder[getProdUrgency(b)]||3));
-  else rows.sort((a,b) => (b.order_date||'') < (a.order_date||'') ? -1 : 1);
+  else rows.sort((a,b) => {
+    const dateDiff = (b.order_date||'').localeCompare(a.order_date||'');
+    if (dateDiff !== 0) return dateDiff;
+    // Same date — newer id (timestamp-based) goes first
+    return String(b.id||'').localeCompare(String(a.id||''));
+  });
 
   renderKPIs(rows);
   renderTable(rows);
@@ -3216,7 +3221,7 @@ async function openAddModal() {
   clearForm();
   document.getElementById('modalTitle').textContent = 'Tambah Order Baru';
   document.getElementById('modalSubtitle').textContent = 'Profit dikira automatik';
-  const today = new Date().toISOString().split('T')[0];
+  const today = getMYTDateStr();
   document.getElementById('f_order_date').value = today;
   document.getElementById('f_invdate').value = today;
   // Auto-set PIC to current user if sales role
@@ -3233,9 +3238,9 @@ async function openAddModal() {
 }
 
 async function generateInvNumber() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const mytStr = getMYTDateStr(); // YYYY-MM-DD in MYT
+  const yyyy = mytStr.slice(0,4);
+  const mm   = mytStr.slice(5,7);
   const prefix = 'DOD-' + yyyy + mm + '-';
 
   function maxSeq(invNumbers) {
@@ -3250,14 +3255,14 @@ async function generateInvNumber() {
   }
 
   try {
-    const res = await supaFetch('/rest/v1/orders?select=inv_number&inv_number=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
-    const supaMax = maxSeq((res || []).map(r => r.inv_number));
-    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const res = await supaFetch('/rest/v1/orders?select=inv_number_supplier&inv_number_supplier=like.' + encodeURIComponent(prefix + '%') + '&limit=2000');
+    const supaMax = maxSeq((res || []).map(r => r.inv_number_supplier));
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number_supplier);
     const localMax = maxSeq(allLocal);
     const next = Math.max(supaMax, localMax) + 1;
     return prefix + String(next).padStart(4, '0');
   } catch(e) {
-    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number);
+    const allLocal = Object.values(sessionData).flat().map(r => r.inv_number_supplier);
     const localMax = maxSeq(allLocal);
     return prefix + String(localMax + 1).padStart(4, '0');
   }
@@ -3765,7 +3770,7 @@ function openDoc(docType) {
         payload = {
           type: 'po',
           inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
-          inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+          inv_date: r.inv_date || r.order_date || getMYTDateStr(),
           due_date: r.due_date || '',
           cust_name: r.supplier_name || 'NOHAD SDN BHD',
           cust_tel: '', cust_addr: '',
@@ -3780,7 +3785,7 @@ function openDoc(docType) {
         payload = {
           type: 'po',
           inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || '') + '-S2',
-          inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+          inv_date: r.inv_date || r.order_date || getMYTDateStr(),
           due_date: r.due_date || '',
           cust_name: r.supplier2_name,
           cust_tel: '', cust_addr: '',
@@ -3796,7 +3801,7 @@ function openDoc(docType) {
       payload = {
         type: 'po',
         inv_number: 'PO-' + (r.inv_number_supplier || r.inv_number || ''),
-        inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+        inv_date: r.inv_date || r.order_date || getMYTDateStr(),
         due_date: r.due_date || '',
         cust_name: r.supplier_name || 'NOHAD SDN BHD',
         cust_tel: '', cust_addr: '',
@@ -3811,7 +3816,7 @@ function openDoc(docType) {
     payload = {
       type: docType,
       inv_number: r.inv_number_supplier || r.inv_number || '',
-      inv_date: r.inv_date || r.order_date || new Date().toISOString().slice(0,10),
+      inv_date: r.inv_date || r.order_date || getMYTDateStr(),
       due_date: r.due_date || '',
       cust_name: r.cust_name || '',
       cust_tel: r.cust_tel || '',
@@ -4413,8 +4418,8 @@ function getAllOrders() {
 function renderHomeKpi() {
   const all = getAllOrders();
   const now = new Date();
-  const todayStr = now.toISOString().slice(0,10);
-  const ystStr   = new Date(now - 86400000).toISOString().slice(0,10);
+  const todayStr = getMYTDateStr();
+  const ystStr   = getMYTDateStr(new Date(now - 86400000));
 
   const months    = Object.keys(sessionData);
   const curMonth  = months[months.length-1];
@@ -4442,7 +4447,7 @@ function renderHomeKpi() {
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
-  const weekAgo7    = new Date(now - 6*86400000).toISOString().slice(0,10);
+  const weekAgo7    = getMYTDateStr(new Date(now - 6*86400000));
   const todayOrders = allSales.filter(o => o.order_date === todayStr);
   const todayRev    = todayOrders.reduce((s,o) => s+(o.total_customer||0), 0);
   const ystOrders   = allSales.filter(o => o.order_date === ystStr);
@@ -6814,7 +6819,7 @@ function generateOSReminder(custIndex) {
     price: parseFloat(o.balance_customer)||0,
     total: parseFloat(o.balance_customer)||0,
   }));
-  const today = new Date().toISOString().slice(0,10);
+  const today = getMYTDateStr();
   const payload = {
     type: 'invoice',
     inv_number: 'OS-REMINDER-' + today,
@@ -7539,7 +7544,7 @@ function bulkOSReminder() {
     total: c.totalOS,
   }));
   const totalOS = customers.reduce((s,c) => s+c.totalOS, 0);
-  const today = new Date().toISOString().slice(0,10);
+  const today = getMYTDateStr();
   const payload = {
     type: 'invoice',
     inv_number: 'BULK-OS-' + today,
@@ -7573,8 +7578,8 @@ function _getOSDaysOverdue(c) {
 
 function _buildOSPayload(c, level) {
   const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
-  const todayFmt = today.toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
+  const todayStr = getMYTDateStr();
+  const todayFmt = new Date(todayStr + 'T00:00:00+08:00').toLocaleDateString('ms-MY', {day:'numeric', month:'long', year:'numeric'});
   const daysOverdue = _getOSDaysOverdue(c);
   const totalOS = c.osOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
 
@@ -7633,7 +7638,7 @@ function _buildOSPayload(c, level) {
     type: 'letter',
     inv_number: cfg.num,
     inv_date: todayStr,
-    due_date: deadline.toISOString().slice(0,10),
+    due_date: getMYTDateStr(deadline),
     cust_name: c.name,
     cust_tel: c.tel,
     cust_addr: c.addr || '',
@@ -7814,7 +7819,7 @@ function addPaymentRecord(type='deposit', amount=0, method='Transfer', date='', 
     type: type || 'deposit',
     amount: amount || 0,
     method: method || 'Transfer',
-    date: date || now.toISOString().slice(0,10),
+    date: date || getMYTDateStr(),
     time: time || now.toTimeString().slice(0,5),
     ref: ref || '',
     note: note || '',
@@ -8341,9 +8346,10 @@ async function restoreBackup(file) {
 async function checkWeeklyBackup() {
   const lastKey = 'dod_last_backup';
   const last = localStorage.getItem(lastKey);
-  const now = new Date();
-  const isMonday = now.getDay() === 1;
-  const today = now.toISOString().slice(0,10);
+  const mytStr = getMYTDateStr();
+  const mytDate = new Date(mytStr + 'T00:00:00+08:00');
+  const isMonday = mytDate.getDay() === 1;
+  const today = mytStr;
 
   if (isMonday && last !== today) {
     localStorage.setItem(lastKey, today);
@@ -8612,6 +8618,16 @@ function getMYTToday() {
   const myt = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
   myt.setHours(0, 0, 0, 0);
   return myt;
+}
+
+// Returns YYYY-MM-DD string in MYT (UTC+8), not UTC
+function getMYTDateStr(date) {
+  const d = date || new Date();
+  const myt = new Date(d.toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'}));
+  const yyyy = myt.getFullYear();
+  const mm   = String(myt.getMonth() + 1).padStart(2, '0');
+  const dd   = String(myt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function calcDeadline() {
