@@ -1118,6 +1118,10 @@ tr:hover .row-actions{opacity:1;}
             <div class="trend-row" id="homeTrendBars"></div>
           </div>
           <div class="home-panel">
+            <div class="home-panel-title">Trend Bulanan (PCS)</div>
+            <div class="trend-row" id="homeTrendBarsPcs"></div>
+          </div>
+          <div class="home-panel">
             <div class="home-panel-title">Order Terkini</div>
             <div id="homeRecentOrders"></div>
           </div>
@@ -4369,6 +4373,7 @@ function renderHomepage() {
   if (isAdmin) {
     renderHomeKpi();
     renderHomeTrend();
+    renderHomeTrendPcs();
     renderHomeRecent();
   }
 
@@ -4583,6 +4588,27 @@ function renderHomeTrend() {
     return `<div class="trend-bar-wrap">
       <div class="trend-bar-val">${rev>0?'RM'+(rev>=1000?(rev/1000).toFixed(0)+'K':rev.toFixed(0)):''}</div>
       <div class="trend-bar" style="height:${barPct}%;background:var(--blue);opacity:${opacity};"></div>
+      <div class="trend-bar-label">${MONTH_SHORT[m]||m.split(' ')[0].slice(0,3)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeTrendPcs() {
+  const months = Object.keys(sessionData);
+  const last6  = months.slice(-6);
+  const pcsArr = last6.map(m => sessionData[m].filter(isPipelineSales).reduce((s,o) => s+(o.pcs||0),0));
+  const maxPcs = Math.max(...pcsArr, 1);
+  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun','JULY 2026':'Jul','AUG 2026':'Ogo','SEP 2026':'Sep','OCT 2026':'Okt','NOV 2026':'Nov'};
+
+  const el = document.getElementById('homeTrendBarsPcs');
+  if (!el) return;
+  el.innerHTML = last6.map((m,i) => {
+    const pcs = pcsArr[i];
+    const barPct = Math.max((pcs/maxPcs)*100, 3);
+    const opacity = 0.4 + 0.6*(pcs/maxPcs);
+    return `<div class="trend-bar-wrap">
+      <div class="trend-bar-val">${pcs>0?pcs.toLocaleString('en-MY')+' pcs':''}</div>
+      <div class="trend-bar" style="height:${barPct}%;background:var(--green);opacity:${opacity};"></div>
       <div class="trend-bar-label">${MONTH_SHORT[m]||m.split(' ')[0].slice(0,3)}</div>
     </div>`;
   }).join('');
