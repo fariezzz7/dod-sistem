@@ -4409,6 +4409,28 @@ function renderHomeKpi() {
   const totalProfit = allSales.reduce((s,o) => s+(o.profit||0), 0);
   const totalOS     = allSales.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
 
+  // Yearly breakdown
+  const curYear  = now.getFullYear();
+  const lastYear = curYear - 1;
+  const thisYearSales = allSales.filter(o => {
+    const yr = o.month ? parseInt(o.month.split(' ').pop()) : null;
+    return yr === curYear;
+  });
+  const lastYearSales = allSales.filter(o => {
+    const yr = o.month ? parseInt(o.month.split(' ').pop()) : null;
+    return yr === lastYear;
+  });
+  const thisYearRev    = thisYearSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const thisYearPCS    = thisYearSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const thisYearProfit = thisYearSales.reduce((s,o) => s+(o.profit||0), 0);
+  const lastYearRev    = lastYearSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const lastYearPCS    = lastYearSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const lastYearProfit = lastYearSales.reduce((s,o) => s+(o.profit||0), 0);
+  const yoyChange = lastYearRev > 0 ? ((thisYearRev - lastYearRev)/lastYearRev*100).toFixed(1) : null;
+  const yoyTrend  = yoyChange !== null ? (parseFloat(yoyChange) >= 0
+    ? `<span style="color:var(--green);font-size:10px;">▲ ${yoyChange}% vs ${lastYear}</span>`
+    : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(yoyChange)}% vs ${lastYear}</span>`) : '';
+
   const curSales  = curOrders.filter(isPipelineSales);
   const curQuots  = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation');
   const curRev    = curSales.reduce((s,o) => s+(o.total_customer||0), 0);
@@ -4477,6 +4499,46 @@ function renderHomeKpi() {
       <div class="home-kpi-label">7 Hari Lepas</div>
       <div class="home-kpi-val">${fmt(weekRev7)}</div>
       <div class="home-kpi-sub">${weekOrders7.length} order</div>
+    </div>
+
+    <!-- Section label: Tahun Ini -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      📅 Kumulatif ${curYear} (Jan → Kini)
+    </div>
+    <div class="home-kpi-card accent-amber" style="border-left:3px solid var(--amber);">
+      <div class="home-kpi-label">Revenue ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(thisYearRev)} ${yoyTrend}</div>
+      <div class="home-kpi-sub">${thisYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
+      <div class="home-kpi-label">PCS ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmtNum(thisYearPCS)}</div>
+      <div class="home-kpi-sub">${thisYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-green" style="border-left:3px solid var(--green);">
+      <div class="home-kpi-label">Profit ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(thisYearProfit)}</div>
+      <div class="home-kpi-sub">margin ${thisYearRev>0?(thisYearProfit/thisYearRev*100).toFixed(1):0}%</div>
+    </div>
+
+    <!-- Section label: Tahun Lepas -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      📅 Kumulatif ${lastYear} (Jan → Dis)
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">Revenue ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmt(lastYearRev)}</div>
+      <div class="home-kpi-sub">${lastYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">PCS ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmtNum(lastYearPCS)}</div>
+      <div class="home-kpi-sub">${lastYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">Profit ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmt(lastYearProfit)}</div>
+      <div class="home-kpi-sub">margin ${lastYearRev>0?(lastYearProfit/lastYearRev*100).toFixed(1):0}%</div>
     </div>
 
     <!-- Section label: All Time -->
