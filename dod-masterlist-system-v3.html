@@ -2555,6 +2555,7 @@ function setupNavForRole() {
     sbShow('sbKpi');
     sbShow('sbCalendar');
     sbShow('sbMemo');
+  } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
     sbShow('sbCustomer');
@@ -2570,6 +2571,7 @@ function setupNavForRole() {
     sbHide('sbSupplierOS');
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
+    sbHide('sbMemo');
   } else { // designer
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
@@ -2584,6 +2586,7 @@ function setupNavForRole() {
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
     sbHide('sbBtnAddOrder');
+    sbHide('sbMemo');
   }
 }
 
@@ -9335,17 +9338,25 @@ async function memoCheckAndShow() {
   const urgentUnread = relevant.filter(m => m.type === 'urgent' && !readIds.includes(m.id));
   const infoUnread   = relevant.filter(m => m.type === 'info'   && !readIds.includes(m.id));
   
-  // Show info notices as banner
+  // Show ALL relevant memos in notice bar (read or unread) — urgent & info
   const bar = document.getElementById('memoNoticeBar');
   if (bar) {
-    const infos = relevant.filter(m => m.type === 'info' && !readIds.includes(m.id));
-    if (infos.length) {
-      bar.innerHTML = infos.map(m => `
-        <div class="memo-notice-item" style="display:flex;align-items:center;gap:10px;background:var(--bluebg);border-left:3px solid var(--blue);padding:8px 14px;border-radius:4px;margin-bottom:4px;">
-          <span style="font-size:13px;">📌</span>
-          <span style="flex:1;font-size:12px;color:var(--textd);">${m.title}: ${m.body}</span>
-          <button onclick="memoDismiss('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--textm);font-size:14px;padding:0 4px;">✕</button>
-        </div>`).join('');
+    if (relevant.length) {
+      bar.innerHTML = relevant.map(m => {
+        const isRead = readIds.includes(m.id);
+        const isUrgent = m.type === 'urgent';
+        const bg     = isUrgent ? '#fff5f5' : 'var(--bluebg)';
+        const border = isUrgent ? '#e03050' : 'var(--blue)';
+        const icon   = isUrgent ? '🔴' : '📌';
+        const readBadge = isRead
+          ? `<span style="font-size:9px;background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:8px;margin-left:6px;">✓ dah baca</span>`
+          : `<span style="font-size:9px;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;margin-left:6px;">belum baca</span>`;
+        return `<div style="display:flex;align-items:center;gap:8px;background:${bg};border-left:3px solid ${border};padding:7px 14px;border-radius:4px;margin-bottom:3px;">
+          <span style="font-size:12px;flex-shrink:0;">${icon}</span>
+          <span style="flex:1;font-size:12px;color:var(--textd);"><b>${m.title}</b> — ${m.body}</span>
+          ${readBadge}
+        </div>`;
+      }).join('');
       bar.style.display = 'block';
     } else {
       bar.style.display = 'none';
