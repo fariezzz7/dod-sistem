@@ -1039,6 +1039,12 @@ tr:hover .row-actions{opacity:1;}
   <div class="sb-divider"></div>
   <div class="sb-section">Admin</div>
 
+  <button class="sb-item" id="sbMemo" data-tip="Memo & Announcement" onclick="sbNav('memo')" style="display:none;">
+    <span class="sb-item-icon">📢</span>
+    <span class="sb-item-label">Memo</span>
+    <span class="sb-badge" id="memoBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;">NEW</span>
+  </button>
+
   <button class="sb-item" id="sbUserMgmt" data-tip="Pengurusan Pengguna" onclick="sbNav('usermgmt')" style="display:none;">
     <span class="sb-item-icon">👤</span>
     <span class="sb-item-label">Pengguna</span>
@@ -2339,6 +2345,8 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Check memos for this user
+  setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
   if (currentUser?.role === 'admin') checkWeeklyBackup();
 }
@@ -2395,7 +2403,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2494,7 +2502,7 @@ function setupNavForRole() {
     sbShow('sbPenerimaan');
     sbShow('sbKpi');
     sbShow('sbCalendar');
-  } else if (role === 'sales' || role === 'sales_executive') {
+    sbShow('sbMemo');
     sbShow('sbMasterlist');
     sbShow('sbKpi');
     sbShow('sbCustomer');
@@ -2595,6 +2603,11 @@ function sbNav(view) {
       const sbCal = document.getElementById('sbCalendar');
       if (sbCal) sbCal.classList.add('active');
       showCalendarView();
+      showSbMonths(false);
+      break;
+    case 'memo':
+      document.getElementById('sbMemo').classList.add('active');
+      showMemoView();
       showSbMonths(false);
       break;
   }
@@ -4616,7 +4629,7 @@ function renderHomeTrendPcs() {
 
 function renderHomeRecent() {
   const all = getAllOrders();
-  const recent = all.filter(o => o.order_date).sort((a,b) => b.order_date.localeCompare(a.order_date)).slice(0,6);
+  const recent = all.filter(o => o.order_date && isPipelineSales(o)).sort((a,b) => b.order_date.localeCompare(a.order_date)).slice(0,6);
   document.getElementById('homeRecentOrders').innerHTML = recent.map(o => {
     const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
     return `<div class="recent-order-row">
@@ -9228,6 +9241,267 @@ function calTrunc(s,n){ return s&&s.length>n?s.substring(0,n)+'…':(s||''); }
 
 // supaFetch defined at top of script — no duplicate needed
 
+// ══════════════════════════════════════
+// MEMO SYSTEM
+// ══════════════════════════════════════
+
+const MEMO_ROLES = {
+  all:              'Semua Staff',
+  admin:            'Admin',
+  sales:            'Sales',
+  sales_executive:  'Sales Executive',
+  designer:         'Designer'
+};
+
+let memoPopupQueue = [];
+
+async function memoFetchActive() {
+  try {
+    const data = await supaFetch('/rest/v1/memos?active=eq.true&order=created_at.desc&limit=50');
+    return data || [];
+  } catch(e) {
+    console.warn('Memo fetch failed:', e);
+    return [];
+  }
+}
+
+async function memoCheckAndShow() {
+  const memos = await memoFetchActive();
+  if (!memos.length) return;
+  const role = currentUser?.role || '';
+  const myName = currentUser?.id || '';
+  const readKey = 'dod_memo_read_' + myName;
+  const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+  
+  // Filter memos targeted at this user's role
+  const relevant = memos.filter(m => {
+    const targets = Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles || 'all').split(',');
+    return targets.includes('all') || targets.includes(role);
+  });
+  
+  // Urgent unread → popup queue
+  const urgentUnread = relevant.filter(m => m.type === 'urgent' && !readIds.includes(m.id));
+  const infoUnread   = relevant.filter(m => m.type === 'info'   && !readIds.includes(m.id));
+  
+  // Show info notices as banner
+  const bar = document.getElementById('memoNoticeBar');
+  if (bar) {
+    const infos = relevant.filter(m => m.type === 'info' && !readIds.includes(m.id));
+    if (infos.length) {
+      bar.innerHTML = infos.map(m => `
+        <div class="memo-notice-item" style="display:flex;align-items:center;gap:10px;background:var(--bluebg);border-left:3px solid var(--blue);padding:8px 14px;border-radius:4px;margin-bottom:4px;">
+          <span style="font-size:13px;">📌</span>
+          <span style="flex:1;font-size:12px;color:var(--textd);">${m.title}: ${m.body}</span>
+          <button onclick="memoDismiss('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--textm);font-size:14px;padding:0 4px;">✕</button>
+        </div>`).join('');
+      bar.style.display = 'block';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+  
+  // Update sidebar badge
+  const badge = document.getElementById('memoBadge');
+  if (badge) {
+    const totalUnread = urgentUnread.length + infoUnread.length;
+    badge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
+    badge.textContent = totalUnread > 9 ? '9+' : totalUnread;
+  }
+  
+  // Show urgent popup queue
+  if (urgentUnread.length > 0) {
+    memoPopupQueue = urgentUnread;
+    memoShowNextPopup();
+  }
+}
+
+function memoShowNextPopup() {
+  if (!memoPopupQueue.length) { document.getElementById('memoPopupOverlay').style.display = 'none'; return; }
+  const memo = memoPopupQueue[0];
+  const overlay = document.getElementById('memoPopupOverlay');
+  document.getElementById('memoPopupTitle').textContent = memo.title;
+  document.getElementById('memoPopupBody').textContent = memo.body;
+  document.getElementById('memoPopupDate').textContent = 'Dari: ' + (memo.created_by || 'Admin') + ' · ' + new Date(memo.created_at).toLocaleDateString('ms-MY');
+  overlay.style.display = 'flex';
+}
+
+function memoAcknowledge() {
+  if (!memoPopupQueue.length) return;
+  const memo = memoPopupQueue.shift();
+  memoDismiss(memo.id);
+  memoShowNextPopup();
+}
+
+function memoDismiss(memoId) {
+  const myName = currentUser?.id || '';
+  const readKey = 'dod_memo_read_' + myName;
+  const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+  if (!readIds.includes(memoId)) readIds.push(memoId);
+  localStorage.setItem(readKey, JSON.stringify(readIds));
+  // Re-render notice bar
+  memoCheckAndShow();
+}
+
+async function memoSave() {
+  const title   = document.getElementById('memoFormTitle').value.trim();
+  const body    = document.getElementById('memoFormBody').value.trim();
+  const type    = document.getElementById('memoFormType').value;
+  const expires = document.getElementById('memoFormExpiry').value;
+  const targets = Array.from(document.querySelectorAll('.memo-role-check:checked')).map(c => c.value);
+  
+  if (!title || !body) { showToast('Sila isi Tajuk dan Kandungan memo', true); return; }
+  if (!targets.length) { showToast('Pilih sekurang-kurangnya satu role penerima', true); return; }
+  
+  const payload = {
+    title,
+    body,
+    type,
+    target_roles: targets,
+    active: true,
+    created_by: currentUser.name,
+    created_at: new Date().toISOString(),
+    expires_at: expires ? new Date(expires).toISOString() : null
+  };
+  
+  try {
+    await supaFetch('/rest/v1/memos', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: JSON.stringify(payload)
+    });
+    showToast('Memo berjaya dihantar ✓');
+    document.getElementById('memoFormTitle').value = '';
+    document.getElementById('memoFormBody').value = '';
+    document.getElementById('memoFormExpiry').value = '';
+    document.querySelectorAll('.memo-role-check').forEach(c => c.checked = false);
+    renderMemoList();
+  } catch(e) {
+    // Table mungkin belum wujud — tunjuk instruction
+    showToast('⚠️ Table "memos" belum ada di Supabase. Sila buat dulu.', true);
+    console.error(e);
+  }
+}
+
+async function memoDeactivate(memoId) {
+  try {
+    await supaFetch('/rest/v1/memos?id=eq.' + memoId, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ active: false })
+    });
+    showToast('Memo dinyahaktifkan');
+    renderMemoList();
+  } catch(e) {
+    showToast('Gagal nyahaktif memo', true);
+  }
+}
+
+async function renderMemoList() {
+  const wrap = document.getElementById('memoListWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Memuatkan...</div>';
+  const memos = await memoFetchActive();
+  if (!memos.length) {
+    wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Tiada memo aktif.</div>';
+    return;
+  }
+  wrap.innerHTML = memos.map(m => {
+    const roleLabel = (Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles||'all').split(',')).map(r => MEMO_ROLES[r]||r).join(', ');
+    const typeIcon = m.type === 'urgent' ? '🔴' : '🟡';
+    return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg2);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span>${typeIcon}</span>
+        <span style="font-weight:700;font-size:13px;color:var(--textd);flex:1;">${m.title}</span>
+        <button onclick="memoDeactivate('${m.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--red);border-radius:4px;cursor:pointer;">Nyahaktif</button>
+      </div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:6px;">${m.body}</div>
+      <div style="font-size:10px;color:var(--textm);">Kepada: ${roleLabel} · Oleh: ${m.created_by||'Admin'} · ${new Date(m.created_at).toLocaleDateString('ms-MY')}</div>
+    </div>`;
+  }).join('');
+}
+
+function showMemoView() {
+  setAllViewsHidden();
+  const view = document.getElementById('memoView');
+  if (view) view.style.display = 'block';
+  renderMemoList();
+}
+
+
+
 </script>
+<!-- ── MEMO NOTICE BAR ── -->
+<div id="memoNoticeBar" style="display:none;position:sticky;top:0;z-index:900;padding:8px 20px;background:var(--bg1);border-bottom:1px solid var(--line);"></div>
+
+<!-- ── MEMO URGENT POPUP ── -->
+<div id="memoPopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--bg1);border-radius:14px;padding:28px 28px 22px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.35);border:2px solid var(--red);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:22px;">🔴</span>
+      <div>
+        <div style="font-size:10px;font-family:'Fira Code',monospace;color:var(--red);letter-spacing:.1em;text-transform:uppercase;">Memo Urgent</div>
+        <div id="memoPopupTitle" style="font-size:16px;font-weight:800;color:var(--textd);margin-top:2px;"></div>
+      </div>
+    </div>
+    <div id="memoPopupBody" style="font-size:13px;color:var(--textd);line-height:1.6;white-space:pre-wrap;background:var(--bg2);border-radius:8px;padding:12px 14px;margin-bottom:14px;"></div>
+    <div id="memoPopupDate" style="font-size:10px;color:var(--textm);margin-bottom:16px;"></div>
+    <button onclick="memoAcknowledge()" style="width:100%;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✓ Faham & Tutup</button>
+  </div>
+</div>
+
+<!-- ── MEMO ADMIN VIEW ── -->
+<div id="memoView" style="display:none;padding:24px 28px;max-width:800px;">
+  <div style="font-size:18px;font-weight:800;color:var(--textd);margin-bottom:4px;">📢 Memo & Announcement</div>
+  <div style="font-size:12px;color:var(--textm);margin-bottom:24px;">Hantar notis kepada staff. Urgent = popup wajib baca. Info = banner atas sistem.</div>
+  
+  <!-- Form Buat Memo -->
+  <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:14px;">+ Buat Memo Baru</div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tajuk</label>
+        <input id="memoFormTitle" type="text" placeholder="Contoh: Cutoff order Jumaat" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Jenis</label>
+        <select id="memoFormType" class="fi" style="width:100%;margin-top:4px;">
+          <option value="urgent">🔴 Urgent — Popup wajib baca</option>
+          <option value="info">🟡 Info — Banner atas sistem</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Kandungan Memo</label>
+      <textarea id="memoFormBody" placeholder="Tulis kandungan memo di sini..." class="fi" rows="3" style="width:100%;margin-top:4px;resize:vertical;"></textarea>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Hantar Kepada (Role)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="all"> Semua Staff</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales"> Sales</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales_executive"> Sales Executive</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="designer"> Designer</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="admin"> Admin</label>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tamat Tempoh (Opsyenal)</label>
+        <input id="memoFormExpiry" type="date" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+    </div>
+    
+    <button onclick="memoSave()" style="padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📤 Hantar Memo</button>
+    <div style="font-size:10px;color:var(--textm);margin-top:8px;">⚠️ Pastikan table <code>memos</code> dah dibuat di Supabase dengan kolum: id (uuid), title, body, type, target_roles (text[]), active (bool), created_by, created_at, expires_at</div>
+  </div>
+  
+  <!-- Senarai Memo Aktif -->
+  <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:10px;">Memo Aktif Sekarang</div>
+  <div id="memoListWrap"></div>
+</div>
+
 </body>
 </html>
