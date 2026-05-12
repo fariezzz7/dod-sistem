@@ -144,6 +144,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 }
 .sb-logo-text small{display:block;font-size:8px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-top:1px;}
 #appSidebar.collapsed .sb-logo-text{opacity:0;width:0;}
+#appSidebar.collapsed .sb-toggle{margin-left:0;}
+#appSidebar.collapsed .sb-header{justify-content:center;padding:0;}
 
 /* Toggle collapse button */
 .sb-toggle{
@@ -674,11 +676,11 @@ tr:hover .row-actions{opacity:1;}
 .recent-date{font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);}
 
 /* Monthly trend mini bars */
-.trend-row{display:flex;align-items:flex-end;gap:6px;height:60px;margin-bottom:8px;}
-.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.trend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .5s ease;min-height:3px;}
+.trend-row{display:flex;align-items:flex-end;gap:8px;height:120px;margin-bottom:8px;}
+.trend-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;}
+.trend-bar{width:100%;border-radius:3px 3px 0 0;transition:height .5s ease;min-height:4px;}
 .trend-bar-label{font-family:'Fira Code',monospace;font-size:8px;color:var(--textm);text-align:center;}
-.trend-bar-val{font-family:'Fira Code',monospace;font-size:8px;color:var(--textd);text-align:center;}
+.trend-bar-val{font-family:'Fira Code',monospace;font-size:8px;color:var(--textd);text-align:center;white-space:nowrap;}
 
 /* ── CUSTOMER VIEW ── */
 #customerView{display:none;}
@@ -1039,6 +1041,12 @@ tr:hover .row-actions{opacity:1;}
   <div class="sb-divider"></div>
   <div class="sb-section">Admin</div>
 
+  <button class="sb-item" id="sbMemo" data-tip="Memo & Announcement" onclick="sbNav('memo')" style="display:none;">
+    <span class="sb-item-icon">📢</span>
+    <span class="sb-item-label">Memo</span>
+    <span class="sb-badge" id="memoBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;">NEW</span>
+  </button>
+
   <button class="sb-item" id="sbUserMgmt" data-tip="Pengurusan Pengguna" onclick="sbNav('usermgmt')" style="display:none;">
     <span class="sb-item-icon">👤</span>
     <span class="sb-item-label">Pengguna</span>
@@ -1082,6 +1090,10 @@ tr:hover .row-actions{opacity:1;}
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <div id="appContent">
+
+<!-- ── MEMO NOTICE BAR ── -->
+<div id="memoNoticeBar" style="display:none;padding:8px 20px;background:var(--bg1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;"></div>
+
 <div class="wrap">
 
   <!-- HOME VIEW -->
@@ -1116,6 +1128,10 @@ tr:hover .row-actions{opacity:1;}
           <div class="home-panel">
             <div class="home-panel-title">Trend Bulanan (Revenue)</div>
             <div class="trend-row" id="homeTrendBars"></div>
+          </div>
+          <div class="home-panel">
+            <div class="home-panel-title">Trend Bulanan (PCS)</div>
+            <div class="trend-row" id="homeTrendBarsPcs"></div>
           </div>
           <div class="home-panel">
             <div class="home-panel-title">Order Terkini</div>
@@ -1550,6 +1566,52 @@ tr:hover .row-actions{opacity:1;}
   </div>
 
 </div><!-- /wrap -->
+
+<!-- ── MEMO VIEW (inside appContent) ── -->
+<div id="memoView" style="display:none;padding:24px 28px;max-width:800px;">
+  <div style="font-size:18px;font-weight:800;color:var(--textd);margin-bottom:4px;">📢 Memo & Announcement</div>
+  <div style="font-size:12px;color:var(--textm);margin-bottom:24px;">Hantar notis kepada staff. Urgent = popup wajib baca. Info = banner atas sistem.</div>
+  <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:14px;">+ Buat Memo Baru</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tajuk</label>
+        <input id="memoFormTitle" type="text" placeholder="Contoh: Cutoff order Jumaat" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Jenis</label>
+        <select id="memoFormType" class="fi" style="width:100%;margin-top:4px;">
+          <option value="urgent">🔴 Urgent — Popup wajib baca</option>
+          <option value="info">🟡 Info — Banner atas sistem</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Kandungan Memo</label>
+      <textarea id="memoFormBody" placeholder="Tulis kandungan memo di sini..." class="fi" rows="3" style="width:100%;margin-top:4px;resize:vertical;"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Hantar Kepada (Role)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="all"> Semua Staff</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales"> Sales</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales_executive"> Sales Executive</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="designer"> Designer</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="admin"> Admin</label>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tamat Tempoh (Opsyenal)</label>
+        <input id="memoFormExpiry" type="date" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+    </div>
+    <button onclick="memoSave()" style="padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📤 Hantar Memo</button>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:10px;">Memo Aktif Sekarang</div>
+  <div id="memoListWrap"></div>
+</div>
+
 </div><!-- /appContent -->
 </div><!-- /appShell -->
 
@@ -2335,6 +2397,8 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Check memos for this user
+  setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
   if (currentUser?.role === 'admin') checkWeeklyBackup();
 }
@@ -2391,7 +2455,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2490,7 +2554,7 @@ function setupNavForRole() {
     sbShow('sbPenerimaan');
     sbShow('sbKpi');
     sbShow('sbCalendar');
-  } else if (role === 'sales' || role === 'sales_executive') {
+    sbShow('sbMemo');
     sbShow('sbMasterlist');
     sbShow('sbKpi');
     sbShow('sbCustomer');
@@ -2591,6 +2655,11 @@ function sbNav(view) {
       const sbCal = document.getElementById('sbCalendar');
       if (sbCal) sbCal.classList.add('active');
       showCalendarView();
+      showSbMonths(false);
+      break;
+    case 'memo':
+      document.getElementById('sbMemo').classList.add('active');
+      showMemoView();
       showSbMonths(false);
       break;
   }
@@ -3519,7 +3588,7 @@ function saveOrder() {
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
       luar_amount:luarAmt, luar_paid:luarPaid, supplier2_name:sup2Name, supplier2_amount:sup2Amt, supplier2_paid:sup2Paid,
       total_supplier:totalCost,
-      total_customer:rev, first_payment:pay1, balance_customer:custOS,
+      total_customer:rev, first_payment:totalPaymentsFromRecords, balance_customer:custOS,
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
@@ -3596,7 +3665,7 @@ function saveOrder() {
       supplier_payment_status:supStatus, supplier_name:supName, nohad_amount:nohadAmt, nohad_paid:nohadPaid,
       luar_amount:luarAmt, luar_paid:luarPaid, supplier2_name:sup2Name, supplier2_amount:sup2Amt, supplier2_paid:sup2Paid,
       total_supplier:totalCost,
-      total_customer:rev, first_payment:pay1, balance_customer:custOS,
+      total_customer:rev, first_payment:totalPaymentsFromRecords, balance_customer:custOS,
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
@@ -4369,6 +4438,7 @@ function renderHomepage() {
   if (isAdmin) {
     renderHomeKpi();
     renderHomeTrend();
+    renderHomeTrendPcs();
     renderHomeRecent();
   }
 
@@ -4408,6 +4478,32 @@ function renderHomeKpi() {
   const totalPCS    = allSales.reduce((s,o) => s+(o.pcs||0), 0);
   const totalProfit = allSales.reduce((s,o) => s+(o.profit||0), 0);
   const totalOS     = allSales.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
+
+  // Yearly breakdown
+  const curYear  = now.getFullYear();
+  const lastYear = curYear - 1;
+  const thisYearSales = allSales.filter(o => {
+    const yr = o.month ? parseInt(o.month.split(' ').pop()) : null;
+    return yr === curYear;
+  });
+  const lastYearSales = allSales.filter(o => {
+    const yr = o.month ? parseInt(o.month.split(' ').pop()) : null;
+    return yr === lastYear;
+  });
+  const thisYearRev    = thisYearSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const thisYearPCS    = thisYearSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const thisYearProfit = thisYearSales.reduce((s,o) => s+(o.profit||0), 0);
+  const lastYearRev    = lastYearSales.reduce((s,o) => s+(o.total_customer||0), 0);
+  const lastYearPCS    = lastYearSales.reduce((s,o) => s+(o.pcs||0), 0);
+  const lastYearProfit = lastYearSales.reduce((s,o) => s+(o.profit||0), 0);
+  const lastYearMonths = Object.keys(sessionData).filter(m => parseInt(m.split(' ').pop()) === lastYear);
+  const lastYearLabel  = lastYearMonths.length > 0
+    ? lastYearMonths.map(m => m.split(' ')[0]).join(', ')
+    : 'Tiada data';
+  const yoyChange = lastYearRev > 0 ? ((thisYearRev - lastYearRev)/lastYearRev*100).toFixed(1) : null;
+  const yoyTrend  = yoyChange !== null ? (parseFloat(yoyChange) >= 0
+    ? `<span style="color:var(--green);font-size:10px;">▲ ${yoyChange}% vs ${lastYear}</span>`
+    : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(yoyChange)}% vs ${lastYear}</span>`) : '';
 
   const curSales  = curOrders.filter(isPipelineSales);
   const curQuots  = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation');
@@ -4479,6 +4575,46 @@ function renderHomeKpi() {
       <div class="home-kpi-sub">${weekOrders7.length} order</div>
     </div>
 
+    <!-- Section label: Tahun Ini -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      📅 Kumulatif ${curYear} (Jan → Kini)
+    </div>
+    <div class="home-kpi-card accent-amber" style="border-left:3px solid var(--amber);">
+      <div class="home-kpi-label">Revenue ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(thisYearRev)} ${yoyTrend}</div>
+      <div class="home-kpi-sub">${thisYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-blue" style="border-left:3px solid var(--blue);">
+      <div class="home-kpi-label">PCS ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmtNum(thisYearPCS)}</div>
+      <div class="home-kpi-sub">${thisYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card accent-green" style="border-left:3px solid var(--green);">
+      <div class="home-kpi-label">Profit ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;">${fmt(thisYearProfit)}</div>
+      <div class="home-kpi-sub">margin ${thisYearRev>0?(thisYearProfit/thisYearRev*100).toFixed(1):0}%</div>
+    </div>
+
+    <!-- Section label: Tahun Lepas -->
+    <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
+      📅 Kumulatif ${lastYear} (${lastYearLabel})
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">Revenue ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmt(lastYearRev)}</div>
+      <div class="home-kpi-sub">${lastYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">PCS ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmtNum(lastYearPCS)}</div>
+      <div class="home-kpi-sub">${lastYearSales.length} order</div>
+    </div>
+    <div class="home-kpi-card" style="border-left:3px solid var(--textm);">
+      <div class="home-kpi-label">Profit ${lastYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:var(--textd);">${fmt(lastYearProfit)}</div>
+      <div class="home-kpi-sub">margin ${lastYearRev>0?(lastYearProfit/lastYearRev*100).toFixed(1):0}%</div>
+    </div>
+
     <!-- Section label: All Time -->
     <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
       📊 All Time (Dis 2025 → Kini)
@@ -4506,24 +4642,46 @@ function fmtNum(n) { return Number(n||0).toLocaleString('en-MY'); }
 function renderHomeTrend() {
   const months = Object.keys(sessionData);
   const last6  = months.slice(-6);
-  const revs   = last6.map(m => sessionData[m].reduce((s,o) => s+(o.total_customer||0),0));
+  const revs   = last6.map(m => sessionData[m].filter(isPipelineSales).reduce((s,o) => s+(o.total_customer||0),0));
   const maxRev = Math.max(...revs, 1);
-  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun'};
+  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun','JULY 2026':'Jul','AUG 2026':'Ogo','SEP 2026':'Sep','OCT 2026':'Okt','NOV 2026':'Nov'};
 
   document.getElementById('homeTrendBars').innerHTML = last6.map((m,i) => {
     const rev = revs[i];
-    const pct = Math.max((rev/maxRev)*100, 4);
+    const barPct = Math.max((rev/maxRev)*100, 3);
+    const opacity = 0.4 + 0.6*(rev/maxRev);
     return `<div class="trend-bar-wrap">
-      <div class="trend-bar-val">${rev>0?'RM'+(rev/1000).toFixed(0)+'K':''}</div>
-      <div class="trend-bar" style="height:${pct}%;background:var(--blue);opacity:${0.4+0.6*(rev/maxRev)};"></div>
-      <div class="trend-bar-label">${MONTH_SHORT[m]||m.slice(0,3)}</div>
+      <div class="trend-bar-val">${rev>0?'RM'+(rev>=1000?(rev/1000).toFixed(0)+'K':rev.toFixed(0)):''}</div>
+      <div class="trend-bar" style="height:${barPct}%;background:var(--blue);opacity:${opacity};"></div>
+      <div class="trend-bar-label">${MONTH_SHORT[m]||m.split(' ')[0].slice(0,3)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeTrendPcs() {
+  const months = Object.keys(sessionData);
+  const last6  = months.slice(-6);
+  const pcsArr = last6.map(m => sessionData[m].filter(isPipelineSales).reduce((s,o) => s+(o.pcs||0),0));
+  const maxPcs = Math.max(...pcsArr, 1);
+  const MONTH_SHORT = {'DEC 2025':'Dis','JAN 2026':'Jan','FEB 2026':'Feb','MAC 2026':'Mac','APRIL 2026':'Apr','MEI 2026':'Mei','JUN 2026':'Jun','JULY 2026':'Jul','AUG 2026':'Ogo','SEP 2026':'Sep','OCT 2026':'Okt','NOV 2026':'Nov'};
+
+  const el = document.getElementById('homeTrendBarsPcs');
+  if (!el) return;
+  el.innerHTML = last6.map((m,i) => {
+    const pcs = pcsArr[i];
+    const barPct = Math.max((pcs/maxPcs)*100, 3);
+    const opacity = 0.4 + 0.6*(pcs/maxPcs);
+    return `<div class="trend-bar-wrap">
+      <div class="trend-bar-val">${pcs>0?pcs.toLocaleString('en-MY')+' pcs':''}</div>
+      <div class="trend-bar" style="height:${barPct}%;background:var(--green);opacity:${opacity};"></div>
+      <div class="trend-bar-label">${MONTH_SHORT[m]||m.split(' ')[0].slice(0,3)}</div>
     </div>`;
   }).join('');
 }
 
 function renderHomeRecent() {
   const all = getAllOrders();
-  const recent = all.filter(o => o.order_date).sort((a,b) => b.order_date.localeCompare(a.order_date)).slice(0,6);
+  const recent = all.filter(o => o.order_date && isPipelineSales(o)).sort((a,b) => b.order_date.localeCompare(a.order_date)).slice(0,6);
   document.getElementById('homeRecentOrders').innerHTML = recent.map(o => {
     const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
     return `<div class="recent-order-row">
@@ -9135,6 +9293,211 @@ function calTrunc(s,n){ return s&&s.length>n?s.substring(0,n)+'…':(s||''); }
 
 // supaFetch defined at top of script — no duplicate needed
 
+// ══════════════════════════════════════
+// MEMO SYSTEM
+// ══════════════════════════════════════
+
+const MEMO_ROLES = {
+  all:              'Semua Staff',
+  admin:            'Admin',
+  sales:            'Sales',
+  sales_executive:  'Sales Executive',
+  designer:         'Designer'
+};
+
+let memoPopupQueue = [];
+
+async function memoFetchActive() {
+  try {
+    const data = await supaFetch('/rest/v1/memos?active=eq.true&order=created_at.desc&limit=50');
+    return data || [];
+  } catch(e) {
+    console.warn('Memo fetch failed:', e);
+    return [];
+  }
+}
+
+async function memoCheckAndShow() {
+  const memos = await memoFetchActive();
+  if (!memos.length) return;
+  const role = currentUser?.role || '';
+  const myName = currentUser?.id || '';
+  const readKey = 'dod_memo_read_' + myName;
+  const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+  
+  // Filter memos targeted at this user's role
+  const relevant = memos.filter(m => {
+    const targets = Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles || 'all').split(',');
+    return targets.includes('all') || targets.includes(role);
+  });
+  
+  // Urgent unread → popup queue
+  const urgentUnread = relevant.filter(m => m.type === 'urgent' && !readIds.includes(m.id));
+  const infoUnread   = relevant.filter(m => m.type === 'info'   && !readIds.includes(m.id));
+  
+  // Show info notices as banner
+  const bar = document.getElementById('memoNoticeBar');
+  if (bar) {
+    const infos = relevant.filter(m => m.type === 'info' && !readIds.includes(m.id));
+    if (infos.length) {
+      bar.innerHTML = infos.map(m => `
+        <div class="memo-notice-item" style="display:flex;align-items:center;gap:10px;background:var(--bluebg);border-left:3px solid var(--blue);padding:8px 14px;border-radius:4px;margin-bottom:4px;">
+          <span style="font-size:13px;">📌</span>
+          <span style="flex:1;font-size:12px;color:var(--textd);">${m.title}: ${m.body}</span>
+          <button onclick="memoDismiss('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--textm);font-size:14px;padding:0 4px;">✕</button>
+        </div>`).join('');
+      bar.style.display = 'block';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+  
+  // Update sidebar badge
+  const badge = document.getElementById('memoBadge');
+  if (badge) {
+    const totalUnread = urgentUnread.length + infoUnread.length;
+    badge.style.display = totalUnread > 0 ? 'inline-block' : 'none';
+    badge.textContent = totalUnread > 9 ? '9+' : totalUnread;
+  }
+  
+  // Show urgent popup queue
+  if (urgentUnread.length > 0) {
+    memoPopupQueue = urgentUnread;
+    memoShowNextPopup();
+  }
+}
+
+function memoShowNextPopup() {
+  if (!memoPopupQueue.length) { document.getElementById('memoPopupOverlay').style.display = 'none'; return; }
+  const memo = memoPopupQueue[0];
+  const overlay = document.getElementById('memoPopupOverlay');
+  document.getElementById('memoPopupTitle').textContent = memo.title;
+  document.getElementById('memoPopupBody').textContent = memo.body;
+  document.getElementById('memoPopupDate').textContent = 'Dari: ' + (memo.created_by || 'Admin') + ' · ' + new Date(memo.created_at).toLocaleDateString('ms-MY');
+  overlay.style.display = 'flex';
+}
+
+function memoAcknowledge() {
+  if (!memoPopupQueue.length) return;
+  const memo = memoPopupQueue.shift();
+  memoDismiss(memo.id);
+  memoShowNextPopup();
+}
+
+function memoDismiss(memoId) {
+  const myName = currentUser?.id || '';
+  const readKey = 'dod_memo_read_' + myName;
+  const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
+  if (!readIds.includes(memoId)) readIds.push(memoId);
+  localStorage.setItem(readKey, JSON.stringify(readIds));
+  // Re-render notice bar
+  memoCheckAndShow();
+}
+
+async function memoSave() {
+  const title   = document.getElementById('memoFormTitle').value.trim();
+  const body    = document.getElementById('memoFormBody').value.trim();
+  const type    = document.getElementById('memoFormType').value;
+  const expires = document.getElementById('memoFormExpiry').value;
+  const targets = Array.from(document.querySelectorAll('.memo-role-check:checked')).map(c => c.value);
+  
+  if (!title || !body) { showToast('Sila isi Tajuk dan Kandungan memo', true); return; }
+  if (!targets.length) { showToast('Pilih sekurang-kurangnya satu role penerima', true); return; }
+  
+  const payload = {
+    title,
+    body,
+    type,
+    target_roles: targets,
+    active: true,
+    created_by: currentUser.name,
+    created_at: new Date().toISOString(),
+    expires_at: expires ? new Date(expires).toISOString() : null
+  };
+  
+  try {
+    await supaFetch('/rest/v1/memos', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: JSON.stringify(payload)
+    });
+    showToast('Memo berjaya dihantar ✓');
+    document.getElementById('memoFormTitle').value = '';
+    document.getElementById('memoFormBody').value = '';
+    document.getElementById('memoFormExpiry').value = '';
+    document.querySelectorAll('.memo-role-check').forEach(c => c.checked = false);
+    renderMemoList();
+  } catch(e) {
+    // Table mungkin belum wujud — tunjuk instruction
+    showToast('⚠️ Table "memos" belum ada di Supabase. Sila buat dulu.', true);
+    console.error(e);
+  }
+}
+
+async function memoDeactivate(memoId) {
+  try {
+    await supaFetch('/rest/v1/memos?id=eq.' + memoId, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ active: false })
+    });
+    showToast('Memo dinyahaktifkan');
+    renderMemoList();
+  } catch(e) {
+    showToast('Gagal nyahaktif memo', true);
+  }
+}
+
+async function renderMemoList() {
+  const wrap = document.getElementById('memoListWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Memuatkan...</div>';
+  const memos = await memoFetchActive();
+  if (!memos.length) {
+    wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Tiada memo aktif.</div>';
+    return;
+  }
+  wrap.innerHTML = memos.map(m => {
+    const roleLabel = (Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles||'all').split(',')).map(r => MEMO_ROLES[r]||r).join(', ');
+    const typeIcon = m.type === 'urgent' ? '🔴' : '🟡';
+    return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg2);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <span>${typeIcon}</span>
+        <span style="font-weight:700;font-size:13px;color:var(--textd);flex:1;">${m.title}</span>
+        <button onclick="memoDeactivate('${m.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--red);border-radius:4px;cursor:pointer;">Nyahaktif</button>
+      </div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:6px;">${m.body}</div>
+      <div style="font-size:10px;color:var(--textm);">Kepada: ${roleLabel} · Oleh: ${m.created_by||'Admin'} · ${new Date(m.created_at).toLocaleDateString('ms-MY')}</div>
+    </div>`;
+  }).join('');
+}
+
+function showMemoView() {
+  setAllViewsHidden();
+  const view = document.getElementById('memoView');
+  if (view) view.style.display = 'block';
+  renderMemoList();
+}
+
+
+
 </script>
+
+<!-- ── MEMO URGENT POPUP (position:fixed) ── -->
+<div id="memoPopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#ffffff;border-radius:14px;padding:28px 28px 22px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.4);border-top:4px solid #e03050;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:22px;">🔴</span>
+      <div>
+        <div style="font-size:10px;font-family:'Fira Code',monospace;color:#e03050;letter-spacing:.1em;text-transform:uppercase;font-weight:700;">Memo Urgent</div>
+        <div id="memoPopupTitle" style="font-size:16px;font-weight:800;color:#111827;margin-top:2px;"></div>
+      </div>
+    </div>
+    <div id="memoPopupBody" style="font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap;background:#f9fafb;border-radius:8px;padding:12px 14px;margin-bottom:14px;border:1px solid #e5e7eb;"></div>
+    <div id="memoPopupDate" style="font-size:10px;color:#9ca3af;margin-bottom:16px;"></div>
+    <button onclick="memoAcknowledge()" style="width:100%;padding:12px;background:#e03050;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.02em;">✓ Faham & Tutup</button>
+  </div>
+</div>
+
 </body>
 </html>
