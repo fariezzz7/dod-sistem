@@ -9384,13 +9384,25 @@ function memoAcknowledge() {
   memoShowNextPopup();
 }
 
-function memoDismiss(memoId) {
-  const myName = currentUser?.id || '';
-  const readKey = 'dod_memo_read_' + myName;
+async function memoDismiss(memoId) {
+  const myId   = currentUser?.id   || '';
+  const myName = currentUser?.name || myId;
+  const readKey = 'dod_memo_read_' + myId;
   const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
-  if (!readIds.includes(memoId)) readIds.push(memoId);
-  localStorage.setItem(readKey, JSON.stringify(readIds));
-  // Re-render notice bar
+  if (!readIds.includes(memoId)) {
+    readIds.push(memoId);
+    localStorage.setItem(readKey, JSON.stringify(readIds));
+    // Save read record to Supabase
+    try {
+      await supaFetch('/rest/v1/memo_reads', {
+        method: 'POST',
+        prefer: 'return=minimal',
+        body: JSON.stringify({ memo_id: memoId, user_id: myId, user_name: myName })
+      });
+    } catch(e) { console.warn('memo_reads save failed:', e); }
+  } else {
+    localStorage.setItem(readKey, JSON.stringify(readIds));
+  }
   memoCheckAndShow();
 }
 
@@ -9457,17 +9469,36 @@ async function renderMemoList() {
     wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Tiada memo aktif.</div>';
     return;
   }
+
+  // Fetch all read records for active memos
+  let allReads = [];
+  try {
+    const memoIds = memos.map(m => m.id).join(',');
+    allReads = await supaFetch('/rest/v1/memo_reads?memo_id=in.(' + memoIds + ')&select=memo_id,user_name,read_at&order=read_at.asc') || [];
+  } catch(e) { console.warn('memo_reads fetch failed:', e); }
+
   wrap.innerHTML = memos.map(m => {
     const roleLabel = (Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles||'all').split(',')).map(r => MEMO_ROLES[r]||r).join(', ');
     const typeIcon = m.type === 'urgent' ? '🔴' : '🟡';
+    const readers = allReads.filter(r => r.memo_id === m.id);
+    const readerHTML = readers.length
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;">✅ Dah baca (${readers.length}):</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${readers.map(r => `<span style="font-size:10px;background:var(--greenbg,#e8f5e9);color:var(--green,#2e7d32);padding:2px 7px;border-radius:10px;">${r.user_name||r.user_id} · ${new Date(r.read_at).toLocaleDateString('ms-MY')}</span>`).join('')}
+          </div>
+        </div>`
+      : `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:10px;color:var(--textm);">Belum ada yang baca lagi.</div>`;
+
     return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg2);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
         <span>${typeIcon}</span>
         <span style="font-weight:700;font-size:13px;color:var(--textd);flex:1;">${m.title}</span>
         <button onclick="memoDeactivate('${m.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--red);border-radius:4px;cursor:pointer;">Nyahaktif</button>
       </div>
-      <div style="font-size:12px;color:var(--textm);margin-bottom:6px;">${m.body}</div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:4px;">${m.body}</div>
       <div style="font-size:10px;color:var(--textm);">Kepada: ${roleLabel} · Oleh: ${m.created_by||'Admin'} · ${new Date(m.created_at).toLocaleDateString('ms-MY')}</div>
+      ${readerHTML}
     </div>`;
   }).join('');
 }
