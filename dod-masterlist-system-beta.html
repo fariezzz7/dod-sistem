@@ -1088,6 +1088,10 @@ tr:hover .row-actions{opacity:1;}
 
 <!-- ═══ MAIN CONTENT ═══ -->
 <div id="appContent">
+
+<!-- ── MEMO NOTICE BAR ── -->
+<div id="memoNoticeBar" style="display:none;padding:8px 20px;background:var(--bg1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;"></div>
+
 <div class="wrap">
 
   <!-- HOME VIEW -->
@@ -1560,6 +1564,53 @@ tr:hover .row-actions{opacity:1;}
   </div>
 
 </div><!-- /wrap -->
+
+<!-- ── MEMO VIEW (inside appContent) ── -->
+<div id="memoView" style="display:none;padding:24px 28px;max-width:800px;">
+  <div style="font-size:18px;font-weight:800;color:var(--textd);margin-bottom:4px;">📢 Memo & Announcement</div>
+  <div style="font-size:12px;color:var(--textm);margin-bottom:24px;">Hantar notis kepada staff. Urgent = popup wajib baca. Info = banner atas sistem.</div>
+  <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:14px;">+ Buat Memo Baru</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tajuk</label>
+        <input id="memoFormTitle" type="text" placeholder="Contoh: Cutoff order Jumaat" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Jenis</label>
+        <select id="memoFormType" class="fi" style="width:100%;margin-top:4px;">
+          <option value="urgent">🔴 Urgent — Popup wajib baca</option>
+          <option value="info">🟡 Info — Banner atas sistem</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Kandungan Memo</label>
+      <textarea id="memoFormBody" placeholder="Tulis kandungan memo di sini..." class="fi" rows="3" style="width:100%;margin-top:4px;resize:vertical;"></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Hantar Kepada (Role)</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="all"> Semua Staff</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales"> Sales</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales_executive"> Sales Executive</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="designer"> Designer</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="admin"> Admin</label>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tamat Tempoh (Opsyenal)</label>
+        <input id="memoFormExpiry" type="date" class="fi" style="width:100%;margin-top:4px;">
+      </div>
+    </div>
+    <button onclick="memoSave()" style="padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📤 Hantar Memo</button>
+    <div style="font-size:10px;color:var(--textm);margin-top:8px;">⚠️ Pastikan table <code>memos</code> dah dibuat di Supabase.</div>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:10px;">Memo Aktif Sekarang</div>
+  <div id="memoListWrap"></div>
+</div>
+
 </div><!-- /appContent -->
 </div><!-- /appShell -->
 
@@ -9430,10 +9481,8 @@ function showMemoView() {
 
 
 </script>
-<!-- ── MEMO NOTICE BAR ── -->
-<div id="memoNoticeBar" style="display:none;position:sticky;top:0;z-index:900;padding:8px 20px;background:var(--bg1);border-bottom:1px solid var(--line);"></div>
 
-<!-- ── MEMO URGENT POPUP ── -->
+<!-- ── MEMO URGENT POPUP (position:fixed) ── -->
 <div id="memoPopupOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:var(--bg1);border-radius:14px;padding:28px 28px 22px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.35);border:2px solid var(--red);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
@@ -9447,60 +9496,6 @@ function showMemoView() {
     <div id="memoPopupDate" style="font-size:10px;color:var(--textm);margin-bottom:16px;"></div>
     <button onclick="memoAcknowledge()" style="width:100%;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">✓ Faham & Tutup</button>
   </div>
-</div>
-
-<!-- ── MEMO ADMIN VIEW ── -->
-<div id="memoView" style="display:none;padding:24px 28px;max-width:800px;">
-  <div style="font-size:18px;font-weight:800;color:var(--textd);margin-bottom:4px;">📢 Memo & Announcement</div>
-  <div style="font-size:12px;color:var(--textm);margin-bottom:24px;">Hantar notis kepada staff. Urgent = popup wajib baca. Info = banner atas sistem.</div>
-  
-  <!-- Form Buat Memo -->
-  <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:24px;">
-    <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:14px;">+ Buat Memo Baru</div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-      <div>
-        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tajuk</label>
-        <input id="memoFormTitle" type="text" placeholder="Contoh: Cutoff order Jumaat" class="fi" style="width:100%;margin-top:4px;">
-      </div>
-      <div>
-        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Jenis</label>
-        <select id="memoFormType" class="fi" style="width:100%;margin-top:4px;">
-          <option value="urgent">🔴 Urgent — Popup wajib baca</option>
-          <option value="info">🟡 Info — Banner atas sistem</option>
-        </select>
-      </div>
-    </div>
-    
-    <div style="margin-bottom:12px;">
-      <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Kandungan Memo</label>
-      <textarea id="memoFormBody" placeholder="Tulis kandungan memo di sini..." class="fi" rows="3" style="width:100%;margin-top:4px;resize:vertical;"></textarea>
-    </div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div>
-        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Hantar Kepada (Role)</label>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="all"> Semua Staff</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales"> Sales</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales_executive"> Sales Executive</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="designer"> Designer</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="admin"> Admin</label>
-        </div>
-      </div>
-      <div>
-        <label style="font-size:10px;color:var(--textm);text-transform:uppercase;letter-spacing:.05em;">Tamat Tempoh (Opsyenal)</label>
-        <input id="memoFormExpiry" type="date" class="fi" style="width:100%;margin-top:4px;">
-      </div>
-    </div>
-    
-    <button onclick="memoSave()" style="padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📤 Hantar Memo</button>
-    <div style="font-size:10px;color:var(--textm);margin-top:8px;">⚠️ Pastikan table <code>memos</code> dah dibuat di Supabase dengan kolum: id (uuid), title, body, type, target_roles (text[]), active (bool), created_by, created_at, expires_at</div>
-  </div>
-  
-  <!-- Senarai Memo Aktif -->
-  <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:10px;">Memo Aktif Sekarang</div>
-  <div id="memoListWrap"></div>
 </div>
 
 </body>
