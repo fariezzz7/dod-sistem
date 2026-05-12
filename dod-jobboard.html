@@ -23,7 +23,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(26,92,200,0.035) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0;}
 
 /* ── NAV ── */
@@ -62,7 +62,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .btn-logout:hover{background:var(--red);color:#fff;}
 
 /* ── WRAP ── */
-.wrap{max-width:1600px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+.wrap{max-width:1600px;margin:0 auto;padding:0 24px;position:relative;z-index:1;display:flex;flex-direction:column;height:calc(100vh - var(--nav-h));overflow:hidden;}
 
 /* ── ALERT BAR ── */
 .alert-bar{background:var(--redbg);border:1px solid var(--redb);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:12px;color:var(--red);}
@@ -71,7 +71,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
 /* ── BOARD TOOLBAR ── */
-.board-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 0 10px;}
+.board-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px;flex-shrink:0;}
 .board-info{}
 .board-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:var(--text);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;}
 .board-owner-tag{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.1em;padding:3px 9px;border-radius:10px;font-weight:500;}
@@ -86,11 +86,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .search-board:focus{border-color:var(--blueb);background:#fff;width:200px;}
 
 /* ── BOARD ── */
-.board-outer{overflow-x:auto;padding-bottom:20px;}
-.board{display:flex;gap:10px;min-width:max-content;align-items:flex-start;}
+.board-outer{overflow-x:auto;overflow-y:hidden;padding:0 0 12px;flex:1;min-height:0;}
+.board{display:flex;gap:10px;min-width:max-content;align-items:stretch;height:100%;}
 
 /* ── COLUMN ── */
-.col{width:260px;flex-shrink:0;display:flex;flex-direction:column;border-radius:12px;background:var(--bg2);border:1px solid var(--line);box-shadow:var(--shadow);}
+.col{width:260px;flex-shrink:0;display:flex;flex-direction:column;border-radius:12px;background:var(--bg2);border:1px solid var(--line);box-shadow:var(--shadow);height:100%;overflow:hidden;}
 .col-header{padding:11px 13px 9px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0;}
 .col-title-row{display:flex;align-items:center;gap:7px;}
 .col-accent{width:3px;height:14px;border-radius:2px;flex-shrink:0;}
@@ -100,7 +100,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .col-stuck-badge{font-size:9px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);padding:1px 6px;border-radius:8px;font-weight:600;}
 .col-add{width:22px;height:22px;border-radius:5px;border:1px solid var(--line);background:none;color:var(--textm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;transition:all .12s;}
 .col-add:hover{background:var(--bg3);color:var(--blue);}
-.col-body{padding:7px;min-height:100px;display:flex;flex-direction:column;gap:7px;border-radius:0 0 12px 12px;transition:background .15s;}
+.col-body{padding:7px;min-height:60px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;border-radius:0 0 12px 12px;transition:background .15s;}
 .col-body.drag-over{background:var(--bluebg);}
 .col-empty{text-align:center;padding:18px 10px;font-size:11px;color:var(--textm);}
 
@@ -110,6 +110,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .card.dragging{opacity:0.35;cursor:grabbing;}
 .card.stuck-warn{border-left:3px solid var(--amber);}
 .card.stuck-alert{border-left:3px solid var(--red);}
+.card-cover-wrap{width:calc(100% + 24px);margin:-11px -12px 10px;height:120px;border-radius:8px 8px 0 0;overflow:hidden;flex-shrink:0;}
+.card-cover{width:100%;height:100%;object-fit:cover;display:block;}
 .card-labels{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px;}
 .card-label{font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:0.04em;}
 .card-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.45;}
@@ -119,6 +121,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .card-due.due-soon{color:var(--amber);background:var(--amberbg);}
 .card-due.overdue{color:var(--red);background:var(--redbg);}
 .card-comments{display:flex;align-items:center;gap:3px;font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);margin-left:auto;}
+.card-attachments{display:flex;align-items:center;gap:3px;font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);}
 .card-stuck-badge{font-family:'Fira Code',monospace;font-size:8px;padding:1px 5px;border-radius:6px;font-weight:700;margin-left:auto;}
 .stuck-warn-badge{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);}
 .stuck-alert-badge{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
@@ -204,6 +207,39 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .lp-name{font-size:12px;color:var(--text);}
 .lp-check{margin-left:auto;color:var(--green);font-size:11px;}
 
+/* ── ATTACHMENTS ── */
+.attach-section{margin-top:14px;}
+.attach-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+.attach-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;transition:border-color .12s;}
+.attach-item:hover{border-color:var(--blueb);}
+.attach-thumb{width:44px;height:44px;object-fit:cover;border-radius:5px;flex-shrink:0;cursor:pointer;border:1px solid var(--line);}
+.attach-thumb-link{width:44px;height:44px;background:var(--bluebg);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;text-decoration:none;}
+.attach-info{flex:1;min-width:0;}
+.attach-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.attach-meta{font-size:10px;color:var(--textm);margin-top:1px;}
+.attach-del{background:none;border:none;color:var(--textm);cursor:pointer;font-size:13px;padding:4px;border-radius:4px;flex-shrink:0;}
+.attach-del:hover{color:var(--red);background:var(--redbg);}
+.attach-btn-row{display:flex;gap:6px;}
+.attach-btn{flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;transition:all .12s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.attach-btn:hover{border-color:var(--blueb);background:var(--bluebg);color:var(--blue);}
+.attach-uploading{font-size:11px;color:var(--textm);text-align:center;padding:6px;display:none;}
+/* Attach link modal */
+.attach-link-modal{position:fixed;inset:0;background:rgba(26,32,64,0.5);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+.attach-link-modal.open{display:flex;}
+.attach-link-box{background:#fff;border-radius:14px;padding:22px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.attach-link-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:4px;}
+.attach-link-sub{font-size:11px;color:var(--textm);margin-bottom:14px;}
+.attach-link-input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:8px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:7px;outline:none;margin-bottom:8px;transition:border-color .15s;}
+.attach-link-input:focus{border-color:var(--blue);background:#fff;}
+.attach-link-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+.attach-link-cancel{padding:7px 14px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+.attach-link-save{padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
+/* Image lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:700;display:none;align-items:center;justify-content:center;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain;}
+.lightbox-close{position:absolute;top:20px;right:24px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;}
+
 /* ── ADD CARD MODAL ── */
 .modal-bg{position:fixed;inset:0;background:rgba(26,32,64,0.45);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-bg.open{display:flex;}
@@ -262,10 +298,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .toast.err{background:var(--red);}
 
 /* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:var(--bg3);}
-::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px;}
-::-webkit-scrollbar-thumb:hover{background:var(--textm);}
+::-webkit-scrollbar{width:6px;height:10px;}
+::-webkit-scrollbar-track{background:var(--bg3);border-radius:5px;}
+::-webkit-scrollbar-thumb{background:var(--textm);border-radius:5px;}
+::-webkit-scrollbar-thumb:hover{background:var(--textd);}
 </style>
 </head>
 <body>
@@ -307,7 +343,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   </div>
 
   <!-- DESIGN CUSTOMER BOARD -->
-  <div id="boardDesign">
+  <div id="boardDesign" style="display:flex;flex-direction:column;flex:1;min-height:0;">
     <div class="board-toolbar">
       <div class="board-info">
         <div class="board-title">
@@ -326,7 +362,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   </div>
 
   <!-- CONTENT BOARD -->
-  <div id="boardContent" style="display:none;">
+  <div id="boardContent" style="display:none;flex-direction:column;flex:1;min-height:0;">
     <div class="board-toolbar">
       <div class="board-info">
         <div class="board-title">
@@ -345,7 +381,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   </div>
 
   <!-- KPI VIEW -->
-  <div id="boardKpi" style="display:none;">
+  <div id="boardKpi" style="display:none;flex:1;overflow-y:auto;">
     <div class="kpi-view" id="kpiContent"></div>
   </div>
 </div>
@@ -580,6 +616,7 @@ function createCard(board, { title, assignee, col, due, labels, desc }) {
     created_at: now,
     updated_at: now,
     col_entered_at: now,
+    created_by: currentUser?.name || '—',
     comments: [],
     history: [{ type:'created', user:currentUser.name, from:null, to:col||'job-list', ts:now, note:'Kad dicipta' }]
   };
@@ -753,16 +790,30 @@ function cardHTML(card, board) {
     dueCls = due < today ? 'overdue' : due <= new Date(today.getTime()+86400000) ? 'due-soon' : '';
   }
   const cmts = (card.comments||[]).length;
+
+  // Attachments — cover image + count
+  const atts = card.attachments || [];
+  const coverImg = atts.find(a => a.type === 'image');
+  const attCount = atts.length;
+  const coverHTML = coverImg
+    ? `<div class="card-cover-wrap"><img class="card-cover" src="${escHtml(coverImg.url)}" alt="cover" loading="lazy"></div>`
+    : '';
+  const attHTML = attCount
+    ? `<div class="card-attachments">📎 ${attCount}</div>`
+    : '';
+
   return `<div class="${cls}" id="card-${card.id}"
     draggable="true"
     ondragstart="dragStart(event,'${card.id}','${board}')"
     ondragend="this.classList.remove('dragging')"
     onclick="openDetail('${card.id}','${board}')">
+    ${coverHTML}
     ${(card.labels||[]).length ? `<div class="card-labels">${labelsHTML}</div>` : ''}
     <div class="card-title">${escHtml(card.title)}</div>
     <div class="card-meta">
       ${assigneeHTML}
       ${dueStr ? `<div class="card-due ${dueCls}">📅 ${dueStr}</div>` : ''}
+      ${attHTML}
       ${cmts ? `<div class="card-comments">💬 ${cmts}</div>` : ''}
       ${stuckBadge}
     </div>
@@ -898,6 +949,15 @@ function renderDetail(id, board) {
     <div class="detail-section-label" style="margin-top:12px;">Deskripsi</div>
     <textarea class="detail-desc-input" id="detailDesc" placeholder="Tambah brief..." ${canEdit?'':'readonly'}
       onblur="${canEdit?`saveTitleDesc('${id}','${board}')`:''}">${escHtml(card.desc||'')}</textarea>
+    <div class="detail-section-label" style="margin-top:14px;">📎 Attachment</div>
+    <div class="attach-section">
+      <div class="attach-list" id="attachList">${buildAttachHTML(card, board)}</div>
+      <div class="attach-uploading" id="attachUploading">⏳ Uploading...</div>
+      <div class="attach-btn-row">
+        <label class="attach-btn" style="cursor:pointer;">🖼 Upload Gambar<input type="file" accept="image/*" style="display:none" onchange="handleAttachUpload(event,'${id}','${board}')"></label>
+        <button class="attach-btn" onclick="openAttachLinkModal('${id}','${board}')">🔗 Attach Link</button>
+      </div>
+    </div>
     <div class="detail-section-label" style="margin-top:14px;">Aktiviti & Komen</div>
     <div class="activity-list" id="activityList">${actHTML}</div>
     <div class="comment-row">
@@ -948,6 +1008,7 @@ function renderDetail(id, board) {
       <div class="side-section-label">Maklumat</div>
       <div class="side-info">
         <strong>Dicipta:</strong> ${fmtTs(card.created_at)}<br>
+        <strong>Dicipta oleh:</strong> ${card.created_by || card.history?.[0]?.user || '—'}<br>
         <strong>Dikemaskini:</strong> ${fmtTs(card.updated_at)}<br>
         <strong>Dalam kolum:</strong> ${sl!=='ok'?`<span style="color:${sl==='alert'?'var(--red)':'var(--amber)'};">${hrs.toFixed(0)} jam</span>`:fmtHrs(hrs)}<br>
         <strong>Board:</strong> ${BOARD_TYPES[board]?.label}
@@ -1004,8 +1065,7 @@ function toggleLabel(id, board, key) {
   card.labels = card.labels || [];
   const idx = card.labels.indexOf(key);
   if (idx >= 0) card.labels.splice(idx,1); else card.labels.push(key);
-  card.updated_at = new Date().toISOString();
-  saveDB(board);
+  updateCard(board, id, { labels: card.labels });
   labelPickerOpen = false;
   renderBoard(board);
   openDetail(id, board);
@@ -1338,9 +1398,9 @@ function renderKpi() {
 // ══════════════════════════════════════
 function switchBoard(board) {
   currentBoard = board;
-  document.getElementById('boardDesign').style.display  = board === 'design'  ? 'block' : 'none';
-  document.getElementById('boardContent').style.display = board === 'content' ? 'block' : 'none';
-  document.getElementById('boardKpi').style.display     = board === 'kpi'     ? 'block' : 'none';
+  document.getElementById('boardDesign').style.display  = board === 'design'  ? 'flex' : 'none';
+  document.getElementById('boardContent').style.display = board === 'content' ? 'flex' : 'none';
+  document.getElementById('boardKpi').style.display     = board === 'kpi'     ? 'flex' : 'none';
   document.getElementById('tabDesign').classList.toggle('active',  board === 'design');
   document.getElementById('tabContent').classList.toggle('active', board === 'content');
   document.getElementById('tabKpi').classList.toggle('active',     board === 'kpi');
@@ -1456,6 +1516,8 @@ async function loadBoardFromSupabase(board) {
       col_entered_at: c.col_entered_at || c.created_at,
       created_at: c.created_at,
       updated_at: c.updated_at,
+      created_by: c.created_by || '',
+      attachments: c.attachments || [],
       comments: (actMap[c.id]||[]).filter(a => a.type === 'comment').map(a => ({
         user: a.user, text: a.note, ts: a.ts,
       })),
@@ -1498,6 +1560,7 @@ function createCard(board, { title, assignee, col, due, labels, desc }) {
     col: col || 'job-list', due: due || '',
     labels: labels || [], desc: desc || '',
     created_at: now, updated_at: now, col_entered_at: now,
+    created_by: currentUser?.name || '—',
     comments: [],
     history: [{ type:'created', user:currentUser.name, from:null, to:col||'job-list', ts:now, note:'Kad dicipta' }]
   };
@@ -1511,6 +1574,7 @@ function createCard(board, { title, assignee, col, due, labels, desc }) {
     due_date: card.due || null,
     labels: card.labels, description: card.desc,
     col_entered_at: card.col_entered_at,
+    created_by: card.created_by,
   };
   supaUpsert('jobboard_cards', supaCard).catch(e => console.warn('Card sync failed:', e));
   supaUpsert('jobboard_activity', [{
@@ -1532,6 +1596,7 @@ function updateCard(board, id, changes) {
   if (changes.title !== undefined) patch.title = changes.title;
   if (changes.desc !== undefined) patch.description = changes.desc;
   if (changes.labels !== undefined) patch.labels = changes.labels;
+  if (changes.attachments !== undefined) patch.attachments = changes.attachments;
   if (Object.keys(patch).length) {
     supaPatch('jobboard_cards', 'id=eq.' + encodeURIComponent(id), patch)
       .catch(e => console.warn('Card update sync failed:', e));
@@ -1597,6 +1662,184 @@ function stuckLevel(card) {
   return h >= STUCK_ALERT ? 'alert' : h >= STUCK_WARN ? 'warn' : 'ok';
 }
 
+// ══════════════════════════════════════
+// ATTACHMENT FUNCTIONS
+// ══════════════════════════════════════
+const SUPA_BUCKET = 'job-attachments';
+
+function getAttachments(card) {
+  return card.attachments || [];
+}
+
+function buildAttachHTML(card, board) {
+  const atts = getAttachments(card);
+  if (!atts.length) return '<div style="font-size:11px;color:var(--textm);padding:4px 0 6px;">Tiada attachment lagi.</div>';
+  return atts.map(a => {
+    if (a.type === 'image') {
+      return `<div class="attach-item">
+        <img class="attach-thumb" src="${escHtml(a.url)}" onclick="openLightbox('${escHtml(a.url)}')" title="Klik untuk besar">
+        <div class="attach-info">
+          <div class="attach-name">${escHtml(a.name)}</div>
+          <div class="attach-meta">Gambar · ${a.uploaded_by||'—'} · ${fmtTs(a.uploaded_at)}</div>
+        </div>
+        <button class="attach-del" onclick="deleteAttachment('${board}','${card.id}','${a.id}')" title="Padam">🗑</button>
+      </div>`;
+    } else {
+      return `<div class="attach-item">
+        <a class="attach-thumb-link" href="${escHtml(a.url)}" target="_blank" title="Buka link">🔗</a>
+        <div class="attach-info">
+          <div class="attach-name"><a href="${escHtml(a.url)}" target="_blank" style="color:var(--blue);text-decoration:none;">${escHtml(a.name||a.url)}</a></div>
+          <div class="attach-meta">Link · ${a.uploaded_by||'—'} · ${fmtTs(a.uploaded_at)}</div>
+        </div>
+        <button class="attach-del" onclick="deleteAttachment('${board}','${card.id}','${a.id}')" title="Padam">🗑</button>
+      </div>`;
+    }
+  }).join('');
+}
+
+async function handleAttachUpload(event, cardId, board) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) { showToast('⚠ Saiz fail melebihi 3MB', 'warn'); return; }
+
+  const upEl = document.getElementById('attachUploading');
+  if (upEl) upEl.style.display = 'block';
+
+  try {
+    // Upload to Supabase Storage
+    const ext = file.name.split('.').pop();
+    const fileName = `${cardId}_${Date.now()}.${ext}`;
+    const res = await fetch(`${SUPA_URL}/storage/v1/object/${SUPA_BUCKET}/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': file.type,
+        'x-upsert': 'true',
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(t);
+    }
+    const publicUrl = `${SUPA_URL}/storage/v1/object/public/${SUPA_BUCKET}/${fileName}`;
+
+    // Save attachment to card
+    const att = {
+      id: 'att_' + Date.now(),
+      type: 'image',
+      name: file.name,
+      url: publicUrl,
+      storage_path: fileName,
+      uploaded_by: currentUser.name,
+      uploaded_at: new Date().toISOString(),
+    };
+    const card = getCard(board, cardId);
+    if (!card.attachments) card.attachments = [];
+    card.attachments.push(att);
+    updateCard(board, cardId, { attachments: card.attachments });
+
+    // Refresh attach list
+    const listEl = document.getElementById('attachList');
+    if (listEl) listEl.innerHTML = buildAttachHTML(card, board);
+    showToast('✓ Gambar berjaya diupload', 'ok');
+  } catch(e) {
+    showToast('⚠ Upload gagal: ' + e.message, 'warn');
+    console.error(e);
+  } finally {
+    if (upEl) upEl.style.display = 'none';
+    event.target.value = '';
+  }
+}
+
+let _attachModalCardId = null, _attachModalBoard = null;
+function openAttachLinkModal(cardId, board) {
+  _attachModalCardId = cardId;
+  _attachModalBoard = board;
+  document.getElementById('attachLinkUrl').value = '';
+  document.getElementById('attachLinkName').value = '';
+  document.getElementById('attachLinkModal').classList.add('open');
+  setTimeout(() => document.getElementById('attachLinkUrl').focus(), 100);
+}
+function closeAttachLinkModal() {
+  document.getElementById('attachLinkModal').classList.remove('open');
+}
+function saveAttachLink() {
+  const url = document.getElementById('attachLinkUrl').value.trim();
+  const name = document.getElementById('attachLinkName').value.trim();
+  if (!url) { showToast('⚠ Sila masukkan URL', 'warn'); return; }
+
+  const att = {
+    id: 'att_' + Date.now(),
+    type: 'link',
+    name: name || url,
+    url,
+    uploaded_by: currentUser.name,
+    uploaded_at: new Date().toISOString(),
+  };
+  const card = getCard(_attachModalBoard, _attachModalCardId);
+  if (!card.attachments) card.attachments = [];
+  card.attachments.push(att);
+  updateCard(_attachModalBoard, _attachModalCardId, { attachments: card.attachments });
+
+  const listEl = document.getElementById('attachList');
+  if (listEl) listEl.innerHTML = buildAttachHTML(card, _attachModalBoard);
+  closeAttachLinkModal();
+  showToast('✓ Link berjaya disimpan', 'ok');
+}
+
+async function deleteAttachment(board, cardId, attId) {
+  if (!confirm('Padam attachment ini?')) return;
+  const card = getCard(board, cardId);
+  const att = (card.attachments||[]).find(a => a.id === attId);
+  if (!att) return;
+
+  // Delete from Supabase Storage if image
+  if (att.type === 'image' && att.storage_path) {
+    await fetch(`${SUPA_URL}/storage/v1/object/${SUPA_BUCKET}/${att.storage_path}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY },
+    }).catch(() => {});
+  }
+
+  card.attachments = (card.attachments||[]).filter(a => a.id !== attId);
+  updateCard(board, cardId, { attachments: card.attachments });
+
+  const listEl = document.getElementById('attachList');
+  if (listEl) listEl.innerHTML = buildAttachHTML(card, board);
+  showToast('Attachment dipadam', 'ok');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxImg').src = '';
+}
+
 </script>
+<!-- ATTACH LINK MODAL -->
+<div class="attach-link-modal" id="attachLinkModal">
+  <div class="attach-link-box">
+    <div class="attach-link-title">📎 Attach Link</div>
+    <div class="attach-link-sub">Paste link Google Drive, WeTransfer, Dropbox atau mana-mana URL</div>
+    <input class="attach-link-input" id="attachLinkUrl" type="url" placeholder="https://drive.google.com/...">
+    <input class="attach-link-input" id="attachLinkName" type="text" placeholder="Nama papar (optional)">
+    <div class="attach-link-footer">
+      <button class="attach-link-cancel" onclick="closeAttachLinkModal()">Batal</button>
+      <button class="attach-link-save" onclick="saveAttachLink()">Simpan Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 </body>
 </html>
