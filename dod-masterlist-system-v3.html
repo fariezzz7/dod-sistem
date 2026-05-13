@@ -9608,7 +9608,11 @@ let _audioCtx = null;
 let _audioUnlocked = false;
 
 function getAudioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!_audioCtx) {
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { return null; }
+  }
   return _audioCtx;
 }
 
@@ -9616,7 +9620,10 @@ function getAudioCtx() {
 function unlockAudio() {
   if (_audioUnlocked) return;
   try {
-    const ctx = getAudioCtx();
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = _audioCtx;
     if (ctx.state === 'suspended') {
       ctx.resume().then(() => { _audioUnlocked = true; });
     } else {
@@ -9637,6 +9644,7 @@ document.addEventListener('touchstart', unlockAudio, { once: false });
 async function playSoundAsync(type) {
   try {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     if (ctx.state === 'suspended') await ctx.resume();
     playSound(type);
   } catch(e) {}
@@ -9645,6 +9653,7 @@ async function playSoundAsync(type) {
 function playSound(type) {
   try {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     if (ctx.state === 'suspended') { ctx.resume().then(() => playSound(type)); return; }
     if (type === 'new_job') {
       [[587,0,0.12],[880,0.13,0.22]].forEach(([freq,start,end]) => {
@@ -9904,6 +9913,7 @@ function mIsMemoNotifDup(memoId) {
 function playMemoInfoSound() {
   try {
     const ctx = getAudioCtx();
+    if (!ctx) return;
     if (ctx.state === 'suspended') { ctx.resume().then(() => playMemoInfoSound()); return; }
     // Gentle descending two-tone: G5 → E5
     [[784, 0, 0.18],[659, 0.22, 0.42]].forEach(([freq, start, end]) => {
