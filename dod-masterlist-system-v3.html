@@ -9869,11 +9869,12 @@ async function mPollJobboardChanges() {
     rows.forEach(row => {
       const evtId = row.id + '_' + row.updated_at;
       if (mIsDuplicate(evtId)) return;
-      const isNew = row.created_at === row.updated_at ||
-                    (new Date(row.updated_at) - new Date(row.created_at)) < 3000;
+      const ageSec = (new Date(row.updated_at) - new Date(row.created_at)) / 1000;
+      const isNew = ageSec < 30;
       const isUrgent = (row.labels||[]).includes('urgent');
       const colLabel = M_COL_MAP[row.col] || row.col;
-      if (!isNew && row.created_by === currentUser.name) {
+      const createdByMe = (row.created_by||'').toUpperCase() === (currentUser.name||'').toUpperCase();
+      if (!isNew && createdByMe) {
         mAddNotif({ icon:'🔄', title:'Job Dikemaskini', sub:`${row.title} → ${colLabel}`, type:'status_update' });
       }
       if (currentUser.role === 'admin' && isNew) {

@@ -2120,19 +2120,21 @@ async function pollJobboardChanges() {
     );
     if (!rows || !rows.length) return;
 
-    const now = new Date().toISOString();
     rows.forEach(row => {
       const evtId = row.id + '_' + row.updated_at;
       if (isDuplicate(evtId)) return;
 
-      const isNew = row.created_at === row.updated_at || 
-                    (new Date(row.updated_at) - new Date(row.created_at)) < 3000;
+      // isNew: job dicipta dalam tempoh 30 saat dari updated_at
+      // (lebih toleran — handle Supabase timestamp delay)
+      const ageSec = (new Date(row.updated_at) - new Date(row.created_at)) / 1000;
+      const isNew = ageSec < 30;
       const isUrgent = (row.labels || []).includes('urgent');
 
       // ── DESIGNER: alert bila new job assigned kepada dia
       if (currentUser.role === 'designer') {
-        const myName = currentUser.name?.toUpperCase();
-        if (row.assignee?.toUpperCase() === myName && isNew) {
+        const myName = (currentUser.name || '').toUpperCase();
+        const assignee = (row.assignee || '').toUpperCase();
+        if (assignee === myName && isNew) {
           addNotif({
             icon: '🆕',
             title: 'Job Baru Untuk Kamu!',
@@ -2146,7 +2148,8 @@ async function pollJobboardChanges() {
 
       // ── SALES / ADMIN: alert bila job yang dia cipta ada status update
       if (currentUser.role === 'sales' || currentUser.role === 'admin') {
-        if (!isNew && row.created_by === currentUser.name) {
+        const createdByMe = (row.created_by || '').toUpperCase() === (currentUser.name || '').toUpperCase();
+        if (!isNew && createdByMe) {
           const colLabel = COL_MAP[row.col]?.label || row.col;
           addNotif({
             icon: '🔄',
