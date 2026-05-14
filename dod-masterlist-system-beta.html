@@ -2474,7 +2474,7 @@ async function initApp() {
 async function loadOrdersFromSupabase() {
   showLoading('Memuatkan data jualan...');
   try {
-    const orders = await supaGet('orders', 'select=*&order=order_date.asc&is_deleted=neq.true');
+    const orders = await supaGet('orders', 'select=*&order=order_date.asc&is_deleted=not.is.true');
     
     // Group by month
     const grouped = {};
@@ -3641,7 +3641,7 @@ function saveOrder() {
         if (!isNaN(dateObj.getTime())) {
           const year = dateObj.getUTCFullYear();
           const monthIdx = dateObj.getUTCMonth();
-          const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+          const MONTH_NAMES = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
           targetMonth = MONTH_NAMES[monthIdx] + ' ' + year;
           
           // Auto-create month if needed
@@ -3718,7 +3718,7 @@ function saveOrder() {
         if (!isNaN(dateObj.getTime())) {
           const year = dateObj.getUTCFullYear();
           const monthIdx = dateObj.getUTCMonth();
-          const MONTH_NAMES = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+          const MONTH_NAMES = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'];
           targetMonth = MONTH_NAMES[monthIdx] + ' ' + year;
           
           // Auto-create bulan jika belum ada
