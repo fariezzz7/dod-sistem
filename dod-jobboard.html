@@ -712,7 +712,12 @@ function renderBoard(board) {
   const canAdd = currentUser.role !== 'designer';
 
   BOARD_COLS.forEach(col => {
-    const colCards = filtered.filter(c => c.col === col.id);
+    const colCards = filtered.filter(c => c.col === col.id)
+      .sort((a, b) => {
+        const aUrgent = (a.labels||[]).includes('urgent') ? 0 : 1;
+        const bUrgent = (b.labels||[]).includes('urgent') ? 0 : 1;
+        return aUrgent - bUrgent;
+      });
     const allInCol = db.cards.filter(c => c.col === col.id);
     const stuckInCol = allInCol.filter(c => stuckLevel(c) !== 'ok' && col.id !== 'complete').length;
 
