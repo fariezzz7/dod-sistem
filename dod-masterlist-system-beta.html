@@ -866,6 +866,36 @@ tr:hover .row-actions{opacity:1;}
 .home-nav-card.featured{grid-column:span 2;padding:28px 24px;background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);}
 .home-nav-card.featured .home-nav-icon{font-size:32px;margin-bottom:10px;}
 .home-nav-card.featured .home-nav-title{font-size:17px;}
+
+/* ══ NOTIFICATION BELL (Masterlist — floating fixed) ══ */
+.notif-bell-wrap{position:fixed;bottom:72px;right:20px;z-index:8000;}
+.notif-bell-btn{width:42px;height:42px;border-radius:50%;border:none;background:var(--blue);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(26,92,200,0.35);transition:all .15s;position:relative;}
+.notif-bell-btn:hover{background:var(--bluehi);transform:translateY(-2px);}
+.notif-bell-btn.has-notif{animation:bellShake .5s ease-in-out;}
+@keyframes bellShake{0%,100%{transform:rotate(0);}20%{transform:rotate(-12deg);}40%{transform:rotate(12deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}}
+.notif-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;background:var(--red);color:#fff;border-radius:9px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff;}
+.notif-badge.show{display:flex;}
+.notif-panel{position:absolute;bottom:calc(100% + 10px);right:0;width:320px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.06);z-index:9999;overflow:hidden;display:none;}
+.notif-panel.open{display:block;}
+.notif-panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.notif-panel-title{font-weight:700;font-size:13px;color:var(--text);}
+.notif-clear-btn{font-size:10px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:inherit;padding:2px 6px;border-radius:4px;}
+.notif-clear-btn:hover{background:var(--bluebg);}
+.notif-list{max-height:340px;overflow-y:auto;}
+.notif-empty{padding:28px 14px;text-align:center;color:var(--textm);font-size:12px;}
+.notif-item{padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s;display:flex;gap:10px;align-items:flex-start;}
+.notif-item:hover{background:var(--bg3);}
+.notif-item.unread{background:var(--bluebg);}
+.notif-item:last-child{border-bottom:none;}
+.notif-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.notif-body{flex:1;min-width:0;}
+.notif-body-title{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-body-sub{font-size:11px;color:var(--textd);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.notif-body-time{font-size:10px;color:var(--textm);margin-top:3px;}
+.notif-panel-foot{padding:8px 14px;border-top:1px solid var(--line);text-align:center;}
+.notif-panel-foot span{font-size:10px;color:var(--textm);}
+.notif-perm-toast{position:fixed;bottom:130px;right:20px;background:var(--amberbg);border:1px solid var(--amberb);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--amber);cursor:pointer;z-index:8001;max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,0.1);display:none;}
+.notif-perm-toast.show{display:block;}
 </style>
 </head>
 <body>
@@ -1055,6 +1085,11 @@ tr:hover .row-actions{opacity:1;}
   <button class="sb-item" id="sbSecurity" data-tip="Security & Audit" onclick="sbNav('security')" style="display:none;">
     <span class="sb-item-icon">🛡</span>
     <span class="sb-item-label">Security</span>
+  </button>
+
+  <button class="sb-item" id="sbBin" data-tip="Tong Sampah (Deleted Orders)" onclick="sbNav('bin')" style="display:none;">
+    <span class="sb-item-icon">🗑</span>
+    <span class="sb-item-label">Bin</span>
   </button>
 
   <button class="sb-item" id="sbCalendar" data-tip="Kalendar" onclick="sbNav('calendar')" style="display:none;">
@@ -1340,6 +1375,11 @@ tr:hover .row-actions{opacity:1;}
     <div id="penerimaanContent"></div>
   </div>
 
+  <!-- BIN VIEW -->
+  <div id="binView" style="display:none;padding:24px 28px;">
+    <div id="binContent"></div>
+  </div>
+
   <!-- CALENDAR VIEW -->
   <div id="calendarView">
     <!-- Stats -->
@@ -1607,7 +1647,6 @@ tr:hover .row-actions{opacity:1;}
       </div>
     </div>
     <button onclick="memoSave()" style="padding:9px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">📤 Hantar Memo</button>
-    <div style="font-size:10px;color:var(--textm);margin-top:8px;">⚠️ Pastikan table <code>memos</code> dah dibuat di Supabase.</div>
   </div>
   <div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:10px;">Memo Aktif Sekarang</div>
   <div id="memoListWrap"></div>
@@ -2044,6 +2083,30 @@ tr:hover .row-actions{opacity:1;}
 </datalist>
 <div class="toast" id="toast"></div>
 
+<!-- NOTIFICATION BELL (floating) -->
+<div class="notif-bell-wrap" id="notifWrap">
+  <div class="notif-perm-toast" id="notifPermToast" onclick="requestNotifPermission()">
+    🔔 Klik untuk aktifkan notifikasi Windows
+  </div>
+  <button class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifPanel()" title="Notifikasi">
+    🔔
+    <span class="notif-badge" id="notifBadge"></span>
+  </button>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-head">
+      <div class="notif-panel-title">🔔 Notifikasi</div>
+      <button class="notif-clear-btn" onclick="clearAllNotifs()">Padam semua</button>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-empty">Tiada notifikasi baharu.</div>
+    </div>
+    <div class="notif-panel-foot">
+      <span id="notifFootText">— tiada —</span>
+      <button onclick="testAllSounds()" style="margin-left:8px;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 8px;cursor:pointer;color:var(--textd);">🔊 Test Bunyi</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /mainApp -->
 
 <!-- SUPPLIER EDIT MODAL -->
@@ -2201,7 +2264,9 @@ async function supaUpsert(table, data) {
       'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
       'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
-      'payments'];
+      'payments',
+      'supplier2_name','supplier2_amount','supplier2_paid',
+      'pipeline_notes','is_deleted','deleted_at','deleted_by','deleted_snapshot'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -2402,12 +2467,14 @@ async function initApp() {
   setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
   if (currentUser?.role === 'admin') checkWeeklyBackup();
+  // Start notification system
+  setTimeout(() => initNotifications(), 1000);
 }
 
 async function loadOrdersFromSupabase() {
   showLoading('Memuatkan data jualan...');
   try {
-    const orders = await supaGet('orders', 'select=*&order=order_date.asc');
+    const orders = await supaGet('orders', 'select=*&order=order_date.asc&is_deleted=neq.true');
     
     // Group by month
     const grouped = {};
@@ -2456,7 +2523,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2550,12 +2617,14 @@ function setupNavForRole() {
     sbShow('sbDocGen');
     sbShow('sbUserMgmt');
     sbShow('sbSecurity');
+    sbShow('sbBin');
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
     sbShow('sbKpi');
     sbShow('sbCalendar');
     sbShow('sbMemo');
+  } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
     sbShow('sbCustomer');
@@ -2571,6 +2640,7 @@ function setupNavForRole() {
     sbHide('sbSupplierOS');
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
+    sbHide('sbMemo');
   } else { // designer
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
@@ -2585,6 +2655,7 @@ function setupNavForRole() {
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
     sbHide('sbBtnAddOrder');
+    sbHide('sbMemo');
   }
 }
 
@@ -2650,6 +2721,12 @@ function sbNav(view) {
       const sbPen = document.getElementById('sbPenerimaan');
       if (sbPen) sbPen.classList.add('active');
       showPenerimaanView();
+      showSbMonths(false);
+      break;
+    case 'bin':
+      const sbBinEl = document.getElementById('sbBin');
+      if (sbBinEl) sbBinEl.classList.add('active');
+      showBinView();
       showSbMonths(false);
       break;
     case 'calendar':
@@ -3706,7 +3783,7 @@ function closeDelModal() { document.getElementById('delModalBg').classList.remov
 function clearDelError() { document.getElementById('delPwError').textContent = ''; }
 
 function confirmDelete() {
-  if (currentUser.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  const role = currentUser?.role;
   const pw = document.getElementById('delPwInput').value;
   if (pw !== DELETE_PASSWORD) {
     document.getElementById('delPwError').textContent = '❌ Kata laluan salah. Cuba lagi.';
@@ -3716,12 +3793,29 @@ function confirmDelete() {
   }
   if (!deleteTargetId) return;
   const idToDel = deleteTargetId;
-  // Capture snapshot before delete for audit
-  let delSnap = null;
+
+  // Find order
+  let delOrder = null, delMonth = null;
   for (const m of Object.keys(sessionData)) {
     const found = sessionData[m].find(r => r.id === idToDel);
-    if (found) { delSnap = { name_job: found.name_job, pcs: found.pcs, total: found.total_customer, pic: found.pic }; break; }
+    if (found) { delOrder = found; delMonth = m; break; }
   }
+  if (!delOrder) { showToast('Order tidak dijumpai.', true); return; }
+
+  // Role check: non-admin can only delete quotation status
+  if (role !== 'admin') {
+    const pStatus = (delOrder.pipeline_status || 'confirmed');
+    if (pStatus !== 'quotation') {
+      document.getElementById('delPwError').textContent = '❌ Hanya order status Quotation boleh dibatal oleh Sales/Executive.';
+      return;
+    }
+  }
+
+  // Soft delete — mark as deleted, save snapshot
+  const now = new Date().toISOString();
+  const snapshot = JSON.stringify(delOrder);
+  const deletedBy = currentUser?.name || currentUser?.username || role || 'unknown';
+
   // Remove from local sessionData
   for (const m of Object.keys(sessionData)) {
     const idx = sessionData[m].findIndex(r => r.id === idToDel);
@@ -3730,11 +3824,18 @@ function confirmDelete() {
   closeDelModal();
   closeDetail();
   renderAll();
-  showToast('Order dipadam.');
-  // Delete from Supabase + audit log
-  supaDelete('orders', 'id=eq.' + encodeURIComponent(idToDel))
-    .then(() => logAudit(idToDel, 'delete', null, delSnap))
-    .catch(e => console.warn('Delete sync failed:', e));
+  showToast('Order dibuang ke Bin.');
+
+  // Soft delete in Supabase
+  supaUpsert('orders', {
+    id: idToDel,
+    is_deleted: true,
+    deleted_at: now,
+    deleted_by: deletedBy,
+    deleted_snapshot: snapshot,
+    month: delMonth
+  }).then(() => logAudit(idToDel, 'delete', null, { name_job: delOrder.name_job, pcs: delOrder.pcs, total: delOrder.total_customer, pic: delOrder.pic }))
+    .catch(e => console.warn('Soft delete sync failed:', e));
 }
 
 // ══════════════════════════════════════
@@ -7237,8 +7338,9 @@ function renderProdTrack() {
   ).filter(o => {
     if (supF === 'ALL') return true;
     const oSup = (o.supplier_name || 'NOHAD SDN BHD').toUpperCase();
+    const oSup2 = (o.supplier2_name || '').toUpperCase();
     // Support both full name exact match and legacy partial keyword match
-    return oSup === supF || oSup.includes(supF);
+    return oSup === supF || oSup.includes(supF) || (oSup2 && (oSup2 === supF || oSup2.includes(supF)));
   });
 
   // Only show orders with production tracking (exclude no status = treat as job-submit)
@@ -7824,20 +7926,28 @@ function renderHomePipeline(role) {
     const urgLabel = daysAgo >= 14 ? daysLabel+' — KRITIKAL' : daysAgo >= 7 ? daysLabel+' — Susulan' : daysLabel;
 
     rows += '<tr style="border-bottom:1px solid var(--line);">'
-      + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
+      + '<td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+(o.name_job||'')+'">'+( o.name_job||'—')+'</td>'
       + (isAdmin ? '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.pic||'—')+'</td>' : '')
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">'+(o.cust_name||'—')+'</td>'
       + '<td style="padding:8px 10px;font-family:\'Fira Code\',monospace;font-size:11px;color:var(--amber);text-align:right;">'+fmt(o.total_customer||0)+'</td>'
       + '<td style="padding:8px 10px;text-align:center;">'
         + '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;background:'+urgBg+';color:'+urgColor+';border:1px solid '+urgColor+'44;">'+urgLabel+'</span>'
       + '</td>'
-      + '<td style="padding:8px 10px;text-align:center;">'
-        + '<button onclick="window.confirmOrder(\''+o.id+'\')" '
-        + 'style="font-size:10px;padding:4px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">✅ Confirm</button>'
-        + ' <button onclick="openEditModalById(\''+o.id+'\',\''+o._month+'\')" '
-        + 'style="font-size:10px;padding:4px 8px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:5px;cursor:pointer;margin-left:4px;">✏️</button>'
-      + '</td>'
-      + '</tr>';
+      + '<td style="padding:6px 10px;min-width:160px;">'
+        + '<input type="text" value="'+(o.pipeline_notes||'').replace(/"/g,\'&quot;\')+\'" placeholder="Tambah nota..." \'
+        + \'onblur="window.savePipelineNote(\\\'+o.id+\\\',\\\'+o._month+\\\',this.value)" \'
+        + \'onkeydown="if(event.key===\\"Enter\\"){this.blur();}" \'
+        + \'style="width:100%;font-size:10px;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:var(--bg3);color:var(--text);outline:none;box-sizing:border-box;">\'
+      + \'</td>\'
+      + \'<td style="padding:8px 10px;text-align:center;white-space:nowrap;">\'
+        + \'<button onclick="window.confirmOrder(\\\'+o.id+\'\\\')" \'
+        + \'style="font-size:10px;padding:4px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;">✅ Confirm</button>\'
+        + \' <button onclick="openEditModalById(\\\'+o.id+\'\\\',\\\'+o._month+\'\\\')" \'
+        + \'style="font-size:10px;padding:4px 8px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:5px;cursor:pointer;">✏️</button>\'
+        + \' <button onclick="window.batalQuotation(\\\'+o.id+\'\\\',\\\'+o._month+\'\\\')" \'
+        + \'style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;font-weight:600;">✕ Batal</button>\'
+      + \'</td>\'
+      + \'</tr>\';
   });
 
   el.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);">'
@@ -7869,6 +7979,7 @@ function renderHomePipeline(role) {
       + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Customer</th>'
       + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
       + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Pending</th>'
+      + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Notes</th>'
       + '<th style="padding:7px 10px;font-family:\'Fira Code\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
@@ -7877,6 +7988,181 @@ function renderHomePipeline(role) {
     + '</div>';
 }
 window.renderHomePipeline = renderHomePipeline;
+
+// ══════════════════════════════════════
+// PIPELINE NOTES
+// ══════════════════════════════════════
+async function savePipelineNote(orderId, month, value) {
+  const m = month || Object.keys(sessionData).find(k => (sessionData[k]||[]).some(r => r.id === orderId));
+  if (!m) return;
+  const idx = (sessionData[m]||[]).findIndex(r => r.id === orderId);
+  if (idx < 0) return;
+  sessionData[m][idx].pipeline_notes = value;
+  supaUpsert('orders', { id: orderId, month: m, pipeline_notes: value })
+    .catch(e => console.warn('Note save failed:', e));
+}
+window.savePipelineNote = savePipelineNote;
+
+// ══════════════════════════════════════
+// BATAL QUOTATION (Sales/Admin)
+// ══════════════════════════════════════
+function batalQuotation(orderId, month) {
+  const role = currentUser?.role;
+  // Find order
+  let order = null;
+  const m = month || Object.keys(sessionData).find(k => (sessionData[k]||[]).some(r => r.id === orderId));
+  if (m) order = (sessionData[m]||[]).find(r => r.id === orderId);
+  if (!order) { showToast('Order tidak dijumpai.', true); return; }
+
+  const jobName = order.name_job || '—';
+  const custName = order.cust_name || '—';
+
+  // Double confirm
+  if (!confirm(`⚠️ Batalkan Quotation?\n\nJob: ${jobName}\nCustomer: ${custName}\n\nOrder ini akan dibuang ke Bin. Admin boleh recover semula.`)) return;
+  if (!confirm(`Confirm sekali lagi — batalkan "${jobName}"?\n\nTekan OK untuk teruskan.`)) return;
+
+  // Soft delete
+  const now = new Date().toISOString();
+  const snapshot = JSON.stringify(order);
+  const deletedBy = currentUser?.name || currentUser?.username || role || 'unknown';
+
+  // Remove from sessionData
+  const idx = (sessionData[m]||[]).findIndex(r => r.id === orderId);
+  if (idx >= 0) sessionData[m].splice(idx, 1);
+
+  renderAll();
+  renderHomepage();
+  showToast('Quotation dibatalkan — dibuang ke Bin.');
+
+  supaUpsert('orders', {
+    id: orderId, month: m,
+    is_deleted: true, deleted_at: now,
+    deleted_by: deletedBy, deleted_snapshot: snapshot
+  }).then(() => logAudit(orderId, 'delete', null, { name_job: order.name_job, pcs: order.pcs, total: order.total_customer, pic: order.pic, note: 'Batal Quotation' }))
+    .catch(e => console.warn('Batal sync failed:', e));
+}
+window.batalQuotation = batalQuotation;
+
+// ══════════════════════════════════════
+// BIN VIEW
+// ══════════════════════════════════════
+function showBinView() {
+  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  setAllViewsHidden();
+  document.getElementById('binView').style.display = 'block';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbBin'); if (el) el.classList.add('active');
+  renderBinView();
+}
+
+async function renderBinView() {
+  if (currentUser?.role !== 'admin') return;
+  const el = document.getElementById('binContent');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--textm);">⏳ Memuatkan...</div>';
+
+  let deleted = [];
+  try {
+    deleted = await supaGet('orders', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);">❌ Gagal memuatkan data Bin.</div>';
+    return;
+  }
+
+  if (!deleted.length) {
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--text);">🗑 Tong Sampah</div>
+          <div style="font-size:12px;color:var(--textm);margin-top:2px;">Order yang telah dipadam</div>
+        </div>
+      </div>
+      <div style="text-align:center;padding:60px;color:var(--textm);">
+        <div style="font-size:32px;margin-bottom:12px;">🗑</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);">Bin kosong</div>
+        <div style="font-size:12px;margin-top:4px;">Tiada order yang dipadam</div>
+      </div>`;
+    return;
+  }
+
+  const rows = deleted.map(o => {
+    const delDate = o.deleted_at ? new Date(o.deleted_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '—';
+    const safeId = (o.id||'').replace(/'/g,"\\'");
+    return `<tr style="border-bottom:1px solid var(--line);">
+      <td style="padding:8px 10px;font-size:12px;color:var(--text);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${o.name_job||''}">${o.name_job||'—'}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--textd);">${o.pic||'—'}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--textd);">${o.cust_name||'—'}</td>
+      <td style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:11px;color:var(--amber);text-align:right;">${fmt(o.total_customer||0)}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--textd);">${o.month||'—'}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--red);">${o.deleted_by||'—'}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--textm);">${delDate}</td>
+      <td style="padding:8px 10px;text-align:center;">
+        <button onclick="window.recoverOrder('${safeId}')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">♻ Recover</button>
+        <button onclick="window.purgeBinOrder('${safeId}')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;margin-left:4px;">🗑 Purge</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:20px;font-weight:700;color:var(--text);">🗑 Tong Sampah</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">${deleted.length} order dipadam · Admin sahaja boleh recover atau purge</div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="background:var(--bg3);">
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">PIC</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Customer</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);">Bulan</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>
+            <th style="padding:8px 10px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function recoverOrder(orderId) {
+  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Recover order ini balik ke masterlist?')) return;
+  try {
+    // Get the deleted order to find its month
+    const rows = await supaGet('orders', 'select=*&id=eq.' + encodeURIComponent(orderId) + '&is_deleted=eq.true&limit=1');
+    if (!rows || !rows.length) { showToast('Order tidak dijumpai dalam Bin.', true); return; }
+    const o = rows[0];
+    const restoreMonth = o.month || 'UNKNOWN';
+    await supaUpsert('orders', { id: orderId, month: restoreMonth, is_deleted: false, deleted_at: null, deleted_by: null, deleted_snapshot: null });
+    showToast('✅ Order berjaya di-recover!');
+    await loadOrdersFromSupabase();
+    renderBinView();
+  } catch(e) {
+    showToast('❌ Gagal recover order.', true);
+    console.error(e);
+  }
+}
+window.recoverOrder = recoverOrder;
+
+async function purgeBinOrder(orderId) {
+  if (currentUser?.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Padam KEKAL order ini? Tindakan ini tidak boleh dibatalkan.')) return;
+  if (!confirm('Confirm sekali lagi — PADAM KEKAL?')) return;
+  try {
+    await supaDelete('orders', 'id=eq.' + encodeURIComponent(orderId));
+    showToast('Order dipadam kekal.');
+    renderBinView();
+  } catch(e) {
+    showToast('❌ Gagal padam kekal.', true);
+  }
+}
+window.purgeBinOrder = purgeBinOrder;
 
 
 // ══════════════════════════════════════
@@ -9336,17 +9622,25 @@ async function memoCheckAndShow() {
   const urgentUnread = relevant.filter(m => m.type === 'urgent' && !readIds.includes(m.id));
   const infoUnread   = relevant.filter(m => m.type === 'info'   && !readIds.includes(m.id));
   
-  // Show info notices as banner
+  // Show ALL relevant memos in notice bar (read or unread) — urgent & info
   const bar = document.getElementById('memoNoticeBar');
   if (bar) {
-    const infos = relevant.filter(m => m.type === 'info' && !readIds.includes(m.id));
-    if (infos.length) {
-      bar.innerHTML = infos.map(m => `
-        <div class="memo-notice-item" style="display:flex;align-items:center;gap:10px;background:var(--bluebg);border-left:3px solid var(--blue);padding:8px 14px;border-radius:4px;margin-bottom:4px;">
-          <span style="font-size:13px;">📌</span>
-          <span style="flex:1;font-size:12px;color:var(--textd);">${m.title}: ${m.body}</span>
-          <button onclick="memoDismiss('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--textm);font-size:14px;padding:0 4px;">✕</button>
-        </div>`).join('');
+    if (relevant.length) {
+      bar.innerHTML = relevant.map(m => {
+        const isRead = readIds.includes(m.id);
+        const isUrgent = m.type === 'urgent';
+        const bg     = isUrgent ? '#fff5f5' : 'var(--bluebg)';
+        const border = isUrgent ? '#e03050' : 'var(--blue)';
+        const icon   = isUrgent ? '🔴' : '📌';
+        const readBadge = isRead
+          ? `<span style="font-size:9px;background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:8px;margin-left:6px;">✓ dah baca</span>`
+          : `<span style="font-size:9px;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;margin-left:6px;">belum baca</span>`;
+        return `<div style="display:flex;align-items:center;gap:8px;background:${bg};border-left:3px solid ${border};padding:7px 14px;border-radius:4px;margin-bottom:3px;">
+          <span style="font-size:12px;flex-shrink:0;">${icon}</span>
+          <span style="flex:1;font-size:12px;color:var(--textd);"><b>${m.title}</b> — ${m.body}</span>
+          ${readBadge}
+        </div>`;
+      }).join('');
       bar.style.display = 'block';
     } else {
       bar.style.display = 'none';
@@ -9385,13 +9679,25 @@ function memoAcknowledge() {
   memoShowNextPopup();
 }
 
-function memoDismiss(memoId) {
-  const myName = currentUser?.id || '';
-  const readKey = 'dod_memo_read_' + myName;
+async function memoDismiss(memoId) {
+  const myId   = currentUser?.id   || '';
+  const myName = currentUser?.name || myId;
+  const readKey = 'dod_memo_read_' + myId;
   const readIds = JSON.parse(localStorage.getItem(readKey) || '[]');
-  if (!readIds.includes(memoId)) readIds.push(memoId);
-  localStorage.setItem(readKey, JSON.stringify(readIds));
-  // Re-render notice bar
+  if (!readIds.includes(memoId)) {
+    readIds.push(memoId);
+    localStorage.setItem(readKey, JSON.stringify(readIds));
+    // Save read record to Supabase
+    try {
+      await supaFetch('/rest/v1/memo_reads', {
+        method: 'POST',
+        prefer: 'return=minimal',
+        body: JSON.stringify({ memo_id: memoId, user_id: myId, user_name: myName })
+      });
+    } catch(e) { console.warn('memo_reads save failed:', e); }
+  } else {
+    localStorage.setItem(readKey, JSON.stringify(readIds));
+  }
   memoCheckAndShow();
 }
 
@@ -9458,17 +9764,36 @@ async function renderMemoList() {
     wrap.innerHTML = '<div style="color:var(--textm);font-size:12px;padding:8px 0;">Tiada memo aktif.</div>';
     return;
   }
+
+  // Fetch all read records for active memos
+  let allReads = [];
+  try {
+    const memoIds = memos.map(m => m.id).join(',');
+    allReads = await supaFetch('/rest/v1/memo_reads?memo_id=in.(' + memoIds + ')&select=memo_id,user_name,read_at&order=read_at.asc') || [];
+  } catch(e) { console.warn('memo_reads fetch failed:', e); }
+
   wrap.innerHTML = memos.map(m => {
     const roleLabel = (Array.isArray(m.target_roles) ? m.target_roles : (m.target_roles||'all').split(',')).map(r => MEMO_ROLES[r]||r).join(', ');
     const typeIcon = m.type === 'urgent' ? '🔴' : '🟡';
+    const readers = allReads.filter(r => r.memo_id === m.id);
+    const readerHTML = readers.length
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);">
+          <div style="font-size:10px;color:var(--textm);margin-bottom:4px;">✅ Dah baca (${readers.length}):</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${readers.map(r => `<span style="font-size:10px;background:var(--greenbg,#e8f5e9);color:var(--green,#2e7d32);padding:2px 7px;border-radius:10px;">${r.user_name||r.user_id} · ${new Date(r.read_at).toLocaleDateString('ms-MY')}</span>`).join('')}
+          </div>
+        </div>`
+      : `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:10px;color:var(--textm);">Belum ada yang baca lagi.</div>`;
+
     return `<div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px;background:var(--bg2);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
         <span>${typeIcon}</span>
         <span style="font-weight:700;font-size:13px;color:var(--textd);flex:1;">${m.title}</span>
         <button onclick="memoDeactivate('${m.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--red);border-radius:4px;cursor:pointer;">Nyahaktif</button>
       </div>
-      <div style="font-size:12px;color:var(--textm);margin-bottom:6px;">${m.body}</div>
+      <div style="font-size:12px;color:var(--textm);margin-bottom:4px;">${m.body}</div>
       <div style="font-size:10px;color:var(--textm);">Kepada: ${roleLabel} · Oleh: ${m.created_by||'Admin'} · ${new Date(m.created_at).toLocaleDateString('ms-MY')}</div>
+      ${readerHTML}
     </div>`;
   }).join('');
 }
@@ -9499,6 +9824,410 @@ function showMemoView() {
     <button onclick="memoAcknowledge()" style="width:100%;padding:12px;background:#e03050;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.02em;">✓ Faham & Tutup</button>
   </div>
 </div>
+
+<script>
+// ══════════════════════════════════════
+// NOTIFICATION SYSTEM v1.0 — Masterlist
+// Monitors jobboard_cards for Sales Admin / Admin alerts
+// ══════════════════════════════════════
+
+// ── SOUND ENGINE ──
+let _audioCtx = null;
+let _audioUnlocked = false;
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) { return null; }
+  }
+  return _audioCtx;
+}
+
+// Unlock AudioContext on first user interaction (Mac/Safari/Chrome requirement)
+function unlockAudio() {
+  if (_audioUnlocked) return;
+  try {
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = _audioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => { _audioUnlocked = true; });
+    } else {
+      _audioUnlocked = true;
+    }
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) {}
+}
+
+document.addEventListener('click', unlockAudio, { once: false });
+document.addEventListener('keydown', unlockAudio, { once: false });
+document.addEventListener('touchstart', unlockAudio, { once: false });
+
+async function playSoundAsync(type) {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') await ctx.resume();
+    playSound(type);
+  } catch(e) {}
+}
+
+function playSound(type) {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') { ctx.resume().then(() => playSound(type)); return; }
+    if (type === 'new_job') {
+      [[587,0,0.12],[880,0.13,0.22]].forEach(([freq,start,end]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq; o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime+start);
+        g.gain.linearRampToValueAtTime(0.35, ctx.currentTime+start+0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+end);
+        o.start(ctx.currentTime+start); o.stop(ctx.currentTime+end);
+      });
+    } else if (type === 'status_update') {
+      [0, 0.18].forEach(delay => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 523; o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime+delay);
+        g.gain.linearRampToValueAtTime(0.2, ctx.currentTime+delay+0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.14);
+        o.start(ctx.currentTime+delay); o.stop(ctx.currentTime+delay+0.14);
+      });
+    } else if (type === 'urgent') {
+      [0, 0.15, 0.30].forEach(delay => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 659; o.type = 'square';
+        g.gain.setValueAtTime(0, ctx.currentTime+delay);
+        g.gain.linearRampToValueAtTime(0.25, ctx.currentTime+delay+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.12);
+        o.start(ctx.currentTime+delay); o.stop(ctx.currentTime+delay+0.12);
+      });
+    }
+  } catch(e) {}
+}
+
+async function testAllSounds() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
+    showToast('🔔 Testing bunyi...');
+    playSound('new_job');
+    setTimeout(() => playSound('status_update'), 600);
+    setTimeout(() => playSound('urgent'), 1400);
+    setTimeout(() => playMemoInfoSound(), 2400);
+  } catch(e) {
+    showToast('⚠ AudioContext gagal — Cuba klik mana-mana dulu', true);
+  }
+}
+
+// ── HELPERS ──
+function notifFmtTs(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), ms = Date.now() - d;
+  const mins = Math.floor(ms/60000), hrs = Math.floor(ms/3600000), days = Math.floor(ms/86400000);
+  if (mins < 1) return 'Baru sahaja';
+  if (mins < 60) return `${mins} minit lalu`;
+  if (hrs < 24) return `${hrs} jam lalu`;
+  if (days < 7) return `${days} hari lalu`;
+  return d.toLocaleDateString('ms-MY',{day:'numeric',month:'short'});
+}
+function notifEsc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── NOTIFICATION STORE ──
+const NOTIF_KEY = 'dod_notifs_v1';
+let mNotifList = [];
+
+function mLoadNotifs() {
+  try { mNotifList = JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]'); }
+  catch(e) { mNotifList = []; }
+}
+function mSaveNotifs() {
+  try { localStorage.setItem(NOTIF_KEY, JSON.stringify(mNotifList.slice(0,30))); }
+  catch(e) {}
+}
+
+function mAddNotif({ icon, title, sub, type }) {
+  const id = 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+  mNotifList.unshift({ id, icon, title, sub, type, ts: new Date().toISOString(), unread: true });
+  mNotifList = mNotifList.slice(0, 30);
+  mSaveNotifs(); mRenderNotifPanel(); mShakeBell();
+  playSoundAsync(type); mShowOsNotif(title, sub);
+}
+
+function mMarkAllRead() {
+  mNotifList.forEach(n => n.unread = false);
+  mSaveNotifs(); mRenderNotifPanel();
+}
+
+function clearAllNotifs() {
+  mNotifList = []; mSaveNotifs(); mRenderNotifPanel();
+}
+
+function mRenderNotifPanel() {
+  const unread = mNotifList.filter(n => n.unread).length;
+  const badge = document.getElementById('notifBadge');
+  if (badge) {
+    badge.textContent = unread > 9 ? '9+' : (unread || '');
+    badge.classList.toggle('show', unread > 0);
+  }
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  if (!mNotifList.length) {
+    list.innerHTML = '<div class="notif-empty">Tiada notifikasi baharu.</div>';
+    const f = document.getElementById('notifFootText'); if(f) f.textContent='— tiada —';
+    return;
+  }
+  list.innerHTML = mNotifList.map(n => `
+    <div class="notif-item ${n.unread?'unread':''}" onclick="mNotifClick('${n.id}')">
+      <div class="notif-icon">${n.icon}</div>
+      <div class="notif-body">
+        <div class="notif-body-title">${notifEsc(n.title)}</div>
+        <div class="notif-body-sub">${notifEsc(n.sub||'')}</div>
+        <div class="notif-body-time">${notifFmtTs(n.ts)}</div>
+      </div>
+    </div>`).join('');
+  const f = document.getElementById('notifFootText');
+  if (f) f.textContent = `${mNotifList.length} notifikasi tersimpan`;
+}
+
+function mNotifClick(notifId) {
+  const n = mNotifList.find(x => x.id === notifId);
+  if (n) n.unread = false;
+  mSaveNotifs(); mRenderNotifPanel(); closeNotifPanel();
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+  if (panel.classList.contains('open')) { closeNotifPanel(); }
+  else { panel.classList.add('open'); mMarkAllRead(); }
+}
+function closeNotifPanel() {
+  document.getElementById('notifPanel')?.classList.remove('open');
+}
+
+function mShakeBell() {
+  const btn = document.getElementById('notifBellBtn');
+  if (!btn) return;
+  btn.classList.remove('has-notif'); void btn.offsetWidth;
+  btn.classList.add('has-notif');
+  setTimeout(() => btn.classList.remove('has-notif'), 600);
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('notifWrap');
+  if (wrap && !wrap.contains(e.target)) closeNotifPanel();
+});
+
+// ── OS NOTIFICATION ──
+function mShowOsNotif(title, body) {
+  if (Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification('DOD Masterlist', { body: body||'', tag:'dod-masterlist', silent:false });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 6000);
+  } catch(e) {}
+}
+
+// ── PERMISSION ──
+function mCheckNotifPermission() {
+  if (!('Notification' in window)) return;
+  const toast = document.getElementById('notifPermToast');
+  if (!toast) return;
+  if (Notification.permission === 'default') {
+    toast.style.display = 'block';
+    setTimeout(() => { if(toast) toast.style.display='none'; }, 8000);
+  }
+}
+async function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  const t = document.getElementById('notifPermToast');
+  if (t) t.style.display = 'none';
+  const result = await Notification.requestPermission();
+  if (result === 'granted') {
+    showToast('✓ Notifikasi Windows diaktifkan!');
+    new Notification('DOD Masterlist', { body:'Notifikasi berjaya diaktifkan! ✓', tag:'dod-test' });
+  }
+}
+
+// ── DEDUP ──
+const M_DEDUP_KEY = 'dod_notif_dedup';
+function mIsDuplicate(eventId) {
+  try {
+    const seen = JSON.parse(localStorage.getItem(M_DEDUP_KEY) || '[]');
+    if (seen.includes(eventId)) return true;
+    seen.unshift(eventId);
+    localStorage.setItem(M_DEDUP_KEY, JSON.stringify(seen.slice(0,100)));
+    return false;
+  } catch(e) { return false; }
+}
+
+// ── COLUMN LABELS ──
+const M_COL_MAP = {
+  'job-list':'Job List','design-on':'Design On-going','first-art':'First Artwork',
+  'amended':'Design Amended','mockup':'Mockup','complete':'Job Complete',
+};
+
+// ── POLLING ──
+let _mLastPollTs = new Date().toISOString();
+let _mPollTimer = null;
+
+async function mPollJobboardChanges() {
+  if (!currentUser) return;
+  if (currentUser.role !== 'sales' && currentUser.role !== 'admin') return;
+  try {
+    const since = encodeURIComponent(_mLastPollTs);
+    const rows = await supaGet('jobboard_cards',
+      `updated_at=gt.${since}&select=id,title,col,assignee,labels,created_by,board,updated_at,created_at&order=updated_at.desc&limit=20`
+    );
+    if (!rows || !rows.length) return;
+    rows.forEach(row => {
+      const evtId = row.id + '_' + row.updated_at;
+      if (mIsDuplicate(evtId)) return;
+      const ageSec = (new Date(row.updated_at) - new Date(row.created_at)) / 1000;
+      const isNew = ageSec < 30;
+      const isUrgent = (row.labels||[]).includes('urgent');
+      const colLabel = M_COL_MAP[row.col] || row.col;
+      const createdByMe = (row.created_by||'').toUpperCase() === (currentUser.name||'').toUpperCase();
+      if (!isNew && createdByMe) {
+        mAddNotif({ icon:'🔄', title:'Job Dikemaskini', sub:`${row.title} → ${colLabel}`, type:'status_update' });
+      }
+      if (currentUser.role === 'admin' && isNew) {
+        mAddNotif({ icon:'🆕', title:'Job Baru Ditambah', sub:`${row.title} · ${row.assignee||'—'}`, type: isUrgent?'urgent':'new_job' });
+      }
+    });
+    if (rows.length) {
+      _mLastPollTs = rows.reduce((max,r) => r.updated_at > max ? r.updated_at : max, _mLastPollTs);
+    }
+  } catch(e) {}
+}
+
+function mStartRealtime() {
+  _mLastPollTs = new Date().toISOString();
+  _mMemoPollTs = new Date().toISOString();
+  _mPollTimer = setInterval(() => {
+    mPollJobboardChanges();
+    mPollMemoChanges();
+  }, 8000);
+}
+
+// ── MEMO POLLING ──
+let _mMemoPollTs = new Date().toISOString();
+const M_MEMO_DEDUP_KEY = 'dod_memo_notif_dedup';
+
+function mIsMemoNotifDup(memoId) {
+  try {
+    const seen = JSON.parse(localStorage.getItem(M_MEMO_DEDUP_KEY) || '[]');
+    if (seen.includes(memoId)) return true;
+    seen.unshift(memoId);
+    localStorage.setItem(M_MEMO_DEDUP_KEY, JSON.stringify(seen.slice(0, 100)));
+    return false;
+  } catch(e) { return false; }
+}
+
+// Slow double ding — memo info sound (new unique sound)
+function playMemoInfoSound() {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === 'suspended') { ctx.resume().then(() => playMemoInfoSound()); return; }
+    // Gentle descending two-tone: G5 → E5
+    [[784, 0, 0.18],[659, 0.22, 0.42]].forEach(([freq, start, end]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq; o.type = 'sine';
+      g.gain.setValueAtTime(0, ctx.currentTime + start);
+      g.gain.linearRampToValueAtTime(0.22, ctx.currentTime + start + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + end);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + end);
+    });
+  } catch(e) {}
+}
+
+async function mPollMemoChanges() {
+  if (!currentUser) return;
+  try {
+    const since = encodeURIComponent(_mMemoPollTs);
+    const rows = await supaFetch(
+      `/rest/v1/memos?active=eq.true&created_at=gt.${since}&order=created_at.desc&limit=10`
+    );
+    if (!rows || !rows.length) return;
+
+    const role = currentUser.role || '';
+
+    rows.forEach(memo => {
+      // Check if this memo targets current user's role
+      const targets = Array.isArray(memo.target_roles)
+        ? memo.target_roles
+        : (memo.target_roles || 'all').split(',');
+      const isTargeted = targets.includes('all') || targets.includes(role);
+      if (!isTargeted) return;
+
+      // Dedup — one notification per memo per device
+      if (mIsMemoNotifDup('memo_' + memo.id)) return;
+
+      const isUrgent = memo.type === 'urgent';
+
+      // Play sound — urgent = triple beep, info = slow double ding
+      if (isUrgent) {
+        playSoundAsync('urgent');
+      } else {
+        playMemoInfoSound();
+      }
+
+      // Add to notification panel
+      mAddNotifSilent({
+        icon: isUrgent ? '🔴' : '📌',
+        title: isUrgent ? `[URGENT] ${memo.title}` : memo.title,
+        sub: memo.body ? memo.body.slice(0, 80) + (memo.body.length > 80 ? '…' : '') : '',
+        type: isUrgent ? 'urgent' : 'memo_info',
+      });
+
+      // OS notification
+      mShowOsNotif(
+        isUrgent ? `🔴 URGENT: ${memo.title}` : `📌 Memo: ${memo.title}`,
+        memo.body ? memo.body.slice(0, 100) : ''
+      );
+    });
+
+    if (rows.length) {
+      _mMemoPollTs = rows.reduce((max, r) => r.created_at > max ? r.created_at : max, _mMemoPollTs);
+    }
+  } catch(e) {}
+}
+
+// mAddNotifSilent — add notif without triggering sound/OS (sound handled separately above)
+function mAddNotifSilent({ icon, title, sub, type }) {
+  const id = 'n_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+  mNotifList.unshift({ id, icon, title, sub, type, ts: new Date().toISOString(), unread: true });
+  mNotifList = mNotifList.slice(0, 30);
+  mSaveNotifs();
+  mRenderNotifPanel();
+  mShakeBell();
+}
+
+// ── INIT — called by initApp() after login ──
+function initNotifications() {
+  mLoadNotifs();
+  mRenderNotifPanel();
+  setTimeout(mCheckNotifPermission, 1500);
+  mStartRealtime();
+}
+</script>
 
 </body>
 </html>
