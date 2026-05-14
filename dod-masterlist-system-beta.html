@@ -8000,7 +8000,7 @@ async function savePipelineNote(orderId, month, value) {
   const idx = (sessionData[m]||[]).findIndex(r => r.id === orderId);
   if (idx < 0) return;
   sessionData[m][idx].pipeline_notes = value;
-  supaUpsert('orders', { id: orderId, month: m, pipeline_notes: value })
+  supaPatch('orders', 'id=eq.' + encodeURIComponent(orderId), { pipeline_notes: value })
     .catch(e => console.warn('Note save failed:', e));
 }
 window.savePipelineNote = savePipelineNote;
@@ -8141,7 +8141,7 @@ async function recoverOrder(orderId) {
     if (!rows || !rows.length) { showToast('Order tidak dijumpai dalam Bin.', true); return; }
     const o = rows[0];
     const restoreMonth = o.month || 'UNKNOWN';
-    await supaUpsert('orders', { id: orderId, month: restoreMonth, is_deleted: false, deleted_at: null, deleted_by: null, deleted_snapshot: null });
+    await supaPatch('orders', 'id=eq.' + encodeURIComponent(orderId), { is_deleted: false, deleted_at: null, deleted_by: null, deleted_snapshot: null });
     showToast('✅ Order berjaya di-recover!');
     await loadOrdersFromSupabase();
     renderBinView();
