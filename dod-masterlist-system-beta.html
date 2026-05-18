@@ -1087,6 +1087,21 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Security</span>
   </button>
 
+  <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
+    <span class="sb-item-icon">⚙️</span>
+    <span class="sb-item-label">Control Panel</span>
+  </button>
+
+  <button class="sb-item" id="sbSalesKit" data-tip="Sales Kit" onclick="sbNav('saleskit')" style="display:none;">
+    <span class="sb-item-icon">📦</span>
+    <span class="sb-item-label">Sales Kit</span>
+  </button>
+
+  <button class="sb-item" id="sbDodAI" data-tip="DOD AI Assistant" onclick="window.open('https://chatgpt.com/g/g-6a06ed0f276c8191bd2f869daa883429-dod-worldwide-internal-ai','_blank')" style="display:none;">
+    <span class="sb-item-icon">🤖</span>
+    <span class="sb-item-label">DOD AI</span>
+  </button>
+
   <button class="sb-item" id="sbBin" data-tip="Tong Sampah" onclick="sbNav('bin')" style="display:none;">
     <span class="sb-item-icon">🗑</span>
     <span class="sb-item-label">Bin</span>
@@ -1347,9 +1362,14 @@ tr:hover .row-actions{opacity:1;}
     <div id="securityContent"></div>
   </div>
 
-  <!-- SECURITY VIEW -->
-  <div id="securityView" style="display:none;padding:24px 28px;">
-    <div id="securityContent"></div>
+  <!-- CONTROL PANEL VIEW -->
+  <div id="controlPanelView" style="display:none;padding:24px 28px;">
+    <div id="controlPanelContent"></div>
+  </div>
+
+  <!-- SALES KIT VIEW -->
+  <div id="salesKitView" style="display:none;padding:24px 28px;">
+    <div id="salesKitContent"></div>
   </div>
 
   <!-- PRODUCTION TRACKER -->
@@ -1982,6 +2002,10 @@ tr:hover .row-actions{opacity:1;}
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button id="btnHantarDesign" title="Simpan dan hantar ke Design Board" onclick="saveAndHantarDesign()"
+        style="padding:10px 14px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blue)33;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">
+        🎨 Simpan + Design Board
+      </button>
       <button class="btn-save" onclick="saveOrder()">💾 Simpan Order</button>
     </div>
   </div>
@@ -2458,6 +2482,8 @@ async function initApp() {
     currentUser.color = freshUser.color;
     localStorage.setItem('dod_session', JSON.stringify(currentUser));
   }
+  // Load Control Panel settings (non-blocking)
+  loadCpSettings().catch(()=>{});
   setupNavForRole();
   updateNavDate();
   showHomeView();
@@ -2523,7 +2549,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -2624,6 +2650,11 @@ function setupNavForRole() {
     sbShow('sbKpi');
     sbShow('sbCalendar');
     sbShow('sbMemo');
+    // Control Panel: root_admin only
+    const cpBtn = document.getElementById('sbControlPanel');
+    if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
+    sbShow('sbSalesKit');
+    sbShow('sbDodAI');
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -2641,6 +2672,8 @@ function setupNavForRole() {
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
     sbHide('sbMemo');
+    sbShow('sbSalesKit');
+    sbShow('sbDodAI');
   } else { // designer
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
@@ -2648,6 +2681,8 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
+    sbShow('sbSalesKit');
+    sbShow('sbDodAI');
     sbHide('sbCustomer');
     sbHide('sbSupplierDir');
     sbHide('sbProdTrack');
@@ -2741,6 +2776,16 @@ function sbNav(view) {
     case 'memo':
       document.getElementById('sbMemo').classList.add('active');
       showMemoView();
+      showSbMonths(false);
+      break;
+    case 'controlpanel':
+      document.getElementById('sbControlPanel') && document.getElementById('sbControlPanel').classList.add('active');
+      showControlPanelView();
+      showSbMonths(false);
+      break;
+    case 'saleskit':
+      document.getElementById('sbSalesKit') && document.getElementById('sbSalesKit').classList.add('active');
+      showSalesKitView();
       showSbMonths(false);
       break;
   }
@@ -3338,6 +3383,20 @@ function showDetail(id) {
     ${isAdmin?`<button class="btn-del-detail" onclick="openDeleteFromDetail()">🗑</button>`:''}
   `;
 
+  // Butang Hantar ke Design Board + status
+  const dbSection = document.createElement('div');
+  dbSection.style.cssText = 'margin-top:14px;';
+  dbSection.innerHTML = `
+    <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;">DESIGN BOARD</div>
+    <button onclick="hantarKeDesignBoard('${r.id}','${(r.name_job||'').replace(/'/g,"\'")}','${r.pic||''}','${r.due_date||''}',${r.pcs||0})"
+      style="width:100%;padding:9px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:8px;">
+      🎨 Hantar ke Design Board
+    </button>
+    <div id="dbStatusContainer"></div>
+  `;
+  document.getElementById('detailBody').appendChild(dbSection);
+  renderDesignBoardStatus(r.id, document.getElementById('dbStatusContainer'));
+
   document.getElementById('detailPanel').classList.add('open');
 }
 
@@ -3768,6 +3827,28 @@ function saveOrder() {
 
   closeModal();
   renderAll();
+
+  // Kalau butang "Simpan + Design Board" yang ditekan
+  if (window._pendingDesignBoard) {
+    window._pendingDesignBoard = false;
+    // Get the latest saved order (just saved above)
+    setTimeout(() => {
+      // Find the order we just saved — cari dalam sessionData by editingId or latest
+      const allOrders = Object.values(sessionData).flat();
+      // If editing, use editingId; if new, cari yang paling recent
+      let savedOrder = null;
+      if (editingId) {
+        const found = findRowById(editingId);
+        if (found) savedOrder = found.row;
+      } else {
+        // New order — ambil yang paling baru berdasarkan order_date & inv
+        savedOrder = allOrders.sort((a,b) => new Date(b.order_date||0) - new Date(a.order_date||0))[0];
+      }
+      if (savedOrder) {
+        hantarKeDesignBoard(savedOrder.id, savedOrder.name_job, savedOrder.pic, savedOrder.due_date, savedOrder.pcs);
+      }
+    }, 600); // wait for supabase sync
+  }
 }
 
 // ======================================
@@ -7574,27 +7655,71 @@ function renderHomeAlerts(role) {
   });
   const readyJobs  = activeJobs.filter(o => o.production_status === 'ready');
 
-  // Customer OS — exclude Quotation (same logic as homepage KPI)
-  const custOS = allOrders.filter(o => isPipelineSales(o) && (o.balance_customer||0) > 0);
-  const totalOS = custOS.reduce((s,o) => s+(o.balance_customer||0), 0);
+  // ── NEW: Completed + OS alert (2-tier with threshold) ──────────────────
+  const cpSettings = window._cpSettings || {};
+  const criticalDays = parseInt(cpSettings.alert_os_critical_days || 7);
+  const warningDays  = parseInt(cpSettings.alert_os_warning_days  || 0);
+  const alertOsEnabled = cpSettings.alert_os_enabled !== false;
+
+  const salesOrders = allOrders.filter(o => isPipelineSales(o) && (o.balance_customer||0) > 0);
+
+  let criticalOS = [], warningOS = [];
+  if (alertOsEnabled && role === 'admin') {
+    salesOrders.forEach(o => {
+      const bal = o.balance_customer || 0;
+      if (bal <= 0) return;
+      let daysOverdue = null;
+      if (o.due_date) {
+        try { daysOverdue = Math.floor((today - new Date(o.due_date+'T00:00:00')) / 86400000); } catch(e) {}
+      } else if (o.order_date) {
+        try { daysOverdue = Math.floor((today - new Date(o.order_date+'T00:00:00')) / 86400000); } catch(e) {}
+      }
+      if (daysOverdue === null) return; // tiada tarikh — skip
+      if (daysOverdue >= criticalDays) criticalOS.push({...o, daysOverdue});
+      else if (daysOverdue >= warningDays) warningOS.push({...o, daysOverdue});
+    });
+    criticalOS.sort((a,b) => b.daysOverdue - a.daysOverdue);
+    warningOS.sort((a,b)  => b.daysOverdue - a.daysOverdue);
+  }
 
   const alerts = [];
-  if (overdue.length)   alerts.push({ color:'var(--red)',   bg:'var(--redbg)',   border:'var(--redb)',   icon:'🔴', text:`<strong>${overdue.length} job overdue</strong> — deadline dah lepas`, fn:"showProdTrackView()" });
-  if (dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:"showProdTrackView()" });
-  if (readyJobs.length) alerts.push({ color:'#0E7A7A',     bg:'#f0fafa',        border:'#b2e0e0',       icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:"showProdTrackView()" });
-  if (totalOS > 0 && role === 'admin') alerts.push({ color:'var(--red)', bg:'var(--redbg)', border:'var(--redb)', icon:'💰', text:`Customer OS <strong>${fmt(totalOS)}</strong> belum dikutip`, fn:"showCustomerView()" });
+  if (overdue.length)   alerts.push({ color:'var(--red)',   bg:'var(--redbg)',   border:'var(--redb)',   icon:'🔴', text:`<strong>${overdue.length} job overdue</strong> — deadline dah lepas`, fn:`showProdTrackView()` });
+  if (dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:`showProdTrackView()` });
+  if (readyJobs.length) alerts.push({ color:'#0E7A7A',     bg:'#f0fafa',        border:'#b2e0e0',       icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:`showProdTrackView()` });
+
+  if (criticalOS.length) {
+    const totalCrit = criticalOS.reduce((s,o)=>s+(o.balance_customer||0),0);
+    const topName = criticalOS[0].name_job ? criticalOS[0].name_job.slice(0,30)+(criticalOS[0].name_job.length>30?'…':'') : '';
+    alerts.push({
+      color:'var(--red)', bg:'var(--redbg)', border:'var(--redb)', icon:'🚨',
+      text:`<strong>${criticalOS.length} order CRITICAL OS</strong> — ${fmt(totalCrit)} dah ${criticalDays}+ hari overdue · Terlama: ${topName} (${criticalOS[0].daysOverdue} hari)`,
+      fn:`showCustomerView()`,
+      extra: criticalOS.slice(0,3).map(o=>`<span style="font-size:10px;background:rgba(192,40,64,0.08);border:1px solid rgba(192,40,64,0.2);border-radius:4px;padding:2px 7px;margin-right:4px;color:var(--red);">${(o.name_job||'').slice(0,20)} · ${fmt(o.balance_customer)} · ${o.daysOverdue}h</span>`).join('')
+    });
+  }
+  if (warningOS.length) {
+    const totalWarn = warningOS.reduce((s,o)=>s+(o.balance_customer||0),0);
+    alerts.push({
+      color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'⚠️',
+      text:`<strong>${warningOS.length} order OS</strong> — ${fmt(totalWarn)} belum bayar selepas complete`,
+      fn:`showCustomerView()`
+    });
+  }
 
   if (!alerts.length) { el.style.display = 'none'; return; }
 
   el.style.display = 'block';
   el.innerHTML = alerts.map(a => `
-    <div onclick="${a.fn}" style="display:flex;align-items:center;gap:10px;padding:10px 16px;
+    <div onclick="${a.fn}" style="display:flex;flex-direction:column;gap:6px;padding:10px 16px;
       background:${a.bg};border:1px solid ${a.border};border-left:3px solid ${a.color};
       border-radius:8px;margin-bottom:6px;cursor:pointer;transition:opacity .15s;"
-      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
-      <span style="font-size:16px;">${a.icon}</span>
-      <span style="font-size:12px;color:var(--text);">${a.text}</span>
-      <span style="margin-left:auto;font-size:10px;color:var(--textm);">Klik untuk lihat →</span>
+      onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;">${a.icon}</span>
+        <span style="font-size:12px;color:var(--text);flex:1;">${a.text}</span>
+        <span style="font-size:10px;color:var(--textm);">Klik untuk lihat →</span>
+      </div>
+      ${a.extra ? `<div style="padding-left:26px;">${a.extra}</div>` : ''}
     </div>`).join('');
 }
 
@@ -8917,6 +9042,1027 @@ async function showBackupHistory() {
   } catch(e) { showToast('Gagal: ' + e.message, true); }
 }
 window.showSecurityView = showSecurityView;
+
+// ══════════════════════════════════════════════════════════════
+// CONTROL PANEL
+// ══════════════════════════════════════════════════════════════
+
+// Default settings — used as fallback if Supabase belum ada table
+const CP_DEFAULTS = {
+  // Deadline Calculator lead times
+  dc_prod_normal:         7,
+  dc_prod_urgent:         3,
+  dc_design_custom:       3,
+  dc_design_readymade:    0,
+  dc_delivery_pos_sm:     2,
+  dc_delivery_pos_ss:     5,
+  dc_delivery_lalamove:   1,
+  dc_buffer:              1,
+  // Alert rules
+  alert_os_enabled:       true,
+  alert_os_critical_days: 7,
+  alert_os_warning_days:  0,
+  alert_prod_overdue:     true,
+  alert_prod_due_soon:    true,
+  alert_margin_enabled:   false,
+  alert_margin_threshold: 20,
+  // KPI targets
+  kpi_revenue_target:     80000,
+  kpi_margin_min:         30,
+  kpi_leads_target:       250,
+  kpi_roas_min:           10,
+  kpi_closing_anis:       35,
+  kpi_closing_hakimah:    35,
+  kpi_delivery_zul:       85,
+  kpi_posts_aidi:         50,
+  // System mode
+  system_mode:            'normal',
+  month_autolock:         true,
+  // Visibility
+  hide_profit_from_sales: true,
+  hide_supplier_cost:     true,
+  hide_margin_from_sales: true,
+  hide_ads_from_sales:    true,
+};
+
+// In-memory cache
+window._cpSettings = { ...CP_DEFAULTS };
+
+async function loadCpSettings() {
+  try {
+    const rows = await supaGet('system_settings', 'select=key,value');
+    if (rows && rows.length) {
+      const merged = { ...CP_DEFAULTS };
+      rows.forEach(r => {
+        try { merged[r.key] = JSON.parse(r.value); } catch(e) { merged[r.key] = r.value; }
+      });
+      window._cpSettings = merged;
+    }
+  } catch(e) {
+    console.warn('CP settings: using defaults (table mungkin belum wujud)', e.message);
+    window._cpSettings = { ...CP_DEFAULTS };
+  }
+}
+
+async function saveCpSetting(key, value) {
+  window._cpSettings[key] = value;
+  try {
+    await supaFetch('/rest/v1/system_settings', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify([{ key, value: JSON.stringify(value) }]),
+    });
+  } catch(e) {
+    console.warn('CP save failed (table mungkin belum create):', e.message);
+    showToast('Setting disimpan secara lokal sahaja — SQL setup belum dijalankan', true);
+  }
+}
+
+async function saveCpAll() {
+  const keys = Object.keys(window._cpSettings);
+  try {
+    const payload = keys.map(k => ({ key: k, value: JSON.stringify(window._cpSettings[k]) }));
+    await supaFetch('/rest/v1/system_settings', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify(payload),
+    });
+    showToast('Semua settings berjaya disimpan ✓');
+  } catch(e) {
+    showToast('Simpan gagal — pastikan SQL setup sudah dijalankan', true);
+  }
+}
+
+function getCpVal(key) {
+  const v = window._cpSettings[key];
+  return v !== undefined ? v : CP_DEFAULTS[key];
+}
+
+function setCpVal(key, value) {
+  window._cpSettings[key] = value;
+}
+
+// ── Control Panel View ──────────────────────────────────────
+
+function showControlPanelView() {
+  if (!currentUser || currentUser.id !== 'fariz' && currentUser.cp_role !== 'root_admin') {
+    showToast('Akses ditolak — Root Admin sahaja', true);
+    return;
+  }
+  setAllViewsHidden();
+  document.getElementById('controlPanelView').style.display = 'block';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbControlPanel'); if(el) el.classList.add('active');
+  renderControlPanel('alerts');
+}
+
+let _cpActiveTab = 'alerts';
+
+function renderControlPanel(tab) {
+  _cpActiveTab = tab || _cpActiveTab;
+  const el = document.getElementById('controlPanelContent');
+  if (!el) return;
+
+  const tabs = [
+    { key:'alerts',     label:'Alert Rules',     icon:'⚠️' },
+    { key:'kpi',        label:'KPI Targets',      icon:'📊' },
+    { key:'visibility', label:'Visibility Data',  icon:'👁' },
+    { key:'mode',       label:'Mod Sistem',       icon:'🚦' },
+    { key:'roles',      label:'Role & Akses',     icon:'🔐' },
+    { key:'deadline',   label:'Deadline Calculator', icon:'⏱️' },
+  ];
+
+  const tabHtml = tabs.map(t => `
+    <button onclick="renderControlPanel('${t.key}')" style="
+      display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;font-weight:500;
+      background:${_cpActiveTab===t.key?'#fff':'transparent'};
+      color:${_cpActiveTab===t.key?'var(--blue)':'var(--textd)'};
+      border:none;border-radius:6px;cursor:pointer;
+      box-shadow:${_cpActiveTab===t.key?'0 1px 3px rgba(0,0,0,0.1)':'none'};
+      transition:all .12s;">
+      <span style="font-size:13px;">${t.icon}</span>${t.label}
+    </button>`).join('');
+
+  let content = '';
+  if (_cpActiveTab === 'alerts')     content = renderCpAlerts();
+  else if (_cpActiveTab === 'kpi')   content = renderCpKpi();
+  else if (_cpActiveTab === 'visibility') content = renderCpVisibility();
+  else if (_cpActiveTab === 'mode')  content = renderCpMode();
+  else if (_cpActiveTab === 'roles')    content = renderCpRoles();
+  else if (_cpActiveTab === 'deadline') content = renderCpDeadline();
+
+  el.innerHTML = `
+    <div style="max-width:900px;">
+      <div style="margin-bottom:20px;">
+        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;">⚙️ Control Panel</div>
+        <div style="font-size:12px;color:var(--textm);">Root Admin · ${currentUser.name} · Perubahan disimpan ke Supabase</div>
+      </div>
+      <div style="display:flex;gap:4px;background:var(--bg3);padding:4px;border-radius:8px;margin-bottom:20px;flex-wrap:wrap;">
+        ${tabHtml}
+      </div>
+      ${content}
+    </div>`;
+}
+
+function cpCard(title, subtitle, body) {
+  return `<div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:${subtitle?'2px':'12px'};">${title}</div>
+    ${subtitle?`<div style="font-size:11px;color:var(--textm);margin-bottom:12px;">${subtitle}</div>`:''}
+    ${body}
+  </div>`;
+}
+
+function cpRow(label, sublabel, control) {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);">
+    <div>
+      <div style="font-size:12px;color:var(--text);">${label}</div>
+      ${sublabel?`<div style="font-size:10px;color:var(--textm);margin-top:1px;">${sublabel}</div>`:''}
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">${control}</div>
+  </div>`;
+}
+
+function cpToggle(key, onchange) {
+  const on = getCpVal(key);
+  return `<div onclick="cpToggleClick('${key}','${onchange||''}')" style="
+    display:inline-flex;align-items:center;justify-content:${on?'flex-end':'flex-start'};
+    width:36px;height:20px;border-radius:10px;cursor:pointer;padding:2px;transition:background .15s;
+    background:${on?'var(--green)':'var(--bg5)'};" id="cptog_${key}">
+    <div style="width:16px;height:16px;border-radius:50%;background:#fff;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
+  </div>`;
+}
+
+function cpToggleClick(key, onchange) {
+  const newVal = !getCpVal(key);
+  setCpVal(key, newVal);
+  const el = document.getElementById('cptog_'+key);
+  if (el) {
+    el.style.background = newVal ? 'var(--green)' : 'var(--bg5)';
+    el.style.justifyContent = newVal ? 'flex-end' : 'flex-start';
+  }
+  saveCpSetting(key, newVal);
+  if (onchange) eval(onchange);
+}
+
+function cpInput(key, unit, width) {
+  const v = getCpVal(key);
+  return `<div style="display:flex;align-items:center;gap:6px;">
+    <input type="number" value="${v}" min="0"
+      style="width:${width||60}px;padding:5px 8px;font-size:12px;text-align:right;
+      border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);"
+      onchange="setCpVal('${key}',parseFloat(this.value)||0);saveCpSetting('${key}',parseFloat(this.value)||0);">
+    ${unit?`<span style="font-size:11px;color:var(--textm);">${unit}</span>`:''}
+  </div>`;
+}
+
+// ── Alert Rules tab ─────────────────────────────────────────
+
+function renderCpAlerts() {
+  const sqlNote = `<div style="background:var(--bluebg);border:1px solid var(--blueb);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:var(--blue);line-height:1.6;">
+    <strong>Setup SQL diperlukan:</strong> Jalankan query berikut dalam Supabase SQL Editor sekali sahaja:<br>
+    <code style="display:block;margin-top:6px;padding:8px;background:rgba(26,92,200,0.08);border-radius:4px;font-size:10px;line-height:1.7;word-break:break-all;">
+    CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TIMESTAMPTZ DEFAULT NOW());<br>
+    ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;<br>
+    CREATE POLICY "allow_all" ON system_settings FOR ALL USING (true) WITH CHECK (true);
+    </code>
+  </div>`;
+
+  const critDays = getCpVal('alert_os_critical_days');
+  const warnDays = getCpVal('alert_os_warning_days');
+
+  const alertsContent = `
+    ${cpRow('Alert OS Completed aktif','Tunjuk alert bila order completed tapi customer belum bayar baki',cpToggle('alert_os_enabled','renderHomeAlerts(currentUser.role)'))}
+    ${cpRow(`Threshold Critical (merah)`,`Alert merah bila overdue ≥ ${critDays} hari dari due date`,cpInput('alert_os_critical_days','hari',55))}
+    ${cpRow(`Threshold Warning (kuning)`,`Alert kuning bila ≥ ${warnDays} hari. Set 0 = semua order OS yang ada due date`,cpInput('alert_os_warning_days','hari',55))}
+    <div style="background:var(--amberbg);border:1px solid var(--amberb);border-radius:6px;padding:8px 12px;margin-top:8px;font-size:11px;color:var(--amber);line-height:1.5;">
+      <strong>Contoh dengan setting semasa:</strong> Order dengan due date ≥${critDays} hari lepas → Critical (merah). 
+      Order dengan due date ${warnDays}–${critDays-1} hari lepas → Warning (kuning). Order belum lepas due date → tidak muncul.
+    </div>`;
+
+  const prodContent = `
+    ${cpRow('Alert job overdue','Muncul bila production deadline dah lepas',cpToggle('alert_prod_overdue'))}
+    ${cpRow('Alert job due dalam 3 hari','Reminder bila job hampir deadline',cpToggle('alert_prod_due_soon'))}
+    ${cpRow('Alert margin rendah','Alert bila margin order bawah threshold',cpToggle('alert_margin_enabled'))}
+    ${cpRow('Threshold margin minimum',`Alert bila margin < X%`,cpInput('alert_margin_threshold','%',55))}`;
+
+  return sqlNote +
+    cpCard('OS Completed Alert', 'Alert 2-tahap untuk customer yang dah dapat barang tapi belum bayar baki.', alertsContent) +
+    cpCard('Production Alerts', 'Alert untuk status pengeluaran dan deadline.', prodContent) +
+    `<div style="display:flex;gap:8px;">
+      <button onclick="saveCpAll()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
+      <button onclick="renderHomeAlerts(currentUser.role);showToast('Alert di-refresh ✓')" style="padding:8px 16px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:7px;font-size:12px;cursor:pointer;">🔄 Preview Alert</button>
+    </div>`;
+}
+
+// ── KPI Targets tab ──────────────────────────────────────────
+
+function renderCpKpi() {
+  const companyContent = `
+    ${cpRow('Revenue bulanan','Sasaran jualan confirmed',cpInput('kpi_revenue_target','RM',80))}
+    ${cpRow('Margin minimum','Alert bila margin bulan jatuh bawah threshold',cpInput('kpi_margin_min','%',55))}
+    ${cpRow('Lead bulanan','Sasaran jumlah lead dari ads',cpInput('kpi_leads_target','leads',65))}
+    ${cpRow('ROAS minimum','Return on ads spend minimum',cpInput('kpi_roas_min','x',55))}`;
+
+  const staffContent = `
+    ${cpRow('Anis — Closing Rate minimum','Target closing rate bulanan',cpInput('kpi_closing_anis','%',55))}
+    ${cpRow('Hakimah — Closing Rate minimum','Target closing rate bulanan',cpInput('kpi_closing_hakimah','%',55))}
+    ${cpRow('Zul — On-time Delivery','First artwork dalam 24 jam',cpInput('kpi_delivery_zul','%',55))}
+    ${cpRow('Aidi — Posts per bulan','Content output target',cpInput('kpi_posts_aidi','posts',65))}`;
+
+  return cpCard('Sasaran Syarikat', 'KPI bulanan DOD. Dashboard akan tunjuk hijau/kuning/merah berdasarkan nilai ini.', companyContent) +
+    cpCard('Sasaran Per Staff', 'Target individu untuk setiap staff. Dipapar dalam KPI view.', staffContent) +
+    `<button onclick="saveCpAll()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>`;
+}
+
+// ── Visibility tab ───────────────────────────────────────────
+
+function renderCpVisibility() {
+  const content = `
+    ${cpRow('Sembunyi Profit/Margin dari Sales','Sales tidak nampak kolum profit dan margin dalam masterlist',cpToggle('hide_profit_from_sales'))}
+    ${cpRow('Sembunyi Kos Supplier dari Sales','Nohad amount, Luar amount — admin sahaja',cpToggle('hide_supplier_cost'))}
+    ${cpRow('Sembunyi Margin % dari Sales','Peratusan margin dalam KPI view',cpToggle('hide_margin_from_sales'))}
+    ${cpRow('Sembunyi Ads Data dari Sales','Ads spend, ROAS, CPL — dashboard admin sahaja',cpToggle('hide_ads_from_sales'))}`;
+
+  const scopeVal = getCpVal('sales_order_scope') || 'all';
+  const scopeContent = `
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <button onclick="setCpVal('sales_order_scope','all');saveCpSetting('sales_order_scope','all');renderControlPanel()" style="padding:6px 14px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:${scopeVal==='all'?'var(--blue)':'var(--bg3)'};color:${scopeVal==='all'?'#fff':'var(--textd)'};">Semua Order</button>
+      <button onclick="setCpVal('sales_order_scope','own');saveCpSetting('sales_order_scope','own');renderControlPanel()" style="padding:6px 14px;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:${scopeVal==='own'?'var(--blue)':'var(--bg3)'};color:${scopeVal==='own'?'#fff':'var(--textd)'};">Order Sendiri Sahaja</button>
+    </div>
+    <div style="font-size:11px;color:var(--textm);">Semasa: Sales ${scopeVal==='own'?'hanya nampak order sendiri (pic = nama mereka)':'boleh nampak semua order'}.</div>`;
+
+  return cpCard('Field Sensitif', 'Pilih field yang Sales dan Designer tidak boleh nampak.', content) +
+    cpCard('Skop Order Sales', 'Tetapkan sama ada Sales boleh lihat order semua orang atau hanya order sendiri.', scopeContent) +
+    `<button onclick="saveCpAll()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>`;
+}
+
+// ── System Mode tab ──────────────────────────────────────────
+
+function renderCpMode() {
+  const mode = getCpVal('system_mode') || 'normal';
+  const modes = [
+    { key:'normal',      icon:'🟢', label:'Normal',      desc:'Semua fungsi aktif sepenuhnya' },
+    { key:'readonly',    icon:'🔵', label:'Read-Only',   desc:'Staff boleh tengok sahaja, tiada edit/tambah' },
+    { key:'maintenance', icon:'🔴', label:'Maintenance', desc:'Sistem lock — hanya Root/Master Admin masuk' },
+  ];
+  const modeCards = modes.map(m => `
+    <div onclick="setCpVal('system_mode','${m.key}');saveCpSetting('system_mode','${m.key}');renderControlPanel()" style="
+      padding:12px 14px;border:${mode===m.key?'2px solid var(--blue)':'1px solid var(--line)'};
+      border-radius:8px;cursor:pointer;background:${mode===m.key?'var(--bluebg)':'#fff'};transition:all .12s;">
+      <div style="font-size:18px;margin-bottom:5px;">${m.icon}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${m.label}</div>
+      <div style="font-size:10px;color:var(--textm);margin-top:2px;">${m.desc}</div>
+    </div>`).join('');
+
+  const lockContent = `
+    ${cpRow('Auto-lock bulan lepas','Setiap 1hb, bulan sebelum dikunci automatik — tiada edit dibenarkan',cpToggle('month_autolock'))}
+    <div style="padding:9px 0;font-size:11px;color:var(--textm);">Manual unlock tersedia dalam Security → Audit Log. Memerlukan PIN Admin.</div>`;
+
+  return cpCard('Mod Operasi Aktif', 'Hanya satu mod boleh aktif. Perubahan berkuat kuasa serta-merta.', `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">${modeCards}</div>`) +
+    cpCard('Month Lock', 'Kawal kebolehubahan data bulan lepas.', lockContent) +
+    `<button onclick="saveCpAll()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>`;
+}
+
+// ── Roles tab ────────────────────────────────────────────────
+
+function renderCpRoles() {
+  const hierarchyContent = `
+    <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:8px;">
+      <div style="padding:10px 14px;background:var(--purplebg);border:1px solid var(--purpleb);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span style="font-size:10px;font-weight:700;background:rgba(110,48,200,0.15);color:var(--purple);padding:2px 8px;border-radius:3px;margin-right:8px;">ROOT ADMIN</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">Fariz</span>
+          <span style="font-size:11px;color:var(--textm);margin-left:6px;">God mode · Semua fungsi + Control Panel</span>
+        </div>
+        <span style="font-size:18px;">🔒</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      ${['Fathi','Aina'].map(n=>`
+      <div style="padding:10px 14px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:8px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <span style="font-size:10px;font-weight:700;background:rgba(26,92,200,0.12);color:var(--blue);padding:2px 8px;border-radius:3px;margin-right:8px;">MASTER ADMIN</span>
+          <span style="font-size:12px;font-weight:600;color:var(--text);">${n}</span>
+        </div>
+        <span style="font-size:18px;">🔒</span>
+      </div>`).join('')}
+    </div>`;
+
+  const store = loadUserStore();
+  const staffUsers = Object.values(store).filter(u => u.role !== 'admin');
+  const staffRows = staffUsers.map(u => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);">
+      <div style="width:28px;height:28px;border-radius:50%;background:${u.color||'#1A5CC8'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">${(u.name||u.id).slice(0,2).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);">${u.name||u.id}</div>
+        <div style="font-size:10px;color:var(--textm);">@${u.id} · ${ROLE_LABELS[u.role]||u.role}</div>
+      </div>
+      <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${u.bg||'#EEF4FF'};color:${u.color||'#1A5CC8'};font-weight:600;">${u.role}</span>
+      <button onclick="sbNav('usermgmt')" style="font-size:10px;padding:4px 10px;border:1px solid var(--line);background:var(--bg3);border-radius:5px;cursor:pointer;color:var(--textd);">Edit</button>
+    </div>`).join('') || '<div style="font-size:12px;color:var(--textm);padding:8px 0;">Tiada staff selain admin.</div>';
+
+  const permNote = `<div style="padding:10px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:6px;font-size:11px;color:var(--green);margin-top:8px;">
+    Permission matrix penuh (toggle per fungsi per role) akan tersedia dalam versi seterusnya. Buat masa ni, edit role melalui Pengurusan Pengguna.
+  </div>`;
+
+  return cpCard('Hierarchy Admin', 'Root Admin dan Master Admin adalah locked — tidak boleh diubah dari sini.', hierarchyContent) +
+    cpCard('Staff & Role', 'Semua staff selain admin. Klik Edit untuk tukar role dalam Pengurusan Pengguna.', staffRows + permNote);
+}
+
+
+// ── Deadline Calculator Settings tab ─────────────────────────
+
+function renderCpDeadline() {
+  const prodContent = `
+    ${cpRow('Produksi Normal','Hari bekerja standard untuk siapkan order',cpInput('dc_prod_normal','hari',55))}
+    ${cpRow('Produksi Urgent','Hari untuk slot urgent (ada caj tambahan RM10/pcs)',cpInput('dc_prod_urgent','hari',55))}
+    ${cpRow('Buffer sebelum hantar','Masa tambah untuk QC dan packing sebelum pos/collect',cpInput('dc_buffer','jam',55))}`;
+
+  const designContent = `
+    ${cpRow('Design Custom (tiada artwork)','Hari untuk buat design dari awal',cpInput('dc_design_custom','hari',55))}
+    ${cpRow('Design Readymade (ada artwork)','Hari bila customer ada artwork sendiri — biasanya 0',cpInput('dc_design_readymade','hari',55))}`;
+
+  const deliveryContent = `
+    ${cpRow('Pos Semenanjung (Pos SM)','Hari untuk sampai ke customer Semenanjung',cpInput('dc_delivery_pos_sm','hari',55))}
+    ${cpRow('Pos Sabah & Sarawak (Pos SS)','Hari untuk sampai ke customer Sabah/Sarawak',cpInput('dc_delivery_pos_ss','hari',55))}
+    ${cpRow('Self-collect / Lalamove','Hari untuk self-collect atau courier same-day',cpInput('dc_delivery_lalamove','hari',55))}`;
+
+  const preview = buildDeadlinePreview();
+
+  return cpCard('Waktu Produksi', 'Tetapkan lead time standard. Deadline Calculator dalam form order akan guna nilai ini.', prodContent) +
+    cpCard('Waktu Design', 'Berapa hari untuk siapkan design sebelum hantar kilang.', designContent) +
+    cpCard('Waktu Penghantaran', 'Hari tambahan untuk delivery selepas kilang siap.', deliveryContent) +
+    cpCard('Preview Semasa', 'Simulasi deadline berdasarkan setting semasa (dari hari ini, delivery Pos SM, custom design).', preview) +
+    `<button onclick="saveCpAll();showToast('Lead time disimpan ✓');document.getElementById('dc_preview_wrap').innerHTML=buildDeadlinePreview()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan & Preview</button>`;
+}
+
+function buildDeadlinePreview() {
+  const s = window._cpSettings || {};
+  const norm  = parseInt(s.dc_prod_normal       ?? 7);
+  const urg   = parseInt(s.dc_prod_urgent        ?? 3);
+  const buf   = parseInt(s.dc_buffer             ?? 1);
+  const dsgC  = parseInt(s.dc_design_custom      ?? 3);
+  const dsgR  = parseInt(s.dc_design_readymade   ?? 0);
+  const posS  = parseInt(s.dc_delivery_pos_sm    ?? 2);
+  const posSS = parseInt(s.dc_delivery_pos_ss    ?? 5);
+  const lala  = parseInt(s.dc_delivery_lalamove  ?? 1);
+
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+  const fmtD = d => d.toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric'});
+  const today = new Date(); today.setHours(12,0,0,0);
+
+  // Scenario: order hari ni, custom design, Pos SM
+  const depositDeadline_norm = addDays(today, 0); // hari ni juga — brief sekarang
+  const hantarKilang_norm    = addDays(today, dsgC);
+  const kilangSiap_norm      = addDays(hantarKilang_norm, norm);
+  const bufDate_norm         = addDays(kilangSiap_norm, buf);
+  const sampai_norm          = addDays(bufDate_norm, posS);
+
+  const hantarKilang_urg     = addDays(today, dsgC);
+  const kilangSiap_urg       = addDays(hantarKilang_urg, urg);
+  const bufDate_urg          = addDays(kilangSiap_urg, buf);
+  const sampai_urg           = addDays(bufDate_urg, posS);
+
+  const rows = [
+    ['Scenario', 'NORMAL', 'URGENT'],
+    ['Brief design hari ini', fmtD(today), fmtD(today)],
+    ['Hantar ke kilang', fmtD(hantarKilang_norm), fmtD(hantarKilang_urg)],
+    ['Kilang siap', fmtD(kilangSiap_norm), fmtD(kilangSiap_urg)],
+    [`Buffer (${buf} hari)`, fmtD(bufDate_norm), fmtD(bufDate_urg)],
+    [`Pos SM (${posS} hari)`, fmtD(sampai_norm), fmtD(sampai_urg)],
+    ['Customer terima', `<strong style="color:var(--blue)">${fmtD(sampai_norm)}</strong>`, `<strong style="color:var(--red)">${fmtD(sampai_urg)}</strong>`],
+  ];
+
+  return `<div id="dc_preview_wrap" style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      ${rows.map((r,i) => `<tr style="background:${i===0?'var(--bg5)':i%2===0?'var(--bg3)':'transparent'}">
+        ${r.map((c,j) => `<td style="padding:6px 10px;border-bottom:1px solid var(--line);${j===0?'color:var(--textm);font-weight:500;':'text-align:center;color:var(--text);'}">${c}</td>`).join('')}
+      </tr>`).join('')}
+    </table>
+    <div style="margin-top:8px;font-size:10px;color:var(--textm);">* Scenario: brief hari ini, custom design, penghantaran Pos Semenanjung. Adjust setting dan klik Simpan & Preview untuk kemaskini.</div>
+  </div>`;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SALES KIT
+// ══════════════════════════════════════════════════════════════
+
+let _skPosts = []; // in-memory cache
+
+// ── Show Sales Kit View ──────────────────────────────────────
+
+function showSalesKitView() {
+  setAllViewsHidden();
+  document.getElementById('salesKitView').style.display = 'block';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbSalesKit'); if(el) el.classList.add('active');
+  renderSalesKitPage();
+  loadSalesKitPosts();
+}
+
+async function loadSalesKitPosts() {
+  try {
+    const rows = await supaGet('sales_kit_posts', 'select=*&order=pinned.desc,order_index.asc,created_at.desc');
+    _skPosts = rows || [];
+    renderSalesKitFeed();
+  } catch(e) {
+    console.error('Sales Kit load error:', e);
+    document.getElementById('sk-feed').innerHTML = `<div style="padding:20px;text-align:center;color:var(--textm);font-size:12px;">Gagal muatkan posts — pastikan SQL setup sudah dijalankan.</div>`;
+  }
+}
+
+function renderSalesKitPage() {
+  const isAdmin = currentUser?.role === 'admin';
+  document.getElementById('salesKitContent').innerHTML = `
+    <div style="max-width:680px;margin:0 auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--text);">📦 Sales Kit</div>
+          <div style="font-size:12px;color:var(--textm);margin-top:2px;">Resources & tools untuk team sales</div>
+        </div>
+        ${isAdmin ? `<button onclick="openSkAddModal()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">＋ Tambah Post</button>` : ''}
+      </div>
+      <div id="sk-feed">
+        <div style="text-align:center;padding:40px;color:var(--textm);font-size:12px;">Memuatkan...</div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="skModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+      <div style="background:#fff;border-radius:14px;padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;" id="skModalTitle">Tambah Post Baru</div>
+        
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--textm);margin-bottom:4px;font-weight:500;">HEADLINE *</div>
+          <input id="sk_headline" placeholder="Contoh: SOP Terima Order Baru" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg3);">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--textm);margin-bottom:4px;font-weight:500;">CAPTION / DESCRIPTION</div>
+          <textarea id="sk_caption" placeholder="Tulis penerangan, arahan, atau nota penting..." rows="4" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg3);resize:vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;color:var(--textm);margin-bottom:8px;font-weight:500;">LAMPIRAN</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            ${['none','image','youtube','pdf','docx'].map(t => `
+            <button onclick="skSetMediaType('${t}')" id="skmtype_${t}" style="padding:5px 12px;font-size:11px;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:${t==='none'?'var(--blue)':'var(--bg3)'};color:${t==='none'?'#fff':'var(--textd)'};font-weight:${t==='none'?'600':'400'};">${{none:'Tiada',image:'🖼 Gambar',youtube:'▶️ YouTube',pdf:'📄 PDF',docx:'📝 Word'}[t]}</button>`).join('')}
+          </div>
+          <div id="sk_media_input"></div>
+          <div id="sk_upload_progress" style="display:none;margin-top:8px;font-size:11px;color:var(--blue);">Mengupload...</div>
+          <div id="sk_media_preview" style="margin-top:10px;"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+          <button onclick="closeSkModal()" style="padding:8px 16px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer;">Batal</button>
+          <button onclick="submitSkPost()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Simpan Post</button>
+        </div>
+      </div>
+    </div>`;
+
+  skSetMediaType('none');
+}
+
+// ── Feed Render ───────────────────────────────────────────────
+
+function renderSalesKitFeed() {
+  const feed = document.getElementById('sk-feed');
+  if (!feed) return;
+  const isAdmin = currentUser?.role === 'admin';
+
+  if (!_skPosts.length) {
+    feed.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--textm);">
+      <div style="font-size:32px;margin-bottom:12px;">📭</div>
+      <div style="font-size:13px;font-weight:500;">Belum ada post dalam Sales Kit</div>
+      ${isAdmin ? `<div style="font-size:11px;margin-top:6px;">Klik "＋ Tambah Post" untuk mula.</div>` : ''}
+    </div>`;
+    return;
+  }
+
+  feed.innerHTML = _skPosts.map((p, idx) => {
+    const isFirst  = idx === 0 || (!p.pinned && _skPosts[idx-1]?.pinned);
+    const isLast   = idx === _skPosts.length - 1;
+    const canMoveUp = isAdmin && !p.pinned && idx > 0 && !_skPosts[idx-1]?.pinned;
+    const canMoveDn = isAdmin && !p.pinned && idx < _skPosts.length - 1;
+
+    const mediaHtml = renderSkMedia(p);
+
+    return `<div id="skpost_${p.id}" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;${p.pinned ? 'border-left:3px solid var(--blue);' : ''}">
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
+        <div style="flex:1;">
+          ${p.pinned ? `<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--blue);background:var(--bluebg);padding:2px 8px;border-radius:4px;margin-bottom:6px;">📌 PINNED</div><br>` : ''}
+          <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.4;">${escHtml(p.headline)}</div>
+        </div>
+        ${isAdmin ? `
+        <div style="display:flex;gap:4px;margin-left:12px;flex-shrink:0;">
+          ${canMoveUp ? `<button onclick="skMovePost('${p.id}',-1)" title="Naik" style="padding:4px 8px;font-size:11px;border:1px solid var(--line);background:var(--bg3);border-radius:5px;cursor:pointer;">↑</button>` : ''}
+          ${canMoveDn ? `<button onclick="skMovePost('${p.id}',1)" title="Turun" style="padding:4px 8px;font-size:11px;border:1px solid var(--line);background:var(--bg3);border-radius:5px;cursor:pointer;">↓</button>` : ''}
+          <button onclick="skTogglePin('${p.id}')" title="${p.pinned?'Unpin':'Pin'}" style="padding:4px 8px;font-size:11px;border:1px solid var(--line);background:${p.pinned?'var(--bluebg)':'var(--bg3)'};color:${p.pinned?'var(--blue)':'var(--textd)'};border-radius:5px;cursor:pointer;">📌</button>
+          <button onclick="skDeletePost('${p.id}')" title="Padam" style="padding:4px 8px;font-size:11px;border:1px solid var(--redb);background:var(--redbg);color:var(--red);border-radius:5px;cursor:pointer;">🗑</button>
+        </div>` : ''}
+      </div>
+
+      <!-- Caption -->
+      ${p.caption ? `<div style="font-size:13px;color:var(--textd);line-height:1.6;margin-bottom:${mediaHtml?'14px':'0'};white-space:pre-wrap;">${escHtml(p.caption)}</div>` : ''}
+
+      <!-- Media -->
+      ${mediaHtml}
+
+      <!-- Footer -->
+      <div style="margin-top:12px;font-size:10px;color:var(--textm);display:flex;align-items:center;gap:8px;">
+        <span>oleh <strong>${escHtml(p.created_by||'admin')}</strong></span>
+        <span>·</span>
+        <span>${fmtSkDate(p.created_at)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSkMedia(p) {
+  if (!p.media_type || p.media_type === 'none' || !p.media_url) return '';
+
+  if (p.media_type === 'image') {
+    return `<div style="margin-top:4px;"><img src="${p.media_url}" alt="${escHtml(p.headline)}" style="width:100%;max-height:480px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:var(--bg3);" onerror="this.style.display='none'"></div>`;
+  }
+
+  if (p.media_type === 'youtube') {
+    const ytId = extractYtId(p.media_url);
+    if (!ytId) return `<div style="padding:10px;background:var(--redbg);border-radius:6px;font-size:11px;color:var(--red);">Link YouTube tidak sah.</div>`;
+    return `<div style="position:relative;padding-bottom:56.25%;height:0;border-radius:8px;overflow:hidden;margin-top:4px;">
+      <iframe src="https://www.youtube.com/embed/${ytId}" frameborder="0" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:8px;"></iframe>
+    </div>`;
+  }
+
+  if (p.media_type === 'pdf' || p.media_type === 'docx') {
+    const icon = p.media_type === 'pdf' ? '📄' : '📝';
+    const label = p.media_type === 'pdf' ? 'PDF' : 'Word Document';
+    return `<a href="${p.media_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;text-decoration:none;margin-top:4px;">
+      <span style="font-size:20px;">${icon}</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);">${escHtml(p.file_name||label)}</div>
+        <div style="font-size:10px;color:var(--blue);">Klik untuk buka / muat turun</div>
+      </div>
+    </a>`;
+  }
+  return '';
+}
+
+function fmtSkDate(ts) {
+  if (!ts) return '';
+  try {
+    return new Date(ts).toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  } catch(e) { return ts; }
+}
+
+function extractYtId(url) {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Add Modal ─────────────────────────────────────────────────
+
+let _skEditId   = null;
+let _skMediaType = 'none';
+let _skUploadedUrl = null;
+let _skUploadedName = null;
+
+function openSkAddModal() {
+  _skEditId = null;
+  _skUploadedUrl = null;
+  _skUploadedName = null;
+  document.getElementById('skModalTitle').textContent = 'Tambah Post Baru';
+  document.getElementById('sk_headline').value = '';
+  document.getElementById('sk_caption').value = '';
+  document.getElementById('sk_media_preview').innerHTML = '';
+  document.getElementById('sk_upload_progress').style.display = 'none';
+  skSetMediaType('none');
+  const m = document.getElementById('skModal');
+  m.style.display = 'flex';
+}
+
+function closeSkModal() {
+  document.getElementById('skModal').style.display = 'none';
+}
+
+function skSetMediaType(type) {
+  _skMediaType = type;
+  _skUploadedUrl = null;
+  _skUploadedName = null;
+
+  // Update tab buttons
+  ['none','image','youtube','pdf','docx'].forEach(t => {
+    const btn = document.getElementById('skmtype_'+t);
+    if (!btn) return;
+    btn.style.background = t === type ? 'var(--blue)' : 'var(--bg3)';
+    btn.style.color      = t === type ? '#fff' : 'var(--textd)';
+    btn.style.fontWeight = t === type ? '600' : '400';
+  });
+
+  const inp = document.getElementById('sk_media_input');
+  const prev = document.getElementById('sk_media_preview');
+  if (prev) prev.innerHTML = '';
+
+  if (type === 'none') {
+    inp.innerHTML = '';
+  } else if (type === 'youtube') {
+    inp.innerHTML = `<input id="sk_yt_url" placeholder="Paste link YouTube (https://youtu.be/...)" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--text);background:var(--bg3);" oninput="skPreviewYt(this.value)">`;
+  } else {
+    const accept = type === 'image' ? 'image/jpeg,image/png,image/gif,image/webp' : type === 'pdf' ? 'application/pdf' : '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    inp.innerHTML = `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--line);border-radius:8px;cursor:pointer;background:var(--bg3);">
+      <span style="font-size:20px;">${type==='image'?'🖼':type==='pdf'?'📄':'📝'}</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);">Klik untuk pilih fail</div>
+        <div style="font-size:10px;color:var(--textm);">${type==='image'?'JPG, PNG, GIF, WEBP':type==='pdf'?'PDF':'DOCX'} · Max 20MB</div>
+      </div>
+      <input type="file" accept="${accept}" style="display:none;" onchange="skHandleUpload(this)">
+    </label>`;
+  }
+}
+
+function skPreviewYt(url) {
+  const ytId = extractYtId(url);
+  const prev = document.getElementById('sk_media_preview');
+  if (!prev) return;
+  if (!ytId) { prev.innerHTML = ''; return; }
+  prev.innerHTML = `<div style="position:relative;padding-bottom:40%;height:0;border-radius:8px;overflow:hidden;margin-top:8px;">
+    <iframe src="https://www.youtube.com/embed/${ytId}" frameborder="0" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+  </div>`;
+}
+
+async function skHandleUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const maxMB = 20;
+  if (file.size > maxMB * 1024 * 1024) {
+    showToast(`Fail terlalu besar. Max ${maxMB}MB.`, true);
+    return;
+  }
+
+  const prog = document.getElementById('sk_upload_progress');
+  prog.style.display = 'block';
+  prog.textContent = 'Mengupload ' + file.name + '...';
+
+  try {
+    const ext      = file.name.split('.').pop();
+    const safeName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path     = `sales-kit/${safeName}`;
+
+    const res = await fetch(`${SUPA_URL}/storage/v1/object/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'true',
+      },
+      body: file,
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('Upload gagal: ' + txt.slice(0,200));
+    }
+
+    _skUploadedUrl  = `${SUPA_URL}/storage/v1/object/public/${path}`;
+    _skUploadedName = file.name;
+    prog.textContent = '✓ Upload berjaya: ' + file.name;
+    prog.style.color = 'var(--green)';
+
+    // Preview
+    const prev = document.getElementById('sk_media_preview');
+    if (_skMediaType === 'image') {
+      prev.innerHTML = `<img src="${_skUploadedUrl}" style="max-width:100%;max-height:200px;border-radius:8px;margin-top:6px;object-fit:contain;border:1px solid var(--line);">`;
+    } else {
+      prev.innerHTML = `<div style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:6px;font-size:11px;color:var(--green);margin-top:6px;">✓ ${escHtml(file.name)}</div>`;
+    }
+  } catch(e) {
+    prog.textContent = '✗ ' + e.message;
+    prog.style.color = 'var(--red)';
+    showToast(e.message, true);
+  }
+}
+
+async function submitSkPost() {
+  const headline = document.getElementById('sk_headline').value.trim();
+  if (!headline) { showToast('Headline wajib diisi', true); return; }
+
+  const caption    = document.getElementById('sk_caption').value.trim();
+  const mediaType  = _skMediaType;
+  let   mediaUrl   = null;
+  let   fileName   = null;
+
+  if (mediaType === 'youtube') {
+    const ytInput = document.getElementById('sk_yt_url');
+    mediaUrl = ytInput ? ytInput.value.trim() : '';
+    if (mediaUrl && !extractYtId(mediaUrl)) { showToast('Link YouTube tidak sah', true); return; }
+  } else if (mediaType !== 'none') {
+    if (!_skUploadedUrl) { showToast('Sila upload fail dahulu', true); return; }
+    mediaUrl = _skUploadedUrl;
+    fileName = _skUploadedName;
+  }
+
+  // Order index: bottom of non-pinned list
+  const maxOrder = _skPosts.filter(p=>!p.pinned).reduce((m,p) => Math.max(m, p.order_index||0), 0);
+
+  const payload = {
+    headline, caption, media_type: mediaType, media_url: mediaUrl||null,
+    file_name: fileName||null, order_index: maxOrder + 1,
+    pinned: false, created_by: currentUser.name || currentUser.id,
+  };
+
+  try {
+    await supaFetch('/rest/v1/sales_kit_posts', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: JSON.stringify([payload]),
+    });
+    showToast('Post berjaya ditambah ✓');
+    closeSkModal();
+    loadSalesKitPosts();
+  } catch(e) {
+    showToast('Gagal simpan: ' + e.message, true);
+  }
+}
+
+// ── Post Actions ──────────────────────────────────────────────
+
+async function skDeletePost(id) {
+  if (!confirm('Padam post ini?')) return;
+  try {
+    await supaFetch(`/rest/v1/sales_kit_posts?id=eq.${id}`, { method: 'DELETE' });
+    showToast('Post dipadam ✓');
+    loadSalesKitPosts();
+  } catch(e) {
+    showToast('Gagal padam: ' + e.message, true);
+  }
+}
+
+async function skTogglePin(id) {
+  const post = _skPosts.find(p => p.id === id);
+  if (!post) return;
+  try {
+    await supaFetch(`/rest/v1/sales_kit_posts?id=eq.${id}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ pinned: !post.pinned }),
+    });
+    showToast(post.pinned ? 'Post di-unpin' : 'Post di-pin ✓');
+    loadSalesKitPosts();
+  } catch(e) {
+    showToast('Gagal: ' + e.message, true);
+  }
+}
+
+async function skMovePost(id, direction) {
+  // Get only non-pinned posts in order
+  const unpinned = _skPosts.filter(p => !p.pinned);
+  const idx = unpinned.findIndex(p => p.id === id);
+  const swapIdx = idx + direction;
+  if (swapIdx < 0 || swapIdx >= unpinned.length) return;
+
+  const a = unpinned[idx];
+  const b = unpinned[swapIdx];
+
+  // Swap order_index
+  const aOrd = a.order_index;
+  const bOrd = b.order_index;
+
+  try {
+    await Promise.all([
+      supaFetch(`/rest/v1/sales_kit_posts?id=eq.${a.id}`, { method:'PATCH', prefer:'return=minimal', body: JSON.stringify({order_index: bOrd}) }),
+      supaFetch(`/rest/v1/sales_kit_posts?id=eq.${b.id}`, { method:'PATCH', prefer:'return=minimal', body: JSON.stringify({order_index: aOrd}) }),
+    ]);
+    loadSalesKitPosts();
+  } catch(e) {
+    showToast('Gagal move: ' + e.message, true);
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// HANTAR KE DESIGN BOARD
+// ══════════════════════════════════════════════════════════════
+
+// Kira design due date = dateHantarKilang - 1 hari (sehari sebelum customer approve design)
+// Guna _cpSettings untuk lead times, fallback ke hardcoded
+function calcDesignDueDate(dueDate) {
+  if (!dueDate) return null;
+  const _s = window._cpSettings || {};
+  const LT_PROD_NORMAL = parseInt(_s.dc_prod_normal ?? 7);
+  const LT_DESIGN      = parseInt(_s.dc_design_custom ?? 3); // default custom design
+  const LT_BUFFER      = parseInt(_s.dc_buffer ?? 1);
+  // Kira backward: dateHantarKilang = dueDate - buffer - produksi - 0 (delivery sudah dikira oleh due date)
+  // Tapi due_date dalam order = tarikh customer terima/collect
+  // dateKilangSiap = dueDate - buffer
+  // dateHantarKilang = dateKilangSiap - prodNormal
+  // designDue = dateHantarKilang - 1 hari
+  const custDate = new Date(dueDate); custDate.setHours(12,0,0,0);
+  const subDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()-n); return x; };
+  const dateKilangSiap    = subDays(custDate, LT_BUFFER);
+  const dateHantarKilang  = subDays(dateKilangSiap, LT_PROD_NORMAL);
+  const designDue         = subDays(dateHantarKilang, 1);
+  return designDue.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+// Butang "Hantar ke Design Board" — dari form tambah order atau sidebar detail
+async function hantarKeDesignBoard(orderId, nameJob, pic, dueDate, pcs) {
+  // 1. Block kalau due date kosong
+  if (!dueDate) {
+    showToast('⚠️ Sila isi tarikh due date dahulu supaya deadline design boleh dikira.', true);
+    return;
+  }
+
+  // 2. Anti-duplicate: check order_id dalam jobboard_cards
+  try {
+    const existing = await supaGet('jobboard_cards', `order_id=eq.${encodeURIComponent(orderId)}&select=id,col,title&limit=1`);
+    if (existing && existing.length > 0) {
+      const ex = existing[0];
+      const colLabel = M_COL_MAP[ex.col] || ex.col;
+      showToast(`⚠️ Job ini sudah ada dalam Design Board — kolum: "${colLabel}"`, true);
+      return;
+    }
+  } catch(e) {
+    // Kalau table order_id column belum ada, proceed je (backward compat)
+    console.warn('order_id check failed:', e.message);
+  }
+
+  // 3. Kira design due date
+  const designDue = calcDesignDueDate(dueDate);
+
+  // 4. Bina card payload
+  const payload = {
+    title:      nameJob || '(Tiada Nama)',
+    col:        'job-list',
+    board:      'design-customer',
+    assignee:   'ZUL',
+    labels:     ['NEW JOB'],
+    due_date:   designDue,
+    pcs:        pcs || 0,
+    created_by: currentUser?.name || currentUser?.id || 'system',
+    order_id:   orderId,
+  };
+
+  try {
+    await supaFetch('/rest/v1/jobboard_cards', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: JSON.stringify([payload]),
+    });
+
+    const dueTxt = designDue
+      ? ` · Deadline design: ${new Date(designDue).toLocaleDateString('ms-MY', {day:'numeric',month:'short',year:'numeric'})}`
+      : '';
+    showToast(`✓ Job dihantar ke Design Board${dueTxt}`);
+
+    // Refresh sidebar kalau terbuka
+    if (currentDetailRow && currentDetailRow.id === orderId) {
+      showDetail(orderId);
+    }
+  } catch(e) {
+    showToast('Gagal hantar ke Design Board: ' + e.message, true);
+  }
+}
+
+// Ambil status design board untuk satu order_id
+async function getDesignBoardStatus(orderId) {
+  if (!orderId) return null;
+  try {
+    const rows = await supaGet('jobboard_cards', `order_id=eq.${encodeURIComponent(orderId)}&select=id,col,title,labels,updated_at&limit=1`);
+    return (rows && rows.length) ? rows[0] : null;
+  } catch(e) { return null; }
+}
+
+// Render design board status untuk sidebar
+async function renderDesignBoardStatus(orderId, containerEl) {
+  const card = await getDesignBoardStatus(orderId);
+  if (!card) {
+    containerEl.innerHTML = `
+      <div style="font-size:11px;color:var(--textm);padding:6px 0;">
+        Belum dihantar ke Design Board.
+      </div>`;
+    return;
+  }
+
+  const isClosed = (card.labels||[]).includes('CUSTOMER CLOSED');
+  if (isClosed) {
+    containerEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:6px;">
+        <span style="font-size:13px;">✅</span>
+        <span style="font-size:11px;font-weight:600;color:var(--green);">CUSTOMER CLOSED</span>
+      </div>`;
+    return;
+  }
+
+  const colLabel  = M_COL_MAP[card.col] || card.col;
+  const updatedAt = new Date(card.updated_at);
+  const nowMs     = Date.now();
+  const diffHrs   = Math.floor((nowMs - updatedAt.getTime()) / 3600000);
+  const diffMins  = Math.floor((nowMs - updatedAt.getTime()) / 60000) % 60;
+
+  let stuckBg = 'var(--bg3)', stuckColor = 'var(--textm)', stuckIcon = '🎨';
+  let stuckLabel = '';
+  if (diffHrs >= 48) {
+    stuckBg = 'var(--redbg)'; stuckColor = 'var(--red)'; stuckIcon = '🚨';
+    stuckLabel = `Stuck ${diffHrs} jam`;
+  } else if (diffHrs >= 24) {
+    stuckBg = 'var(--amberbg)'; stuckColor = 'var(--amber)'; stuckIcon = '⚠️';
+    stuckLabel = `Stuck ${diffHrs} jam`;
+  } else {
+    stuckLabel = diffHrs > 0 ? `${diffHrs}j ${diffMins}m` : `${diffMins} minit`;
+  }
+
+  containerEl.innerHTML = `
+    <div style="background:${stuckBg};border:1px solid ${stuckColor}33;border-radius:8px;padding:8px 12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:13px;">${stuckIcon}</span>
+        <span style="font-size:11px;font-weight:700;color:${stuckColor};">${colLabel}</span>
+      </div>
+      <div style="font-size:10px;color:var(--textm);">Di sini selama <strong style="color:${stuckColor};">${stuckLabel}</strong></div>
+    </div>`;
+}
+
+
+// Simpan order THEN hantar ke Design Board
+async function saveAndHantarDesign() {
+  const dueDate = document.getElementById('f_duedate').value;
+  if (!dueDate) {
+    showToast('⚠️ Sila isi tarikh due date dahulu supaya deadline design boleh dikira.', true);
+    return;
+  }
+  // Save order first, then on success detect the new order id
+  window._pendingDesignBoard = true;
+  saveOrder(); // saveOrder will check _pendingDesignBoard after save
+}
+
+window.hantarKeDesignBoard = hantarKeDesignBoard;
+window.renderDesignBoardStatus = renderDesignBoardStatus;
+window.calcDesignDueDate = calcDesignDueDate;
+
+window.showSalesKitView = showSalesKitView;
+window.skSetMediaType   = skSetMediaType;
+window.skPreviewYt      = skPreviewYt;
+window.skHandleUpload   = skHandleUpload;
+window.submitSkPost     = submitSkPost;
+window.openSkAddModal   = openSkAddModal;
+window.closeSkModal     = closeSkModal;
+window.skDeletePost     = skDeletePost;
+window.skTogglePin      = skTogglePin;
+window.skMovePost       = skMovePost;
+
+window.showControlPanelView = showControlPanelView;
+window.renderControlPanel   = renderControlPanel;
+window.cpToggleClick        = cpToggleClick;
+window.loadCpSettings       = loadCpSettings;
 window.loadAuditLogInline = loadAuditLogInline;
 window.showBackupHistory = showBackupHistory;
 
@@ -8956,12 +10102,21 @@ function calcDeadline() {
     return;
   }
 
-  // Lead times (hari)
-  const LT_PROD_NORMAL  = 7;
-  const LT_PROD_URGENT  = 3;
-  const LT_DESIGN       = artwork === 'yes' ? 0 : 3;
-  const LT_BUFFER       = 1;
-  const LT_POSTAGE      = delivery === 'collect' ? 0 : delivery === 'pos_sm' ? 2 : 5;
+  // Lead times (hari) — baca dari Control Panel settings, fallback ke hardcoded
+  const _s              = window._cpSettings || {};
+  const LT_PROD_NORMAL  = parseInt(_s.dc_prod_normal       ?? 7);
+  const LT_PROD_URGENT  = parseInt(_s.dc_prod_urgent       ?? 3);
+  const LT_BUFFER       = parseInt(_s.dc_buffer            ?? 1);
+  const LT_DESIGN       = artwork === 'yes'
+    ? parseInt(_s.dc_design_readymade ?? 0)
+    : parseInt(_s.dc_design_custom    ?? 3);
+  const LT_POSTAGE      = delivery === 'collect'
+    ? 0
+    : delivery === 'pos_sm'
+      ? parseInt(_s.dc_delivery_pos_sm  ?? 2)
+      : delivery === 'pos_ss'
+        ? parseInt(_s.dc_delivery_pos_ss  ?? 5)
+        : parseInt(_s.dc_delivery_lalamove ?? 1);
 
   const custDate = new Date(custDateVal);
   custDate.setHours(12,0,0,0);
