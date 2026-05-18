@@ -995,8 +995,8 @@ tr:hover .row-actions{opacity:1;}
   <!-- Date -->
   <div class="sb-date" id="sbDate"></div>
 
-  <!-- ── UTAMA ── -->
-  <div class="sb-section">Utama</div>
+  <!-- ══ BAHAGIAN 1: KERJA ══ -->
+  <div class="sb-section">Kerja</div>
 
   <button class="sb-item active" id="sbHome" data-tip="Home" onclick="sbNav('home')">
     <span class="sb-item-icon">🏠</span>
@@ -1008,37 +1008,9 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Masterlist</span>
   </button>
 
-  <!-- ── JUALAN ── -->
-  <div class="sb-divider"></div>
-  <div class="sb-section">Jualan</div>
-
   <button class="sb-item" id="sbKpi" data-tip="KPI Sales" onclick="sbNav('kpi')" style="display:none;">
     <span class="sb-item-icon">📊</span>
     <span class="sb-item-label">KPI Sales</span>
-  </button>
-
-  <button class="sb-item" id="sbDashboard" data-tip="Dashboard" onclick="sbNav('dashboard')" style="display:none;">
-    <span class="sb-item-icon">📈</span>
-    <span class="sb-item-label">Dashboard</span>
-  </button>
-
-  <button class="sb-item" id="sbCustomer" data-tip="Pelanggan" onclick="sbNav('customer')" style="display:none;">
-    <span class="sb-item-icon">👥</span>
-    <span class="sb-item-label">Pelanggan</span>
-  </button>
-
-  <!-- ── OPERASI ── -->
-  <div class="sb-divider"></div>
-  <div class="sb-section">Operasi</div>
-
-  <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
-    <span class="sb-item-icon">🏭</span>
-    <span class="sb-item-label">Supplier</span>
-  </button>
-
-  <button class="sb-item" id="sbProdTrack" data-tip="Production Tracker" onclick="sbNav('prodtrack')" style="display:none;">
-    <span class="sb-item-icon">📦</span>
-    <span class="sb-item-label">Production</span>
   </button>
 
   <button class="sb-item" id="sbJobBoard" data-tip="Job Board" onclick="window.open('dod-jobboard.html','_blank')" style="display:none;">
@@ -1047,49 +1019,9 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-badge" style="background:var(--purplebg);color:var(--purple);">↗</span>
   </button>
 
-  <!-- ── KEWANGAN ── -->
-  <div class="sb-divider"></div>
-  <div class="sb-section">Kewangan</div>
-
-  <button class="sb-item" id="sbSupplierOS" data-tip="Supplier OS" onclick="sbNav('supplieros')" style="display:none;">
-    <span class="sb-item-icon">💸</span>
-    <span class="sb-item-label">Supplier OS</span>
-  </button>
-
-  <button class="sb-item" id="sbDocGen" data-tip="Jana Dokumen" onclick="window.open('dod-document-generator.html','_blank')" style="display:none;">
-    <span class="sb-item-icon">📄</span>
-    <span class="sb-item-label">Jana Dokumen</span>
-    <span class="sb-item-badge" style="background:var(--tealbg);color:var(--teal);">↗</span>
-  </button>
-
-  <button class="sb-item" id="sbPenerimaan" data-tip="Penerimaan (Wang Masuk)" onclick="sbNav('penerimaan')" style="display:none;">
-    <span class="sb-item-icon">💰</span>
-    <span class="sb-item-label">Penerimaan</span>
-  </button>
-
-  <!-- ── ADMIN ── -->
-  <div class="sb-divider"></div>
-  <div class="sb-section">Admin</div>
-
-  <button class="sb-item" id="sbMemo" data-tip="Memo & Announcement" onclick="sbNav('memo')" style="display:none;">
-    <span class="sb-item-icon">📢</span>
-    <span class="sb-item-label">Memo</span>
-    <span class="sb-badge" id="memoBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;">NEW</span>
-  </button>
-
-  <button class="sb-item" id="sbUserMgmt" data-tip="Pengurusan Pengguna" onclick="sbNav('usermgmt')" style="display:none;">
-    <span class="sb-item-icon">👤</span>
-    <span class="sb-item-label">Pengguna</span>
-  </button>
-
-  <button class="sb-item" id="sbSecurity" data-tip="Security & Audit" onclick="sbNav('security')" style="display:none;">
-    <span class="sb-item-icon">🛡</span>
-    <span class="sb-item-label">Security</span>
-  </button>
-
-  <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
-    <span class="sb-item-icon">⚙️</span>
-    <span class="sb-item-label">Control Panel</span>
+  <button class="sb-item" id="sbCustomer" data-tip="Pelanggan" onclick="sbNav('customer')" style="display:none;">
+    <span class="sb-item-icon">👥</span>
+    <span class="sb-item-label">Pelanggan</span>
   </button>
 
   <button class="sb-item" id="sbSalesKit" data-tip="Sales Kit" onclick="sbNav('saleskit')" style="display:none;">
@@ -1102,14 +1034,74 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">DOD AI</span>
   </button>
 
-  <button class="sb-item" id="sbBin" data-tip="Tong Sampah" onclick="sbNav('bin')" style="display:none;">
-    <span class="sb-item-icon">🗑</span>
-    <span class="sb-item-label">Bin</span>
-  </button>
-
   <button class="sb-item" id="sbCalendar" data-tip="Kalendar" onclick="sbNav('calendar')" style="display:none;">
     <span class="sb-item-icon">📅</span>
     <span class="sb-item-label">Kalendar</span>
+  </button>
+
+  <button class="sb-item" id="sbDocGen" data-tip="Jana Dokumen" onclick="window.open('dod-document-generator.html','_blank')" style="display:none;">
+    <span class="sb-item-icon">📄</span>
+    <span class="sb-item-label">Jana Dokumen</span>
+    <span class="sb-item-badge" style="background:var(--tealbg);color:var(--teal);">↗</span>
+  </button>
+
+  <!-- ══ BAHAGIAN 2: OPERASI ══ -->
+  <div class="sb-divider"></div>
+  <div class="sb-section">Operasi</div>
+
+  <button class="sb-item" id="sbDashboard" data-tip="Dashboard" onclick="sbNav('dashboard')" style="display:none;">
+    <span class="sb-item-icon">📈</span>
+    <span class="sb-item-label">Dashboard</span>
+  </button>
+
+  <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
+    <span class="sb-item-icon">🏭</span>
+    <span class="sb-item-label">Supplier</span>
+  </button>
+
+  <button class="sb-item" id="sbSupplierOS" data-tip="Supplier OS" onclick="sbNav('supplieros')" style="display:none;">
+    <span class="sb-item-icon">💸</span>
+    <span class="sb-item-label">Supplier OS</span>
+  </button>
+
+  <button class="sb-item" id="sbProdTrack" data-tip="Production Tracker" onclick="sbNav('prodtrack')" style="display:none;">
+    <span class="sb-item-icon">🔧</span>
+    <span class="sb-item-label">Production</span>
+  </button>
+
+  <button class="sb-item" id="sbPenerimaan" data-tip="Penerimaan (Wang Masuk)" onclick="sbNav('penerimaan')" style="display:none;">
+    <span class="sb-item-icon">💰</span>
+    <span class="sb-item-label">Penerimaan</span>
+  </button>
+
+  <button class="sb-item" id="sbMemo" data-tip="Memo & Announcement" onclick="sbNav('memo')" style="display:none;">
+    <span class="sb-item-icon">📢</span>
+    <span class="sb-item-label">Memo</span>
+    <span class="sb-badge" id="memoBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;">NEW</span>
+  </button>
+
+  <!-- ══ BAHAGIAN 3: SISTEM ══ -->
+  <div class="sb-divider"></div>
+  <div class="sb-section">Sistem</div>
+
+  <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
+    <span class="sb-item-icon">⚙️</span>
+    <span class="sb-item-label">Control Panel</span>
+  </button>
+
+  <button class="sb-item" id="sbUserMgmt" data-tip="Pengurusan Pengguna" onclick="sbNav('usermgmt')" style="display:none;">
+    <span class="sb-item-icon">👤</span>
+    <span class="sb-item-label">Pengguna</span>
+  </button>
+
+  <button class="sb-item" id="sbSecurity" data-tip="Security & Audit" onclick="sbNav('security')" style="display:none;">
+    <span class="sb-item-icon">🛡</span>
+    <span class="sb-item-label">Security</span>
+  </button>
+
+  <button class="sb-item" id="sbBin" data-tip="Tong Sampah" onclick="sbNav('bin')" style="display:none;">
+    <span class="sb-item-icon">🗑</span>
+    <span class="sb-item-label">Bin</span>
   </button>
 
   <button class="sb-item" id="sbChgPw" data-tip="Tukar Password" onclick="openChpwModal(false)">
@@ -1142,7 +1134,12 @@ tr:hover .row-actions{opacity:1;}
 <div id="appContent">
 
 <!-- ── MEMO NOTICE BAR ── -->
-<div id="memoNoticeBar" style="display:none;padding:8px 20px;background:var(--bg1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;"></div>
+<div id="memoNoticeBar" style="display:none;background:var(--bg1);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;">
+  <div id="memoNoticeInner" style="max-height:64px;overflow:hidden;padding:8px 20px;transition:max-height .3s ease;"></div>
+  <div id="memoNoticeToggle" style="display:none;text-align:center;padding:3px 0 5px;border-top:1px solid var(--line);">
+    <button onclick="toggleMemoBar()" id="memoNoticeToggleBtn" style="font-size:10px;color:var(--blue);background:none;border:none;cursor:pointer;padding:2px 12px;">▼ Baca selanjutnya</button>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -2650,11 +2647,11 @@ function setupNavForRole() {
     sbShow('sbKpi');
     sbShow('sbCalendar');
     sbShow('sbMemo');
-    // Control Panel: root_admin only
-    const cpBtn = document.getElementById('sbControlPanel');
-    if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    // Control Panel: root_admin sahaja
+    const cpBtn = document.getElementById('sbControlPanel');
+    if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -2672,6 +2669,8 @@ function setupNavForRole() {
     sbHide('sbUserMgmt');
     sbHide('sbSecurity');
     sbHide('sbMemo');
+    sbHide('sbControlPanel');
+    sbHide('sbBin');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
   } else { // designer
@@ -2691,6 +2690,10 @@ function setupNavForRole() {
     sbHide('sbSecurity');
     sbHide('sbBtnAddOrder');
     sbHide('sbMemo');
+    sbHide('sbControlPanel');
+    sbHide('sbBin');
+    sbHide('sbPenerimaan');
+    sbShow('sbCalendar');
   }
 }
 
@@ -4499,7 +4502,7 @@ function startAutoRefresh() {
   _autoRefreshTimer = setInterval(async () => {
     if (document.hidden) return; // skip if tab not visible
     try {
-      const orders = await supaGet('orders', 'select=*&order=order_date.asc');
+      const orders = await supaGet('orders', 'select=*&order=order_date.asc&is_deleted=not.is.true');
       const grouped = {};
       orders.forEach(o => {
         const m = o.month || 'UNKNOWN';
@@ -9406,8 +9409,61 @@ function renderCpRoles() {
     Permission matrix penuh (toggle per fungsi per role) akan tersedia dalam versi seterusnya. Buat masa ni, edit role melalui Pengurusan Pengguna.
   </div>`;
 
+  // Permission matrix — read only
+  const matrixItems = [
+    { label:'Home',           admin:true,  sales:true,  designer:true  },
+    { label:'Masterlist',     admin:true,  sales:true,  designer:false },
+    { label:'KPI Sales',      admin:true,  sales:true,  designer:false },
+    { label:'Design Board',   admin:true,  sales:true,  designer:true  },
+    { label:'Pelanggan',      admin:true,  sales:true,  designer:false },
+    { label:'Sales Kit',      admin:true,  sales:true,  designer:true  },
+    { label:'DOD AI',         admin:true,  sales:true,  designer:true  },
+    { label:'Kalendar',       admin:true,  sales:true,  designer:true  },
+    { label:'Jana Dokumen',   admin:true,  sales:true,  designer:true  },
+    { label:'Dashboard',      admin:true,  sales:false, designer:false },
+    { label:'Supplier',       admin:true,  sales:false, designer:false },
+    { label:'Supplier OS',    admin:true,  sales:false, designer:false },
+    { label:'Production',     admin:true,  sales:true,  designer:false },
+    { label:'Penerimaan',     admin:true,  sales:true,  designer:false },
+    { label:'Memo',           admin:true,  sales:false, designer:false },
+    { label:'Control Panel',  admin:'⭐',  sales:false, designer:false },
+    { label:'Pengguna',       admin:true,  sales:false, designer:false },
+    { label:'Security',       admin:true,  sales:false, designer:false },
+    { label:'Bin',            admin:true,  sales:false, designer:false },
+    { label:'Tukar Password', admin:true,  sales:true,  designer:true  },
+  ];
+
+  const tick  = v => v === true  ? '<span style="color:#0F7A48;font-weight:700;">✓</span>'
+                  : v === false ? '<span style="color:var(--textm);">—</span>'
+                  : `<span style="color:var(--blue);font-size:10px;font-weight:700;" title="Root Admin sahaja">${v}</span>`;
+
+  const matrixHtml = `
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead>
+          <tr style="background:var(--bg5);">
+            <th style="text-align:left;padding:7px 12px;color:var(--textm);font-weight:600;border-bottom:1px solid var(--line);">Item Sidebar</th>
+            <th style="text-align:center;padding:7px 16px;color:var(--textm);font-weight:600;border-bottom:1px solid var(--line);">Admin</th>
+            <th style="text-align:center;padding:7px 16px;color:var(--textm);font-weight:600;border-bottom:1px solid var(--line);">Sales</th>
+            <th style="text-align:center;padding:7px 16px;color:var(--textm);font-weight:600;border-bottom:1px solid var(--line);">Designer</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${matrixItems.map((item,i) => `
+          <tr style="background:${i%2===0?'var(--bg3)':'transparent'};">
+            <td style="padding:6px 12px;color:var(--text);border-bottom:1px solid var(--line)33;">${item.label}</td>
+            <td style="text-align:center;padding:6px;border-bottom:1px solid var(--line)33;">${tick(item.admin)}</td>
+            <td style="text-align:center;padding:6px;border-bottom:1px solid var(--line)33;">${tick(item.sales)}</td>
+            <td style="text-align:center;padding:6px;border-bottom:1px solid var(--line)33;">${tick(item.designer)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:8px;font-size:10px;color:var(--textm);">⭐ Control Panel — Root Admin (@fariz) sahaja.</div>
+    </div>`;
+
   return cpCard('Hierarchy Admin', 'Root Admin dan Master Admin adalah locked — tidak boleh diubah dari sini.', hierarchyContent) +
-    cpCard('Staff & Role', 'Semua staff selain admin. Klik Edit untuk tukar role dalam Pengurusan Pengguna.', staffRows + permNote);
+    cpCard('Staff & Role', 'Semua staff selain admin. Klik Edit untuk tukar role dalam Pengurusan Pengguna.', staffRows) +
+    cpCard('Permission Matrix', 'Senarai akses sidebar mengikut role. Read-only — untuk ubah, edit code setupNavForRole.', matrixHtml);
 }
 
 
@@ -9548,8 +9604,8 @@ function renderSalesKitPage() {
         <div style="margin-bottom:12px;">
           <div style="font-size:11px;color:var(--textm);margin-bottom:8px;font-weight:500;">LAMPIRAN</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-            ${['none','image','youtube','pdf','docx'].map(t => `
-            <button onclick="skSetMediaType('${t}')" id="skmtype_${t}" style="padding:5px 12px;font-size:11px;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:${t==='none'?'var(--blue)':'var(--bg3)'};color:${t==='none'?'#fff':'var(--textd)'};font-weight:${t==='none'?'600':'400'};">${{none:'Tiada',image:'🖼 Gambar',youtube:'▶️ YouTube',pdf:'📄 PDF',docx:'📝 Word'}[t]}</button>`).join('')}
+            ${['none','images','youtube','pdf','docx'].map(t => `
+            <button onclick="skSetMediaType('${t}')" id="skmtype_${t}" style="padding:5px 12px;font-size:11px;border-radius:6px;cursor:pointer;border:1px solid var(--line);background:${t==='none'?'var(--blue)':'var(--bg3)'};color:${t==='none'?'#fff':'var(--textd)'};font-weight:${t==='none'?'600':'400'};">${{none:'Tiada',images:'🖼 Gambar',youtube:'▶️ YouTube',pdf:'📄 PDF',docx:'📝 Word'}[t]}</button>`).join('')}
           </div>
           <div id="sk_media_input"></div>
           <div id="sk_upload_progress" style="display:none;margin-top:8px;font-size:11px;color:var(--blue);">Mengupload...</div>
@@ -9625,6 +9681,28 @@ function renderSalesKitFeed() {
 function renderSkMedia(p) {
   if (!p.media_type || p.media_type === 'none' || !p.media_url) return '';
 
+  if (p.media_type === 'images') {
+    let urls = [];
+    try { urls = JSON.parse(p.media_url); } catch(e) { urls = [p.media_url]; }
+    if (!urls.length) return '';
+    if (urls.length === 1) {
+      return `<div style="margin-top:4px;"><img src="${urls[0]}" style="width:100%;max-height:420px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:var(--bg3);"></div>`;
+    }
+    const cid = 'carousel_' + p.id;
+    return `<div id="${cid}" style="margin-top:8px;position:relative;">
+      <div style="overflow:hidden;border-radius:8px;border:1px solid var(--line);background:var(--bg3);">
+        <div id="${cid}_track" style="display:flex;transition:transform .3s ease;">
+          ${urls.map(u => `<img src="${u}" style="min-width:100%;max-height:380px;object-fit:contain;">`).join('')}
+        </div>
+      </div>
+      ${urls.length > 1 ? `
+      <button onclick="skCarousel('${cid}',-1)" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">◀</button>
+      <button onclick="skCarousel('${cid}',1)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">▶</button>
+      <div style="text-align:center;margin-top:6px;">
+        ${urls.map((_,i) => `<span id="${cid}_dot_${i}" onclick="skCarouselGo('${cid}',${i},${urls.length})" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${i===0?'var(--blue)':'var(--line)'};margin:0 3px;cursor:pointer;"></span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }
   if (p.media_type === 'image') {
     return `<div style="margin-top:4px;"><img src="${p.media_url}" alt="${escHtml(p.headline)}" style="width:100%;max-height:480px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:var(--bg3);" onerror="this.style.display='none'"></div>`;
   }
@@ -9674,11 +9752,13 @@ let _skEditId   = null;
 let _skMediaType = 'none';
 let _skUploadedUrl = null;
 let _skUploadedName = null;
+let _skUploadedImages = []; // array for multiple images
 
 function openSkAddModal() {
   _skEditId = null;
   _skUploadedUrl = null;
   _skUploadedName = null;
+  _skUploadedImages = [];
   document.getElementById('skModalTitle').textContent = 'Tambah Post Baru';
   document.getElementById('sk_headline').value = '';
   document.getElementById('sk_caption').value = '';
@@ -9715,13 +9795,23 @@ function skSetMediaType(type) {
     inp.innerHTML = '';
   } else if (type === 'youtube') {
     inp.innerHTML = `<input id="sk_yt_url" placeholder="Paste link YouTube (https://youtu.be/...)" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--text);background:var(--bg3);" oninput="skPreviewYt(this.value)">`;
-  } else {
-    const accept = type === 'image' ? 'image/jpeg,image/png,image/gif,image/webp' : type === 'pdf' ? 'application/pdf' : '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  } else if (type === 'images') {
     inp.innerHTML = `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--line);border-radius:8px;cursor:pointer;background:var(--bg3);">
-      <span style="font-size:20px;">${type==='image'?'🖼':type==='pdf'?'📄':'📝'}</span>
+      <span style="font-size:20px;">🖼</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);">Klik untuk pilih gambar</div>
+        <div style="font-size:10px;color:var(--textm);">JPG, PNG, GIF, WEBP · Boleh pilih berbilang · Max 20MB setiap satu</div>
+      </div>
+      <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none;" onchange="skHandleMultiUpload(this)">
+    </label>
+    <div id="sk_images_list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>`;
+  } else {
+    const accept = type === 'pdf' ? 'application/pdf' : '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    inp.innerHTML = `<label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--line);border-radius:8px;cursor:pointer;background:var(--bg3);">
+      <span style="font-size:20px;">${type==='pdf'?'📄':'📝'}</span>
       <div>
         <div style="font-size:12px;font-weight:600;color:var(--text);">Klik untuk pilih fail</div>
-        <div style="font-size:10px;color:var(--textm);">${type==='image'?'JPG, PNG, GIF, WEBP':type==='pdf'?'PDF':'DOCX'} · Max 20MB</div>
+        <div style="font-size:10px;color:var(--textm);">${type==='pdf'?'PDF':'DOCX'} · Max 20MB</div>
       </div>
       <input type="file" accept="${accept}" style="display:none;" onchange="skHandleUpload(this)">
     </label>`;
@@ -9805,6 +9895,9 @@ async function submitSkPost() {
     const ytInput = document.getElementById('sk_yt_url');
     mediaUrl = ytInput ? ytInput.value.trim() : '';
     if (mediaUrl && !extractYtId(mediaUrl)) { showToast('Link YouTube tidak sah', true); return; }
+  } else if (mediaType === 'images') {
+    if (!_skUploadedImages.length) { showToast('Sila upload sekurang-kurangnya satu gambar', true); return; }
+    mediaUrl = JSON.stringify(_skUploadedImages.map(i => i.url)); // store as JSON array
   } else if (mediaType !== 'none') {
     if (!_skUploadedUrl) { showToast('Sila upload fail dahulu', true); return; }
     mediaUrl = _skUploadedUrl;
@@ -9939,15 +10032,16 @@ async function hantarKeDesignBoard(orderId, nameJob, pic, dueDate, pcs) {
   // 3. Kira design due date
   const designDue = calcDesignDueDate(dueDate);
 
-  // 4. Bina card payload
+  // 4. Bina card payload — id mesti ada (UUID format)
+  const newId = 'card_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
   const payload = {
+    id:         newId,
     title:      nameJob || '(Tiada Nama)',
     col:        'job-list',
-    board:      'design-customer',
+    board:      'design',
     assignee:   'ZUL',
     labels:     ['NEW JOB'],
     due_date:   designDue,
-    pcs:        pcs || 0,
     created_by: currentUser?.name || currentUser?.id || 'system',
     order_id:   orderId,
   };
@@ -10047,6 +10141,85 @@ async function saveAndHantarDesign() {
 window.hantarKeDesignBoard = hantarKeDesignBoard;
 window.renderDesignBoardStatus = renderDesignBoardStatus;
 window.calcDesignDueDate = calcDesignDueDate;
+
+
+// Multi-image upload for Sales Kit
+async function skHandleMultiUpload(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  const prog = document.getElementById('sk_upload_progress');
+  const list = document.getElementById('sk_images_list');
+  prog.style.display = 'block';
+  prog.style.color = 'var(--blue)';
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (file.size > 20 * 1024 * 1024) {
+      showToast(`${file.name} terlalu besar (max 20MB)`, true);
+      continue;
+    }
+    prog.textContent = `Mengupload ${i+1}/${files.length}: ${file.name}...`;
+    try {
+      const safeName = Date.now() + '_' + Math.random().toString(36).slice(2,5) + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path = `sales-kit/${safeName}`;
+      const res = await fetch(`${SUPA_URL}/storage/v1/object/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': file.type||'image/jpeg', 'x-upsert':'true' },
+        body: file,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const url = `${SUPA_URL}/storage/v1/object/public/${path}`;
+      _skUploadedImages.push({ url, name: file.name });
+
+      // Show thumbnail
+      if (list) {
+        const thumb = document.createElement('div');
+        thumb.style.cssText = 'position:relative;';
+        thumb.innerHTML = `<img src="${url}" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">
+          <button onclick="skRemoveImage('${url}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>`;
+        thumb.id = 'sk_thumb_' + _skUploadedImages.length;
+        list.appendChild(thumb);
+      }
+    } catch(e) {
+      showToast(`Gagal upload ${file.name}: ` + e.message, true);
+    }
+  }
+
+  prog.textContent = `✓ ${_skUploadedImages.length} gambar berjaya diupload`;
+  prog.style.color = 'var(--green)';
+}
+
+function skRemoveImage(url) {
+  _skUploadedImages = _skUploadedImages.filter(i => i.url !== url);
+  const list = document.getElementById('sk_images_list');
+  if (list) list.innerHTML = _skUploadedImages.map((img,idx) => `
+    <div style="position:relative;">
+      <img src="${img.url}" style="width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid var(--line);">
+      <button onclick="skRemoveImage('${img.url}')" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:10px;cursor:pointer;">×</button>
+    </div>`).join('');
+}
+
+
+// Sales Kit carousel navigation
+const _skCarouselIdx = {};
+function skCarousel(cid, dir) {
+  const track = document.getElementById(cid + '_track');
+  if (!track) return;
+  const total = track.children.length;
+  _skCarouselIdx[cid] = ((_skCarouselIdx[cid] || 0) + dir + total) % total;
+  skCarouselGo(cid, _skCarouselIdx[cid], total);
+}
+function skCarouselGo(cid, idx, total) {
+  _skCarouselIdx[cid] = idx;
+  const track = document.getElementById(cid + '_track');
+  if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+  // Update dots
+  for (let i = 0; i < total; i++) {
+    const dot = document.getElementById(`${cid}_dot_${i}`);
+    if (dot) dot.style.background = i === idx ? 'var(--blue)' : 'var(--line)';
+  }
+}
 
 window.showSalesKitView = showSalesKitView;
 window.skSetMediaType   = skSetMediaType;
@@ -10421,7 +10594,7 @@ function showCalendarView() {
 
 async function loadCalendarEvents() {
   try {
-    const res = await supaFetch('calendar_events?select=*&order=event_date.asc');
+    const res = await supaFetch('/rest/v1/calendar_events?select=*&order=event_date.asc');
     calEvents = res || [];
     calEventsLoaded = true;
   } catch(e) {
@@ -10430,7 +10603,7 @@ async function loadCalendarEvents() {
   }
 }
 
-function renderCalendar() {
+async function renderCalendar() {
   const label = `${CAL_MONTHS[calMonth]} ${calYear}`;
   document.getElementById('calMonthTitle').textContent = label;
 
@@ -10440,20 +10613,37 @@ function renderCalendar() {
   const prevDays  = new Date(calYear, calMonth, 0).getDate();
 
   // Build maps from sessionData (all months)
+  // Designer: only show their design due dates from jobboard cards
+  const isDesigner = currentUser?.role === 'designer';
   const submitMap = {};
   const dueMap    = {};
-  Object.values(sessionData || {}).flat().forEach(o => {
-    if (o.inv_date) {
-      const k = o.inv_date.substring(0,10);
-      if (!submitMap[k]) submitMap[k] = [];
-      submitMap[k].push(o);
-    }
-    if (o.due_date) {
-      const k = o.due_date.substring(0,10);
-      if (!dueMap[k]) dueMap[k] = [];
-      dueMap[k].push(o);
-    }
-  });
+  if (!isDesigner) {
+    Object.values(sessionData || {}).flat().forEach(o => {
+      if (o.inv_date) {
+        const k = o.inv_date.substring(0,10);
+        if (!submitMap[k]) submitMap[k] = [];
+        submitMap[k].push(o);
+      }
+      if (o.due_date) {
+        const k = o.due_date.substring(0,10);
+        if (!dueMap[k]) dueMap[k] = [];
+        dueMap[k].push(o);
+      }
+    });
+  } else {
+    // Designer: load their jobboard cards due dates
+    try {
+      const assignee = currentUser.name?.toUpperCase() || currentUser.id?.toUpperCase();
+      const cards = await supaGet('jobboard_cards',
+        `assignee=eq.${encodeURIComponent(assignee)}&archived=eq.false&select=title,due_date,col&order=due_date.asc&limit=200`);
+      (cards||[]).forEach(c => {
+        if (!c.due_date) return;
+        const k = c.due_date.substring(0,10);
+        if (!dueMap[k]) dueMap[k] = [];
+        dueMap[k].push({ name_job: c.title, due_date: c.due_date, _isDesignJob: true });
+      });
+    } catch(e) { console.warn('Designer calendar load failed:', e); }
+  }
   const eventMap = {};
   calEvents.forEach(e => {
     const k = e.event_date.substring(0,10);
@@ -10622,7 +10812,7 @@ async function calAddEvent() {
   const type  = document.getElementById('calAddType').value;
   if (!title) { showToast('Sila masukkan nama event.', true); return; }
   try {
-    const res = await supaFetch('calendar_events', {
+    const res = await supaFetch('/rest/v1/calendar_events', {
       method:'POST',
       body: JSON.stringify({event_date:calSelectedDate, event_type:type, title, created_by:currentUser.id}),
       headers:{'Prefer':'return=representation'}
@@ -10647,7 +10837,7 @@ async function calDeleteEvent(evId, dk) {
   if (currentUser.role!=='admin') return;
   if (!confirm('Padam event ini?')) return;
   try {
-    await supaFetch(`calendar_events?id=eq.${evId}`, {method:'DELETE',headers:{'Prefer':''}});
+    await supaFetch(`/rest/v1/calendar_events?id=eq.${evId}`, {method:'DELETE',headers:{'Prefer':''}});
     calEvents = calEvents.filter(e=>String(e.id)!==String(evId));
     calRenderPanel(dk);
     renderCalendar();
@@ -10721,10 +10911,12 @@ async function memoCheckAndShow() {
   const infoUnread   = relevant.filter(m => m.type === 'info'   && !readIds.includes(m.id));
   
   // Show ALL relevant memos in notice bar (read or unread) — urgent & info
-  const bar = document.getElementById('memoNoticeBar');
-  if (bar) {
+  const bar   = document.getElementById('memoNoticeBar');
+  const inner = document.getElementById('memoNoticeInner');
+  const toggle = document.getElementById('memoNoticeToggle');
+  if (bar && inner) {
     if (relevant.length) {
-      bar.innerHTML = relevant.map(m => {
+      inner.innerHTML = relevant.map(m => {
         const isRead = readIds.includes(m.id);
         const isUrgent = m.type === 'urgent';
         const bg     = isUrgent ? '#fff5f5' : 'var(--bluebg)';
@@ -10733,13 +10925,23 @@ async function memoCheckAndShow() {
         const readBadge = isRead
           ? `<span style="font-size:9px;background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:8px;margin-left:6px;">✓ dah baca</span>`
           : `<span style="font-size:9px;background:#fff3cd;color:#856404;padding:1px 6px;border-radius:8px;margin-left:6px;">belum baca</span>`;
-        return `<div style="display:flex;align-items:center;gap:8px;background:${bg};border-left:3px solid ${border};padding:7px 14px;border-radius:4px;margin-bottom:3px;">
+        return `<div style="display:flex;align-items:flex-start;gap:8px;background:${bg};border-left:3px solid ${border};padding:7px 14px;border-radius:4px;margin-bottom:3px;">
           <span style="font-size:12px;flex-shrink:0;">${icon}</span>
-          <span style="flex:1;font-size:12px;color:var(--textd);"><b>${m.title}</b> — ${m.body}</span>
+          <span style="flex:1;font-size:12px;color:var(--textd);line-height:1.5;"><b>${m.title}</b> — ${m.body}</span>
           ${readBadge}
         </div>`;
       }).join('');
       bar.style.display = 'block';
+      // Check if content overflows 64px — show toggle if yes
+      inner._expanded = false;
+      inner.style.maxHeight = '64px';
+      setTimeout(() => {
+        if (inner.scrollHeight > 64) {
+          if (toggle) toggle.style.display = 'block';
+        } else {
+          if (toggle) toggle.style.display = 'none';
+        }
+      }, 50);
     } else {
       bar.style.display = 'none';
     }
@@ -10758,6 +10960,15 @@ async function memoCheckAndShow() {
     memoPopupQueue = urgentUnread;
     memoShowNextPopup();
   }
+}
+
+function toggleMemoBar() {
+  const inner = document.getElementById('memoNoticeInner');
+  const btn   = document.getElementById('memoNoticeToggleBtn');
+  if (!inner) return;
+  inner._expanded = !inner._expanded;
+  inner.style.maxHeight = inner._expanded ? inner.scrollHeight + 'px' : '64px';
+  if (btn) btn.textContent = inner._expanded ? '▲ Tutup' : '▼ Baca selanjutnya';
 }
 
 function memoShowNextPopup() {
