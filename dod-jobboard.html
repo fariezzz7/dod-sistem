@@ -588,11 +588,34 @@ async function loadBoardCols() {
   try {
     const rows = await supaGet('board_columns', 'select=*&order=sort_order.asc');
     if (rows && rows.length) {
+      // Table ada data — guna dari Supabase
+      BOARD_COLS = rows.map(r => ({ id: r.id, label: r.label, accent: r.accent || '#9AA0B8', sort_order: r.sort_order || 0 }));
+      rebuildColMap();
+    } else {
+      // Table kosong — seed defaults ke Supabase supaya consistent lepas ni
+      await seedDefaultCols();
+    }
+  } catch(e) {
+    console.warn('board_columns load failed, using defaults:', e.message);
+    // Guna defaults sahaja, tak seed (mungkin table belum wujud)
+  }
+}
+
+async function seedDefaultCols() {
+  try {
+    await supaFetch('/rest/v1/board_columns', {
+      method: 'POST',
+      prefer: 'resolution=ignore-duplicates,return=minimal',
+      body: JSON.stringify(DEFAULT_BOARD_COLS),
+    });
+    // Reload from Supabase after seed to confirm in-memory state matches DB
+    const rows = await supaGet('board_columns', 'select=*&order=sort_order.asc');
+    if (rows && rows.length) {
       BOARD_COLS = rows.map(r => ({ id: r.id, label: r.label, accent: r.accent || '#9AA0B8', sort_order: r.sort_order || 0 }));
       rebuildColMap();
     }
   } catch(e) {
-    console.warn('board_columns not found, using defaults:', e.message);
+    console.warn('Seed failed, using hardcoded defaults:', e.message);
   }
 }
 
@@ -2496,23 +2519,14 @@ async function saveColSettings() {
   if (col) { col.label = label; col.accent = accent; }
   rebuildColMap();
 
-  // Save to Supabase
+  // Save to Supabase — guna upsert supaya confirm tersimpan walaupun row belum wujud
   try {
-    await supaFetch(`/rest/v1/board_columns?id=eq.${encodeURIComponent(_colEditId)}`, {
-      method: 'PATCH',
-      prefer: 'return=minimal',
-      body: JSON.stringify({ label, accent }),
+    await supaFetch('/rest/v1/board_columns', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates,return=minimal',
+      body: JSON.stringify([{ id: _colEditId, label, accent, sort_order: col?.sort_order || 0 }]),
     });
-  } catch(e) {
-    // Table mungkin belum wujud — try upsert
-    try {
-      await supaFetch('/rest/v1/board_columns', {
-        method: 'POST',
-        prefer: 'resolution=merge-duplicates,return=minimal',
-        body: JSON.stringify([{ id: _colEditId, label, accent, sort_order: col?.sort_order || 0 }]),
-      });
-    } catch(e2) { console.warn('Supabase save failed:', e2.message); }
-  }
+  } catch(e) { console.warn('Supabase save failed:', e.message); }
 
   closeColSettings();
   renderBoard(currentBoard);
