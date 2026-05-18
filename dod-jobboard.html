@@ -544,7 +544,7 @@ async function supaFetch(path, opts={}) {
 
 async function supaUpsert(table, data) {
   return supaFetch('/rest/v1/' + table, {
-    method: 'POST', prefer: 'resolution=merge-duplicates',
+    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
     body: JSON.stringify(Array.isArray(data) ? data : [data]),
   });
 }
@@ -579,11 +579,12 @@ const DEFAULT_BOARD_COLS = {
     { id:'complete',  label:'Job Complete',                accent:'#0F7A48', sort_order:5, board_type:'design' },
   ],
   content: [
-    { id:'cnt-list',     label:'Job List',        accent:'#9AA0B8', sort_order:0, board_type:'content' },
-    { id:'cnt-ongoing',  label:'Content On-going',accent:'#0E7A7A', sort_order:1, board_type:'content' },
-    { id:'cnt-review',   label:'Review',           accent:'#1A5CC8', sort_order:2, board_type:'content' },
-    { id:'cnt-approved', label:'Approved',         accent:'#6E30C8', sort_order:3, board_type:'content' },
-    { id:'cnt-posted',   label:'Posted',           accent:'#0F7A48', sort_order:4, board_type:'content' },
+    { id:'job-list',  label:'Job List',                   accent:'#9AA0B8', sort_order:0, board_type:'content' },
+    { id:'design-on', label:'Content On-going',           accent:'#0E7A7A', sort_order:1, board_type:'content' },
+    { id:'first-art', label:'First Draft (Send to Cust)', accent:'#1A5CC8', sort_order:2, board_type:'content' },
+    { id:'amended',   label:'Content Amended',            accent:'#B8720A', sort_order:3, board_type:'content' },
+    { id:'mockup',    label:'Approval',                   accent:'#6E30C8', sort_order:4, board_type:'content' },
+    { id:'complete',  label:'Posted / Complete',          accent:'#0F7A48', sort_order:5, board_type:'content' },
   ],
 };
 
