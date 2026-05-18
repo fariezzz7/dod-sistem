@@ -896,6 +896,250 @@ tr:hover .row-actions{opacity:1;}
 .notif-panel-foot span{font-size:10px;color:var(--textm);}
 .notif-perm-toast{position:fixed;bottom:130px;right:20px;background:var(--amberbg);border:1px solid var(--amberb);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--amber);cursor:pointer;z-index:8001;max-width:260px;box-shadow:0 4px 16px rgba(0,0,0,0.1);display:none;}
 .notif-perm-toast.show{display:block;}
+
+/* ══════════════════════════════════════════════════════════
+   DOD CHAT SYSTEM
+   ══════════════════════════════════════════════════════════ */
+
+/* Floating bubble */
+#chatBubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #1A5CC8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 8000;
+  box-shadow: 0 4px 16px rgba(26,92,200,0.35);
+  transition: transform .15s ease;
+}
+#chatBubble:hover { transform: scale(1.08); }
+#chatBubble svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+#chatBubbleCount {
+  position: absolute;
+  top: -3px; right: -3px;
+  min-width: 18px; height: 18px;
+  background: #DC2626;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+}
+
+/* Conversation list popup */
+#chatList {
+  position: fixed;
+  bottom: 84px;
+  right: 24px;
+  width: 300px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 8001;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 420px;
+}
+#chatList.open { display: flex; }
+.chat-list-header {
+  padding: 12px 14px;
+  background: #1A5CC8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-list-header span { color: #fff; font-size: 14px; font-weight: 700; flex: 1; }
+.chat-list-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-list-search input {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--bg3);
+  font-size: 12px;
+  outline: none;
+  color: var(--text);
+}
+.chat-conv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background .1s;
+  border-bottom: 1px solid var(--line)44;
+}
+.chat-conv-item:hover { background: var(--bg3); }
+.chat-conv-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+}
+.chat-online-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #0F7A48;
+  border: 2px solid #fff;
+  position: absolute;
+  bottom: 0; right: 0;
+}
+.chat-conv-info { flex: 1; min-width: 0; }
+.chat-conv-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.chat-conv-preview { font-size: 11px; color: var(--textm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-conv-badge {
+  background: #1A5CC8;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Chat windows container */
+#chatWindowsContainer {
+  position: fixed;
+  bottom: 0;
+  right: 84px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 8000;
+}
+
+/* Individual chat window */
+.chat-window {
+  width: 288px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  height: 0;
+  overflow: hidden;
+  transition: height .2s ease;
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.1);
+}
+.chat-window.open { height: 360px; }
+.chat-window.minimized { height: 44px; }
+.chat-win-header {
+  padding: 10px 12px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
+}
+.chat-win-title { font-size: 12px; font-weight: 600; flex: 1; color: var(--text); }
+.chat-win-body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.chat-win-footer { padding: 8px 10px; border-top: 1px solid var(--line); display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.chat-win-input {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--bg3);
+  font-size: 12px;
+  outline: none;
+  color: var(--text);
+}
+.chat-win-input:focus { border-color: #1A5CC8; }
+
+/* Messages */
+.chat-msg-row { display: flex; gap: 6px; align-items: flex-end; }
+.chat-msg-row.out { flex-direction: row-reverse; }
+.chat-msg-bubble-in {
+  background: var(--bg3);
+  border-radius: 14px 14px 14px 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 82%;
+  color: var(--text);
+  word-break: break-word;
+}
+.chat-msg-bubble-out {
+  background: #1A5CC8;
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 82%;
+  word-break: break-word;
+}
+.chat-msg-time { font-size: 10px; color: var(--textm); margin-top: 2px; }
+.chat-msg-sender { font-size: 10px; color: var(--textm); margin-bottom: 2px; }
+
+/* Attach card in message */
+.chat-attach-card {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.chat-attach-card-in {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.chat-attach-card-in:hover, .chat-attach-card:hover { opacity: .85; }
+
+/* Attach picker popup */
+#chatAttachPicker {
+  position: fixed;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  width: 300px;
+  max-height: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  z-index: 8100;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+#chatAttachPicker.open { display: flex; }
+.attach-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.attach-tab { flex: 1; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; color: var(--textm); border-bottom: 2px solid transparent; }
+.attach-tab.active { color: #1A5CC8; border-bottom-color: #1A5CC8; font-weight: 600; }
+.attach-search { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.attach-search input { width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg3); font-size: 12px; outline: none; color: var(--text); }
+.attach-list { flex: 1; overflow-y: auto; }
+.attach-item { padding: 9px 14px; cursor: pointer; border-bottom: 1px solid var(--line)44; display: flex; flex-direction: column; gap: 2px; }
+.attach-item:hover { background: var(--bg3); }
+.attach-item-title { font-size: 12px; font-weight: 600; color: var(--text); }
+.attach-item-sub { font-size: 10px; color: var(--textm); }
+
 </style>
 </head>
 <body>
@@ -2008,6 +2252,36 @@ tr:hover .row-actions{opacity:1;}
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════════════════════
+     DOD CHAT SYSTEM HTML
+     ══════════════════════════════════════════════════════════ -->
+<div id="chatBubble" onclick="chatToggleList()" style="display:none;" title="Mesej">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  <div id="chatBubbleCount"></div>
+</div>
+<div id="chatList">
+  <div class="chat-list-header">
+    <span>Mesej</span>
+    <svg onclick="chatToggleList()" style="width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;cursor:pointer;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </div>
+  <div class="chat-list-search">
+    <input id="chatListSearch" placeholder="Cari staff..." oninput="chatFilterList(this.value)">
+  </div>
+  <div id="chatConvList" style="overflow-y:auto;flex:1;"></div>
+</div>
+<div id="chatWindowsContainer"></div>
+<div id="chatAttachPicker">
+  <div class="attach-tabs">
+    <div class="attach-tab active" id="attachTabOrder" onclick="chatAttachSwitchTab('order')">📋 Order</div>
+    <div class="attach-tab" id="attachTabJob" onclick="chatAttachSwitchTab('job')">🎨 Design Job</div>
+  </div>
+  <div class="attach-search">
+    <input id="attachSearchInput" placeholder="Cari..." oninput="chatAttachSearch(this.value)">
+  </div>
+  <div id="attachList" class="attach-list"></div>
+</div>
+
 <!-- DELETE MODAL -->
 <div id="delModalBg">
   <div class="del-modal">
@@ -2234,6 +2508,531 @@ tr:hover .row-actions{opacity:1;}
 // Keeping as stub to prevent errors
 const DODTweaks = () => null;
 // ReactDOM.createRoot(document.getElementById('tweaks-root')).render(<DODTweaks />);
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DOD CHAT SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+const CHAT_ROOMS = {
+  all_staff:   { id:'all_staff',   name:'Semua Staff',   icon:'👥', type:'group', roles:['admin','sales','sales_executive','designer'] },
+  sales_mgmt:  { id:'sales_mgmt',  name:'Sales + Mgmt',  icon:'💼', type:'group', roles:['admin','sales','sales_executive'] },
+};
+
+let _chatOpen       = false;
+let _chatWindows    = {};   // roomId/userId → { el, msgs, sub }
+let _chatUnread     = {};   // roomId/userId → count
+let _chatRealtimeSubs = [];
+let _chatAttachCtx  = null; // { windowId, tab }
+let _chatAttachTab  = 'order';
+let _chatJobCache   = [];
+let _chatSub        = null;
+let _chatAudio      = null;
+
+// ── Init ──────────────────────────────────────────────────────
+
+function chatInit() {
+  if (!currentUser) return;
+  document.getElementById('chatBubble').style.display = 'flex';
+  chatBuildConvList();
+  chatSubscribeAll();
+  // Audio context — unlock on first interaction
+  document.addEventListener('click', chatUnlockAudio, { once: true });
+}
+
+function chatUnlockAudio() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    _chatAudio = ctx;
+  } catch(e) {}
+}
+
+function chatPlaySound() {
+  try {
+    if (!_chatAudio) return;
+    const osc = _chatAudio.createOscillator();
+    const gain = _chatAudio.createGain();
+    osc.connect(gain); gain.connect(_chatAudio.destination);
+    osc.frequency.setValueAtTime(880, _chatAudio.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, _chatAudio.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, _chatAudio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, _chatAudio.currentTime + 0.3);
+    osc.start(); osc.stop(_chatAudio.currentTime + 0.3);
+  } catch(e) {}
+}
+
+// ── Conversation List ─────────────────────────────────────────
+
+function chatBuildConvList() {
+  const role = currentUser?.role;
+  const convs = [];
+
+  // Group rooms visible to this role
+  Object.values(CHAT_ROOMS).forEach(room => {
+    if (room.roles.includes(role)) convs.push({ id: room.id, name: room.name, icon: room.icon, type: 'group' });
+  });
+
+  // DM list — all other staff
+  const store = loadUserStore ? loadUserStore() : {};
+  Object.values(store).forEach(u => {
+    if (u.id === currentUser.id) return;
+    const dmId = chatDmId(currentUser.id, u.id);
+    convs.push({ id: dmId, name: u.name || u.id, icon: null, type: 'dm', userId: u.id, color: u.color, bg: u.bg });
+  });
+
+  window._chatConvs = convs;
+  chatRenderConvList(convs);
+}
+
+function chatRenderConvList(convs) {
+  const el = document.getElementById('chatConvList');
+  if (!el) return;
+  el.innerHTML = convs.map(c => {
+    const unread = _chatUnread[c.id] || 0;
+    const initials = c.name.slice(0,2).toUpperCase();
+    const avatarStyle = c.type === 'dm'
+      ? `background:${c.bg||'#EEF4FF'};color:${c.color||'#1A5CC8'};`
+      : 'background:var(--bluebg);color:var(--blue);';
+    return `<div class="chat-conv-item" onclick="chatOpenWindow('${c.id}','${c.name}','${c.type}','${c.userId||''}')">
+      <div class="chat-conv-avatar" style="${avatarStyle}">
+        ${c.icon || initials}
+        ${c.type === 'dm' ? '<div class="chat-online-dot" style="display:none;" id="dot_'+c.id+'"></div>' : ''}
+      </div>
+      <div class="chat-conv-info">
+        <div class="chat-conv-name">${c.name}</div>
+        <div class="chat-conv-preview" id="preview_${c.id}">${c.type === 'group' ? 'Group chat' : 'Hantar mesej...'}</div>
+      </div>
+      ${unread > 0 ? `<div class="chat-conv-badge">${unread}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function chatFilterList(q) {
+  if (!window._chatConvs) return;
+  const filtered = q ? window._chatConvs.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : window._chatConvs;
+  chatRenderConvList(filtered);
+}
+
+function chatDmId(a, b) {
+  return [a, b].sort().join('__dm__');
+}
+
+// ── Toggle List ───────────────────────────────────────────────
+
+function chatToggleList() {
+  const el = document.getElementById('chatList');
+  _chatOpen = !_chatOpen;
+  el.classList.toggle('open', _chatOpen);
+}
+
+// ── Open Chat Window ──────────────────────────────────────────
+
+function chatOpenWindow(roomId, name, type, userId) {
+  if (_chatWindows[roomId]) {
+    // Already open — toggle minimized
+    const win = _chatWindows[roomId].el;
+    win.classList.toggle('minimized');
+    if (!win.classList.contains('minimized')) {
+      win.classList.add('open');
+      chatLoadMessages(roomId);
+    }
+    return;
+  }
+
+  // Reset unread
+  _chatUnread[roomId] = 0;
+  chatUpdateBubbleCount();
+
+  const win = document.createElement('div');
+  win.className = 'chat-window open';
+  win.id = 'chatwin_' + roomId;
+
+  const initials = name.slice(0,2).toUpperCase();
+
+  win.innerHTML = `
+    <div class="chat-win-header" onclick="chatMinimize('${roomId}')">
+      <div class="chat-conv-avatar" style="width:28px;height:28px;font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">${initials}</div>
+      <div class="chat-win-title">${name}</div>
+      <svg onclick="event.stopPropagation();chatCloseWindow('${roomId}')" style="width:14px;height:14px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div class="chat-win-body" id="chatbody_${roomId}">
+      <div style="text-align:center;padding:20px;font-size:12px;color:var(--textm);">Memuatkan...</div>
+    </div>
+    <div class="chat-win-footer">
+      <svg onclick="chatOpenAttach('${roomId}')" style="width:18px;height:18px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;" viewBox="0 0 24 24" title="Link order / design job"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <input class="chat-win-input" id="chatinput_${roomId}" placeholder="Aa" 
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatSend('${roomId}');}">
+      <svg onclick="chatSend('${roomId}')" style="width:18px;height:18px;fill:#1A5CC8;cursor:pointer;flex-shrink:0;" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" fill="none" stroke="#1A5CC8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>`;
+
+  document.getElementById('chatWindowsContainer').appendChild(win);
+  _chatWindows[roomId] = { el: win, msgs: [], pending: null };
+
+  chatLoadMessages(roomId);
+  chatSubscribeRoom(roomId);
+
+  // Close list
+  document.getElementById('chatList').classList.remove('open');
+  _chatOpen = false;
+}
+
+function chatMinimize(roomId) {
+  const win = _chatWindows[roomId]?.el;
+  if (!win) return;
+  if (win.classList.contains('minimized')) {
+    win.classList.remove('minimized');
+    win.classList.add('open');
+  } else {
+    win.classList.add('minimized');
+  }
+}
+
+function chatCloseWindow(roomId) {
+  const w = _chatWindows[roomId];
+  if (!w) return;
+  if (w.sub) { try { w.sub.unsubscribe(); } catch(e) {} }
+  w.el.remove();
+  delete _chatWindows[roomId];
+}
+
+// ── Load Messages ─────────────────────────────────────────────
+
+async function chatLoadMessages(roomId) {
+  const body = document.getElementById('chatbody_' + roomId);
+  if (!body) return;
+  try {
+    const rows = await supaGet('chat_messages',
+      `room_id=eq.${encodeURIComponent(roomId)}&order=created_at.asc&limit=60&select=*`);
+    const msgs = rows || [];
+    _chatWindows[roomId] && (_chatWindows[roomId].msgs = msgs);
+    chatRenderMessages(roomId, msgs);
+  } catch(e) {
+    if (e.message && e.message.includes('42P01')) {
+      if (body) body.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--red);text-align:center;">Table belum wujud.<br>Sila run SQL setup dulu.</div>`;
+      chatShowSQLToast();
+    } else {
+      if (body) body.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--textm);text-align:center;">${e.message}</div>`;
+    }
+  }
+}
+
+function chatRenderMessages(roomId, msgs) {
+  const body = document.getElementById('chatbody_' + roomId);
+  if (!body) return;
+  if (!msgs.length) {
+    body.innerHTML = '<div style="text-align:center;padding:20px;font-size:11px;color:var(--textm);">Belum ada mesej.</div>';
+    return;
+  }
+  const isGroup = !roomId.includes('__dm__');
+  body.innerHTML = msgs.map(m => {
+    const isMe = m.sender_id === currentUser.id;
+    const timeStr = new Date(m.created_at).toLocaleTimeString('ms-MY', { hour:'2-digit', minute:'2-digit' });
+    const attachHtml = m.attach_type ? chatRenderAttachCard(m, isMe) : '';
+
+    if (isMe) {
+      return `<div class="chat-msg-row out">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;">
+          <div class="chat-msg-bubble-out">${attachHtml}${m.body ? chatEsc(m.body) : ''}</div>
+          <div class="chat-msg-time">✓✓ ${timeStr}</div>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="chat-msg-row">
+        <div class="chat-conv-avatar" style="width:26px;height:26px;font-size:10px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--textd);">${(m.sender_name||'?').slice(0,2).toUpperCase()}</div>
+        <div style="display:flex;flex-direction:column;">
+          ${isGroup ? `<div class="chat-msg-sender">${chatEsc(m.sender_name||m.sender_id)}</div>` : ''}
+          <div class="chat-msg-bubble-in">${attachHtml}${m.body ? chatEsc(m.body) : ''}</div>
+          <div class="chat-msg-time">${timeStr}</div>
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  // Scroll to bottom
+  body.scrollTop = body.scrollHeight;
+
+  // Update preview
+  const last = msgs[msgs.length - 1];
+  const prev = document.getElementById('preview_' + roomId);
+  if (prev && last) prev.textContent = (last.sender_id === currentUser.id ? 'Anda: ' : '') + (last.body || '[Attachment]');
+}
+
+function chatRenderAttachCard(m, isMe) {
+  const icon = m.attach_type === 'order' ? '📋' : '🎨';
+  const cls = isMe ? 'chat-attach-card' : 'chat-attach-card-in';
+  const fn = m.attach_type === 'order'
+    ? `chatOpenOrder('${m.attach_id}')`
+    : `chatOpenDesignJob('${m.attach_id}')`;
+  return `<div class="${cls}" onclick="${fn}">
+    <div style="font-weight:600;margin-bottom:2px;">${icon} ${chatEsc(m.attach_label||'')}</div>
+    <div style="opacity:.75;font-size:10px;">Klik untuk buka →</div>
+  </div>`;
+}
+
+// ── Send Message ──────────────────────────────────────────────
+
+async function chatSend(roomId) {
+  const input = document.getElementById('chatinput_' + roomId);
+  if (!input) return;
+  const body = input.value.trim();
+  const pending = _chatWindows[roomId]?.pending;
+
+  if (!body && !pending) return;
+
+  const payload = {
+    room_id:      roomId,
+    sender_id:    currentUser.id,
+    sender_name:  currentUser.name || currentUser.id,
+    body:         body || null,
+    attach_type:  pending?.type  || null,
+    attach_id:    pending?.id    || null,
+    attach_label: pending?.label || null,
+  };
+
+  input.value = '';
+  if (_chatWindows[roomId]) _chatWindows[roomId].pending = null;
+  chatClearPendingPreview(roomId);
+
+  try {
+    await supaFetch('/rest/v1/chat_messages', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify([payload]),
+    });
+  } catch(e) {
+    showToast('Gagal hantar mesej: ' + e.message, true);
+  }
+}
+
+// ── Supabase Realtime ─────────────────────────────────────────
+
+function chatSubscribeAll() {
+  if (typeof window.supabaseClient === 'undefined') {
+    // Use polling fallback — check every 5s
+    setInterval(chatPollAll, 5000);
+    return;
+  }
+  chatSubscribeRealtime();
+}
+
+async function chatPollAll() {
+  for (const roomId of Object.keys(_chatWindows)) {
+    try {
+      const w = _chatWindows[roomId];
+      if (!w) continue;
+      const lastTs = w.msgs.length ? w.msgs[w.msgs.length-1].created_at : '1970-01-01';
+      const rows = await supaGet('chat_messages',
+        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=20`);
+      if (rows && rows.length) {
+        rows.forEach(r => w.msgs.push(r));
+        chatRenderMessages(roomId, w.msgs);
+        chatPlaySound();
+        // Unread if window minimized
+        if (_chatWindows[roomId]?.el?.classList.contains('minimized')) {
+          _chatUnread[roomId] = (_chatUnread[roomId] || 0) + rows.length;
+          chatUpdateBubbleCount();
+        }
+      }
+    } catch(e) {}
+  }
+}
+
+function chatSubscribeRoom(roomId) {
+  // Polling handles new messages — no per-window subscription needed
+}
+
+function chatUpdateBubbleCount() {
+  const total = Object.values(_chatUnread).reduce((s,n) => s+n, 0);
+  const el = document.getElementById('chatBubbleCount');
+  if (!el) return;
+  if (total > 0) {
+    el.style.display = 'flex';
+    el.textContent = total > 9 ? '9+' : total;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ── Attach Order / Design Job ─────────────────────────────────
+
+function chatOpenAttach(roomId) {
+  _chatAttachCtx = roomId;
+  const picker = document.getElementById('chatAttachPicker');
+  if (!picker) return;
+
+  const win = _chatWindows[roomId]?.el;
+  if (win) {
+    const rect = win.getBoundingClientRect();
+    picker.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+    picker.style.right  = (window.innerWidth - rect.right) + 'px';
+  } else {
+    picker.style.bottom = '380px';
+    picker.style.right  = '24px';
+  }
+
+  picker.classList.add('open');
+  _chatAttachTab = 'order';
+  chatAttachSwitchTab('order');
+  document.getElementById('attachSearchInput').value = '';
+  chatAttachSearch('');
+
+  // Close on outside click
+  setTimeout(() => {
+    document.addEventListener('click', chatCloseAttachOutside, { once: true });
+  }, 100);
+}
+
+function chatCloseAttachOutside(e) {
+  const picker = document.getElementById('chatAttachPicker');
+  if (picker && !picker.contains(e.target)) {
+    picker.classList.remove('open');
+  }
+}
+
+function chatAttachSwitchTab(tab) {
+  _chatAttachTab = tab;
+  document.getElementById('attachTabOrder').classList.toggle('active', tab === 'order');
+  document.getElementById('attachTabJob').classList.toggle('active', tab === 'job');
+  document.getElementById('attachSearchInput').value = '';
+  chatAttachSearch('');
+}
+
+function chatAttachSearch(q) {
+  const list = document.getElementById('attachList');
+  if (!list) return;
+  q = q.toLowerCase();
+
+  if (_chatAttachTab === 'order') {
+    const all = getAllOrders ? getAllOrders() : [];
+    const filtered = q ? all.filter(o => (o.name_job||'').toLowerCase().includes(q) || (o.inv_number||'').toLowerCase().includes(q)) : all.slice(0, 30);
+    list.innerHTML = filtered.slice(0,30).map(o => `
+      <div class="attach-item" onclick="chatAttachSelect('order','${o.id}','${chatEscAttr(o.name_job||o.inv_number||'Order')}')">
+        <div class="attach-item-title">${chatEsc(o.name_job || '(Tiada nama)')}</div>
+        <div class="attach-item-sub">${o.inv_number||''} · ${o.pic||''} · ${o.due_date||''}</div>
+      </div>`).join('') || '<div style="padding:16px;text-align:center;font-size:12px;color:var(--textm);">Tiada order</div>';
+  } else {
+    // Load jobboard cards
+    if (!_chatJobCache.length) {
+      supaGet('jobboard_cards', `archived=eq.false&select=id,title,col,assignee&limit=100&order=created_at.desc`)
+        .then(rows => { _chatJobCache = rows || []; chatAttachSearch(q); })
+        .catch(() => {});
+      list.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:var(--textm);">Memuatkan...</div>';
+      return;
+    }
+    const filtered = q ? _chatJobCache.filter(c => (c.title||'').toLowerCase().includes(q)) : _chatJobCache.slice(0,30);
+    list.innerHTML = filtered.slice(0,30).map(c => `
+      <div class="attach-item" onclick="chatAttachSelect('job','${c.id}','${chatEscAttr(c.title||'Job')}')">
+        <div class="attach-item-title">${chatEsc(c.title||'(Tiada nama)')}</div>
+        <div class="attach-item-sub">👤 ${c.assignee||'—'}</div>
+      </div>`).join('') || '<div style="padding:16px;text-align:center;font-size:12px;color:var(--textm);">Tiada job</div>';
+  }
+}
+
+function chatAttachSelect(type, id, label) {
+  const roomId = _chatAttachCtx;
+  if (!roomId || !_chatWindows[roomId]) return;
+  _chatWindows[roomId].pending = { type, id, label };
+
+  // Show pending preview below input
+  chatShowPendingPreview(roomId, type, label);
+  document.getElementById('chatAttachPicker').classList.remove('open');
+  document.getElementById('chatinput_' + roomId)?.focus();
+}
+
+function chatShowPendingPreview(roomId, type, label) {
+  const footer = _chatWindows[roomId]?.el?.querySelector('.chat-win-footer');
+  if (!footer) return;
+  let prev = footer.querySelector('.chat-attach-pending');
+  if (!prev) {
+    prev = document.createElement('div');
+    prev.className = 'chat-attach-pending';
+    prev.style.cssText = 'width:100%;padding:4px 10px;background:var(--bluebg);border-radius:6px;font-size:11px;color:var(--blue);display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;';
+    footer.insertBefore(prev, footer.firstChild);
+  }
+  const icon = type === 'order' ? '📋' : '🎨';
+  prev.innerHTML = `<span>${icon} ${chatEsc(label)}</span><span onclick="chatClearPendingPreview('${roomId}')" style="cursor:pointer;font-size:13px;color:var(--textm);">×</span>`;
+}
+
+function chatClearPendingPreview(roomId) {
+  if (_chatWindows[roomId]) _chatWindows[roomId].pending = null;
+  const footer = _chatWindows[roomId]?.el?.querySelector('.chat-win-footer');
+  const prev = footer?.querySelector('.chat-attach-pending');
+  if (prev) prev.remove();
+}
+
+// ── Open attached items ───────────────────────────────────────
+
+function chatOpenOrder(orderId) {
+  if (typeof showDetail === 'function') {
+    sbNav('masterlist');
+    setTimeout(() => showDetail(orderId), 300);
+  }
+}
+
+function chatOpenDesignJob(jobId) {
+  window.open('dod-jobboard.html', '_blank');
+}
+
+// ── SQL setup toast ───────────────────────────────────────────
+
+function chatShowSQLToast() {
+  showToast('Chat: sila run SQL setup dalam Supabase dulu. Semak console.', true);
+  console.log('%c[DOD Chat] SQL Setup Required:\n\n' +
+    'CREATE TABLE chat_messages (\n' +
+    '  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n' +
+    '  room_id text NOT NULL,\n' +
+    '  sender_id text NOT NULL,\n' +
+    '  sender_name text,\n' +
+    '  body text,\n' +
+    '  attach_type text,\n' +
+    '  attach_id text,\n' +
+    '  attach_label text,\n' +
+    '  created_at timestamptz DEFAULT now()\n' +
+    ');\n' +
+    'ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;\n' +
+    'CREATE POLICY "allow_all" ON chat_messages FOR ALL USING (true) WITH CHECK (true);\n' +
+    'CREATE INDEX ON chat_messages (room_id, created_at);',
+    'color:#1A5CC8;font-family:monospace;');
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function chatEsc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function chatEscAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,60);
+}
+
+// Close attach picker on escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('chatAttachPicker')?.classList.remove('open');
+    document.getElementById('chatList')?.classList.remove('open');
+    _chatOpen = false;
+  }
+});
+
+// Expose
+window.chatInit           = chatInit;
+window.chatToggleList     = chatToggleList;
+window.chatFilterList     = chatFilterList;
+window.chatOpenWindow     = chatOpenWindow;
+window.chatMinimize       = chatMinimize;
+window.chatCloseWindow    = chatCloseWindow;
+window.chatSend           = chatSend;
+window.chatOpenAttach     = chatOpenAttach;
+window.chatAttachSwitchTab = chatAttachSwitchTab;
+window.chatAttachSearch   = chatAttachSearch;
+window.chatAttachSelect   = chatAttachSelect;
+window.chatClearPendingPreview = chatClearPendingPreview;
+window.chatOpenOrder      = chatOpenOrder;
+window.chatOpenDesignJob  = chatOpenDesignJob;
 </script>
 
 </body>
@@ -2523,6 +3322,7 @@ async function loadOrdersFromSupabase() {
     renderAll();
     hideLoading();
     startAutoRefresh(); // Start 60s auto-refresh for multi-device sync
+  chatInit(); // Init chat system
     
     // Refresh home KPI if on home view
     if (document.getElementById('homeView').style.display !== 'none') {
