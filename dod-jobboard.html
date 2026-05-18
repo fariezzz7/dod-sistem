@@ -634,9 +634,11 @@ async function loadBoardCols() {
 async function seedDefaultCols() {
   try {
     const all = [...DEFAULT_BOARD_COLS.design, ...DEFAULT_BOARD_COLS.content];
+    // DELETE existing then INSERT fresh (avoid composite key conflicts)
+    await supaFetch('/rest/v1/board_columns', { method: 'DELETE' });
     await supaFetch('/rest/v1/board_columns', {
       method: 'POST',
-      prefer: 'resolution=ignore-duplicates,return=minimal',
+      prefer: 'return=minimal',
       body: JSON.stringify(all),
     });
     // Reload after seed
@@ -2560,12 +2562,12 @@ async function saveColSettings() {
   BOARD_COLS = getBoardCols(currentBoard);
   rebuildColMap(currentBoard);
 
-  // Upsert to Supabase with board_type
+  // Update via PATCH using composite key (id + board_type)
   try {
-    await supaFetch('/rest/v1/board_columns', {
-      method: 'POST',
-      prefer: 'resolution=merge-duplicates,return=minimal',
-      body: JSON.stringify([{ id: _colEditId, label, accent, sort_order: col?.sort_order || 0, board_type: currentBoard }]),
+    await supaFetch(`/rest/v1/board_columns?id=eq.${encodeURIComponent(_colEditId)}&board_type=eq.${currentBoard}`, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ label, accent }),
     });
   } catch(e) { console.warn('Supabase save failed:', e.message); }
 
@@ -2596,7 +2598,7 @@ async function deleteColSettings() {
 
   // Delete from Supabase
   try {
-    await supaFetch(`/rest/v1/board_columns?id=eq.${encodeURIComponent(_colEditId)}`, { method: 'DELETE' });
+    await supaFetch(`/rest/v1/board_columns?id=eq.${encodeURIComponent(_colEditId)}&board_type=eq.${currentBoard}`, { method: 'DELETE' });
   } catch(e) { console.warn('Supabase delete failed:', e.message); }
 
   closeColSettings();
