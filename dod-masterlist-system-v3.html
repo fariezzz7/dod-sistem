@@ -2879,21 +2879,31 @@ function chatSubscribeAll() {
 const _chatLastSeen = {};
 
 async function chatBgPollInit() {
-  // Get all room IDs user has access to
   const role = currentUser?.role;
+  // Group rooms user has access to
   const myRooms = Object.values(CHAT_ROOMS)
     .filter(r => r.roles.includes(role))
     .map(r => r.id);
 
-  // Also include DM rooms — check for any DM with current user
-  // We'll poll by checking messages where room_id starts with user's id pattern
-  // Initialize lastSeen to now — don't alert on old messages
-  const now = new Date().toISOString();
-  myRooms.forEach(id => { if (!_chatLastSeen[id]) _chatLastSeen[id] = now; });
+  // Add DM rooms — load all staff and build DM room IDs
+  try {
+    const users = await supaGet('users', 'select=id,name&active=eq.true');
+    (users||[]).forEach(u => {
+      if (u.id === currentUser.id) return;
+      const dmId = [currentUser.id, u.id].sort().join('__dm__');
+      if (!myRooms.includes(dmId)) myRooms.push(dmId);
+    });
+  } catch(e) {}
 
-  // First run immediately, then every 5s
-  await chatBgPoll(myRooms);
-  setInterval(() => chatBgPoll(myRooms), 5000);
+  // Initialize lastSeen to NOW — don't alert on old messages
+  const now = new Date().toISOString();
+  myRooms.forEach(id => { _chatLastSeen[id] = now; });
+
+  // Store for future reference
+  window._chatMyRooms = myRooms;
+
+  // Start polling every 5s
+  setInterval(() => chatBgPoll(window._chatMyRooms || myRooms), 5000);
 }
 
 async function chatBgPoll(roomIds) {
@@ -2924,9 +2934,7 @@ async function chatBgPoll(roomIds) {
 
         // Sound — once per batch
         chatPlaySound();
-        chatUpdateBubbleCount();
-        chatUpdateTabTitle();
-        chatUpdateConvListBadges();
+        chatUpdateAllBadges();
 
         // If floating window open — render messages
         const w = _chatWindows[roomId];
@@ -2973,8 +2981,21 @@ function chatUpdateConvPreview(roomId, msg) {
 }
 
 function chatUpdateConvListBadges() {
-  // Re-render conv list to show updated unread badges
-  if (window._chatConvs) chatRenderConvList(window._chatConvs);
+  // Update badges and previews without full re-render
+  if (!window._chatConvs) return;
+  window._chatConvs.forEach(c => {
+    const unread = _chatUnread[c.id] || 0;
+    // Update badge in conv item
+    const item = document.querySelector(`[onclick*="chatOpenWindow('${c.id}'"]`);
+    if (!item) return;
+    let badge = item.querySelector('.chat-conv-badge');
+    if (unread > 0) {
+      if (!badge) { badge = document.createElement('div'); badge.className = 'chat-conv-badge'; item.appendChild(badge); }
+      badge.textContent = unread;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
 }
 
 function chatSubscribeRoom(roomId) {
@@ -3255,9 +3276,8 @@ function chatUpdateWinBadge(roomId) {
 // Clear unread + tab title when window opened/focused
 function chatClearUnread(roomId) {
   _chatUnread[roomId] = 0;
-  chatUpdateBubbleCount();
-  chatUpdateTabTitle();
   chatUpdateWinBadge(roomId);
+  chatUpdateAllBadges();
 }
 
 window.chatInit           = chatInit;
@@ -11566,19 +11586,43 @@ window.chatUpdateConvListBadges = function() {
   }
 };
 
-// Also update sidebar badge from chatUpdateBubbleCount
-const _origChatUpdateBubbleCount = window.chatUpdateBubbleCount;
-window.chatUpdateBubbleCount = function() {
-  _origChatUpdateBubbleCount && _origChatUpdateBubbleCount();
-  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+// ── Single source of truth for all badge/notification updates ──────────────
+function chatUpdateAllBadges() {
+  const total = Object.values(_chatUnread).reduce((s,n) => s+n, 0);
+
+  // 1. Floating bubble count
+  const bubble = document.getElementById('chatBubbleCount');
+  if (bubble) {
+    bubble.style.display = total > 0 ? 'flex' : 'none';
+    bubble.textContent   = total > 9 ? '9+' : total;
+  }
+
+  // 2. Sidebar Chat badge
   const sbBadge = document.getElementById('chatSbBadge');
   if (sbBadge) {
     sbBadge.style.display = total > 0 ? 'inline-block' : 'none';
-    sbBadge.textContent = total > 9 ? '9+' : total;
+    sbBadge.textContent   = total > 9 ? '9+' : total;
   }
+
+  // 3. Tab title
+  const base = window._chatBaseTitle || 'DOD Sistem';
+  document.title = total > 0 ? `(${total}) ${base}` : base;
+
+  // 4. Conv list — surgical badge update (don't wipe preview text)
+  chatUpdateConvListBadges();
+  // Full chat list — re-render ok since it has its own preview
+  if (window._chatFullConvs && document.getElementById('chatView')?.style.display !== 'none') {
+    chatFullRenderConvList(window._chatFullConvs);
+  }
+}
+
+// Keep old names working
+window.chatUpdateBubbleCount = chatUpdateAllBadges;
+window.chatUpdateTabTitle    = function() {
+  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+  document.title = total > 0 ? `(${total}) ${window._chatBaseTitle||'DOD Sistem'}` : (window._chatBaseTitle||'DOD Sistem');
 };
 
-// Also poll new msgs for active full chat room
 const _origChatBgPoll = window.chatBgPoll;
 
 window.showChatFullView = showChatFullView;
