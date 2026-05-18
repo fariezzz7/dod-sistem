@@ -2841,6 +2841,7 @@ async function chatSend(roomId) {
 
   if (!body && !pending) return;
 
+  const now = new Date().toISOString();
   const payload = {
     room_id:      roomId,
     sender_id:    currentUser.id,
@@ -2849,11 +2850,23 @@ async function chatSend(roomId) {
     attach_type:  pending?.type  || null,
     attach_id:    pending?.id    || null,
     attach_label: pending?.label || null,
+    created_at:   now,
   };
 
+  // Clear input immediately
   input.value = '';
   if (_chatWindows[roomId]) _chatWindows[roomId].pending = null;
   chatClearPendingPreview(roomId);
+
+  // Optimistic render — tambah dalam local array terus tanpa tunggu Supabase
+  const w = _chatWindows[roomId];
+  if (w) {
+    w.msgs.push(payload);
+    chatRenderMessages(roomId, w.msgs);
+  }
+
+  // Update lastSeen supaya bg poll tak duplicate
+  _chatLastSeen[roomId] = now;
 
   try {
     await supaFetch('/rest/v1/chat_messages', {
@@ -2863,6 +2876,11 @@ async function chatSend(roomId) {
     });
   } catch(e) {
     showToast('Gagal hantar mesej: ' + e.message, true);
+    // Remove optimistic message on failure
+    if (w) {
+      w.msgs = w.msgs.filter(m => m.created_at !== now || m.sender_id !== currentUser.id);
+      chatRenderMessages(roomId, w.msgs);
+    }
   }
 }
 
@@ -11476,6 +11494,7 @@ async function chatFullSend() {
   const body = input?.value.trim();
   if (!body && !_chatFullPending) return;
 
+  const now = new Date().toISOString();
   const payload = {
     room_id:      _chatFullRoomId,
     sender_id:    currentUser.id,
@@ -11484,28 +11503,28 @@ async function chatFullSend() {
     attach_type:  _chatFullPending?.type  || null,
     attach_id:    _chatFullPending?.id    || null,
     attach_label: _chatFullPending?.label || null,
+    created_at:   now,
   };
 
   if (input) { input.value = ''; input.style.height = 'auto'; }
   _chatFullPending = null;
   document.getElementById('chatFullPendingBar').style.display = 'none';
 
+  // Optimistic render
+  _chatFullMsgs.push(payload);
+  chatFullRenderMessages();
+  _chatLastSeen[_chatFullRoomId] = now;
+
   try {
     await supaFetch('/rest/v1/chat_messages', {
-      method: 'POST', prefer: 'return=representation',
+      method: 'POST', prefer: 'return=minimal',
       body: JSON.stringify([payload]),
     });
-    // Add to local msgs and re-render
-    const res = await supaGet('chat_messages',
-      `room_id=eq.${encodeURIComponent(_chatFullRoomId)}&order=created_at.desc&limit=1`);
-    if (res && res.length) {
-      _chatFullMsgs.push(res[0]);
-      chatFullRenderMessages();
-      // Update lastSeen
-      _chatLastSeen[_chatFullRoomId] = res[0].created_at;
-    }
   } catch(e) {
     showToast('Gagal hantar: ' + e.message, true);
+    // Remove optimistic message
+    _chatFullMsgs = _chatFullMsgs.filter(m => m.created_at !== now || m.sender_id !== currentUser.id);
+    chatFullRenderMessages();
   }
 }
 
