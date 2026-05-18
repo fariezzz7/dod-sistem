@@ -3177,7 +3177,7 @@ function chatInit() {
   if (!currentUser) return;
   document.getElementById('chatBubble').style.display = 'flex';
   chatBuildConvList();
-  setInterval(chatPollAll, 5000);
+  chatBgPollInit();
   document.addEventListener('click', () => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3386,32 +3386,49 @@ async function chatSend(roomId) {
 
 // ── Poll ──────────────────────────────────────────────────────
 
-async function chatPollAll() {
-  for (const roomId of Object.keys(_chatWindows)) {
-    const w = _chatWindows[roomId];
-    if (!w) continue;
-    const lastTs = w.msgs.length ? w.msgs[w.msgs.length-1].created_at : '1970-01-01';
+const _chatLastSeen = {};
+
+async function chatBgPollInit() {
+  const role = currentUser?.role;
+  const myRooms = Object.values(CHAT_ROOMS).filter(r=>r.roles.includes(role)).map(r=>r.id);
+  const now = new Date().toISOString();
+  myRooms.forEach(id => { if (!_chatLastSeen[id]) _chatLastSeen[id] = now; });
+  await chatBgPoll(myRooms);
+  setInterval(() => chatBgPoll(myRooms), 5000);
+}
+
+async function chatBgPoll(roomIds) {
+  for (const roomId of roomIds) {
     try {
+      const lastTs = _chatLastSeen[roomId] || new Date().toISOString();
       const rows = await supaGet('chat_messages',
-        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=20`);
+        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=10&sender_id=neq.${encodeURIComponent(currentUser.id)}`);
       if (rows && rows.length) {
-        rows.forEach(r => { w.msgs.push(r); if (r.sender_id!==currentUser.id) chatNotify(r,roomId); });
-        chatRenderMessages(roomId, w.msgs);
+        _chatLastSeen[roomId] = rows[rows.length-1].created_at;
+        rows.forEach(r => {
+          chatNotify(r, roomId);
+          const winEl = _chatWindows[roomId]?.el;
+          const isOpen = winEl && !winEl.classList.contains('minimized');
+          if (!isOpen) _chatUnread[roomId] = (_chatUnread[roomId]||0) + 1;
+          const prev = document.getElementById('preview_'+roomId);
+          if (prev) prev.textContent = (r.sender_name||r.sender_id)+': '+(r.body||'[Attachment]');
+        });
         chatPlaySound();
-        const isMin = w.el?.classList.contains('minimized');
-        if (isMin || document.hidden) {
-          const newCount = rows.filter(r=>r.sender_id!==currentUser.id).length;
-          if (newCount > 0) {
-            _chatUnread[roomId] = (_chatUnread[roomId]||0) + newCount;
-            chatUpdateBubbleCount();
-            chatUpdateTabTitle();
-            if (isMin) chatUpdateWinBadge(roomId);
-          }
+        chatUpdateBubbleCount();
+        chatUpdateTabTitle();
+        if (window._chatConvs) chatRenderConvList(window._chatConvs);
+        const w = _chatWindows[roomId];
+        if (w) {
+          rows.forEach(r => w.msgs.push(r));
+          chatRenderMessages(roomId, w.msgs);
+          if (w.el?.classList.contains('minimized')) chatUpdateWinBadge(roomId);
         }
       }
     } catch(e) {}
   }
 }
+
+async function chatPollAll() { return chatBgPoll(Object.keys(_chatWindows)); }
 
 // ── Notifications ─────────────────────────────────────────────
 

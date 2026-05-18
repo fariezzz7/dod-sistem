@@ -1273,6 +1273,12 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Sales Kit</span>
   </button>
 
+  <button class="sb-item" id="sbChat" data-tip="Chat" onclick="sbNav('chat')" style="display:none;">
+    <span class="sb-item-icon">💬</span>
+    <span class="sb-item-label">Chat</span>
+    <span class="sb-badge" id="chatSbBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;"></span>
+  </button>
+
   <button class="sb-item" id="sbDodAI" data-tip="DOD AI Assistant" onclick="window.open('https://chatgpt.com/g/g-6a06ed0f276c8191bd2f869daa883429-dod-worldwide-internal-ai','_blank')" style="display:none;">
     <span class="sb-item-icon">🤖</span>
     <span class="sb-item-label">DOD AI</span>
@@ -1611,6 +1617,52 @@ tr:hover .row-actions{opacity:1;}
   <!-- SALES KIT VIEW -->
   <div id="salesKitView" style="display:none;padding:24px 28px;">
     <div id="salesKitContent"></div>
+  </div>
+
+  <!-- FULL CHAT VIEW -->
+  <div id="chatView" style="display:none;height:calc(100vh - 0px);display:none;flex-direction:row;">
+    <!-- Left: conversation list -->
+    <div id="chatFullLeft" style="width:280px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100%;">
+      <div style="padding:16px 16px 10px;border-bottom:1px solid var(--line);">
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px;">💬 Chat</div>
+        <input id="chatFullSearch" placeholder="Cari conversation..." oninput="chatFullFilter(this.value)"
+          style="width:100%;padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg3);font-size:12px;outline:none;color:var(--text);">
+      </div>
+      <div id="chatFullConvList" style="flex:1;overflow-y:auto;"></div>
+    </div>
+    <!-- Right: active chat -->
+    <div id="chatFullRight" style="flex:1;display:flex;flex-direction:column;height:100%;min-width:0;">
+      <div id="chatFullEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--textm);">
+        <span style="font-size:48px;">💬</span>
+        <div style="font-size:14px;font-weight:500;">Pilih conversation untuk mula chat</div>
+        <div style="font-size:12px;">DM staff atau buka group chat</div>
+      </div>
+      <div id="chatFullActive" style="display:none;flex-direction:column;height:100%;">
+        <div id="chatFullHeader" style="padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <div id="chatFullAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--bluebg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div id="chatFullName" style="font-size:14px;font-weight:700;color:var(--text);"></div>
+            <div id="chatFullSub" style="font-size:11px;color:var(--textm);"></div>
+          </div>
+          <button onclick="chatBubbleFromFull()" title="Buka sebagai floating window"
+            style="padding:5px 10px;border:1px solid var(--line);background:var(--bg3);border-radius:6px;font-size:11px;color:var(--textd);cursor:pointer;">
+            ⬡ Float
+          </button>
+        </div>
+        <div id="chatFullBody" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;"></div>
+        <div id="chatFullPendingBar" style="display:none;padding:6px 16px;background:var(--bluebg);border-top:1px solid var(--blueb);font-size:11px;color:var(--blue);display:flex;align-items:center;justify-content:space-between;"></div>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          <button onclick="chatFullOpenAttach()" title="Attach order / design job"
+            style="padding:6px 8px;border:none;background:none;cursor:pointer;color:var(--textm);font-size:18px;">🔗</button>
+          <textarea id="chatFullInput" placeholder="Tulis mesej..." rows="1"
+            style="flex:1;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg3);font-size:13px;outline:none;color:var(--text);resize:none;max-height:100px;line-height:1.4;"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatFullSend();}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <button onclick="chatFullSend()"
+            style="padding:8px 18px;background:var(--blue);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">Hantar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- PRODUCTION TRACKER -->
@@ -2661,6 +2713,7 @@ function chatOpenWindow(roomId, name, type, userId) {
     <div class="chat-win-header" onclick="chatMinimize('${roomId}')">
       <div class="chat-conv-avatar" style="width:28px;height:28px;font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">${initials}</div>
       <div class="chat-win-title">${name}</div>
+      <svg onclick="event.stopPropagation();chatOpenFullFromBubble('${roomId}','${name}','${type}','${userId}')" title="Buka full screen" style="width:13px;height:13px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;margin-right:2px;" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       <svg onclick="event.stopPropagation();chatCloseWindow('${roomId}')" style="width:14px;height:14px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </div>
     <div class="chat-win-body" id="chatbody_${roomId}">
@@ -2816,45 +2869,112 @@ async function chatSend(roomId) {
 // ── Supabase Realtime ─────────────────────────────────────────
 
 function chatSubscribeAll() {
-  if (typeof window.supabaseClient === 'undefined') {
-    // Use polling fallback — check every 5s
-    setInterval(chatPollAll, 5000);
-    return;
-  }
-  chatSubscribeRealtime();
+  // Background poll — semua rooms user ada access, walaupun window belum dibuka
+  chatBgPollInit();
+  // Foreground poll — rooms yang window dah buka (untuk render messages)
+  setInterval(chatPollOpen, 5000);
 }
 
-async function chatPollAll() {
-  for (const roomId of Object.keys(_chatWindows)) {
+// Track last seen timestamp per room
+const _chatLastSeen = {};
+
+async function chatBgPollInit() {
+  // Get all room IDs user has access to
+  const role = currentUser?.role;
+  const myRooms = Object.values(CHAT_ROOMS)
+    .filter(r => r.roles.includes(role))
+    .map(r => r.id);
+
+  // Also include DM rooms — check for any DM with current user
+  // We'll poll by checking messages where room_id starts with user's id pattern
+  // Initialize lastSeen to now — don't alert on old messages
+  const now = new Date().toISOString();
+  myRooms.forEach(id => { if (!_chatLastSeen[id]) _chatLastSeen[id] = now; });
+
+  // First run immediately, then every 5s
+  await chatBgPoll(myRooms);
+  setInterval(() => chatBgPoll(myRooms), 5000);
+}
+
+async function chatBgPoll(roomIds) {
+  for (const roomId of roomIds) {
     try {
-      const w = _chatWindows[roomId];
-      if (!w) continue;
-      const lastTs = w.msgs.length ? w.msgs[w.msgs.length-1].created_at : '1970-01-01';
+      const lastTs = _chatLastSeen[roomId] || new Date().toISOString();
       const rows = await supaGet('chat_messages',
-        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=20`);
+        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=10&sender_id=neq.${encodeURIComponent(currentUser.id)}`);
+
       if (rows && rows.length) {
+        // Update lastSeen
+        _chatLastSeen[roomId] = rows[rows.length-1].created_at;
+
         rows.forEach(r => {
-          w.msgs.push(r);
-          // Only notify for messages from others
-          if (r.sender_id !== currentUser.id) {
-            chatNotify(r, roomId);
+          // Notify
+          chatNotify(r, roomId);
+
+          // Increment unread only if window not open and focused
+          const winEl = _chatWindows[roomId]?.el;
+          const isOpen = winEl && !winEl.classList.contains('minimized');
+          if (!isOpen) {
+            _chatUnread[roomId] = (_chatUnread[roomId] || 0) + 1;
           }
+
+          // If DM — also track in conv list
+          chatUpdateConvPreview(roomId, r);
         });
-        chatRenderMessages(roomId, w.msgs);
+
+        // Sound — once per batch
         chatPlaySound();
-        // Unread count — always increment if not focused on this window
-        const winEl = _chatWindows[roomId]?.el;
-        const isMinimized = winEl?.classList.contains('minimized');
-        const isHidden = document.hidden;
-        if (isMinimized || isHidden || !winEl) {
-          _chatUnread[roomId] = (_chatUnread[roomId] || 0) + rows.filter(r => r.sender_id !== currentUser.id).length;
-          chatUpdateBubbleCount();
-          chatUpdateTabTitle();
-          if (winEl && isMinimized) chatUpdateWinBadge(roomId);
+        chatUpdateBubbleCount();
+        chatUpdateTabTitle();
+        chatUpdateConvListBadges();
+
+        // If floating window open — render messages
+        const w = _chatWindows[roomId];
+        if (w) {
+          rows.forEach(r => w.msgs.push(r));
+          chatRenderMessages(roomId, w.msgs);
+          if (_chatWindows[roomId]?.el?.classList.contains('minimized')) {
+            chatUpdateWinBadge(roomId);
+          }
         }
+        // If full chat view active and same room — append and render
+        if (_chatFullRoomId === roomId && document.getElementById('chatView')?.style.display !== 'none') {
+          rows.forEach(r => _chatFullMsgs.push(r));
+          chatFullRenderMessages();
+          _chatLastSeen[roomId] = rows[rows.length-1].created_at;
+        }
+      } else {
+        // Update lastSeen even if no new messages (keep in sync)
+        if (!_chatLastSeen[roomId]) _chatLastSeen[roomId] = new Date().toISOString();
       }
     } catch(e) {}
   }
+}
+
+// Poll only for open windows (foreground)
+async function chatPollOpen() {
+  for (const roomId of Object.keys(_chatWindows)) {
+    const w = _chatWindows[roomId];
+    if (!w) continue;
+    // BgPoll already handles new messages — just sync if window was just opened
+    // and has no messages yet
+    if (!w.msgs.length) {
+      await chatLoadMessages(roomId).catch(() => {});
+    }
+  }
+}
+
+// Legacy alias
+async function chatPollAll() { return chatBgPoll(Object.keys(_chatWindows)); }
+
+function chatUpdateConvPreview(roomId, msg) {
+  const prev = document.getElementById('preview_' + roomId);
+  if (prev) prev.textContent = (msg.sender_name||msg.sender_id) + ': ' + (msg.body || '[Attachment]');
+}
+
+function chatUpdateConvListBadges() {
+  // Re-render conv list to show updated unread badges
+  if (window._chatConvs) chatRenderConvList(window._chatConvs);
 }
 
 function chatSubscribeRoom(roomId) {
@@ -3479,7 +3599,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView','chatView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3582,6 +3702,7 @@ function setupNavForRole() {
     sbShow('sbMemo');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
@@ -3606,6 +3727,7 @@ function setupNavForRole() {
     sbHide('sbBin');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
   } else { // designer
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
@@ -3615,6 +3737,7 @@ function setupNavForRole() {
     sbHide('sbDashboard');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
     sbHide('sbCustomer');
     sbHide('sbSupplierDir');
     sbHide('sbProdTrack');
@@ -3722,6 +3845,11 @@ function sbNav(view) {
     case 'saleskit':
       document.getElementById('sbSalesKit') && document.getElementById('sbSalesKit').classList.add('active');
       showSalesKitView();
+      showSbMonths(false);
+      break;
+    case 'chat':
+      document.getElementById('sbChat') && document.getElementById('sbChat').classList.add('active');
+      showChatFullView();
       showSbMonths(false);
       break;
   }
@@ -11153,6 +11281,313 @@ function skCarouselGo(cid, idx, total) {
     if (dot) dot.style.background = i === idx ? 'var(--blue)' : 'var(--line)';
   }
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// FULL CHAT VIEW
+// ══════════════════════════════════════════════════════════════
+
+let _chatFullRoomId  = null;
+let _chatFullType    = null;
+let _chatFullName    = null;
+let _chatFullPending = null;
+let _chatFullMsgs    = [];
+
+function showChatFullView() {
+  setAllViewsHidden();
+  const view = document.getElementById('chatView');
+  view.style.display = 'flex';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbChat');
+  if (el) el.classList.add('active');
+  chatFullBuildConvList();
+}
+
+function chatFullBuildConvList() {
+  const role = currentUser?.role;
+  const convs = [];
+  Object.values(CHAT_ROOMS).forEach(room => {
+    if (room.roles.includes(role)) convs.push({ id:room.id, name:room.name, icon:room.icon, type:'group' });
+  });
+  const store = loadUserStore ? loadUserStore() : {};
+  Object.values(store).forEach(u => {
+    if (u.id === currentUser.id) return;
+    const dmId = [currentUser.id, u.id].sort().join('__dm__');
+    convs.push({ id:dmId, name:u.name||u.id, icon:null, type:'dm', userId:u.id, color:u.color, bg:u.bg });
+  });
+  window._chatFullConvs = convs;
+  chatFullRenderConvList(convs);
+}
+
+function chatFullRenderConvList(convs) {
+  const el = document.getElementById('chatFullConvList');
+  if (!el) return;
+  el.innerHTML = convs.map(c => {
+    const unread = _chatUnread[c.id] || 0;
+    const initials = c.name.slice(0,2).toUpperCase();
+    const isActive = c.id === _chatFullRoomId;
+    const avatarBg = c.type === 'dm' ? (c.bg||'var(--bluebg)') : 'var(--bluebg)';
+    const avatarColor = c.type === 'dm' ? (c.color||'var(--blue)') : 'var(--blue)';
+    return `<div onclick="chatFullOpen('${c.id}','${c.name}','${c.type}','${c.userId||''}')"
+      style="display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--line)33;
+        background:${isActive ? 'var(--bluebg)' : 'transparent'};transition:background .1s;"
+      onmouseover="if('${c.id}'!=='${_chatFullRoomId}')this.style.background='var(--bg3)'"
+      onmouseout="if('${c.id}'!=='${_chatFullRoomId}')this.style.background='transparent'">
+      <div style="width:38px;height:38px;border-radius:50%;background:${avatarBg};color:${avatarColor};
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">
+        ${c.icon || initials}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:${unread>0?'700':'500'};color:var(--text);">${c.name}</div>
+        <div style="font-size:11px;color:var(--textm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="fullpreview_${c.id}">
+          ${c.type==='group'?'Group chat':'Hantar mesej...'}
+        </div>
+      </div>
+      ${unread > 0 ? `<div style="background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;min-width:18px;text-align:center;">${unread}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function chatFullFilter(q) {
+  if (!window._chatFullConvs) return;
+  const filtered = q ? window._chatFullConvs.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : window._chatFullConvs;
+  chatFullRenderConvList(filtered);
+}
+
+async function chatFullOpen(roomId, name, type, userId) {
+  _chatFullRoomId = roomId;
+  _chatFullType   = type;
+  _chatFullName   = name;
+  _chatFullPending = null;
+  _chatFullMsgs   = [];
+
+  // Clear unread
+  chatClearUnread(roomId);
+  chatFullRenderConvList(window._chatFullConvs || []);
+
+  // Show active panel
+  document.getElementById('chatFullEmpty').style.display = 'none';
+  const active = document.getElementById('chatFullActive');
+  active.style.display = 'flex';
+
+  // Header
+  const initials = name.slice(0,2).toUpperCase();
+  document.getElementById('chatFullAvatar').textContent = initials;
+  document.getElementById('chatFullName').textContent = name;
+  document.getElementById('chatFullSub').textContent = type === 'group'
+    ? (CHAT_ROOMS[roomId]?.roles?.length + ' ahli') : 'DM';
+
+  // Clear body and load
+  const body = document.getElementById('chatFullBody');
+  body.innerHTML = '<div style="text-align:center;padding:40px;font-size:12px;color:var(--textm);">Memuatkan...</div>';
+
+  try {
+    const rows = await supaGet('chat_messages',
+      `room_id=eq.${encodeURIComponent(roomId)}&order=created_at.asc&limit=80`);
+    _chatFullMsgs = rows || [];
+    chatFullRenderMessages();
+  } catch(e) {
+    body.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--red);">${e.message}</div>`;
+  }
+
+  // Update lastSeen so bg poll won't re-alert
+  _chatLastSeen[roomId] = new Date().toISOString();
+  document.getElementById('chatFullInput')?.focus();
+}
+
+function chatFullRenderMessages() {
+  const body = document.getElementById('chatFullBody');
+  if (!body) return;
+  const isGroup = !_chatFullRoomId?.includes('__dm__');
+  if (!_chatFullMsgs.length) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;font-size:12px;color:var(--textm);">Belum ada mesej. Mula perbualan!</div>';
+    return;
+  }
+
+  body.innerHTML = _chatFullMsgs.map((m, idx) => {
+    const isMe = m.sender_id === currentUser.id;
+    const timeStr = new Date(m.created_at).toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'});
+    const showSender = isGroup && !isMe && (idx===0 || _chatFullMsgs[idx-1].sender_id !== m.sender_id);
+    const attachHtml = m.attach_type ? chatFullRenderAttach(m, isMe) : '';
+
+    if (isMe) {
+      return `<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+        <div style="max-width:65%;">
+          <div style="background:var(--blue);color:#fff;border-radius:16px 16px 4px 16px;padding:10px 14px;font-size:13px;line-height:1.5;word-break:break-word;">
+            ${attachHtml}${m.body ? chatEsc(m.body) : ''}
+          </div>
+          <div style="font-size:10px;color:var(--textm);text-align:right;margin-top:3px;">✓✓ ${timeStr}</div>
+        </div>
+      </div>`;
+    } else {
+      return `<div style="display:flex;gap:8px;margin-bottom:4px;align-items:flex-end;">
+        ${showSender ? `<div style="width:30px;height:30px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--textd);flex-shrink:0;">${(m.sender_name||'?').slice(0,2).toUpperCase()}</div>` : '<div style="width:30px;flex-shrink:0;"></div>'}
+        <div style="max-width:65%;">
+          ${showSender ? `<div style="font-size:10px;color:var(--textm);margin-bottom:3px;">${chatEsc(m.sender_name||m.sender_id)}</div>` : ''}
+          <div style="background:var(--bg3);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text);word-break:break-word;">
+            ${attachHtml}${m.body ? chatEsc(m.body) : ''}
+          </div>
+          <div style="font-size:10px;color:var(--textm);margin-top:3px;">${timeStr}</div>
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  body.scrollTop = body.scrollHeight;
+}
+
+function chatFullRenderAttach(m, isMe) {
+  const icon = m.attach_type==='order' ? '📋' : '🎨';
+  const fn = m.attach_type==='order'
+    ? `chatOpenOrder('${m.attach_id}')`
+    : `chatOpenDesignJob('${m.attach_id}')`;
+  const bg = isMe ? 'rgba(255,255,255,0.15)' : 'var(--bg2)';
+  const border = isMe ? '1px solid rgba(255,255,255,0.25)' : '1px solid var(--line)';
+  return `<div onclick="${fn}" style="background:${bg};border:${border};border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font-size:12px;">
+    <div style="font-weight:600;margin-bottom:2px;">${icon} ${chatEsc(m.attach_label||'')}</div>
+    <div style="opacity:.75;font-size:10px;">Klik untuk buka →</div>
+  </div>`;
+}
+
+async function chatFullSend() {
+  if (!_chatFullRoomId) return;
+  const input = document.getElementById('chatFullInput');
+  const body = input?.value.trim();
+  if (!body && !_chatFullPending) return;
+
+  const payload = {
+    room_id:      _chatFullRoomId,
+    sender_id:    currentUser.id,
+    sender_name:  currentUser.name || currentUser.id,
+    body:         body || null,
+    attach_type:  _chatFullPending?.type  || null,
+    attach_id:    _chatFullPending?.id    || null,
+    attach_label: _chatFullPending?.label || null,
+  };
+
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  _chatFullPending = null;
+  document.getElementById('chatFullPendingBar').style.display = 'none';
+
+  try {
+    await supaFetch('/rest/v1/chat_messages', {
+      method: 'POST', prefer: 'return=representation',
+      body: JSON.stringify([payload]),
+    });
+    // Add to local msgs and re-render
+    const res = await supaGet('chat_messages',
+      `room_id=eq.${encodeURIComponent(_chatFullRoomId)}&order=created_at.desc&limit=1`);
+    if (res && res.length) {
+      _chatFullMsgs.push(res[0]);
+      chatFullRenderMessages();
+      // Update lastSeen
+      _chatLastSeen[_chatFullRoomId] = res[0].created_at;
+    }
+  } catch(e) {
+    showToast('Gagal hantar: ' + e.message, true);
+  }
+}
+
+function chatFullOpenAttach() {
+  // Reuse floating attach picker but redirect to full chat
+  _chatAttachCtx = '__full__';
+  const picker = document.getElementById('chatAttachPicker');
+  if (!picker) return;
+  picker.style.bottom = '80px';
+  picker.style.left   = '300px';
+  picker.style.right  = 'auto';
+  picker.classList.add('open');
+  _chatAttachTab = 'order';
+  chatAttachSwitchTab('order');
+  document.getElementById('attachSearchInput').value = '';
+  chatAttachSearch('');
+  setTimeout(() => {
+    document.addEventListener('click', e => {
+      if (!document.getElementById('chatAttachPicker')?.contains(e.target)) {
+        document.getElementById('chatAttachPicker')?.classList.remove('open');
+      }
+    }, { once: true });
+  }, 100);
+}
+
+// Override chatAttachSelect to handle full chat context
+const _origChatAttachSelect = window.chatAttachSelect;
+window.chatAttachSelect = function(type, id, label) {
+  if (_chatAttachCtx === '__full__') {
+    _chatFullPending = { type, id, label };
+    const bar = document.getElementById('chatFullPendingBar');
+    if (bar) {
+      bar.style.display = 'flex';
+      bar.innerHTML = `<span>${type==='order'?'📋':'🎨'} ${chatEsc(label)}</span>
+        <span onclick="document.getElementById('chatFullPendingBar').style.display='none';_chatFullPending=null;" style="cursor:pointer;font-size:16px;color:var(--textm);">×</span>`;
+    }
+    document.getElementById('chatAttachPicker')?.classList.remove('open');
+    document.getElementById('chatFullInput')?.focus();
+    return;
+  }
+  _origChatAttachSelect(type, id, label);
+};
+
+// Open full chat from floating bubble — with specific room pre-selected
+function chatOpenFullFromBubble(roomId, name, type, userId) {
+  sbNav('chat');
+  setTimeout(() => chatFullOpen(roomId, name, type, userId), 100);
+}
+
+// Open floating window from full chat
+function chatBubbleFromFull() {
+  if (!_chatFullRoomId) return;
+  chatOpenWindow(_chatFullRoomId, _chatFullName, _chatFullType, '');
+}
+
+// Update full chat when bg poll gets new messages
+const _origChatUpdateConvListBadges = window.chatUpdateConvListBadges || function(){};
+window.chatUpdateConvListBadges = function() {
+  _origChatUpdateConvListBadges();
+  // Update full chat conv list if open
+  if (document.getElementById('chatView')?.style.display !== 'none') {
+    chatFullRenderConvList(window._chatFullConvs || []);
+  }
+  // Update sidebar badge
+  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+  const sbBadge = document.getElementById('chatSbBadge');
+  if (sbBadge) {
+    sbBadge.style.display = total > 0 ? 'inline-block' : 'none';
+    sbBadge.textContent = total > 9 ? '9+' : total;
+  }
+  // Also update full conv list preview
+  if (window._chatFullConvs) {
+    window._chatFullConvs.forEach(c => {
+      const fp = document.getElementById('fullpreview_'+c.id);
+      const sp = document.getElementById('preview_'+c.id);
+      if (fp && sp) fp.textContent = sp.textContent;
+    });
+  }
+};
+
+// Also update sidebar badge from chatUpdateBubbleCount
+const _origChatUpdateBubbleCount = window.chatUpdateBubbleCount;
+window.chatUpdateBubbleCount = function() {
+  _origChatUpdateBubbleCount && _origChatUpdateBubbleCount();
+  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+  const sbBadge = document.getElementById('chatSbBadge');
+  if (sbBadge) {
+    sbBadge.style.display = total > 0 ? 'inline-block' : 'none';
+    sbBadge.textContent = total > 9 ? '9+' : total;
+  }
+};
+
+// Also poll new msgs for active full chat room
+const _origChatBgPoll = window.chatBgPoll;
+
+window.showChatFullView = showChatFullView;
+window.chatFullOpen     = chatFullOpen;
+window.chatFullFilter   = chatFullFilter;
+window.chatFullSend     = chatFullSend;
+window.chatFullOpenAttach = chatFullOpenAttach;
+window.chatBubbleFromFull = chatBubbleFromFull;
+window.chatOpenFullFromBubble = chatOpenFullFromBubble;
 
 window.showSalesKitView = showSalesKitView;
 window.skSetMediaType   = skSetMediaType;
