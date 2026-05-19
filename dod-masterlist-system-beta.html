@@ -8766,19 +8766,26 @@ function renderProdKanban(allOrders, autoFilter) {
     return true;
   });
 
-  return `<div style="overflow-x:auto;padding-bottom:12px;">
-    <div style="display:flex;gap:10px;min-width:max-content;align-items:flex-start;">
+  // Calculate available height for board
+  const boardHeight = 'calc(100vh - 340px)';
+
+  return `<div style="overflow-x:auto;overflow-y:hidden;padding-bottom:12px;height:${boardHeight};min-height:400px;">
+    <div style="display:flex;gap:10px;height:100%;min-width:max-content;">
       ${cols.map(col => `
-        <div style="min-width:200px;max-width:200px;display:flex;flex-direction:column;"
-          ondragover="event.preventDefault()" ondrop="prodDrop(event,'${col.id}')">
-          <div style="padding:9px 12px;border-radius:10px 10px 0 0;background:${col.bg};border:0.5px solid ${col.border};display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;">${col.icon}</span>
-            <span style="font-size:11px;font-weight:600;color:${col.color};flex:1;">${col.label}</span>
-            <span style="background:${col.color};color:#fff;border-radius:10px;padding:0 7px;font-size:10px;font-weight:600;">${col.cards.length}</span>
+        <div style="width:280px;flex-shrink:0;display:flex;flex-direction:column;height:100%;border-radius:12px;background:var(--bg2);border:1px solid ${col.border};box-shadow:0 1px 4px rgba(0,0,0,0.06);overflow:hidden;"
+          ondragover="event.preventDefault();this.style.boxShadow='0 0 0 2px ${col.color}55'"
+          ondragleave="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.06)'"
+          ondrop="this.style.boxShadow='0 1px 4px rgba(0,0,0,0.06)';prodDrop(event,'${col.id}')">
+          <!-- Column header -->
+          <div style="padding:11px 14px;background:${col.bg};border-bottom:1px solid ${col.border};flex-shrink:0;display:flex;align-items:center;gap:8px;">
+            <div style="width:3px;height:16px;border-radius:2px;background:${col.color};flex-shrink:0;"></div>
+            <span style="font-size:13px;font-weight:700;color:${col.color};flex:1;">${col.label}</span>
+            <span style="background:${col.color};color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600;">${col.cards.length}</span>
           </div>
-          <div style="border:0.5px solid ${col.border};border-top:none;border-radius:0 0 10px 10px;padding:7px;background:var(--bg3);min-height:280px;display:flex;flex-direction:column;gap:6px;">
+          <!-- Column body — vertical scroll -->
+          <div style="padding:8px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;">
             ${col.cards.length === 0
-              ? `<div style="text-align:center;padding:20px 10px;font-size:11px;color:var(--textm);">Tiada order</div>`
+              ? `<div style="text-align:center;padding:24px 10px;font-size:12px;color:var(--textm);">Tiada order</div>`
               : col.cards.map(o => renderKanbanCard(o, col, today)).join('')}
           </div>
         </div>`).join('')}
@@ -8794,25 +8801,27 @@ function renderKanbanCard(o, col, today) {
   const cardBorder = isOverdue ? '2px solid var(--red)' : isDueSoon ? '2px solid var(--amber)' : '0.5px solid var(--line)';
 
   const dueBadge = diffDue === null ? ''
-    : isOverdue ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">overdue ${Math.abs(diffDue)}h</span>`
-    : isDueSoon ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--amberbg);color:var(--amber);font-weight:600;">${diffDue}h lagi</span>`
-    : `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--greenbg);color:var(--green);">${diffDue}h</span>`;
+    : isOverdue ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">🔴 overdue ${Math.abs(diffDue)}h</span>`
+    : isDueSoon ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--amberbg);color:var(--amber);font-weight:600;">🟡 ${diffDue}h lagi</span>`
+    : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--greenbg);color:var(--green);">🟢 ${diffDue}h</span>`;
 
   const status = PROD_STATUS_MAP[o.production_status||'job-submit'] || PROD_STATUSES[0];
 
   // Progress bar for on-going
   const progressHtml = col.id === 'on-going' ? `
-    <div style="margin-top:6px;">
-      <div style="background:var(--line);border-radius:3px;height:3px;overflow:hidden;">
-        <div style="width:${status.pct}%;height:100%;background:${col.color};border-radius:3px;"></div>
+    <div style="margin-top:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--textm);margin-bottom:4px;">
+        <span>${status.icon} ${status.label}</span><span style="font-weight:600;">${status.pct}%</span>
       </div>
-      <div style="font-size:9px;color:var(--textm);margin-top:2px;">${status.icon} ${status.label} — ${status.pct}%</div>
+      <div style="background:var(--line);border-radius:4px;height:5px;overflow:hidden;">
+        <div style="width:${status.pct}%;height:100%;background:${col.color};border-radius:4px;transition:width .3s;"></div>
+      </div>
     </div>` : '';
 
   // Pending note
   const pendingHtml = col.id === 'pending' && o.pending_note ? `
-    <div style="margin-top:5px;padding:4px 7px;background:var(--amberbg);border-radius:5px;font-size:10px;color:var(--amber);line-height:1.4;">
-      ${o.pending_note.slice(0,60)}${o.pending_note.length>60?'...':''}
+    <div style="margin-top:8px;padding:7px 10px;background:var(--amberbg);border:1px solid var(--amberb);border-radius:7px;font-size:11px;color:var(--amber);line-height:1.5;">
+      💬 ${o.pending_note.slice(0,80)}${o.pending_note.length>80?'...':''}
     </div>` : '';
 
   // OS badge
@@ -8839,23 +8848,27 @@ function renderKanbanCard(o, col, today) {
   return `<div draggable="true"
     ondragstart="prodDragStart(event,'${o.id}','${o._month}')"
     onclick="showDetail('${o.id}')"
-    style="background:var(--bg2);border:${cardBorder};border-radius:8px;padding:9px 10px;cursor:pointer;transition:box-shadow .12s;"
-    onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
-    <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3;">${(o.name_job||'').slice(0,40)}</div>
-    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px;">
+    style="background:var(--bg1);border:${cardBorder};border-radius:10px;padding:12px 13px;cursor:pointer;transition:box-shadow .12s,transform .1s;"
+    onmouseover="this.style.boxShadow='0 3px 12px rgba(0,0,0,0.1)';this.style.transform='translateY(-1px)'"
+    onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+    <!-- Job name -->
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:7px;line-height:1.35;">${(o.name_job||'').slice(0,45)}</div>
+    <!-- Badges -->
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
       ${dueBadge}${osBadge}
-      ${o.pic?`<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--bluebg);color:var(--blue);">${o.pic}</span>`:''}
+      ${o.pic?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bluebg);color:var(--blue);font-weight:500;">${o.pic}</span>`:''}
     </div>
-    <div style="font-size:10px;color:var(--textm);display:flex;gap:8px;">
+    <!-- Meta -->
+    <div style="font-size:11px;color:var(--textm);display:flex;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line);">
       <span>📦 ${o.pcs||0} pcs</span>
       ${dueDate?`<span>📅 ${o.due_date}</span>`:''}
     </div>
     ${progressHtml}${pendingHtml}${actionBtn}
     <!-- Move dropdown -->
-    <div onclick="event.stopPropagation()" style="margin-top:6px;">
+    <div onclick="event.stopPropagation()" style="margin-top:8px;">
       <select onchange="prodMoveCard('${o.id}','${o._month}',this.value);this.value=''"
-        style="width:100%;font-size:10px;padding:3px 6px;border-radius:5px;border:0.5px solid var(--line);background:var(--bg3);color:var(--textd);cursor:pointer;outline:none;">
-        <option value="">Pindah ke...</option>
+        style="width:100%;font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid var(--line);background:var(--bg3);color:var(--textd);cursor:pointer;outline:none;">
+        <option value="">↕ Pindah ke...</option>
         ${KANBAN_COLS.filter(c=>c.id!==col.id && c.id!=='pending-payment').map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
       </select>
     </div>
@@ -9204,7 +9217,7 @@ function renderHomeAlerts(role) {
     alerts.push({
       color:'var(--red)', bg:'var(--redbg)', border:'var(--redb)', icon:'🚨',
       text:`<strong>${criticalOS.length} order CRITICAL OS</strong> — ${fmt(totalCrit)} dah ${criticalDays}+ hari overdue · Terlama: ${topName} (${criticalOS[0].daysOverdue} hari)`,
-      fn:`showCustomerView()`,
+      fn:`window._custTab='os';window._custSort='os';showCustomerView()`,
       extra: criticalOS.slice(0,3).map(o=>`<span style="font-size:10px;background:rgba(192,40,64,0.08);border:1px solid rgba(192,40,64,0.2);border-radius:4px;padding:2px 7px;margin-right:4px;color:var(--red);">${(o.name_job||'').slice(0,20)} · ${fmt(o.balance_customer)} · ${o.daysOverdue}h</span>`).join('')
     });
   }
@@ -9213,7 +9226,7 @@ function renderHomeAlerts(role) {
     alerts.push({
       color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'⚠️',
       text:`<strong>${warningOS.length} order OS</strong> — ${fmt(totalWarn)} belum bayar selepas complete`,
-      fn:`showCustomerView()`
+      fn:`window._custTab='os';window._custSort='os';showCustomerView()`
     });
   }
 
