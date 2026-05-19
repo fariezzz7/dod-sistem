@@ -1257,7 +1257,7 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">KPI Sales</span>
   </button>
 
-  <button class="sb-item" id="sbJobBoard" data-tip="Job Board" onclick="window.open('dod-jobboard.html','_blank')" style="display:none;">
+  <button class="sb-item" id="sbJobBoard" data-tip="Job Board" onclick="window.open('dod-jobboard.html','dod_jobboard')" style="display:none;">
     <span class="sb-item-icon">🎨</span>
     <span class="sb-item-label">Design Board</span>
     <span class="sb-item-badge" style="background:var(--purplebg);color:var(--purple);">↗</span>
@@ -1271,6 +1271,12 @@ tr:hover .row-actions{opacity:1;}
   <button class="sb-item" id="sbSalesKit" data-tip="Sales Kit" onclick="sbNav('saleskit')" style="display:none;">
     <span class="sb-item-icon">📦</span>
     <span class="sb-item-label">Sales Kit</span>
+  </button>
+
+  <button class="sb-item" id="sbChat" data-tip="Chat" onclick="sbNav('chat')" style="display:none;">
+    <span class="sb-item-icon">💬</span>
+    <span class="sb-item-label">Chat</span>
+    <span class="sb-badge" id="chatSbBadge" style="display:none;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:9px;margin-left:auto;"></span>
   </button>
 
   <button class="sb-item" id="sbDodAI" data-tip="DOD AI Assistant" onclick="window.open('https://chatgpt.com/g/g-6a06ed0f276c8191bd2f869daa883429-dod-worldwide-internal-ai','_blank')" style="display:none;">
@@ -1611,6 +1617,52 @@ tr:hover .row-actions{opacity:1;}
   <!-- SALES KIT VIEW -->
   <div id="salesKitView" style="display:none;padding:24px 28px;">
     <div id="salesKitContent"></div>
+  </div>
+
+  <!-- FULL CHAT VIEW -->
+  <div id="chatView" style="display:none;height:calc(100vh - 0px);display:none;flex-direction:row;">
+    <!-- Left: conversation list -->
+    <div id="chatFullLeft" style="width:280px;flex-shrink:0;border-right:1px solid var(--line);display:flex;flex-direction:column;height:100%;">
+      <div style="padding:16px 16px 10px;border-bottom:1px solid var(--line);">
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:10px;">💬 Chat</div>
+        <input id="chatFullSearch" placeholder="Cari conversation..." oninput="chatFullFilter(this.value)"
+          style="width:100%;padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg3);font-size:12px;outline:none;color:var(--text);">
+      </div>
+      <div id="chatFullConvList" style="flex:1;overflow-y:auto;"></div>
+    </div>
+    <!-- Right: active chat -->
+    <div id="chatFullRight" style="flex:1;display:flex;flex-direction:column;height:100%;min-width:0;">
+      <div id="chatFullEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--textm);">
+        <span style="font-size:48px;">💬</span>
+        <div style="font-size:14px;font-weight:500;">Pilih conversation untuk mula chat</div>
+        <div style="font-size:12px;">DM staff atau buka group chat</div>
+      </div>
+      <div id="chatFullActive" style="display:none;flex-direction:column;height:100%;">
+        <div id="chatFullHeader" style="padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <div id="chatFullAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--bluebg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div id="chatFullName" style="font-size:14px;font-weight:700;color:var(--text);"></div>
+            <div id="chatFullSub" style="font-size:11px;color:var(--textm);"></div>
+          </div>
+          <button onclick="chatBubbleFromFull()" title="Buka sebagai floating window"
+            style="padding:5px 10px;border:1px solid var(--line);background:var(--bg3);border-radius:6px;font-size:11px;color:var(--textd);cursor:pointer;">
+            ⬡ Float
+          </button>
+        </div>
+        <div id="chatFullBody" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;"></div>
+        <div id="chatFullPendingBar" style="display:none;padding:6px 16px;background:var(--bluebg);border-top:1px solid var(--blueb);font-size:11px;color:var(--blue);display:flex;align-items:center;justify-content:space-between;"></div>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          <button onclick="chatFullOpenAttach()" title="Attach order / design job"
+            style="padding:6px 8px;border:none;background:none;cursor:pointer;color:var(--textm);font-size:18px;">🔗</button>
+          <textarea id="chatFullInput" placeholder="Tulis mesej..." rows="1"
+            style="flex:1;padding:9px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg3);font-size:13px;outline:none;color:var(--text);resize:none;max-height:100px;line-height:1.4;"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chatFullSend();}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <button onclick="chatFullSend()"
+            style="padding:8px 18px;background:var(--blue);color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;">Hantar</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- PRODUCTION TRACKER -->
@@ -2538,8 +2590,15 @@ function chatInit() {
   document.getElementById('chatBubble').style.display = 'flex';
   chatBuildConvList();
   chatSubscribeAll();
-  // Audio context — unlock on first interaction
   document.addEventListener('click', chatUnlockAudio, { once: true });
+  // Request browser notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+  // Set base title
+  window._chatBaseTitle = document.title;
+  // Init BroadcastChannel
+  chatInitBC();
 }
 
 function chatUnlockAudio() {
@@ -2642,8 +2701,7 @@ function chatOpenWindow(roomId, name, type, userId) {
   }
 
   // Reset unread
-  _chatUnread[roomId] = 0;
-  chatUpdateBubbleCount();
+  chatClearUnread(roomId);
 
   const win = document.createElement('div');
   win.className = 'chat-window open';
@@ -2655,6 +2713,7 @@ function chatOpenWindow(roomId, name, type, userId) {
     <div class="chat-win-header" onclick="chatMinimize('${roomId}')">
       <div class="chat-conv-avatar" style="width:28px;height:28px;font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">${initials}</div>
       <div class="chat-win-title">${name}</div>
+      <svg onclick="event.stopPropagation();chatOpenFullFromBubble('${roomId}','${name}','${type}','${userId}')" title="Buka full screen" style="width:13px;height:13px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;margin-right:2px;" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       <svg onclick="event.stopPropagation();chatCloseWindow('${roomId}')" style="width:14px;height:14px;fill:none;stroke:var(--textm);stroke-width:2;stroke-linecap:round;cursor:pointer;flex-shrink:0;" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </div>
     <div class="chat-win-body" id="chatbody_${roomId}">
@@ -2684,6 +2743,7 @@ function chatMinimize(roomId) {
   if (win.classList.contains('minimized')) {
     win.classList.remove('minimized');
     win.classList.add('open');
+    chatClearUnread(roomId);
   } else {
     win.classList.add('minimized');
   }
@@ -2781,6 +2841,7 @@ async function chatSend(roomId) {
 
   if (!body && !pending) return;
 
+  const now = new Date().toISOString();
   const payload = {
     room_id:      roomId,
     sender_id:    currentUser.id,
@@ -2789,11 +2850,23 @@ async function chatSend(roomId) {
     attach_type:  pending?.type  || null,
     attach_id:    pending?.id    || null,
     attach_label: pending?.label || null,
+    created_at:   now,
   };
 
+  // Clear input immediately
   input.value = '';
   if (_chatWindows[roomId]) _chatWindows[roomId].pending = null;
   chatClearPendingPreview(roomId);
+
+  // Optimistic render — tambah dalam local array terus tanpa tunggu Supabase
+  const w = _chatWindows[roomId];
+  if (w) {
+    w.msgs.push(payload);
+    chatRenderMessages(roomId, w.msgs);
+  }
+
+  // Update lastSeen supaya bg poll tak duplicate
+  _chatLastSeen[roomId] = now;
 
   try {
     await supaFetch('/rest/v1/chat_messages', {
@@ -2803,40 +2876,144 @@ async function chatSend(roomId) {
     });
   } catch(e) {
     showToast('Gagal hantar mesej: ' + e.message, true);
+    // Remove optimistic message on failure
+    if (w) {
+      w.msgs = w.msgs.filter(m => m.created_at !== now || m.sender_id !== currentUser.id);
+      chatRenderMessages(roomId, w.msgs);
+    }
   }
 }
 
 // ── Supabase Realtime ─────────────────────────────────────────
 
 function chatSubscribeAll() {
-  if (typeof window.supabaseClient === 'undefined') {
-    // Use polling fallback — check every 5s
-    setInterval(chatPollAll, 5000);
-    return;
-  }
-  chatSubscribeRealtime();
+  // Background poll — semua rooms user ada access, walaupun window belum dibuka
+  chatBgPollInit();
+  // Foreground poll — rooms yang window dah buka (untuk render messages)
+  setInterval(chatPollOpen, 5000);
 }
 
-async function chatPollAll() {
-  for (const roomId of Object.keys(_chatWindows)) {
+// Track last seen timestamp per room
+const _chatLastSeen = {};
+
+async function chatBgPollInit() {
+  const role = currentUser?.role;
+  // Group rooms user has access to
+  const myRooms = Object.values(CHAT_ROOMS)
+    .filter(r => r.roles.includes(role))
+    .map(r => r.id);
+
+  // Add DM rooms — load all staff and build DM room IDs
+  try {
+    const users = await supaGet('users', 'select=id,name&active=eq.true');
+    (users||[]).forEach(u => {
+      if (u.id === currentUser.id) return;
+      const dmId = [currentUser.id, u.id].sort().join('__dm__');
+      if (!myRooms.includes(dmId)) myRooms.push(dmId);
+    });
+  } catch(e) {}
+
+  // Initialize lastSeen to NOW — don't alert on old messages
+  const now = new Date().toISOString();
+  myRooms.forEach(id => { _chatLastSeen[id] = now; });
+
+  // Store for future reference
+  window._chatMyRooms = myRooms;
+
+  // Start polling every 5s
+  setInterval(() => chatBgPoll(window._chatMyRooms || myRooms), 5000);
+}
+
+async function chatBgPoll(roomIds) {
+  for (const roomId of roomIds) {
     try {
-      const w = _chatWindows[roomId];
-      if (!w) continue;
-      const lastTs = w.msgs.length ? w.msgs[w.msgs.length-1].created_at : '1970-01-01';
+      const lastTs = _chatLastSeen[roomId] || new Date().toISOString();
       const rows = await supaGet('chat_messages',
-        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=20`);
+        `room_id=eq.${encodeURIComponent(roomId)}&created_at=gt.${encodeURIComponent(lastTs)}&order=created_at.asc&limit=10&sender_id=neq.${encodeURIComponent(currentUser.id)}`);
+
       if (rows && rows.length) {
-        rows.forEach(r => w.msgs.push(r));
-        chatRenderMessages(roomId, w.msgs);
+        // Update lastSeen
+        _chatLastSeen[roomId] = rows[rows.length-1].created_at;
+
+        rows.forEach(r => {
+          // Notify
+          chatNotify(r, roomId);
+
+          // Increment unread only if window not open and focused
+          const winEl = _chatWindows[roomId]?.el;
+          const isOpen = winEl && !winEl.classList.contains('minimized');
+          if (!isOpen) {
+            _chatUnread[roomId] = (_chatUnread[roomId] || 0) + 1;
+          }
+
+          // If DM — also track in conv list
+          chatUpdateConvPreview(roomId, r);
+        });
+
+        // Sound — once per batch
         chatPlaySound();
-        // Unread if window minimized
-        if (_chatWindows[roomId]?.el?.classList.contains('minimized')) {
-          _chatUnread[roomId] = (_chatUnread[roomId] || 0) + rows.length;
-          chatUpdateBubbleCount();
+        chatUpdateAllBadges();
+
+        // If floating window open — render messages
+        const w = _chatWindows[roomId];
+        if (w) {
+          rows.forEach(r => w.msgs.push(r));
+          chatRenderMessages(roomId, w.msgs);
+          if (_chatWindows[roomId]?.el?.classList.contains('minimized')) {
+            chatUpdateWinBadge(roomId);
+          }
         }
+        // If full chat view active and same room — append and render
+        if (_chatFullRoomId === roomId && document.getElementById('chatView')?.style.display !== 'none') {
+          rows.forEach(r => _chatFullMsgs.push(r));
+          chatFullRenderMessages();
+          _chatLastSeen[roomId] = rows[rows.length-1].created_at;
+        }
+      } else {
+        // Update lastSeen even if no new messages (keep in sync)
+        if (!_chatLastSeen[roomId]) _chatLastSeen[roomId] = new Date().toISOString();
       }
     } catch(e) {}
   }
+}
+
+// Poll only for open windows (foreground)
+async function chatPollOpen() {
+  for (const roomId of Object.keys(_chatWindows)) {
+    const w = _chatWindows[roomId];
+    if (!w) continue;
+    // BgPoll already handles new messages — just sync if window was just opened
+    // and has no messages yet
+    if (!w.msgs.length) {
+      await chatLoadMessages(roomId).catch(() => {});
+    }
+  }
+}
+
+// Legacy alias
+async function chatPollAll() { return chatBgPoll(Object.keys(_chatWindows)); }
+
+function chatUpdateConvPreview(roomId, msg) {
+  const prev = document.getElementById('preview_' + roomId);
+  if (prev) prev.textContent = (msg.sender_name||msg.sender_id) + ': ' + (msg.body || '[Attachment]');
+}
+
+function chatUpdateConvListBadges() {
+  // Update badges and previews without full re-render
+  if (!window._chatConvs) return;
+  window._chatConvs.forEach(c => {
+    const unread = _chatUnread[c.id] || 0;
+    // Update badge in conv item
+    const item = document.querySelector(`[onclick*="chatOpenWindow('${c.id}'"]`);
+    if (!item) return;
+    let badge = item.querySelector('.chat-conv-badge');
+    if (unread > 0) {
+      if (!badge) { badge = document.createElement('div'); badge.className = 'chat-conv-badge'; item.appendChild(badge); }
+      badge.textContent = unread;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
 }
 
 function chatSubscribeRoom(roomId) {
@@ -2965,6 +3142,7 @@ function chatClearPendingPreview(roomId) {
 // ── Open attached items ───────────────────────────────────────
 
 function chatOpenOrder(orderId) {
+  // We're in masterlist — open directly
   if (typeof showDetail === 'function') {
     sbNav('masterlist');
     setTimeout(() => showDetail(orderId), 300);
@@ -2972,7 +3150,7 @@ function chatOpenOrder(orderId) {
 }
 
 function chatOpenDesignJob(jobId) {
-  window.open('dod-jobboard.html', '_blank');
+  window.open('dod-jobboard.html?opencard=' + encodeURIComponent(jobId), '_blank');
 }
 
 // ── SQL setup toast ───────────────────────────────────────────
@@ -3010,6 +3188,14 @@ function chatEscAttr(s) {
 }
 
 // Close attach picker on escape
+// Clear tab title when user focuses back on tab
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    // Only clear if user clicks on an open chat window
+    chatUpdateTabTitle();
+  }
+});
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.getElementById('chatAttachPicker')?.classList.remove('open');
@@ -3019,6 +3205,99 @@ document.addEventListener('keydown', e => {
 });
 
 // Expose
+
+// ── BroadcastChannel — cross-tab coordination ────────────────
+
+const _chatBC = (() => {
+  try { return new BroadcastChannel('dod_chat'); } catch(e) { return null; }
+})();
+const _chatNotifiedIds = new Set();
+
+function chatInitBC() {
+  if (!_chatBC) return;
+  _chatBC.onmessage = e => {
+    const d = e.data;
+    // Another tab already notified this message — skip
+    if (d.type === 'notified' && d.msgId) {
+      _chatNotifiedIds.add(d.msgId);
+    }
+    // Jobboard asking masterlist to open an order
+    if (d.type === 'openOrder' && d.orderId) {
+      sbNav('masterlist');
+      window.focus();
+      setTimeout(() => showDetail(d.orderId), 400);
+    }
+  };
+}
+
+// ── Notifications ─────────────────────────────────────────────
+
+function chatNotify(msg, roomId) {
+  // Skip if another tab already handled this message
+  if (_chatNotifiedIds.has(msg.id)) return;
+  // Broadcast to other tabs — don't double notify
+  if (_chatBC) _chatBC.postMessage({ type:'notified', msgId: msg.id });
+  _chatNotifiedIds.add(msg.id);
+
+  const senderName = msg.sender_name || msg.sender_id;
+  const preview = msg.body
+    ? (msg.body.length > 60 ? msg.body.slice(0,60) + '...' : msg.body)
+    : msg.attach_label ? '📎 ' + msg.attach_label : 'Mesej baru';
+
+  // Browser notification (when tab not focused)
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    const roomName = CHAT_ROOMS[roomId]?.name || senderName;
+    const notif = new Notification('DOD — ' + (CHAT_ROOMS[roomId] ? roomName : senderName), {
+      body: CHAT_ROOMS[roomId] ? `${senderName}: ${preview}` : preview,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%231A5CC8"><circle cx="12" cy="12" r="12"/><path fill="white" d="M20 14a2 2 0 0 1-2 2H6l-3 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></svg>',
+      tag: 'dod-chat-' + roomId,
+      renotify: true,
+    });
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+      chatOpenWindow(roomId,
+        CHAT_ROOMS[roomId]?.name || senderName,
+        CHAT_ROOMS[roomId] ? 'group' : 'dm',
+        CHAT_ROOMS[roomId] ? '' : msg.sender_id);
+    };
+    // Auto close after 5s
+    setTimeout(() => notif.close(), 5000);
+  }
+}
+
+function chatUpdateTabTitle() {
+  const total = Object.values(_chatUnread).reduce((s,n) => s+n, 0);
+  const base = window._chatBaseTitle || 'DOD Sistem';
+  document.title = total > 0 ? `(${total}) ${base}` : base;
+}
+
+function chatUpdateWinBadge(roomId) {
+  const win = _chatWindows[roomId]?.el;
+  if (!win) return;
+  const unread = _chatUnread[roomId] || 0;
+  let badge = win.querySelector('.chat-win-unread-badge');
+  if (unread > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'chat-win-unread-badge';
+      badge.style.cssText = 'background:#DC2626;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;';
+      const title = win.querySelector('.chat-win-title');
+      if (title) title.after(badge);
+    }
+    badge.textContent = unread;
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+// Clear unread + tab title when window opened/focused
+function chatClearUnread(roomId) {
+  _chatUnread[roomId] = 0;
+  chatUpdateWinBadge(roomId);
+  chatUpdateAllBadges();
+}
+
 window.chatInit           = chatInit;
 window.chatToggleList     = chatToggleList;
 window.chatFilterList     = chatFilterList;
@@ -3033,6 +3312,8 @@ window.chatAttachSelect   = chatAttachSelect;
 window.chatClearPendingPreview = chatClearPendingPreview;
 window.chatOpenOrder      = chatOpenOrder;
 window.chatOpenDesignJob  = chatOpenDesignJob;
+window.chatClearUnread    = chatClearUnread;
+window.chatNotify         = chatNotify;
 </script>
 
 </body>
@@ -3081,7 +3362,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status',
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','pending_note','prod_archived',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
       'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
       'payments',
@@ -3323,6 +3604,16 @@ async function loadOrdersFromSupabase() {
     hideLoading();
     startAutoRefresh(); // Start 60s auto-refresh for multi-device sync
   chatInit(); // Init chat system
+
+  // Handle ?openorder= param (from jobboard chat link)
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _openOrderId = _urlParams.get('openorder');
+  if (_openOrderId) {
+    setTimeout(() => {
+      sbNav('masterlist');
+      setTimeout(() => showDetail(_openOrderId), 500);
+    }, 800);
+  }
     
     // Refresh home KPI if on home view
     if (document.getElementById('homeView').style.display !== 'none') {
@@ -3346,7 +3637,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView','chatView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3449,6 +3740,7 @@ function setupNavForRole() {
     sbShow('sbMemo');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
@@ -3473,6 +3765,7 @@ function setupNavForRole() {
     sbHide('sbBin');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
   } else { // designer
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
@@ -3482,6 +3775,7 @@ function setupNavForRole() {
     sbHide('sbDashboard');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
+    sbShow('sbChat');
     sbHide('sbCustomer');
     sbHide('sbSupplierDir');
     sbHide('sbProdTrack');
@@ -3589,6 +3883,11 @@ function sbNav(view) {
     case 'saleskit':
       document.getElementById('sbSalesKit') && document.getElementById('sbSalesKit').classList.add('active');
       showSalesKitView();
+      showSbMonths(false);
+      break;
+    case 'chat':
+      document.getElementById('sbChat') && document.getElementById('sbChat').classList.add('active');
+      showChatFullView();
       showSbMonths(false);
       break;
   }
@@ -6019,7 +6318,18 @@ function openCustDetail(idx) {
       <div class="cust-detail-stat"><div class="cust-detail-stat-val" style="color:var(--blue)">${fmtNum(c.totalPCS)}</div><div class="cust-detail-stat-label">PCS</div></div>
       <div class="cust-detail-stat"><div class="cust-detail-stat-val" style="color:var(--green);font-size:14px;">${fmt(c.totalRev)}</div><div class="cust-detail-stat-label">Jumlah</div></div>
     </div>
-    ${totalOS > 0 ? `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:14px;">⚠ Outstanding: ${fmt(totalOS)}</div>` : ''}
+    ${(() => {
+      const readyStatuses = ['ready','delivered','complete'];
+      const osReadyTotal = c.orders.filter(o =>
+        (o.balance_customer||0) > 0 && readyStatuses.includes(o.production_status||'')
+      ).reduce((s,o) => s+(o.balance_customer||0), 0);
+      const osAllTotal = totalOS;
+      if (osAllTotal <= 0) return '';
+      if (osReadyTotal > 0) {
+        return `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:14px;">🚨 OS Ready: ${fmt(osReadyTotal)} — Job dah siap, belum bayar!</div>`;
+      }
+      return `<div style="background:var(--amberbg);border:1px solid var(--amberb);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--amber);margin-bottom:14px;">⚠ Outstanding: ${fmt(osAllTotal)} (Job belum ready)</div>`;
+    })()}
     <div style="margin-bottom:14px;">
       <button class="btn-new" style="font-size:11px;padding:6px 12px;background:var(--green);box-shadow:0 2px 6px rgba(15,122,72,0.25);" onclick="openDocFromCust()">📄 Jana Quotation</button>
     ${totalOS > 0 ? `
@@ -6045,27 +6355,109 @@ function openCustDetail(idx) {
         onblur="saveCustNote('${c.tel}',this.value)">${c.notes||''}</textarea>
     </div>
 
-    ${totalOS > 0 ? `
-    <div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:12px 14px;margin:12px 20px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:11px;font-weight:700;color:var(--red);">⚠ Outstanding Belum Dijelaskan</div>
-        ${overdueLabel ? `<div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:10px;padding:2px 8px;background:${reminderColor}22;color:${reminderColor};border:1px solid ${reminderColor}55;border-radius:10px;font-weight:700;">
-            🕐 ${overdueLabel} overdue
-          </span>
-          <span style="font-size:10px;color:var(--textm);">→ ${reminderLevel}</span>
+    ${(() => {
+      // Production timeline for each order
+      const PROD_STATUS_LABELS = {
+        'job-submit':  { label:'Job Submit',     color:'#9AA0B8', icon:'📋' },
+        'in-progress': { label:'In Production',  color:'#1A5CC8', icon:'⚙️' },
+        'quality':     { label:'QC Check',       color:'#B8720A', icon:'🔍' },
+        'ready':       { label:'Ready',          color:'#0F7A48', icon:'📦' },
+        'delivered':   { label:'Delivered',      color:'#0F7A48', icon:'🚚' },
+        'complete':    { label:'Complete',       color:'#0F7A48', icon:'✅' },
+      };
+      const readyStatuses = ['ready','delivered','complete'];
+      const hasActiveOrders = c.orders.some(o => (o.pipeline_status||'quotation') !== 'quotation');
+      if (!hasActiveOrders) return '';
+
+      const timelineRows = c.orders
+        .filter(o => (o.pipeline_status||'quotation') !== 'quotation')
+        .map(o => {
+          const ps = o.production_status || 'job-submit';
+          const pInfo = PROD_STATUS_LABELS[ps] || { label: ps, color:'#9AA0B8', icon:'📋' };
+          const isReady = readyStatuses.includes(ps);
+          const prodDate = o.production_date ? new Date(o.production_date).toLocaleDateString('ms-MY',{day:'numeric',month:'short'}) : '—';
+          const dueDate  = o.due_date ? new Date(o.due_date).toLocaleDateString('ms-MY',{day:'numeric',month:'short',year:'numeric'}) : '—';
+          const _today = new Date(); _today.setHours(0,0,0,0);
+          const dueMs = o.due_date ? (new Date(o.due_date) - _today) / 86400000 : null;
+          const dueFlag = dueMs !== null
+            ? dueMs < 0  ? `<span style="font-size:9px;color:var(--red);font-weight:600;">${Math.abs(Math.floor(dueMs))} hari lepas</span>`
+            : dueMs <= 3 ? `<span style="font-size:9px;color:var(--amber);font-weight:600;">${Math.floor(dueMs)} hari lagi</span>`
+            : `<span style="font-size:9px;color:var(--green);">${Math.floor(dueMs)} hari lagi</span>`
+            : '';
+          return `<div style="padding:8px 10px;background:var(--bg3);border-radius:7px;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+              <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;">${(o.name_job||'').slice(0,35)}</div>
+              <span style="font-size:10px;padding:2px 7px;background:${pInfo.color}18;color:${pInfo.color};border:1px solid ${pInfo.color}44;border-radius:10px;font-weight:600;white-space:nowrap;">${pInfo.icon} ${pInfo.label}</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:10px;color:var(--textm);">
+              <span>📅 Hantar kilang: <strong style="color:var(--text);">${prodDate}</strong></span>
+              <span>🏁 Due: <strong style="color:var(--text);">${dueDate}</strong> ${dueFlag}</span>
+            </div>
+            ${isReady && (o.balance_customer||0) > 0 ? `<div style="margin-top:5px;font-size:10px;color:var(--red);background:var(--redbg);border-radius:5px;padding:3px 7px;display:inline-block;">⚠ Job dah Ready — OS ${fmt(o.balance_customer)} belum dijelaskan</div>` : ''}
+          </div>`;
+        }).join('');
+
+      if (!timelineRows) return '';
+      return `<div style="margin:12px 20px;">
+        <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:6px;">🏭 Production Status</div>
+        ${timelineRows}
+      </div>`;
+    })()}
+
+    ${(() => {
+      // OS section — only show OS for orders that are Ready/Complete
+      const readyStatuses = ['ready','delivered','complete'];
+      const osReadyOrders = c.orders.filter(o =>
+        (o.balance_customer||0) > 0 &&
+        readyStatuses.includes(o.production_status||'') &&
+        (o.pipeline_status||'quotation') !== 'quotation'
+      );
+      const totalOSReady = osReadyOrders.reduce((s,o) => s+(o.balance_customer||0), 0);
+      const allOsTotal = c.orders.reduce((s,o) => s+(o.balance_customer||0), 0);
+      const pendingOS = c.orders.filter(o =>
+        (o.balance_customer||0) > 0 &&
+        !readyStatuses.includes(o.production_status||'') &&
+        (o.pipeline_status||'quotation') !== 'quotation'
+      );
+
+      if (allOsTotal <= 0) return '';
+
+      const _today = new Date(); _today.setHours(0,0,0,0);
+      const daysOverdue = osReadyOrders.length > 0 ? Math.max(...osReadyOrders.map(o => {
+        if (!o.order_date) return 0;
+        return Math.max(0, Math.floor((_today - new Date(o.order_date)) / 86400000));
+      })) : 0;
+      const overdueLabel = daysOverdue > 0 ? daysOverdue + ' hari' : '';
+      const reminderLevel = daysOverdue >= 30 ? 'Final Notice' : daysOverdue >= 15 ? '2nd Reminder' : '1st Reminder';
+      const reminderColor = daysOverdue >= 30 ? 'var(--red)' : daysOverdue >= 15 ? 'var(--amber)' : 'var(--green)';
+
+      return `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:12px 14px;margin:12px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;color:var(--red);">⚠ Outstanding Belum Dijelaskan</div>
+          ${overdueLabel ? `<div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:10px;padding:2px 8px;background:${reminderColor}22;color:${reminderColor};border:1px solid ${reminderColor}55;border-radius:10px;font-weight:700;">
+              🕐 ${overdueLabel} overdue
+            </span>
+            <span style="font-size:10px;color:var(--textm);">→ ${reminderLevel}</span>
+          </div>` : ''}
+        </div>
+        ${osReadyOrders.length > 0 ? osReadyOrders.map(o => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);font-size:11px;">
+          <div>
+            <span style="color:var(--textd);">${o.inv_number_supplier||o.inv_number||o.name_job||'—'}</span>
+            <span style="font-size:9px;margin-left:6px;padding:1px 5px;background:var(--greenbg);color:var(--green);border-radius:4px;">✅ Ready</span>
+          </div>
+          <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--red);">${fmt(o.balance_customer||0)}</span>
+        </div>`).join('') : ''}
+        ${pendingOS.length > 0 ? `<div style="padding:5px 0;font-size:10px;color:var(--textm);">
+          + ${pendingOS.length} order lagi OS ${fmt(pendingOS.reduce((s,o)=>s+(o.balance_customer||0),0))} (belum ready)
         </div>` : ''}
-      </div>
-      ${osOrders.map(o => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--redb);font-size:11px;">
-        <span style="color:var(--textd);">${o.inv_number_supplier||o.inv_number||o.name_job||'—'}</span>
-        <span style="font-family:'Fira Code',monospace;font-weight:700;color:var(--red);">${fmt(o.balance_customer||0)}</span>
-      </div>`).join('')}
-      <div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;">
-        <span style="color:var(--text);">Jumlah OS</span>
-        <span style="font-family:'Fira Code',monospace;color:var(--red);">${fmt(totalOS)}</span>
-      </div>
-    </div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;">
+          <span style="color:var(--text);">Jumlah OS (Ready)</span>
+          <span style="font-family:'Fira Code',monospace;color:var(--red);">${fmt(totalOSReady > 0 ? totalOSReady : allOsTotal)}</span>
+        </div>
+      </div>`;
+    })()}
 
     <div class="cust-section-label">Senarai Order (${c.orders.length})</div>
     ${jobsHTML}
@@ -8187,171 +8579,348 @@ const PROD_STATUSES = [
 const PROD_STATUS_MAP = {};
 PROD_STATUSES.forEach(s => { PROD_STATUS_MAP[s.id] = s; });
 
-let prodFilter = 'active'; // 'active' | 'complete'
-let prodFilterStatus = '';
-let prodFilterPic = '';
-
-function showProdTrackView() {
+function showProdTrackView(autoFilter) {
   setAllViewsHidden();
   document.getElementById('prodTrackView').style.display = 'block';
   showSbMonths(false);
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('sbProdTrack'); if(el) el.classList.add('active');
+  if (autoFilter) window._prodAutoFilter = autoFilter;
   renderProdTrack();
 }
 
+// ── Prod state ────────────────────────────────────────────────
+let prodFilter       = 'kanban'; // 'kanban' | 'list' | 'complete'
+let prodFilterPic    = '';
+let _prodViewMode    = 'kanban'; // 'kanban' | 'list'
+let _prodPendingEdit = null;     // { orderId, month } for pending note modal
+
+// ── Column definitions (kanban) ────────────────────────────────
+const KANBAN_COLS = [
+  { id:'new-job',         label:'New Job',         icon:'📥', color:'#185FA5', bg:'#E6F1FB', border:'#B5D4F4',
+    match: o => (o.production_status||'job-submit') === 'job-submit' && !o.pending_note },
+  { id:'pending',         label:'Pending',         icon:'⚠️',  color:'#854F0B', bg:'#FAEEDA', border:'#FAC775',
+    match: o => (o.production_status||'job-submit') === 'job-submit' && !!o.pending_note },
+  { id:'on-going',        label:'On Going',        icon:'⚙️',  color:'#534AB7', bg:'#EEEDFE', border:'#CECBF6',
+    match: o => ['printing','jahit','qc'].includes(o.production_status||'') },
+  { id:'ready',           label:'Ready',           icon:'📦', color:'#0F7A48', bg:'#EAF3DE', border:'#C0DD97',
+    match: o => o.production_status === 'ready' && !(o.balance_customer > 0) },
+  { id:'pending-payment', label:'Pending Payment', icon:'💳', color:'#A32D2D', bg:'#FCEBEB', border:'#F7C1C1',
+    match: o => o.production_status === 'ready' && (o.balance_customer||0) > 0 },
+  { id:'delivery',        label:'Delivery',        icon:'🚚', color:'#0F6E56', bg:'#E1F5EE', border:'#9FE1CB',
+    match: o => o.production_status === 'complete' && !o.prod_archived },
+];
+
+function getKanbanCol(o) {
+  for (const col of KANBAN_COLS) { if (col.match(o)) return col; }
+  return KANBAN_COLS[0];
+}
+
+// ── Main render ───────────────────────────────────────────────
 function renderProdTrack() {
   const el = document.getElementById('prodTrackContent');
   const supF = (window._prodSupFilter || 'ALL').toUpperCase();
+
   const allOrders = Object.entries(sessionData).flatMap(([month, orders]) =>
     orders.map(o => ({ ...o, _month: month }))
   ).filter(o => {
+    if ((o.pipeline_status||'confirmed') === 'quotation') return false;
     if (supF === 'ALL') return true;
     const oSup = (o.supplier_name || 'NOHAD SDN BHD').toUpperCase();
-    const oSup2 = (o.supplier2_name || '').toUpperCase();
-    return oSup === supF || oSup.includes(supF) || (oSup2 && (oSup2 === supF || oSup2.includes(supF)));
+    return oSup === supF || oSup.includes(supF);
   });
 
-  // Only show orders with production tracking (exclude no status = treat as job-submit)
-  const activeOrders = allOrders.filter(o =>
-    (o.production_status || 'job-submit') !== 'complete' &&
-    (o.pipeline_status || 'confirmed') !== 'quotation'
-  );
-  const completeOrders = allOrders.filter(o =>
-    o.production_status === 'complete'
-  );
+  const activeOrders   = allOrders.filter(o => (o.production_status||'job-submit') !== 'complete');
+  const completeOrders = allOrders.filter(o => o.production_status === 'complete');
 
-  const showing = prodFilter === 'complete' ? completeOrders : activeOrders;
-
-  // Apply filters
-  let filtered = showing;
-  if (prodFilterStatus) filtered = filtered.filter(o => (o.production_status||'job-submit') === prodFilterStatus);
-  if (prodFilterPic)    filtered = filtered.filter(o => o.pic === prodFilterPic);
-
-  // Sort: overdue first, then by deadline
   const today = getMYTToday();
+  const overdue   = activeOrders.filter(o => o.due_date && new Date(o.due_date) < today);
+  const dueSoon   = activeOrders.filter(o => { if (!o.due_date) return false; const d=(new Date(o.due_date)-today)/86400000; return d>=0&&d<=3; });
+  const pendingK  = activeOrders.filter(o => (o.production_status||'job-submit')==='job-submit' && !!o.pending_note);
+  const readyJ    = activeOrders.filter(o => o.production_status==='ready');
+  const pendingPay= activeOrders.filter(o => o.production_status==='ready' && (o.balance_customer||0)>0);
+
+  const pics = [...new Set(allOrders.map(o=>o.pic).filter(Boolean))].sort();
+
+  // Auto filter from alert click
+  const af = window._prodAutoFilter;
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);">📦 Production Board</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Tracking status semua order aktif</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select onchange="prodFilterPic=this.value;renderProdTrack()"
+          style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:20px;font-size:12px;outline:none;">
+          <option value="">Semua PIC</option>
+          ${pics.map(p=>`<option value="${p}" ${prodFilterPic===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+        <button onclick="_prodViewMode='kanban';renderProdTrack()"
+          style="padding:6px 14px;border-radius:20px;border:1px solid var(--line);font-size:12px;cursor:pointer;${_prodViewMode==='kanban'?'background:var(--blue);color:#fff;border-color:var(--blue);':'background:var(--bg3);color:var(--textd);'}">
+          ⬛ Kanban
+        </button>
+        <button onclick="_prodViewMode='list';renderProdTrack()"
+          style="padding:6px 14px;border-radius:20px;border:1px solid var(--line);font-size:12px;cursor:pointer;${_prodViewMode==='list'?'background:var(--blue);color:#fff;border-color:var(--blue);':'background:var(--bg3);color:var(--textd);'}">
+          ☰ List
+        </button>
+        <button onclick="_prodViewMode='archive';renderProdTrack()"
+          style="padding:6px 14px;border-radius:20px;border:1px solid var(--line);font-size:12px;cursor:pointer;${_prodViewMode==='archive'?'background:#0F6E56;color:#fff;border-color:#0F6E56;':'background:var(--bg3);color:var(--textd);'}">
+          📦 Archive
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px;">
+      ${[
+        {val:activeOrders.length, label:'Job aktif',        color:'var(--blue)',   click:''},
+        {val:overdue.length,      label:'Overdue',          color:'var(--red)',    click:"window._prodAutoFilter='overdue';renderProdTrack()"},
+        {val:pendingK.length,     label:'Pending kilang',   color:'#854F0B',       click:"window._prodAutoFilter='pending';renderProdTrack()"},
+        {val:dueSoon.length,      label:'Due 3 hari',       color:'var(--amber)',  click:"window._prodAutoFilter='duesoon';renderProdTrack()"},
+        {val:readyJ.length,       label:'Ready',            color:'#0F7A48',       click:"window._prodAutoFilter='ready';renderProdTrack()"},
+        {val:pendingPay.length,   label:'Pending payment',  color:'var(--red)',    click:"window._prodAutoFilter='pendingpay';renderProdTrack()"},
+      ].map(s=>`
+        <div onclick="${s.click}" style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center;${s.click?'cursor:pointer;':''}"
+          onmouseover="if('${s.click}')this.style.background='var(--bg4)'" onmouseout="this.style.background='var(--bg3)'">
+          <div style="font-size:20px;font-weight:700;color:${s.color};">${s.val}</div>
+          <div style="font-size:10px;color:var(--textm);">${s.label}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Supplier filter -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;" id="prodSupFilters">
+      ${['ALL','4NA','BGS','BROTHER TRADING','IKHTIAR JAYA','NEXTGEN','NOHAD'].map(s=>`
+        <button onclick="window._prodSupFilter='${s}';renderProdTrack()"
+          style="padding:4px 12px;border-radius:20px;border:1px solid var(--line);font-size:11px;cursor:pointer;
+          ${(window._prodSupFilter||'ALL')===s?'background:var(--blue);color:#fff;border-color:var(--blue);':'background:var(--bg3);color:var(--textd);'}">
+          ${s==='ALL'?'Semua kilang':s}
+        </button>`).join('')}
+    </div>
+
+    <!-- View -->
+    <div id="prodBoardWrap">
+      ${_prodViewMode==='kanban'   ? renderProdKanban(allOrders, af)
+        : _prodViewMode==='archive' ? renderProdArchive(allOrders)
+        : renderProdList(allOrders)}
+    </div>
+
+    <!-- Pending note modal -->
+    <div id="pendingNoteModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:8500;align-items:center;justify-content:center;">
+      <div style="background:var(--bg2);border-radius:14px;padding:24px;width:400px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text);">⚠️ Sebab Pending</div>
+        <div style="font-size:12px;color:var(--textm);margin-bottom:12px;">Tulis sebab order ini perlu pending (contoh: tunggu confirm warna dari customer)</div>
+        <textarea id="pendingNoteInput" rows="3" placeholder="Tulis nota pending..."
+          style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--bg3);color:var(--text);resize:none;outline:none;"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button onclick="closePendingModal()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer;color:var(--textd);">Batal</button>
+          <button onclick="savePendingNote()" style="padding:8px 20px;background:var(--amber);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Simpan Pending</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Clear auto filter after render
+  window._prodAutoFilter = null;
+}
+
+// ── Kanban render ─────────────────────────────────────────────
+function renderProdKanban(allOrders, autoFilter) {
+  const today = getMYTToday();
+  const active = allOrders.filter(o => (o.pipeline_status||'confirmed') !== 'quotation');
+  const filtered = prodFilterPic ? active.filter(o => o.pic === prodFilterPic) : active;
+
+  // Apply auto filter highlight
+  const highlightCol = autoFilter === 'overdue'    ? null
+                     : autoFilter === 'pending'    ? 'pending'
+                     : autoFilter === 'duesoon'    ? null
+                     : autoFilter === 'ready'      ? 'ready'
+                     : autoFilter === 'pendingpay' ? 'pending-payment'
+                     : null;
+
+  const cols = KANBAN_COLS.map(col => {
+    let cards = filtered.filter(o => col.match(o));
+
+    // Apply overdue/duesoon filter to all cols
+    if (autoFilter === 'overdue') cards = cards.filter(o => o.due_date && new Date(o.due_date) < today);
+    if (autoFilter === 'duesoon') cards = cards.filter(o => {
+      if (!o.due_date) return false;
+      const d = (new Date(o.due_date) - today) / 86400000;
+      return d >= 0 && d <= 3;
+    });
+
+    // Sort overdue first
+    cards.sort((a,b) => {
+      const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
+      const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+      return da - db;
+    });
+
+    return { ...col, cards };
+  }).filter(col => {
+    // If autoFilter specific col, only show that col + non-empty cols
+    if (autoFilter === 'pending')    return col.id === 'pending' || col.cards.length > 0;
+    if (autoFilter === 'ready')      return col.id === 'ready' || col.cards.length > 0;
+    if (autoFilter === 'pendingpay') return col.id === 'pending-payment' || col.cards.length > 0;
+    return true;
+  });
+
+  return `<div style="overflow-x:auto;padding-bottom:12px;">
+    <div style="display:flex;gap:10px;min-width:max-content;align-items:flex-start;">
+      ${cols.map(col => `
+        <div style="min-width:200px;max-width:200px;display:flex;flex-direction:column;"
+          ondragover="event.preventDefault()" ondrop="prodDrop(event,'${col.id}')">
+          <div style="padding:9px 12px;border-radius:10px 10px 0 0;background:${col.bg};border:0.5px solid ${col.border};display:flex;align-items:center;gap:6px;">
+            <span style="font-size:12px;">${col.icon}</span>
+            <span style="font-size:11px;font-weight:600;color:${col.color};flex:1;">${col.label}</span>
+            <span style="background:${col.color};color:#fff;border-radius:10px;padding:0 7px;font-size:10px;font-weight:600;">${col.cards.length}</span>
+          </div>
+          <div style="border:0.5px solid ${col.border};border-top:none;border-radius:0 0 10px 10px;padding:7px;background:var(--bg3);min-height:280px;display:flex;flex-direction:column;gap:6px;">
+            ${col.cards.length === 0
+              ? `<div style="text-align:center;padding:20px 10px;font-size:11px;color:var(--textm);">Tiada order</div>`
+              : col.cards.map(o => renderKanbanCard(o, col, today)).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderKanbanCard(o, col, today) {
+  const dueDate = o.due_date ? new Date(o.due_date) : null;
+  const diffDue = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const isOverdue  = diffDue !== null && diffDue < 0;
+  const isDueSoon  = diffDue !== null && diffDue >= 0 && diffDue <= 3;
+  const cardBorder = isOverdue ? '2px solid var(--red)' : isDueSoon ? '2px solid var(--amber)' : '0.5px solid var(--line)';
+
+  const dueBadge = diffDue === null ? ''
+    : isOverdue ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">overdue ${Math.abs(diffDue)}h</span>`
+    : isDueSoon ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--amberbg);color:var(--amber);font-weight:600;">${diffDue}h lagi</span>`
+    : `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--greenbg);color:var(--green);">${diffDue}h</span>`;
+
+  const status = PROD_STATUS_MAP[o.production_status||'job-submit'] || PROD_STATUSES[0];
+
+  // Progress bar for on-going
+  const progressHtml = col.id === 'on-going' ? `
+    <div style="margin-top:6px;">
+      <div style="background:var(--line);border-radius:3px;height:3px;overflow:hidden;">
+        <div style="width:${status.pct}%;height:100%;background:${col.color};border-radius:3px;"></div>
+      </div>
+      <div style="font-size:9px;color:var(--textm);margin-top:2px;">${status.icon} ${status.label} — ${status.pct}%</div>
+    </div>` : '';
+
+  // Pending note
+  const pendingHtml = col.id === 'pending' && o.pending_note ? `
+    <div style="margin-top:5px;padding:4px 7px;background:var(--amberbg);border-radius:5px;font-size:10px;color:var(--amber);line-height:1.4;">
+      ${o.pending_note.slice(0,60)}${o.pending_note.length>60?'...':''}
+    </div>` : '';
+
+  // OS badge
+  const osBadge = (o.balance_customer||0) > 0
+    ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--redbg);color:var(--red);font-weight:600;">OS ${fmt(o.balance_customer)}</span>`
+    : '';
+
+  // Action buttons
+  let actionBtn = '';
+  if (col.id === 'pending-payment') {
+    actionBtn = `<button onclick="event.stopPropagation();sendWANotify('${o.id}','${o._month}')"
+      style="width:100%;margin-top:6px;padding:4px;border-radius:5px;border:0.5px solid var(--redb);background:var(--redbg);font-size:10px;color:var(--red);cursor:pointer;">
+      📱 Hantar reminder</button>`;
+  } else if (col.id === 'ready') {
+    actionBtn = `<button onclick="event.stopPropagation();sendWANotify('${o.id}','${o._month}')"
+      style="width:100%;margin-top:6px;padding:4px;border-radius:5px;border:0.5px solid var(--greenb);background:var(--greenbg);font-size:10px;color:var(--green);cursor:pointer;">
+      📱 WA Notify</button>`;
+  } else if (col.id === 'delivery') {
+    actionBtn = `<button onclick="event.stopPropagation();prodArchiveOrder('${o.id}','${o._month}')"
+      style="width:100%;margin-top:6px;padding:4px;border-radius:5px;border:0.5px solid var(--tealb);background:var(--tealbg);font-size:10px;color:#0F6E56;cursor:pointer;font-weight:600;">
+      📦 Archive</button>`;
+  }
+
+  return `<div draggable="true"
+    ondragstart="prodDragStart(event,'${o.id}','${o._month}')"
+    onclick="showDetail('${o.id}')"
+    style="background:var(--bg2);border:${cardBorder};border-radius:8px;padding:9px 10px;cursor:pointer;transition:box-shadow .12s;"
+    onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+    <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3;">${(o.name_job||'').slice(0,40)}</div>
+    <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:3px;">
+      ${dueBadge}${osBadge}
+      ${o.pic?`<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:var(--bluebg);color:var(--blue);">${o.pic}</span>`:''}
+    </div>
+    <div style="font-size:10px;color:var(--textm);display:flex;gap:8px;">
+      <span>📦 ${o.pcs||0} pcs</span>
+      ${dueDate?`<span>📅 ${o.due_date}</span>`:''}
+    </div>
+    ${progressHtml}${pendingHtml}${actionBtn}
+    <!-- Move dropdown -->
+    <div onclick="event.stopPropagation()" style="margin-top:6px;">
+      <select onchange="prodMoveCard('${o.id}','${o._month}',this.value);this.value=''"
+        style="width:100%;font-size:10px;padding:3px 6px;border-radius:5px;border:0.5px solid var(--line);background:var(--bg3);color:var(--textd);cursor:pointer;outline:none;">
+        <option value="">Pindah ke...</option>
+        ${KANBAN_COLS.filter(c=>c.id!==col.id && c.id!=='pending-payment').map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
+}
+
+// ── List view (production tracker lama) ───────────────────────
+function renderProdList(allOrders) {
+  const today  = getMYTToday();
+  const active = allOrders.filter(o =>
+    (o.production_status||'job-submit') !== 'complete' &&
+    (o.pipeline_status||'confirmed') !== 'quotation'
+  );
+  const complete = allOrders.filter(o => o.production_status === 'complete');
+
+  const showComplete = window._prodListTab === 'complete';
+  const showing = showComplete ? complete : active;
+  const filtered = prodFilterPic ? showing.filter(o => o.pic === prodFilterPic) : showing;
   filtered.sort((a,b) => {
     const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
     const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
     return da - db;
   });
 
-  // Summary KPIs
-  const overdue  = activeOrders.filter(o => o.due_date && new Date(o.due_date) < today && o.production_status !== 'complete').length;
-  const dueSoon  = activeOrders.filter(o => {
-    if (!o.due_date) return false;
-    const d = new Date(o.due_date);
-    const diff = (d - today) / 86400000;
-    return diff >= 0 && diff <= 3;
-  }).length;
-  const readyJobs = activeOrders.filter(o => o.production_status === 'ready').length;
+  const tabHtml = `<div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px;width:fit-content;">
+    <button onclick="window._prodListTab='active';renderProdTrack()"
+      style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;${!showComplete?'background:var(--blue);color:#fff;':'background:transparent;color:var(--textd);'}">
+      In Progress (${active.length})
+    </button>
+    <button onclick="window._prodListTab='complete';renderProdTrack()"
+      style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;${showComplete?'background:var(--green);color:#fff;':'background:transparent;color:var(--textd);'}">
+      Complete (${complete.length})
+    </button>
+  </div>`;
 
-  // Unique PICs for filter
-  const pics = [...new Set(allOrders.map(o => o.pic).filter(Boolean))].sort();
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-      <div>
-        <div style="font-size:20px;font-weight:700;color:var(--text);">📦 Customer Job Progress</div>
-        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Tracking status production semua order aktif</div>
-      </div>
-    </div>
-
-    <!-- Summary KPIs -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-      <div class="kpi-card" style="border-top:3px solid var(--blue);">
-        <div class="kpi-card-label">Job Aktif</div>
-        <div class="kpi-card-val" style="color:var(--blue);">${activeOrders.length}</div>
-        <div class="kpi-card-sub">belum complete</div>
-      </div>
-      <div class="kpi-card" style="border-top:3px solid var(--red);">
-        <div class="kpi-card-label">Overdue</div>
-        <div class="kpi-card-val" style="color:${overdue>0?'var(--red)':'var(--green)'};">${overdue}</div>
-        <div class="kpi-card-sub">deadline dah lepas</div>
-      </div>
-      <div class="kpi-card" style="border-top:3px solid var(--amber);">
-        <div class="kpi-card-label">Due Soon</div>
-        <div class="kpi-card-val" style="color:${dueSoon>0?'var(--amber)':'var(--green)'};">${dueSoon}</div>
-        <div class="kpi-card-sub">dalam 3 hari</div>
-      </div>
-      <div class="kpi-card" style="border-top:3px solid #0E7A7A;">
-        <div class="kpi-card-label">Ready</div>
-        <div class="kpi-card-val" style="color:#0E7A7A;">${readyJobs}</div>
-        <div class="kpi-card-sub">tunggu pickup/delivery</div>
-      </div>
-    </div>
-
-    <!-- Filters & Tabs -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-      <div style="display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;">
-        <button onclick="prodFilter='active';renderProdTrack()"
-          style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;
-          ${prodFilter==='active'?'background:var(--blue);color:#fff;':'background:transparent;color:var(--textd);'}">
-          In Progress (${activeOrders.length})
-        </button>
-        <button onclick="prodFilter='complete';renderProdTrack()"
-          style="padding:7px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s;
-          ${prodFilter==='complete'?'background:var(--green);color:#fff;':'background:transparent;color:var(--textd);'}">
-          Complete (${completeOrders.length})
-        </button>
-      </div>
-      <select onchange="prodFilterStatus=this.value;renderProdTrack()"
-        style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;">
-        <option value="">Semua Status</option>
-        ${PROD_STATUSES.map(s => `<option value="${s.id}" ${prodFilterStatus===s.id?'selected':''}>${s.icon} ${s.label}</option>`).join('')}
-      </select>
-      <select onchange="prodFilterPic=this.value;renderProdTrack()"
-        style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:7px;font-size:12px;outline:none;">
-        <option value="">Semua PIC</option>
-        ${pics.map(p => `<option value="${p}" ${prodFilterPic===p?'selected':''}>${p}</option>`).join('')}
-      </select>
-    </div>
-
-    <!-- Job Cards -->
-    ${filtered.length === 0 ? `
-    <div style="text-align:center;padding:60px;color:var(--textm);">
-      <div style="font-size:32px;margin-bottom:12px;">${prodFilter==='complete'?'✅':'📭'}</div>
-      <div style="font-size:14px;font-weight:600;color:var(--textd);">${prodFilter==='complete'?'Tiada job complete lagi':'Tiada job aktif'}</div>
-    </div>` :
-    filtered.map(o => renderProdCard(o)).join('')}
-  `;
+  if (!filtered.length) return tabHtml + `<div style="text-align:center;padding:40px;color:var(--textm);font-size:13px;">${showComplete?'Tiada order complete':'Tiada order aktif'}</div>`;
+  return tabHtml + filtered.map(o => renderProdCard(o)).join('');
 }
 
+// ── renderProdCard (list view) ───────────────────────────────
 function renderProdCard(o) {
   const today = new Date(); today.setHours(0,0,0,0);
-  const status  = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
-  const dueDate = o.due_date ? new Date(o.due_date) : null;
-  const prodDate= o.production_date ? new Date(o.production_date) : null;
-  const diffDue = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
-  const diffProd= prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
+  const status   = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
+  const dueDate  = o.due_date ? new Date(o.due_date) : null;
+  const prodDate = o.production_date ? new Date(o.production_date) : null;
+  const diffDue  = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
 
-  // Alert level
   let alertColor = 'var(--line)', alertText = '';
   if (status.id !== 'complete') {
-    if (diffDue !== null && diffDue < 0) {
-      alertColor = 'var(--red)'; alertText = '🔴 OVERDUE ' + Math.abs(diffDue) + ' hari';
-    } else if (diffDue !== null && diffDue <= 3) {
-      alertColor = 'var(--amber)'; alertText = '🟡 Due dalam ' + diffDue + ' hari';
-    } else if (prodDate && dueDate && prodDate > dueDate) {
-      alertColor = 'var(--orange)'; alertText = '⚠️ Prod siap > deadline customer';
-    }
+    if (diffDue !== null && diffDue < 0) { alertColor='var(--red)'; alertText='🔴 OVERDUE '+Math.abs(diffDue)+' hari'; }
+    else if (diffDue !== null && diffDue <= 3) { alertColor='var(--amber)'; alertText='🟡 Due dalam '+diffDue+' hari'; }
   }
 
-  // Balance
-  const balance = o.balance_customer || 0;
-  const hasOS   = balance > 0;
-
+  const balance  = o.balance_customer || 0;
+  const hasOS    = balance > 0;
   const statusOptions = PROD_STATUSES.map(s =>
     `<option value="${s.id}" ${s.id===status.id?'selected':''}>${s.icon} ${s.label}</option>`
   ).join('');
 
   return `
-  <div style="background:var(--bg2);border:1px solid ${alertColor};border-left:4px solid ${status.color};border-radius:12px;padding:16px 18px;margin-bottom:12px;">
+  <div style="background:var(--bg2);border:1px solid ${alertColor};border-left:4px solid ${status.color};border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;"
+    onclick="showDetail('${o.id}')">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-
-      <!-- Left: Job info -->
       <div style="flex:1;min-width:200px;">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">${o.name_job||'—'}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${o.name_job||'—'}</div>
         <div style="font-size:11px;color:var(--textm);display:flex;gap:10px;flex-wrap:wrap;">
           <span>👤 ${o.pic||'—'}</span>
           <span>📋 ${o.inv_number_supplier||o.inv_number||'—'}</span>
@@ -8359,50 +8928,168 @@ function renderProdCard(o) {
           ${o.cust_name?`<span>🧑 ${o.cust_name}</span>`:''}
         </div>
         ${alertText?`<div style="font-size:11px;font-weight:600;color:${alertColor};margin-top:6px;">${alertText}</div>`:''}
+        ${o.pending_note?`<div style="margin-top:6px;padding:4px 8px;background:var(--amberbg);border-radius:5px;font-size:11px;color:var(--amber);">⚠️ ${o.pending_note}</div>`:''}
       </div>
-
-      <!-- Right: Dates + Status -->
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
         <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;justify-content:flex-end;">
           ${dueDate?`<span style="background:${diffDue!==null&&diffDue<0?'var(--redbg)':'var(--bg3)'};border:1px solid ${diffDue!==null&&diffDue<0?'var(--redb)':'var(--line)'};padding:3px 8px;border-radius:5px;color:${diffDue!==null&&diffDue<0?'var(--red)':'var(--textd)'};">📅 Due: ${o.due_date}</span>`:''}
-          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:${prodDate>dueDate&&dueDate?'var(--amber)':'var(--textd)'};">🏭 Prod: ${o.production_date}</span>`:'<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textm);">🏭 Prod: —</span>'}
+          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textd);">🏭 Prod: ${o.production_date}</span>`:''}
         </div>
         ${hasOS?`<span style="font-size:11px;font-weight:600;color:var(--red);background:var(--redbg);border:1px solid var(--redb);padding:3px 8px;border-radius:5px;">💰 OS: ${fmt(balance)}</span>`:'<span style="font-size:11px;color:var(--green);background:var(--greenbg);border:1px solid var(--greenb);padding:3px 8px;border-radius:5px;">✓ Paid</span>'}
       </div>
     </div>
-
-    <!-- Progress bar -->
-    <div style="margin:12px 0 10px;">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textm);margin-bottom:5px;">
-        <span>${status.icon} ${status.label}</span>
-        <span>${status.pct}%</span>
+    <div style="margin:10px 0 8px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--textm);margin-bottom:4px;">
+        <span>${status.icon} ${status.label}</span><span>${status.pct}%</span>
       </div>
-      <div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;width:${status.pct}%;background:${status.color};border-radius:3px;transition:width .5s ease;"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:5px;">
-        ${PROD_STATUSES.map(s => `<div style="width:12px;height:12px;border-radius:50%;background:${status.pct>=s.pct?s.color:'var(--bg3)'};border:2px solid ${s.color};transition:all .3s;" title="${s.label}"></div>`).join('')}
+      <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;">
+        <div style="height:100%;width:${status.pct}%;background:${status.color};border-radius:3px;"></div>
       </div>
     </div>
-
-    <!-- Actions -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line);" onclick="event.stopPropagation()">
       <select onchange="updateProdStatus('${o.id}','${o._month}',this.value)"
-        style="background:${status.color}22;border:1px solid ${status.color}66;color:var(--text);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;outline:none;cursor:pointer;flex:1;min-width:180px;">
+        style="background:${status.color}22;border:1px solid ${status.color}66;color:var(--text);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;outline:none;cursor:pointer;flex:1;min-width:160px;">
         ${statusOptions}
       </select>
       ${status.id==='ready'||status.id==='complete'?`
       <button onclick="sendWANotify('${o.id}','${o._month}')"
-        style="background:#25D366;color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;">
+        style="background:#25D366;color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:600;">
         📱 WA Notify
-      </button>`:''}
-      ${status.id==='complete'?`
-      <button onclick="revertProdStatus('${o.id}','${o._month}')"
-        style="background:var(--bg3);color:var(--textd);border:1px solid var(--line);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:11px;white-space:nowrap;">
-        ↩ Edit Status
       </button>`:''}
     </div>
   </div>`;
+}
+
+// ── Drag and drop ─────────────────────────────────────────────
+let _dragProdId = null, _dragProdMonth = null;
+
+function prodDragStart(e, orderId, month) {
+  _dragProdId    = orderId;
+  _dragProdMonth = month;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function prodDrop(e, colId) {
+  e.preventDefault();
+  if (!_dragProdId) return;
+  prodMoveCard(_dragProdId, _dragProdMonth, colId);
+  _dragProdId = null;
+}
+
+function prodMoveCard(orderId, month, targetColId) {
+  if (targetColId === 'pending') {
+    // Prompt for note
+    _prodPendingEdit = { orderId, month };
+    const modal = document.getElementById('pendingNoteModal');
+    if (modal) { modal.style.display = 'flex'; document.getElementById('pendingNoteInput').value = ''; }
+    return;
+  }
+
+  // Map kanban col to production_status
+  const statusMap = {
+    'new-job':   'job-submit',
+    'on-going':  'printing',
+    'ready':     'ready',
+    'delivery':  'complete',
+  };
+  const newStatus = statusMap[targetColId];
+  if (!newStatus) return;
+
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  // Clear pending note when moving out of pending
+  sessionData[month][idx] = { ...sessionData[month][idx], production_status: newStatus, pending_note: null };
+  supaUpsert('orders', { ...sessionData[month][idx], month }).catch(e => console.warn('Move card sync failed:', e));
+  showToast('Status dikemaskini ✓');
+  renderProdTrack();
+}
+
+function closePendingModal() {
+  const m = document.getElementById('pendingNoteModal');
+  if (m) m.style.display = 'none';
+  _prodPendingEdit = null;
+}
+
+function savePendingNote() {
+  if (!_prodPendingEdit) return;
+  const { orderId, month } = _prodPendingEdit;
+  const note = document.getElementById('pendingNoteInput')?.value.trim();
+  if (!note) { showToast('Sila tulis sebab pending', true); return; }
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  sessionData[month][idx] = { ...sessionData[month][idx], production_status:'job-submit', pending_note: note };
+  supaUpsert('orders', { ...sessionData[month][idx], month }).catch(e => console.warn('Pending note sync failed:', e));
+  closePendingModal();
+  showToast('⚠️ Job dipindah ke Pending');
+  renderProdTrack();
+}
+
+
+// ── Production Archive ────────────────────────────────────────
+
+async function prodArchiveOrder(orderId, month) {
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  sessionData[month][idx] = { ...sessionData[month][idx], prod_archived: true };
+  supaUpsert('orders', { ...sessionData[month][idx], month })
+    .catch(e => console.warn('Archive sync failed:', e));
+  showToast('📦 Job diarchive ✓');
+  renderProdTrack();
+}
+
+async function prodUnarchiveOrder(orderId, month) {
+  const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
+  if (idx < 0) return;
+  sessionData[month][idx] = { ...sessionData[month][idx], prod_archived: false };
+  supaUpsert('orders', { ...sessionData[month][idx], month })
+    .catch(e => console.warn('Unarchive sync failed:', e));
+  showToast('↩ Job dipulihkan dari archive ✓');
+  renderProdTrack();
+}
+
+function renderProdArchive(allOrders) {
+  const archived = allOrders.filter(o => o.prod_archived === true);
+
+  if (!archived.length) {
+    return `<div style="text-align:center;padding:60px 20px;color:var(--textm);">
+      <div style="font-size:40px;margin-bottom:12px;">📦</div>
+      <div style="font-size:14px;font-weight:600;color:var(--textd);">Archive kosong</div>
+      <div style="font-size:12px;margin-top:6px;">Order yang dah settle dan diarchive akan tersenarai di sini.</div>
+    </div>`;
+  }
+
+  // Sort by most recently archived (use order_date as proxy)
+  archived.sort((a,b) => new Date(b.order_date||0) - new Date(a.order_date||0));
+
+  return `
+    <div style="max-width:720px;">
+      <div style="font-size:12px;color:var(--textm);margin-bottom:12px;">${archived.length} order diarchive</div>
+      ${archived.map(o => {
+        const balance = o.balance_customer || 0;
+        const dueDate = o.due_date;
+        return `
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;cursor:pointer;"
+          onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.07)'" onmouseout="this.style.boxShadow='none'"
+          onclick="showDetail('${o.id}')">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.name_job||'—'}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--textm);">
+              <span>👤 ${o.pic||'—'}</span>
+              <span>📦 ${o.pcs||0} pcs</span>
+              ${dueDate?`<span>📅 ${dueDate}</span>`:''}
+              ${o.cust_name?`<span>🧑 ${o.cust_name}</span>`:''}
+              ${balance>0
+                ? `<span style="color:var(--red);font-weight:600;">OS: ${fmt(balance)}</span>`
+                : `<span style="color:var(--green);">✓ Paid</span>`}
+            </div>
+          </div>
+          <button onclick="event.stopPropagation();prodUnarchiveOrder('${o.id}','${o._month}')"
+            style="flex-shrink:0;padding:6px 14px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            ↩ Unarchive
+          </button>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 async function updateProdStatus(orderId, month, newStatus) {
@@ -8486,9 +9173,30 @@ function renderHomeAlerts(role) {
   }
 
   const alerts = [];
-  if (overdue.length)   alerts.push({ color:'var(--red)',   bg:'var(--redbg)',   border:'var(--redb)',   icon:'🔴', text:`<strong>${overdue.length} job overdue</strong> — deadline dah lepas`, fn:`showProdTrackView()` });
-  if (dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:`showProdTrackView()` });
-  if (readyJobs.length) alerts.push({ color:'#0E7A7A',     bg:'#f0fafa',        border:'#b2e0e0',       icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:`showProdTrackView()` });
+  const alertProdOverdue  = cpSettings.alert_prod_overdue  !== false;
+  const alertProdDueSoon  = cpSettings.alert_prod_due_soon !== false;
+  const alertMarginOn     = cpSettings.alert_margin_enabled === true;
+  const marginThreshold   = parseFloat(cpSettings.alert_margin_threshold || 20);
+
+  if (alertProdOverdue  && overdue.length)   alerts.push({ color:'var(--red)',   bg:'var(--redbg)',   border:'var(--redb)',   icon:'🔴', text:`<strong>${overdue.length} job overdue</strong> — deadline dah lepas`, fn:`showProdTrackView('overdue')` });
+  if (alertProdDueSoon  && dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:`showProdTrackView('duesoon')` });
+  if (readyJobs.length) alerts.push({ color:'#0E7A7A', bg:'#f0fafa', border:'#b2e0e0', icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:`showProdTrackView('ready')` });
+
+  // Alert margin rendah
+  if (alertMarginOn && role === 'admin') {
+    const curMonth = Object.keys(sessionData).at(-1);
+    const curOrders = sessionData[curMonth] || [];
+    const lowMargin = curOrders.filter(o => {
+      if ((o.pipeline_status||'quotation') === 'quotation') return false;
+      const margin = o.total_customer > 0 ? (o.profit||0)/o.total_customer*100 : 0;
+      return margin < marginThreshold && o.total_customer > 0;
+    });
+    if (lowMargin.length) alerts.push({
+      color:'var(--purple)', bg:'var(--purplebg)', border:'var(--purpleb)', icon:'📉',
+      text:`<strong>${lowMargin.length} order margin rendah</strong> — bawah ${marginThreshold}% bulan ini`,
+      fn:`sbNav('masterlist')`
+    });
+  }
 
   if (criticalOS.length) {
     const totalCrit = criticalOS.reduce((s,o)=>s+(o.balance_customer||0),0);
@@ -11020,6 +11728,338 @@ function skCarouselGo(cid, idx, total) {
     if (dot) dot.style.background = i === idx ? 'var(--blue)' : 'var(--line)';
   }
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// FULL CHAT VIEW
+// ══════════════════════════════════════════════════════════════
+
+let _chatFullRoomId  = null;
+let _chatFullType    = null;
+let _chatFullName    = null;
+let _chatFullPending = null;
+let _chatFullMsgs    = [];
+
+function showChatFullView() {
+  setAllViewsHidden();
+  const view = document.getElementById('chatView');
+  view.style.display = 'flex';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbChat');
+  if (el) el.classList.add('active');
+  chatFullBuildConvList();
+}
+
+function chatFullBuildConvList() {
+  const role = currentUser?.role;
+  const convs = [];
+  Object.values(CHAT_ROOMS).forEach(room => {
+    if (room.roles.includes(role)) convs.push({ id:room.id, name:room.name, icon:room.icon, type:'group' });
+  });
+  const store = loadUserStore ? loadUserStore() : {};
+  Object.values(store).forEach(u => {
+    if (u.id === currentUser.id) return;
+    const dmId = [currentUser.id, u.id].sort().join('__dm__');
+    convs.push({ id:dmId, name:u.name||u.id, icon:null, type:'dm', userId:u.id, color:u.color, bg:u.bg });
+  });
+  window._chatFullConvs = convs;
+  chatFullRenderConvList(convs);
+}
+
+function chatFullRenderConvList(convs) {
+  const el = document.getElementById('chatFullConvList');
+  if (!el) return;
+  el.innerHTML = convs.map(c => {
+    const unread = _chatUnread[c.id] || 0;
+    const initials = c.name.slice(0,2).toUpperCase();
+    const isActive = c.id === _chatFullRoomId;
+    const avatarBg = c.type === 'dm' ? (c.bg||'var(--bluebg)') : 'var(--bluebg)';
+    const avatarColor = c.type === 'dm' ? (c.color||'var(--blue)') : 'var(--blue)';
+    return `<div onclick="chatFullOpen('${c.id}','${c.name}','${c.type}','${c.userId||''}')"
+      style="display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--line)33;
+        background:${isActive ? 'var(--bluebg)' : 'transparent'};transition:background .1s;"
+      onmouseover="if('${c.id}'!=='${_chatFullRoomId}')this.style.background='var(--bg3)'"
+      onmouseout="if('${c.id}'!=='${_chatFullRoomId}')this.style.background='transparent'">
+      <div style="width:38px;height:38px;border-radius:50%;background:${avatarBg};color:${avatarColor};
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">
+        ${c.icon || initials}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:${unread>0?'700':'500'};color:var(--text);">${c.name}</div>
+        <div style="font-size:11px;color:var(--textm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="fullpreview_${c.id}">
+          ${c.type==='group'?'Group chat':'Hantar mesej...'}
+        </div>
+      </div>
+      ${unread > 0 ? `<div style="background:var(--blue);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;min-width:18px;text-align:center;">${unread}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function chatFullFilter(q) {
+  if (!window._chatFullConvs) return;
+  const filtered = q ? window._chatFullConvs.filter(c => c.name.toLowerCase().includes(q.toLowerCase())) : window._chatFullConvs;
+  chatFullRenderConvList(filtered);
+}
+
+async function chatFullOpen(roomId, name, type, userId) {
+  _chatFullRoomId = roomId;
+  _chatFullType   = type;
+  _chatFullName   = name;
+  _chatFullPending = null;
+  _chatFullMsgs   = [];
+
+  // Clear unread
+  chatClearUnread(roomId);
+  chatFullRenderConvList(window._chatFullConvs || []);
+
+  // Show active panel
+  document.getElementById('chatFullEmpty').style.display = 'none';
+  const active = document.getElementById('chatFullActive');
+  active.style.display = 'flex';
+
+  // Header
+  const initials = name.slice(0,2).toUpperCase();
+  document.getElementById('chatFullAvatar').textContent = initials;
+  document.getElementById('chatFullName').textContent = name;
+  document.getElementById('chatFullSub').textContent = type === 'group'
+    ? (CHAT_ROOMS[roomId]?.roles?.length + ' ahli') : 'DM';
+
+  // Clear body and load
+  const body = document.getElementById('chatFullBody');
+  body.innerHTML = '<div style="text-align:center;padding:40px;font-size:12px;color:var(--textm);">Memuatkan...</div>';
+
+  try {
+    const rows = await supaGet('chat_messages',
+      `room_id=eq.${encodeURIComponent(roomId)}&order=created_at.asc&limit=80`);
+    _chatFullMsgs = rows || [];
+    chatFullRenderMessages();
+  } catch(e) {
+    body.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--red);">${e.message}</div>`;
+  }
+
+  // Update lastSeen so bg poll won't re-alert
+  _chatLastSeen[roomId] = new Date().toISOString();
+  document.getElementById('chatFullInput')?.focus();
+}
+
+function chatFullRenderMessages() {
+  const body = document.getElementById('chatFullBody');
+  if (!body) return;
+  const isGroup = !_chatFullRoomId?.includes('__dm__');
+  if (!_chatFullMsgs.length) {
+    body.innerHTML = '<div style="text-align:center;padding:40px;font-size:12px;color:var(--textm);">Belum ada mesej. Mula perbualan!</div>';
+    return;
+  }
+
+  body.innerHTML = _chatFullMsgs.map((m, idx) => {
+    const isMe = m.sender_id === currentUser.id;
+    const timeStr = new Date(m.created_at).toLocaleTimeString('ms-MY',{hour:'2-digit',minute:'2-digit'});
+    const showSender = isGroup && !isMe && (idx===0 || _chatFullMsgs[idx-1].sender_id !== m.sender_id);
+    const attachHtml = m.attach_type ? chatFullRenderAttach(m, isMe) : '';
+
+    if (isMe) {
+      return `<div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+        <div style="max-width:65%;">
+          <div style="background:var(--blue);color:#fff;border-radius:16px 16px 4px 16px;padding:10px 14px;font-size:13px;line-height:1.5;word-break:break-word;">
+            ${attachHtml}${m.body ? chatEsc(m.body) : ''}
+          </div>
+          <div style="font-size:10px;color:var(--textm);text-align:right;margin-top:3px;">✓✓ ${timeStr}</div>
+        </div>
+      </div>`;
+    } else {
+      return `<div style="display:flex;gap:8px;margin-bottom:4px;align-items:flex-end;">
+        ${showSender ? `<div style="width:30px;height:30px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--textd);flex-shrink:0;">${(m.sender_name||'?').slice(0,2).toUpperCase()}</div>` : '<div style="width:30px;flex-shrink:0;"></div>'}
+        <div style="max-width:65%;">
+          ${showSender ? `<div style="font-size:10px;color:var(--textm);margin-bottom:3px;">${chatEsc(m.sender_name||m.sender_id)}</div>` : ''}
+          <div style="background:var(--bg3);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:13px;line-height:1.5;color:var(--text);word-break:break-word;">
+            ${attachHtml}${m.body ? chatEsc(m.body) : ''}
+          </div>
+          <div style="font-size:10px;color:var(--textm);margin-top:3px;">${timeStr}</div>
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  body.scrollTop = body.scrollHeight;
+}
+
+function chatFullRenderAttach(m, isMe) {
+  const icon = m.attach_type==='order' ? '📋' : '🎨';
+  const fn = m.attach_type==='order'
+    ? `chatOpenOrder('${m.attach_id}')`
+    : `chatOpenDesignJob('${m.attach_id}')`;
+  const bg = isMe ? 'rgba(255,255,255,0.15)' : 'var(--bg2)';
+  const border = isMe ? '1px solid rgba(255,255,255,0.25)' : '1px solid var(--line)';
+  return `<div onclick="${fn}" style="background:${bg};border:${border};border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;font-size:12px;">
+    <div style="font-weight:600;margin-bottom:2px;">${icon} ${chatEsc(m.attach_label||'')}</div>
+    <div style="opacity:.75;font-size:10px;">Klik untuk buka →</div>
+  </div>`;
+}
+
+async function chatFullSend() {
+  if (!_chatFullRoomId) return;
+  const input = document.getElementById('chatFullInput');
+  const body = input?.value.trim();
+  if (!body && !_chatFullPending) return;
+
+  const now = new Date().toISOString();
+  const payload = {
+    room_id:      _chatFullRoomId,
+    sender_id:    currentUser.id,
+    sender_name:  currentUser.name || currentUser.id,
+    body:         body || null,
+    attach_type:  _chatFullPending?.type  || null,
+    attach_id:    _chatFullPending?.id    || null,
+    attach_label: _chatFullPending?.label || null,
+    created_at:   now,
+  };
+
+  if (input) { input.value = ''; input.style.height = 'auto'; }
+  _chatFullPending = null;
+  document.getElementById('chatFullPendingBar').style.display = 'none';
+
+  // Optimistic render
+  _chatFullMsgs.push(payload);
+  chatFullRenderMessages();
+  _chatLastSeen[_chatFullRoomId] = now;
+
+  try {
+    await supaFetch('/rest/v1/chat_messages', {
+      method: 'POST', prefer: 'return=minimal',
+      body: JSON.stringify([payload]),
+    });
+  } catch(e) {
+    showToast('Gagal hantar: ' + e.message, true);
+    // Remove optimistic message
+    _chatFullMsgs = _chatFullMsgs.filter(m => m.created_at !== now || m.sender_id !== currentUser.id);
+    chatFullRenderMessages();
+  }
+}
+
+function chatFullOpenAttach() {
+  // Reuse floating attach picker but redirect to full chat
+  _chatAttachCtx = '__full__';
+  const picker = document.getElementById('chatAttachPicker');
+  if (!picker) return;
+  picker.style.bottom = '80px';
+  picker.style.left   = '300px';
+  picker.style.right  = 'auto';
+  picker.classList.add('open');
+  _chatAttachTab = 'order';
+  chatAttachSwitchTab('order');
+  document.getElementById('attachSearchInput').value = '';
+  chatAttachSearch('');
+  setTimeout(() => {
+    document.addEventListener('click', e => {
+      if (!document.getElementById('chatAttachPicker')?.contains(e.target)) {
+        document.getElementById('chatAttachPicker')?.classList.remove('open');
+      }
+    }, { once: true });
+  }, 100);
+}
+
+// Override chatAttachSelect to handle full chat context
+const _origChatAttachSelect = window.chatAttachSelect;
+window.chatAttachSelect = function(type, id, label) {
+  if (_chatAttachCtx === '__full__') {
+    _chatFullPending = { type, id, label };
+    const bar = document.getElementById('chatFullPendingBar');
+    if (bar) {
+      bar.style.display = 'flex';
+      bar.innerHTML = `<span>${type==='order'?'📋':'🎨'} ${chatEsc(label)}</span>
+        <span onclick="document.getElementById('chatFullPendingBar').style.display='none';_chatFullPending=null;" style="cursor:pointer;font-size:16px;color:var(--textm);">×</span>`;
+    }
+    document.getElementById('chatAttachPicker')?.classList.remove('open');
+    document.getElementById('chatFullInput')?.focus();
+    return;
+  }
+  _origChatAttachSelect(type, id, label);
+};
+
+// Open full chat from floating bubble — with specific room pre-selected
+function chatOpenFullFromBubble(roomId, name, type, userId) {
+  sbNav('chat');
+  setTimeout(() => chatFullOpen(roomId, name, type, userId), 100);
+}
+
+// Open floating window from full chat
+function chatBubbleFromFull() {
+  if (!_chatFullRoomId) return;
+  chatOpenWindow(_chatFullRoomId, _chatFullName, _chatFullType, '');
+}
+
+// Update full chat when bg poll gets new messages
+const _origChatUpdateConvListBadges = window.chatUpdateConvListBadges || function(){};
+window.chatUpdateConvListBadges = function() {
+  _origChatUpdateConvListBadges();
+  // Update full chat conv list if open
+  if (document.getElementById('chatView')?.style.display !== 'none') {
+    chatFullRenderConvList(window._chatFullConvs || []);
+  }
+  // Update sidebar badge
+  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+  const sbBadge = document.getElementById('chatSbBadge');
+  if (sbBadge) {
+    sbBadge.style.display = total > 0 ? 'inline-block' : 'none';
+    sbBadge.textContent = total > 9 ? '9+' : total;
+  }
+  // Also update full conv list preview
+  if (window._chatFullConvs) {
+    window._chatFullConvs.forEach(c => {
+      const fp = document.getElementById('fullpreview_'+c.id);
+      const sp = document.getElementById('preview_'+c.id);
+      if (fp && sp) fp.textContent = sp.textContent;
+    });
+  }
+};
+
+// ── Single source of truth for all badge/notification updates ──────────────
+function chatUpdateAllBadges() {
+  const total = Object.values(_chatUnread).reduce((s,n) => s+n, 0);
+
+  // 1. Floating bubble count
+  const bubble = document.getElementById('chatBubbleCount');
+  if (bubble) {
+    bubble.style.display = total > 0 ? 'flex' : 'none';
+    bubble.textContent   = total > 9 ? '9+' : total;
+  }
+
+  // 2. Sidebar Chat badge
+  const sbBadge = document.getElementById('chatSbBadge');
+  if (sbBadge) {
+    sbBadge.style.display = total > 0 ? 'inline-block' : 'none';
+    sbBadge.textContent   = total > 9 ? '9+' : total;
+  }
+
+  // 3. Tab title
+  const base = window._chatBaseTitle || 'DOD Sistem';
+  document.title = total > 0 ? `(${total}) ${base}` : base;
+
+  // 4. Conv list — surgical badge update (don't wipe preview text)
+  chatUpdateConvListBadges();
+  // Full chat list — re-render ok since it has its own preview
+  if (window._chatFullConvs && document.getElementById('chatView')?.style.display !== 'none') {
+    chatFullRenderConvList(window._chatFullConvs);
+  }
+}
+
+// Keep old names working
+window.chatUpdateBubbleCount = chatUpdateAllBadges;
+window.chatUpdateTabTitle    = function() {
+  const total = Object.values(_chatUnread).reduce((s,n)=>s+n,0);
+  document.title = total > 0 ? `(${total}) ${window._chatBaseTitle||'DOD Sistem'}` : (window._chatBaseTitle||'DOD Sistem');
+};
+
+const _origChatBgPoll = window.chatBgPoll;
+
+window.showChatFullView = showChatFullView;
+window.chatFullOpen     = chatFullOpen;
+window.chatFullFilter   = chatFullFilter;
+window.chatFullSend     = chatFullSend;
+window.chatFullOpenAttach = chatFullOpenAttach;
+window.chatBubbleFromFull = chatBubbleFromFull;
+window.chatOpenFullFromBubble = chatOpenFullFromBubble;
 
 window.showSalesKitView = showSalesKitView;
 window.skSetMediaType   = skSetMediaType;
