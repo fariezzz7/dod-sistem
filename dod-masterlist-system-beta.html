@@ -8652,6 +8652,10 @@ function renderProdTrack() {
         <div style="font-size:12px;color:var(--textm);margin-top:2px;">Tracking status semua order aktif</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="prodSearchInput" type="text" placeholder="🔍 Cari nama job..."
+          value="${window._prodSearch||''}"
+          oninput="window._prodSearch=this.value;renderProdTrack()"
+          style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 14px;border-radius:20px;font-size:12px;outline:none;width:200px;">
         <select onchange="prodFilterPic=this.value;renderProdTrack()"
           style="background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:20px;font-size:12px;outline:none;">
           <option value="">Semua PIC</option>
@@ -8729,7 +8733,10 @@ function renderProdTrack() {
 function renderProdKanban(allOrders, autoFilter) {
   const today = getMYTToday();
   const active = allOrders.filter(o => (o.pipeline_status||'confirmed') !== 'quotation');
-  const filtered = prodFilterPic ? active.filter(o => o.pic === prodFilterPic) : active;
+  const searchQ = (window._prodSearch||'').toLowerCase().trim();
+  const filtered = active
+    .filter(o => prodFilterPic ? o.pic === prodFilterPic : true)
+    .filter(o => searchQ ? (o.name_job||'').toLowerCase().includes(searchQ) : true);
 
   // Apply auto filter highlight
   const highlightCol = autoFilter === 'overdue'    ? null
@@ -8886,7 +8893,10 @@ function renderProdList(allOrders) {
 
   const showComplete = window._prodListTab === 'complete';
   const showing = showComplete ? complete : active;
-  const filtered = prodFilterPic ? showing.filter(o => o.pic === prodFilterPic) : showing;
+  const searchQ2 = (window._prodSearch||'').toLowerCase().trim();
+  const filtered = showing
+    .filter(o => prodFilterPic ? o.pic === prodFilterPic : true)
+    .filter(o => searchQ2 ? (o.name_job||'').toLowerCase().includes(searchQ2) : true);
   filtered.sort((a,b) => {
     const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
     const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
