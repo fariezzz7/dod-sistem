@@ -3604,6 +3604,7 @@ async function loadOrdersFromSupabase() {
     hideLoading();
     startAutoRefresh(); // Start 60s auto-refresh for multi-device sync
   chatInit(); // Init chat system
+  prodAlertPollStart(); // Init production pending alert poll
 
   // Handle ?openorder= param (from jobboard chat link)
   const _urlParams = new URLSearchParams(window.location.search);
@@ -9023,6 +9024,14 @@ function prodMoveCard(orderId, month, targetColId) {
   // Clear pending note when moving out of pending
   sessionData[month][idx] = { ...sessionData[month][idx], production_status: newStatus, pending_note: null };
   supaUpsert('orders', { ...sessionData[month][idx], month }).catch(e => console.warn('Move card sync failed:', e));
+
+  // Clear from alerted set so if it goes back to pending, will alert again
+  try {
+    const set = _getProdAlertedIds();
+    set.delete(orderId);
+    sessionStorage.setItem('dod_prod_alerted', JSON.stringify([...set]));
+  } catch(e) {}
+
   showToast('Status dikemaskini ✓');
   renderProdTrack();
 }
@@ -9045,6 +9054,17 @@ function savePendingNote() {
   closePendingModal();
   showToast('⚠️ Job dipindah ke Pending');
   renderProdTrack();
+
+  // Trigger pending alert if enabled
+  const role = currentUser?.role;
+  if (role === 'admin' || role === 'sales' || role === 'sales_executive') {
+    const cpSettings = window._cpSettings || {};
+    if (cpSettings.alert_prod_pending !== false) {
+      const delayMin = parseInt(cpSettings.alert_prod_pending_min || 0);
+      const jobName = sessionData[month]?.[idx]?.name_job || 'Job';
+      setTimeout(() => prodTriggerPendingAlert(jobName, note), delayMin * 60000);
+    }
+  }
 }
 
 
@@ -9114,6 +9134,170 @@ function renderProdArchive(allOrders) {
       }).join('')}
     </div>`;
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// PRODUCTION PENDING ALERT SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// Track which orders we've already alerted — persist in sessionStorage
+function _getProdAlertedIds() {
+  try { return new Set(JSON.parse(sessionStorage.getItem('dod_prod_alerted') || '[]')); }
+  catch(e) { return new Set(); }
+}
+function _addProdAlertedId(id) {
+  try {
+    const set = _getProdAlertedIds();
+    set.add(id);
+    sessionStorage.setItem('dod_prod_alerted', JSON.stringify([...set]));
+  } catch(e) {}
+}
+
+// Urgent alert sound — different from chat (more urgent)
+function prodPlayAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const playBeep = (freq, start, dur) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur);
+    };
+    // Triple beep — urgent pattern
+    playBeep(880, 0.0, 0.15);
+    playBeep(880, 0.2, 0.15);
+    playBeep(1100, 0.4, 0.25);
+  } catch(e) {}
+}
+
+// Update notification bell badge in sidebar
+function prodUpdateNotifBadge(count) {
+  // Reuse existing notification bell if available
+  const bell = document.getElementById('notifBell') || document.getElementById('notifCount');
+  if (!bell) return;
+
+  // Get current chat unread + prod pending
+  const chatTotal = Object.values(window._chatUnread || {}).reduce((s,n) => s+n, 0);
+  const total = chatTotal + count;
+
+  // Update bubble badge
+  if (window.chatUpdateAllBadges) {
+    window._prodPendingCount = count;
+    chatUpdateAllBadges();
+  }
+}
+
+// Main alert trigger
+function prodTriggerPendingAlert(jobName, note) {
+  const role = currentUser?.role;
+  if (role === 'designer') return; // Designer skip
+
+  // Play urgent sound
+  prodPlayAlertSound();
+
+  // Browser notification
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const notif = new Notification('⚡ PENDING KILANG — Respon Segera!', {
+      body: `${jobName}\n📝 ${note || 'Job perlu maklum balas'}`,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="%23854F0B"/><text x="12" y="17" text-anchor="middle" fill="white" font-size="14">⚠</text></svg>',
+      tag: 'dod-prod-pending',
+      renotify: true,
+      requireInteraction: true, // stays until dismissed
+    });
+    notif.onclick = () => {
+      window.focus();
+      notif.close();
+      sbNav('prodtrack');
+      setTimeout(() => {
+        window._prodAutoFilter = 'pending';
+        renderProdTrack();
+      }, 300);
+    };
+  }
+
+  // In-app toast — more prominent
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed;top:20px;left:50%;transform:translateX(-50%);
+    background:#854F0B;color:#fff;padding:12px 20px;border-radius:10px;
+    font-size:13px;font-weight:600;z-index:99999;cursor:pointer;
+    box-shadow:0 4px 20px rgba(133,79,11,0.4);
+    display:flex;align-items:center;gap:10px;max-width:400px;
+    animation:slideDown .3s ease;
+  `;
+  toast.innerHTML = `<span style="font-size:18px;">⚡</span><div><div>PENDING KILANG — Respon Segera!</div><div style="font-size:11px;font-weight:400;opacity:.9;margin-top:2px;">${jobName}</div></div>`;
+  toast.onclick = () => {
+    toast.remove();
+    sbNav('prodtrack');
+    setTimeout(() => { window._prodAutoFilter = 'pending'; renderProdTrack(); }, 300);
+  };
+  document.body.appendChild(toast);
+
+  // Add slide down animation
+  if (!document.getElementById('prodAlertStyle')) {
+    const style = document.createElement('style');
+    style.id = 'prodAlertStyle';
+    style.textContent = '@keyframes slideDown{from{top:-60px;opacity:0}to{top:20px;opacity:1}}';
+    document.head.appendChild(style);
+  }
+
+  setTimeout(() => toast.remove(), 8000);
+}
+
+// Background poll — check for new pending orders every 30 seconds
+let _prodPollInterval = null;
+
+function prodAlertPollStart() {
+  if (_prodPollInterval) clearInterval(_prodPollInterval);
+  const role = currentUser?.role;
+  if (role === 'designer') return; // Designer skip
+
+  // Run immediately then every 30s
+  prodAlertPoll();
+  _prodPollInterval = setInterval(prodAlertPoll, 30000);
+}
+
+async function prodAlertPoll() {
+  const cpSettings = window._cpSettings || {};
+  if (cpSettings.alert_prod_pending === false) return;
+  const role = currentUser?.role;
+  if (role === 'designer') return;
+
+  try {
+    // Check for orders with pending_note that we haven't alerted yet
+    const alerted = _getProdAlertedIds();
+
+    // Get all orders with pending_note from sessionData
+    const pendingOrders = Object.values(sessionData || {}).flat()
+      .filter(o => o.pending_note && !alerted.has(o.id));
+
+    if (!pendingOrders.length) return;
+
+    // Alert for each new pending order
+    pendingOrders.forEach(o => {
+      _addProdAlertedId(o.id);
+      // Only alert if recently added (within last 2 minutes based on updated_at)
+      // Since we don't have updated_at on client, just alert once per session
+      prodTriggerPendingAlert(o.name_job || 'Job', o.pending_note);
+    });
+
+    // Update pending count in notification bell
+    const totalPending = Object.values(sessionData || {}).flat()
+      .filter(o => o.pending_note && !o.prod_archived).length;
+    prodUpdateNotifBadge(totalPending);
+
+  } catch(e) {
+    console.warn('Prod alert poll error:', e);
+  }
+}
+
+window.prodTriggerPendingAlert = prodTriggerPendingAlert;
+window.prodAlertPollStart      = prodAlertPollStart;
+window.prodAlertPoll           = prodAlertPoll;
 
 async function updateProdStatus(orderId, month, newStatus) {
   const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
@@ -10597,6 +10781,8 @@ const CP_DEFAULTS = {
   alert_os_critical_days: 7,
   alert_os_warning_days:  0,
   alert_prod_overdue:     true,
+  alert_prod_pending:     true,   // alert bila job masuk Pending
+  alert_prod_pending_min: 0,      // berapa minit selepas pending baru alert (0 = serta-merta)
   alert_prod_due_soon:    true,
   alert_margin_enabled:   false,
   alert_margin_threshold: 20,
@@ -10820,9 +11006,18 @@ function renderCpAlerts() {
     ${cpRow('Alert margin rendah','Alert bila margin order bawah threshold',cpToggle('alert_margin_enabled'))}
     ${cpRow('Threshold margin minimum',`Alert bila margin < X%`,cpInput('alert_margin_threshold','%',55))}`;
 
+  const pendingAlertContent = `
+    ${cpRow('Alert Pending kilang aktif','Notifikasi segera kepada Sales + Admin bila job masuk kolum Pending',cpToggle('alert_prod_pending'))}
+    ${cpRow('Delay sebelum alert','Berapa minit tunggu sebelum trigger alert. 0 = serta-merta',cpInput('alert_prod_pending_min','minit',55))}
+    <div style="margin-top:10px;padding:10px 12px;background:var(--amberbg);border-radius:7px;font-size:11px;color:var(--amber);line-height:1.6;">
+      ⚡ Alert ini akan hantar sound + browser notification + badge kepada semua staff Sales dan Admin.
+      Designer tidak akan terima alert ini.
+    </div>`;
+
   return sqlNote +
     cpCard('OS Completed Alert', 'Alert 2-tahap untuk customer yang dah dapat barang tapi belum bayar baki.', alertsContent) +
     cpCard('Production Alerts', 'Alert untuk status pengeluaran dan deadline.', prodContent) +
+    cpCard('⚡ Pending Kilang Alert', 'Alert urgent bila job masuk Pending — sales kena respon segera.', pendingAlertContent) +
     `<div style="display:flex;gap:8px;">
       <button onclick="saveCpAll()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
       <button onclick="renderHomeAlerts(currentUser.role);showToast('Alert di-refresh ✓')" style="padding:8px 16px;background:var(--bg3);color:var(--text);border:1px solid var(--line);border-radius:7px;font-size:12px;cursor:pointer;">🔄 Preview Alert</button>
