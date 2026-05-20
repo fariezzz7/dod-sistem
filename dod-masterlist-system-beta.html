@@ -10017,8 +10017,8 @@ async function openBinDoc(docId, docType) {
     if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
     const payload = rows[0].snapshot;
     if (docType && docType.startsWith('jobsheet')) {
-      const encoded = encodeURIComponent(JSON.stringify(payload));
-      window.open('dod-jobsheet.html?view=' + encoded, '_blank');
+      sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=1', '_blank');
     } else {
       localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
       window.open('dod-document-generator.html', '_blank');
@@ -12708,8 +12708,8 @@ async function openSavedDoc(docId, docType) {
     const doc = rows[0];
     const payload = doc.snapshot;
     if (docType && docType.startsWith('jobsheet')) {
-      const encoded = encodeURIComponent(JSON.stringify(payload));
-      window.open('dod-jobsheet.html?view=' + encoded, '_blank');
+      sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=1', '_blank');
     } else {
       localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
       window.open('dod-document-generator.html', '_blank');

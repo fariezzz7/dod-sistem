@@ -786,15 +786,18 @@ function showToast(msg,type=''){
 // ══════════════════════════════════════
 function checkViewMode() {
   const params = new URLSearchParams(window.location.search);
-  const viewParam = params.get('view');
-  if (!viewParam) return;
+  if (!params.get('view')) return;
   try {
-    const payload = JSON.parse(decodeURIComponent(viewParam));
-    // Hide generator UI, show print view directly
+    // Read payload from sessionStorage (set by masterlist)
+    const raw = sessionStorage.getItem('dod_jobsheet_view');
+    if (!raw) { showToast('Tiada data jobsheet — cuba jana semula', 'error'); return; }
+    const payload = JSON.parse(raw);
+    sessionStorage.removeItem('dod_jobsheet_view'); // clean up
     document.querySelector('.container').style.display = 'none';
     renderViewMode(payload);
   } catch(e) {
     console.warn('View mode parse failed:', e);
+    showToast('Gagal buka jobsheet', 'error');
   }
 }
 
