@@ -8,42 +8,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#F0F4FC;--bg2:#FFFFFF;--bg3:#E8EDF8;--bg4:#DCE3F2;--bg5:#CDD6EC;
-  --line:rgba(26,32,64,0.08);--linhi:rgba(26,32,64,0.15);
-  --shadow:0 1px 4px rgba(26,32,64,0.07),0 4px 16px rgba(26,32,64,0.05);
-  --shadow2:0 2px 12px rgba(26,32,64,0.1),0 8px 32px rgba(26,32,64,0.07);
-  --text:#1A2040;--textd:#4A5278;--textm:#8A91AA;
+  --bg:#F4F6FA;--bg2:#FFFFFF;--bg3:#EEF1F8;--bg4:#E6EAF4;--bg5:#D8DEF0;
+  --line:rgba(0,0,0,0.08);--linhi:rgba(0,0,0,0.15);
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);
+  --shadow2:0 2px 8px rgba(0,0,0,0.1),0 8px 32px rgba(0,0,0,0.06);
+  --text:#1A2040;--textd:#5A6480;--textm:#9AA0B8;
   --amber:#B8720A;--amberhi:#E89A10;--amberw:rgba(184,114,10,0.08);--amberb:rgba(184,114,10,0.2);--amberbg:#FFF8EC;
   --green:#0F7A48;--greenhi:#12A060;--greenw:rgba(15,122,72,0.08);--greenb:rgba(15,122,72,0.2);--greenbg:#EDFAF3;
   --red:#C02840;--redhi:#E03050;--redw:rgba(192,40,64,0.07);--redb:rgba(192,40,64,0.2);--redbg:#FFF0F3;
-  --blue:#1A5CC8;--bluehi:#2470F0;--bluew:rgba(26,92,200,0.08);--blueb:rgba(26,92,200,0.22);--bluebg:#EEF4FF;
-  --navy:#0A1840;--navy2:#102258;--navyhi:#1A3470;
+  --blue:#1A5CC8;--bluehi:#2470F0;--bluew:rgba(26,92,200,0.07);--blueb:rgba(26,92,200,0.2);--bluebg:#EEF4FF;
   --orange:#C05800;--orangebg:#FFF4EC;--orangeb:rgba(192,88,0,0.2);
   --purple:#6E30C8;--purplebg:#F4EEFF;--purpleb:rgba(110,48,200,0.2);
   --teal:#0E7A7A;--tealbg:#EDFAFA;--tealb:rgba(14,122,122,0.2);
-  --nav-h:56px;--sb-w:228px;--sb-collapsed:56px;
-  --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--radius-xl:16px;
-}
-body.dark {
-  --bg:#0D1424;--bg2:#151E34;--bg3:#1C2840;--bg4:#233050;--bg5:#2A3A5E;
-  --line:rgba(255,255,255,0.07);--linhi:rgba(255,255,255,0.13);
-  --shadow:0 1px 4px rgba(0,0,0,0.25),0 4px 16px rgba(0,0,0,0.2);
-  --shadow2:0 2px 12px rgba(0,0,0,0.35),0 8px 32px rgba(0,0,0,0.25);
-  --text:#E2E6F0;--textd:#8A98B8;--textm:#4A5878;
-  --blue:#2470F0;--bluehi:#4A8CFF;--bluew:rgba(36,112,240,0.12);--blueb:rgba(36,112,240,0.28);--bluebg:rgba(36,112,240,0.15);
-  --navy:#0A1028;--navy2:#1A2845;--navyhi:#243458;
-  --amber:#E89A10;--amberhi:#F5B830;--amberw:rgba(232,154,16,0.1);--amberb:rgba(232,154,16,0.25);--amberbg:rgba(232,154,16,0.12);
-  --green:#12A060;--greenhi:#18C878;--greenw:rgba(18,160,96,0.1);--greenb:rgba(18,160,96,0.25);--greenbg:rgba(18,160,96,0.12);
-  --red:#E03050;--redhi:#FF4C6A;--redw:rgba(224,48,80,0.1);--redb:rgba(224,48,80,0.25);--redbg:rgba(224,48,80,0.12);
-  --orange:#E07020;--orangebg:rgba(224,112,32,0.12);--orangeb:rgba(224,112,32,0.25);
-  --purple:#9050E8;--purplebg:rgba(144,80,232,0.12);--purpleb:rgba(144,80,232,0.25);
-  --teal:#18A0A0;--tealbg:rgba(24,160,160,0.12);--tealb:rgba(24,160,160,0.25);
+  --nav-h:56px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.6;overflow-x:hidden;transition:background .2s,color .2s;}
-body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(26,92,200,0.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0;}
-body.dark::before{background-image:radial-gradient(circle,rgba(36,112,240,0.04) 1px,transparent 1px);}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(26,92,200,0.035) 1px,transparent 1px);background-size:24px 24px;pointer-events:none;z-index:0;}
 
 /* ── LOGIN ── */
 #loginScreen{position:fixed;inset:0;z-index:9999;background:#F4F6FA;display:flex;align-items:center;justify-content:center;}
@@ -99,7 +81,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .nav-tabs{display:flex;gap:2px;padding:0;flex-wrap:nowrap;overflow-x:auto;}
 .nav-tab{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 12px;color:var(--textd);cursor:pointer;border:none;background:none;border-radius:4px;transition:all .15s;}
 .nav-tab:hover{color:var(--blue);}
-.nav-tab.active{background:var(--bg2);color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.1);font-weight:600;}
+.nav-tab.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,0.1);font-weight:600;}
 .nav-tab.new-month{color:var(--green);border:1px dashed var(--greenb);}
 .nav-right{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;}
 .nav-date{font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);}
@@ -127,40 +109,40 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 
 /* Left sidebar */
 #appSidebar{
-  width:var(--sb-w);flex-shrink:0;
-  background:var(--navy);
+  width:220px;flex-shrink:0;
+  background:#fff;
+  border-right:1px solid var(--line);
   display:flex;flex-direction:column;
   position:fixed;top:0;left:0;height:100vh;
   z-index:250;
-  transition:width .22s cubic-bezier(0.4,0,0.2,1),transform .22s cubic-bezier(0.4,0,0.2,1);
+  transition:width .22s ease,transform .22s ease;
   overflow:hidden;
-  box-shadow:3px 0 24px rgba(0,0,0,0.18);
+  box-shadow:2px 0 12px rgba(0,0,0,0.04);
 }
-#appSidebar.collapsed{width:var(--sb-collapsed);}
+#appSidebar.collapsed{width:56px;}
 #appSidebar.mobile-hidden{transform:translateX(-100%);}
 
 /* Sidebar header / logo strip */
 .sb-header{
   display:flex;align-items:center;gap:10px;
-  padding:0 14px;height:var(--nav-h);
-  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:0 14px;height:56px;
+  border-bottom:1px solid var(--line);
   flex-shrink:0;
-  background:linear-gradient(180deg,#071030 0%,var(--navy) 100%);
+  background:linear-gradient(135deg,#0A1840 0%,#1A3A7A 100%);
 }
 .sb-logo-mark{
-  width:30px;height:30px;border-radius:8px;
-  background:var(--blue);
+  width:28px;height:28px;border-radius:7px;
+  background:rgba(255,255,255,0.15);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:#fff;
+  font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:#fff;
   flex-shrink:0;
-  box-shadow:0 2px 8px rgba(26,92,200,0.5);
 }
 .sb-logo-text{
-  font-family:'Fira Code',monospace;font-size:11px;font-weight:700;
+  font-family:'Fira Code',monospace;font-size:11px;font-weight:600;
   color:#fff;white-space:nowrap;overflow:hidden;
-  transition:opacity .18s,width .18s;letter-spacing:0.04em;
+  transition:opacity .18s;
 }
-.sb-logo-text small{display:block;font-size:7.5px;color:rgba(255,255,255,0.38);letter-spacing:0.18em;margin-top:2px;text-transform:uppercase;}
+.sb-logo-text small{display:block;font-size:8px;color:rgba(255,255,255,0.45);letter-spacing:0.1em;margin-top:1px;}
 #appSidebar.collapsed .sb-logo-text{opacity:0;width:0;}
 #appSidebar.collapsed .sb-toggle{margin-left:0;}
 #appSidebar.collapsed .sb-header{justify-content:center;padding:0;}
@@ -168,49 +150,47 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 /* Toggle collapse button */
 .sb-toggle{
   margin-left:auto;flex-shrink:0;
-  background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
-  color:rgba(255,255,255,0.6);
-  width:26px;height:26px;border-radius:6px;
+  background:rgba(255,255,255,0.1);border:none;
+  color:rgba(255,255,255,0.7);
+  width:24px;height:24px;border-radius:5px;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:11px;transition:all .15s;
+  font-size:12px;transition:background .15s;
 }
-.sb-toggle:hover{background:rgba(255,255,255,0.15);color:#fff;}
+.sb-toggle:hover{background:rgba(255,255,255,0.2);}
 
 /* User profile strip */
 .sb-user{
   display:flex;align-items:center;gap:10px;
-  padding:12px 14px;
-  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:12px 14px;border-bottom:1px solid var(--line);
   flex-shrink:0;cursor:pointer;transition:background .15s;
 }
-.sb-user:hover{background:var(--navy2);}
+.sb-user:hover{background:var(--bg3);}
 .sb-user-avatar{
   width:32px;height:32px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:#fff;flex-shrink:0;
-  border:2px solid rgba(255,255,255,0.12);
 }
 .sb-user-info{overflow:hidden;transition:opacity .18s,width .18s;}
-.sb-user-name{font-family:'Fira Code',monospace;font-size:11px;font-weight:600;color:#fff;white-space:nowrap;}
-.sb-user-role{font-family:'Fira Code',monospace;font-size:8.5px;color:rgba(255,255,255,0.42);white-space:nowrap;letter-spacing:0.08em;text-transform:uppercase;}
+.sb-user-name{font-family:'Fira Code',monospace;font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;}
+.sb-user-role{font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);white-space:nowrap;}
 #appSidebar.collapsed .sb-user-info{opacity:0;width:0;}
 
 /* Nav date */
 .sb-date{
   padding:8px 14px;
-  font-family:'Fira Code',monospace;font-size:9px;color:rgba(255,255,255,0.28);
-  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);
+  border-bottom:1px solid var(--line);
   white-space:nowrap;overflow:hidden;
   transition:opacity .18s;
-  flex-shrink:0;letter-spacing:0.06em;
+  flex-shrink:0;
 }
 #appSidebar.collapsed .sb-date{opacity:0;}
 
 /* Section label */
 .sb-section{
-  padding:12px 14px 4px;
-  font-family:'Fira Code',monospace;font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(255,255,255,0.25);white-space:nowrap;overflow:hidden;
+  padding:10px 14px 4px;
+  font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--textm);white-space:nowrap;overflow:hidden;
   transition:opacity .18s;flex-shrink:0;
 }
 #appSidebar.collapsed .sb-section{opacity:0;height:0;padding:0;overflow:hidden;}
@@ -219,43 +199,42 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 /* Nav item */
 .sb-item{
   display:flex;align-items:center;gap:10px;
-  padding:8px 12px;margin:1px 8px;border-radius:var(--radius-md);
-  cursor:pointer;border:1px solid transparent;background:none;width:calc(100% - 16px);
-  text-align:left;transition:all .13s;
+  padding:9px 14px;margin:1px 6px;border-radius:7px;
+  cursor:pointer;border:none;background:none;width:calc(100% - 12px);
+  text-align:left;transition:background .13s,color .13s;
   white-space:nowrap;overflow:hidden;
-  color:rgba(255,255,255,0.48);
+  color:var(--textd);
 }
-.sb-item:hover{background:var(--navy2);color:rgba(255,255,255,0.85);}
-.sb-item.active{background:rgba(36,112,240,0.22);color:#7AAEFF;border-color:rgba(36,112,240,0.2);}
-.sb-item.active .sb-item-icon{color:#7AAEFF;}
-.sb-item-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center;line-height:1;}
+.sb-item:hover{background:var(--bg3);color:var(--text);}
+.sb-item.active{background:var(--bluebg);color:var(--blue);}
+.sb-item.active .sb-item-icon{color:var(--blue);}
+.sb-item-icon{font-size:15px;flex-shrink:0;width:20px;text-align:center;line-height:1;}
 .sb-item-label{font-size:12px;font-weight:500;transition:opacity .18s,width .18s;overflow:hidden;}
 #appSidebar.collapsed .sb-item-label{opacity:0;width:0;}
 .sb-item-badge{
   margin-left:auto;font-family:'Fira Code',monospace;font-size:8px;
-  padding:2px 7px;border-radius:10px;flex-shrink:0;
-  background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);
+  padding:1px 6px;border-radius:8px;flex-shrink:0;
   transition:opacity .18s;
 }
 #appSidebar.collapsed .sb-item-badge{opacity:0;}
 
 /* Divider */
-.sb-divider{height:1px;background:rgba(255,255,255,0.05);margin:5px 10px;}
+.sb-divider{height:1px;background:var(--line);margin:6px 10px;}
 
 /* Month tabs section in sidebar (legacy kept for collapsed tooltip compatibility) */
-.sb-months{flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0;}
+.sb-months{ flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0; }
 .sb-month-btn{
   display:flex;align-items:center;gap:8px;
   padding:7px 10px;border-radius:6px;
   cursor:pointer;border:none;background:none;
-  width:100%;text-align:left;transition:all .12s;
-  font-family:'Fira Code',monospace;font-size:10px;color:rgba(255,255,255,0.45);
+  width:100%;text-align:left;transition:background .12s;
+  font-family:'Fira Code',monospace;font-size:10px;color:var(--textd);
   white-space:nowrap;overflow:hidden;
 }
-.sb-month-btn:hover{background:var(--navy2);color:rgba(255,255,255,0.8);}
-.sb-month-btn.active{background:rgba(36,112,240,0.2);color:#7AAEFF;font-weight:600;}
-.sb-month-dot{width:5px;height:5px;border-radius:50%;background:rgba(36,112,240,0.7);flex-shrink:0;}
-.sb-month-dot.new{background:rgba(18,160,96,0.8);}
+.sb-month-btn:hover{background:var(--bg3);color:var(--text);}
+.sb-month-btn.active{background:var(--bluebg);color:var(--blue);font-weight:600;}
+.sb-month-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);flex-shrink:0;}
+.sb-month-dot.new{background:var(--green);}
 
 /* Inline month tab strip (in masterlist view) */
 .month-tab-pill{
@@ -267,36 +246,36 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   white-space:nowrap;transition:all .12s;
 }
 .month-tab-pill:hover{background:var(--bluebg);color:var(--blue);border-color:var(--blueb);}
-.month-tab-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;box-shadow:0 2px 8px rgba(26,92,200,0.3);}
+.month-tab-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;box-shadow:0 2px 8px rgba(26,92,200,0.25);}
 .month-tab-pill .pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.6;flex-shrink:0;}
 
 /* Bottom actions */
 .sb-bottom{
-  flex-shrink:0;border-top:1px solid rgba(255,255,255,0.06);
-  padding:8px 8px;display:flex;flex-direction:column;gap:3px;
+  flex-shrink:0;border-top:1px solid var(--line);
+  padding:8px 6px;display:flex;flex-direction:column;gap:2px;
 }
 .sb-action-btn{
   display:flex;align-items:center;gap:10px;
-  padding:9px 12px;border-radius:var(--radius-md);
+  padding:8px 14px;border-radius:7px;
   cursor:pointer;border:none;width:100%;
   text-align:left;font-size:12px;font-weight:600;
   white-space:nowrap;overflow:hidden;
   transition:all .13s;
 }
 .sb-action-btn .sb-item-label{font-size:12px;}
-.sb-action-btn.add-order{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(26,92,200,0.35);}
-.sb-action-btn.add-order:hover{background:var(--bluehi);box-shadow:0 3px 14px rgba(36,112,240,0.45);}
-.sb-action-btn.add-month{background:rgba(15,122,72,0.18);color:rgba(18,200,120,0.85);border:1px solid rgba(15,122,72,0.25);}
+.sb-action-btn.add-order{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(26,92,200,0.25);}
+.sb-action-btn.add-order:hover{background:var(--bluehi);}
+.sb-action-btn.add-month{background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);}
 .sb-action-btn.add-month:hover{background:var(--green);color:#fff;}
-.sb-action-btn.logout{background:rgba(192,40,64,0.12);color:rgba(224,80,100,0.85);border:1px solid rgba(192,40,64,0.2);}
+.sb-action-btn.logout{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
 .sb-action-btn.logout:hover{background:var(--red);color:#fff;}
-.sb-action-btn.chpw{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.08);}
-.sb-action-btn.chpw:hover{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);}
+.sb-action-btn.chpw{background:var(--bg3);color:var(--textd);border:1px solid var(--line);}
+.sb-action-btn.chpw:hover{background:var(--bg4);color:var(--text);}
 
 /* Mobile overlay */
 .sb-overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(5,10,30,0.55);backdrop-filter:blur(3px);
+  background:rgba(26,32,64,0.35);backdrop-filter:blur(2px);
   z-index:249;
 }
 .sb-overlay.show{display:block;}
@@ -304,7 +283,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 /* Mobile hamburger in top bar */
 #mobileTopBar{
   display:none;position:fixed;top:0;left:0;right:0;height:48px;
-  background:var(--bg2);border-bottom:1px solid var(--line);
+  background:#fff;border-bottom:1px solid var(--line);
   z-index:200;align-items:center;padding:0 16px;gap:12px;
   box-shadow:0 1px 4px rgba(0,0,0,0.06);
 }
@@ -317,12 +296,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 
 /* Main content area */
 #appContent{
-  margin-left:var(--sb-w);
+  margin-left:220px;
   min-height:100vh;
-  transition:margin-left .22s cubic-bezier(0.4,0,0.2,1);
-  width:calc(100% - var(--sb-w));
+  transition:margin-left .22s ease;
+  width:calc(100% - 220px);
 }
-#appContent.expanded{margin-left:var(--sb-collapsed);width:calc(100% - var(--sb-collapsed));}
+#appContent.expanded{margin-left:56px;width:calc(100% - 56px);}
 
 /* ── WRAP ── */
 .wrap{max-width:1440px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
@@ -415,7 +394,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .cpanel-footer-lbl{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--textm);margin-bottom:7px;}
 .cpanel-add-row{display:flex;gap:6px;}
 .cpanel-add-inp{flex:1;background:var(--bg3);border:1px solid var(--line);padding:7px 10px;border-radius:7px;font-size:12px;color:var(--text);outline:none;font-family:'Plus Jakarta Sans',sans-serif;}
-.cpanel-add-inp:focus{border-color:var(--blue);background:var(--bg2);}
+.cpanel-add-inp:focus{border-color:var(--blue);background:#fff;}
 .cpanel-add-sel{background:var(--bg3);border:1px solid var(--line);padding:7px 8px;border-radius:7px;font-size:11px;color:var(--text);outline:none;cursor:pointer;}
 .cpanel-add-btn{background:var(--blue);color:#fff;border:none;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;}
 .cpanel-add-btn:hover{background:var(--bluehi);}
@@ -472,7 +451,7 @@ select.fsel:focus{outline:none;border-color:var(--bluehi);box-shadow:0 0 0 3px v
 /* search */
 .search-wrap{position:relative;margin-bottom:10px;}
 .search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:8px 12px 8px 32px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:6px;outline:none;transition:border-color .15s;}
-.search-wrap input:focus{border-color:var(--bluehi);background:var(--bg2);}
+.search-wrap input:focus{border-color:var(--bluehi);background:#fff;}
 .search-wrap::before{content:'⌕';position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--textm);font-size:14px;}
 
 /* ── TABLE ── */
@@ -510,9 +489,9 @@ tr:hover .row-actions{opacity:1;}
 .btn-del-row{background:var(--redbg);border:1px solid var(--redb);color:var(--red);padding:3px 7px;border-radius:4px;cursor:pointer;font-size:11px;}
 
 /* ── DETAIL PANEL ── */
-.detail-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:var(--bg2);border-left:1px solid var(--line);box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:300;transition:right .25s ease;overflow-y:auto;display:flex;flex-direction:column;}
+.detail-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:#fff;border-left:1px solid var(--line);box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:300;transition:right .25s ease;overflow-y:auto;display:flex;flex-direction:column;}
 .detail-panel.open{right:0;}
-.detail-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.detail-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1;}
 .detail-title{font-family:'Fira Code',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--textm);}
 .detail-close{background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:12px;}
 .detail-body{padding:16px 20px;flex:1;}
@@ -535,8 +514,8 @@ tr:hover .row-actions{opacity:1;}
 /* ── MODAL ── */
 .modal-bg{position:fixed;inset:0;background:rgba(26,32,64,0.5);backdrop-filter:blur(4px);z-index:400;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-bg.open{display:flex;}
-.modal{background:var(--bg2);border-radius:16px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1;border-radius:16px 16px 0 0;}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0;}
 .modal-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--text);}
 .modal-subtitle{font-size:11px;color:var(--textm);margin-top:2px;}
 .modal-close{background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;}
@@ -549,7 +528,7 @@ tr:hover .row-actions{opacity:1;}
 .form-field{display:flex;flex-direction:column;gap:4px;}
 .form-field.full{grid-column:1/-1;}
 .fl{font-family:'Fira Code',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--textd);}
-.fi{background:var(--bg2);border:1px solid var(--line);color:var(--text);padding:8px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:6px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.fi{background:#fff;border:1px solid var(--line);color:var(--text);padding:8px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:6px;outline:none;transition:border-color .15s,box-shadow .15s;}
 .fi:focus{border-color:var(--bluehi);box-shadow:0 0 0 3px var(--bluew);}
 .fi.highlight{background:var(--bluebg);border-color:var(--blueb);}
 .calc-box{background:linear-gradient(135deg,var(--bg3),var(--bg4));border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:20px;}
@@ -558,7 +537,7 @@ tr:hover .row-actions{opacity:1;}
 .calc-key{font-size:11px;color:var(--textd);}
 .calc-val{font-family:'Fira Code',monospace;font-size:12px;font-weight:600;color:var(--text);}
 .calc-val.red{color:var(--red);}.calc-val.green{color:var(--green);}.calc-val.orange{color:var(--orange);}
-.modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:var(--bg2);border-radius:0 0 16px 16px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px;}
 .btn-save{padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(26,92,200,0.3);transition:all .15s;}
 .btn-save:hover{background:var(--bluehi);}
 .btn-cancel{padding:10px 16px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
@@ -566,7 +545,7 @@ tr:hover .row-actions{opacity:1;}
 /* ── DELETE MODAL ── */
 #delModalBg{position:fixed;inset:0;background:rgba(26,32,64,0.5);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;}
 #delModalBg.open{display:flex;}
-.del-modal{background:var(--bg2);border-radius:16px;width:360px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.del-modal{background:#fff;border-radius:16px;width:360px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
 .del-modal-title{font-size:16px;font-weight:700;color:var(--red);margin-bottom:8px;}
 .del-modal-desc{font-size:12px;color:var(--textd);margin-bottom:16px;line-height:1.6;}
 .del-pw-label{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textd);margin-bottom:6px;display:block;}
@@ -578,7 +557,7 @@ tr:hover .row-actions{opacity:1;}
 /* ── ADD MONTH MODAL ── */
 #monthModalBg{position:fixed;inset:0;background:rgba(26,32,64,0.5);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;}
 #monthModalBg.open{display:flex;}
-.month-modal{background:var(--bg2);border-radius:16px;width:360px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.month-modal{background:#fff;border-radius:16px;width:360px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1A2040;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;transition:transform .3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
@@ -624,7 +603,7 @@ tr:hover .row-actions{opacity:1;}
 .board-col-count{font-family:'Fira Code',monospace;font-size:10px;background:var(--bg4);color:var(--textm);padding:2px 7px;border-radius:10px;}
 .board-col-body{flex:1;min-height:200px;background:var(--bg3);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:8px;display:flex;flex-direction:column;gap:7px;}
 .board-col-body.drag-over{background:var(--bluebg);border-color:var(--blueb);}
-.board-card{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;cursor:grab;transition:all .15s;box-shadow:var(--shadow);}
+.board-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;cursor:grab;transition:all .15s;box-shadow:var(--shadow);}
 .board-card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);}
 .board-card.dragging{opacity:0.4;cursor:grabbing;}
 .bc-tag{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
@@ -726,9 +705,9 @@ tr:hover .row-actions{opacity:1;}
 .cust-last-order{font-size:11px;color:var(--textm);margin-top:8px;}
 
 /* Customer Detail Panel */
-.cust-detail-panel{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:var(--bg2);border-left:1px solid var(--line);box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:300;transition:right .25s ease;overflow-y:auto;display:flex;flex-direction:column;}
+.cust-detail-panel{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:#fff;border-left:1px solid var(--line);box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:300;transition:right .25s ease;overflow-y:auto;display:flex;flex-direction:column;}
 .cust-detail-panel.open{right:0;}
-.cust-detail-header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.cust-detail-header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1;}
 .cust-detail-body{padding:18px 20px;flex:1;}
 .cust-detail-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
 .cust-detail-stat{background:var(--bg3);border-radius:10px;padding:12px;text-align:center;}
@@ -758,7 +737,7 @@ tr:hover .row-actions{opacity:1;}
 .dash-input-field{display:flex;align-items:center;gap:6px;}
 .dash-input-field label{font-size:11px;color:var(--textd);white-space:nowrap;}
 .dash-input-field input{background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:6px 10px;font-size:12px;font-family:'Fira Code',monospace;border-radius:6px;outline:none;width:110px;transition:border-color .15s;}
-.dash-input-field input:focus{border-color:var(--blue);background:var(--bg2);}
+.dash-input-field input:focus{border-color:var(--blue);background:#fff;}
 .dash-save-btn{padding:7px 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .dash-save-btn:hover{background:var(--bluehi);}
 
@@ -830,7 +809,7 @@ tr:hover .row-actions{opacity:1;}
 .um-field{margin-bottom:12px;}
 .um-field label{display:block;font-family:'Fira Code',monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--textd);margin-bottom:5px;}
 .um-field input,.um-field select{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:8px 10px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:7px;outline:none;transition:border-color .15s;}
-.um-field input:focus,.um-field select:focus{border-color:var(--blue);background:var(--bg2);}
+.um-field input:focus,.um-field select:focus{border-color:var(--blue);background:#fff;}
 .um-field input::placeholder{color:var(--textm);}
 .um-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .um-btn-row{display:flex;gap:8px;flex-wrap:wrap;}
@@ -846,14 +825,14 @@ tr:hover .row-actions{opacity:1;}
 .um-info-box strong{color:var(--text);}
 
 /* Change password modal */
-.chpw-modal{background:var(--bg2);border:1px solid var(--line);border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(26,32,64,0.2);}
+.chpw-modal{background:#fff;border:1px solid var(--line);border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(26,32,64,0.2);}
 
 /* ── ITEM BREAKDOWN ── */
 .item-breakdown-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
 .item-breakdown-table th{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:6px 8px;text-align:left;border-bottom:1px solid var(--line);background:var(--bg3);}
 .item-breakdown-table td{padding:4px 4px;}
 .item-breakdown-table input,.item-breakdown-table select{background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:5px 7px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;border-radius:5px;outline:none;width:100%;transition:border-color .12s;}
-.item-breakdown-table input:focus,.item-breakdown-table select:focus{border-color:var(--blue);background:var(--bg2);}
+.item-breakdown-table input:focus,.item-breakdown-table select:focus{border-color:var(--blue);background:#fff;}
 .item-breakdown-table .td-no{width:28px;text-align:center;font-family:'Fira Code',monospace;font-size:11px;color:var(--textm);}
 .item-breakdown-table .td-desc{min-width:160px;}
 .item-breakdown-table .td-qty{width:70px;}
@@ -896,7 +875,7 @@ tr:hover .row-actions{opacity:1;}
 @keyframes bellShake{0%,100%{transform:rotate(0);}20%{transform:rotate(-12deg);}40%{transform:rotate(12deg);}60%{transform:rotate(-8deg);}80%{transform:rotate(8deg);}}
 .notif-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;background:var(--red);color:#fff;border-radius:9px;font-size:9px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff;}
 .notif-badge.show{display:flex;}
-.notif-panel{position:absolute;bottom:calc(100% + 10px);right:0;width:320px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.06);z-index:9999;overflow:hidden;display:none;}
+.notif-panel{position:absolute;bottom:calc(100% + 10px);right:0;width:320px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.06);z-index:9999;overflow:hidden;display:none;}
 .notif-panel.open{display:block;}
 .notif-panel-head{padding:12px 14px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
 .notif-panel-title{font-weight:700;font-size:13px;color:var(--text);}
@@ -1316,6 +1295,12 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-badge" style="background:var(--tealbg);color:var(--teal);">↗</span>
   </button>
 
+  <button class="sb-item" id="sbJobsheet" data-tip="Jobsheet Kilang" onclick="window.open('dod-jobsheet.html','dod_jobsheet')" style="display:none;">
+    <span class="sb-item-icon">🏭</span>
+    <span class="sb-item-label">Jobsheet</span>
+    <span class="sb-item-badge" style="background:var(--orangebg);color:var(--orange);">↗</span>
+  </button>
+
   <!-- ══ BAHAGIAN 2: OPERASI ══ -->
   <div class="sb-divider"></div>
   <div class="sb-section">Operasi</div>
@@ -1388,10 +1373,6 @@ tr:hover .row-actions{opacity:1;}
     <button class="sb-action-btn add-order" id="sbBtnAddOrder" onclick="openAddModal()" style="display:none;" data-tip="Tambah Order">
       <span class="sb-item-icon">＋</span>
       <span class="sb-item-label">Tambah Order</span>
-    </button>
-    <button class="sb-action-btn chpw" onclick="toggleDarkMode()" id="darkModeBtn" data-tip="Toggle Tema">
-      <span class="sb-item-icon" id="darkModeIcon">🌙</span>
-      <span class="sb-item-label" id="darkModeLabel">Dark Mode</span>
     </button>
     <button class="sb-action-btn logout" onclick="doLogout()" data-tip="Log Keluar">
       <span class="sb-item-icon">⏏</span>
@@ -2112,11 +2093,11 @@ tr:hover .row-actions{opacity:1;}
         </div>
         <div id="dc_result" style="display:none;">
           <div id="dc_urgency_flag" style="margin-bottom:10px;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;"></div>
-          <div style="background:var(--bluebg);border:1px solid var(--blueb);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+          <div style="background:#fff;border:1px solid var(--blueb);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
             <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">Timeline Untuk Bagitahu Customer</div>
             <div id="dc_timeline" style="display:flex;flex-direction:column;gap:7px;"></div>
           </div>
-          <div style="background:var(--greenbg);border:1px solid var(--greenb);border-radius:8px;padding:12px 14px;">
+          <div style="background:#fff;border:1px solid var(--greenb);border-radius:8px;padding:12px 14px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
               <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">📱 Mesej WhatsApp — Sedia Copy-Paste</div>
               <button type="button" onclick="copyWAMsg()" style="font-size:10px;padding:3px 10px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;color:var(--green);font-weight:700;">📋 Copy</button>
@@ -3387,7 +3368,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','pending_note','prod_archived',
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','pending_note','prod_archived','date_submit_kilang',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
       'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
       'payments',
@@ -3398,7 +3379,7 @@ async function supaUpsert(table, data) {
       ALLOWED.forEach(k => {
         let v = o[k];
         // Clean empty dates to null
-        if (['order_date','inv_date','due_date','production_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
+        if (['order_date','inv_date','due_date','production_date','date_submit_kilang'].includes(k) && (!v || v === '' || v === 'null')) v = null;
         if (k === 'production_status' && !v) v = 'job-submit';
         r[k] = v !== undefined ? v : null;
       });
@@ -3556,26 +3537,6 @@ async function doLogin() {
   document.getElementById('mainApp').style.display = 'block';
   initApp();
 }
-
-// ── DARK MODE TOGGLE ──
-function toggleDarkMode() {
-  const isDark = document.body.classList.toggle('dark');
-  localStorage.setItem('dod_theme', isDark ? 'dark' : 'light');
-  const icon = document.getElementById('darkModeIcon');
-  const label = document.getElementById('darkModeLabel');
-  if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-  if (label) label.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-}
-(function() {
-  const saved = localStorage.getItem('dod_theme');
-  if (saved === 'dark') {
-    document.body.classList.add('dark');
-    const icon = document.getElementById('darkModeIcon');
-    const label = document.getElementById('darkModeLabel');
-    if (icon) icon.textContent = '☀️';
-    if (label) label.textContent = 'Light Mode';
-  }
-})();
 
 function doLogout() {
   currentUser = null;
@@ -3775,6 +3736,7 @@ function setupNavForRole() {
     sbShow('sbJobBoard');
     sbShow('sbSupplierOS');
     sbShow('sbDocGen');
+    sbShow('sbJobsheet');
     sbShow('sbUserMgmt');
     sbShow('sbSecurity');
     sbShow('sbBin');
@@ -3797,6 +3759,7 @@ function setupNavForRole() {
     sbShow('sbProdTrack');
     sbShow('sbJobBoard');
     sbShow('sbDocGen');
+    sbShow('sbJobsheet');
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
@@ -3816,6 +3779,7 @@ function setupNavForRole() {
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
     sbShow('sbDocGen');
+    sbHide('sbJobsheet');
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
@@ -4509,6 +4473,9 @@ function showDetail(id) {
       <button class="dp-doc-btn" onclick="openDoc('quotation')">📋 Quotation</button>
       <button class="dp-doc-btn" onclick="openDoc('receipt')">✅ Receipt</button>
       ${isAdmin?`<button class="dp-doc-btn" onclick="openDoc('po')">📦 PO Supplier</button>`:''}
+    </div>
+    <div style="margin-top:8px;">
+      <button onclick="openJobsheetFromOrder('${r.id}')" style="width:100%;padding:9px 14px;background:var(--orangebg);color:var(--orange);border:1px solid var(--orangeb);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s;">🏭 Jana Jobsheet</button>
     </div>
 
     <div style="margin-top:16px;">
@@ -9002,7 +8969,7 @@ function renderProdCard(o) {
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
         <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;justify-content:flex-end;">
           ${dueDate?`<span style="background:${diffDue!==null&&diffDue<0?'var(--redbg)':'var(--bg3)'};border:1px solid ${diffDue!==null&&diffDue<0?'var(--redb)':'var(--line)'};padding:3px 8px;border-radius:5px;color:${diffDue!==null&&diffDue<0?'var(--red)':'var(--textd)'};">📅 Due: ${o.due_date}</span>`:''}
-          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textd);">🏭 Prod: ${o.production_date}</span>`:''}
+          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textd);">🏭 Prod: ${o.production_date}</span>`:''}\n          ${o.date_submit_kilang?`<span style="background:var(--teal)22;border:1px solid var(--teal)66;padding:3px 8px;border-radius:5px;color:var(--teal);">📤 Submit: ${o.date_submit_kilang}</span>`:''}
         </div>
         ${hasOS?`<span style="font-size:11px;font-weight:600;color:var(--red);background:var(--redbg);border:1px solid var(--redb);padding:3px 8px;border-radius:5px;">💰 OS: ${fmt(balance)}</span>`:'<span style="font-size:11px;color:var(--green);background:var(--greenbg);border:1px solid var(--greenb);padding:3px 8px;border-radius:5px;">✓ Paid</span>'}
       </div>
@@ -9921,18 +9888,23 @@ async function renderBinView() {
   var el = document.getElementById('binContent');
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--textm);">Memuatkan...</div>';
-  var deleted = [];
+
+  var deleted = [], deletedDocs = [];
   try {
-    deleted = await supaGet('orders', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200');
+    [deleted, deletedDocs] = await Promise.all([
+      supaGet('orders', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200'),
+      supaGet('documents', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200'),
+    ]);
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);">Gagal memuatkan data Bin.</div>';
     return;
   }
-  if (!deleted || !deleted.length) {
-    el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">Tong Sampah</div><div style="text-align:center;padding:60px;color:var(--textm);">Bin kosong</div>';
-    return;
-  }
-  var rows = deleted.map(function(o) {
+
+  deleted = deleted || [];
+  deletedDocs = deletedDocs || [];
+
+  // Build orders table
+  const orderRows = deleted.map(function(o) {
     var delDate = o.deleted_at ? new Date(o.deleted_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
     var safeId = (o.id||'').replace(/'/g, "\\'");
     return '<tr style="border-bottom:1px solid var(--line);">'
@@ -9944,25 +9916,70 @@ async function renderBinView() {
       + '<td style="padding:8px 10px;font-size:11px;color:var(--red);">' + (o.deleted_by||'-') + '</td>'
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + delDate + '</td>'
       + '<td style="padding:8px 10px;text-align:center;white-space:nowrap;">'
-        + '<button onclick="window.recoverOrder(' + "'" + safeId + "'" + ')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
-        + ' <button onclick="window.purgeBinOrder(' + "'" + safeId + "'" + ')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
+        + '<button onclick="window.recoverOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
+        + ' <button onclick="window.purgeBinOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
       + '</td>'
       + '</tr>';
   }).join('');
-  el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">Tong Sampah</div>'
-    + '<div style="font-size:12px;color:var(--textm);margin-bottom:16px;">' + deleted.length + ' order dipadam. Admin sahaja boleh recover atau purge kekal.</div>'
-    + '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">'
-    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
-    + '<thead><tr style="background:var(--bg3);">'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">PIC</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Customer</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Bulan</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
-    + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+
+  // Build documents table
+  const docRows = deletedDocs.map(function(doc) {
+    var delDate = doc.deleted_at ? new Date(doc.deleted_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    var genDate = doc.generated_at ? new Date(doc.generated_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    var info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
+    var safeId = (doc.id||'').replace(/'/g, "\\'");
+    var safeType = (doc.doc_type||'').replace(/'/g, "\\'");
+    return '<tr style="border-bottom:1px solid var(--line);">'
+      + '<td style="padding:8px 10px;font-size:14px;">' + info.icon + '</td>'
+      + '<td style="padding:8px 10px;font-size:12px;color:var(--text);">' + info.label + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (doc.notes||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">' + (doc.generated_by||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + genDate + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--red);">' + (doc.deleted_by||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + delDate + '</td>'
+      + '<td style="padding:8px 10px;text-align:center;white-space:nowrap;">'
+        + '<button onclick="window.openBinDoc(\'' + safeId + '\',\'' + safeType + '\')" style="font-size:10px;padding:4px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;">Buka</button>'
+        + ' <button onclick="window.recoverDoc(\'' + safeId + '\')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
+        + ' <button onclick="window.purgeDoc(\'' + safeId + '\')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+
+  el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;">🗑 Tong Sampah</div>'
+
+    // ORDERS section
+    + '<div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:8px;">📋 Order (' + deleted.length + ')</div>'
+    + (deleted.length ? (
+        '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px;">'
+        + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        + '<thead><tr style="background:var(--bg3);">'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">PIC</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Customer</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Bulan</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+        + '</tr></thead><tbody>' + orderRows + '</tbody></table></div></div>'
+      ) : '<div style="font-size:12px;color:var(--textm);margin-bottom:20px;padding:16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center;">Tiada order dalam Bin</div>')
+
+    // DOCUMENTS section
+    + '<div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:8px;">📄 Dokumen (' + deletedDocs.length + ')</div>'
+    + (deletedDocs.length ? (
+        '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">'
+        + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        + '<thead><tr style="background:var(--bg3);">'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Jenis</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Label</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Job Name</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dijana Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Jana</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+        + '</tr></thead><tbody>' + docRows + '</tbody></table></div></div>'
+      ) : '<div style="font-size:12px;color:var(--textm);padding:16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center;">Tiada dokumen dalam Bin</div>');
 }
 
 async function recoverOrder(orderId) {
@@ -9993,6 +10010,54 @@ async function purgeBinOrder(orderId) {
   }
 }
 window.purgeBinOrder = purgeBinOrder;
+
+async function openBinDoc(docId, docType) {
+  try {
+    const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
+    if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
+    const payload = rows[0].snapshot;
+    if (docType && docType.startsWith('jobsheet')) {
+      const encoded = encodeURIComponent(JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=' + encoded, '_blank');
+    } else {
+      localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+      window.open('dod-document-generator.html', '_blank');
+    }
+  } catch(e) {
+    showToast('Gagal buka dokumen: ' + e.message, true);
+  }
+}
+window.openBinDoc = openBinDoc;
+
+async function recoverDoc(docId) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Pulihkan dokumen ini?')) return;
+  try {
+    await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_deleted: false, deleted_at: null, deleted_by: null }),
+    });
+    showToast('Dokumen berjaya dipulihkan ✓');
+    renderBinView();
+  } catch(e) {
+    showToast('Gagal pulihkan dokumen.', true);
+  }
+}
+window.recoverDoc = recoverDoc;
+
+async function purgeDoc(docId) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Padam KEKAL dokumen ini? Tidak boleh dibatalkan.')) return;
+  if (!confirm('Confirm sekali lagi - PADAM KEKAL?')) return;
+  try {
+    await supaDelete('documents', 'id=eq.' + encodeURIComponent(docId));
+    showToast('Dokumen dipadam kekal.');
+    renderBinView();
+  } catch(e) {
+    showToast('Gagal padam kekal.', true);
+  }
+}
+window.purgeDoc = purgeDoc;
 
 
 
@@ -10067,26 +10132,26 @@ function renderPaymentRecords() {
   wrap.innerHTML = paymentRecords.map((rec, i) => `
     <div style="display:grid;grid-template-columns:80px 90px 100px 110px 80px 1fr 28px;gap:5px;align-items:center;background:${rec.type==='balance'?'var(--greenbg)':'var(--bluebg)'};border:1px solid ${rec.type==='balance'?'var(--greenb)':'var(--blueb)'};border-radius:7px;padding:7px 10px;">
       <select onchange="updatePaymentField('${rec.id}','type',this.value)"
-        style="font-family:'Fira Code',monospace;font-size:10px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;color:${rec.type==='balance'?'var(--green)':'var(--blue)'};">
+        style="font-family:'Fira Code',monospace;font-size:10px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:#fff;cursor:pointer;color:${rec.type==='balance'?'var(--green)':'var(--blue)'};">
         <option value="deposit" ${rec.type==='deposit'?'selected':''}>Deposit</option>
         <option value="balance" ${rec.type==='balance'?'selected':''}>Balance</option>
       </select>
       <input type="number" value="${rec.amount||''}" placeholder="0.00" min="0" step="0.01"
         onchange="updatePaymentField('${rec.id}','amount',this.value)"
-        style="font-family:'Fira Code',monospace;font-size:11px;font-weight:600;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);width:100%;">
+        style="font-family:'Fira Code',monospace;font-size:11px;font-weight:600;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:#fff;width:100%;">
       <select onchange="updatePaymentField('${rec.id}','method',this.value)"
-        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;">
+        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:#fff;cursor:pointer;">
         ${PAY_METHODS.map(m=>`<option value="${m}" ${rec.method===m?'selected':''}>${m}</option>`).join('')}
       </select>
       <input type="date" value="${rec.date||''}"
         onchange="updatePaymentField('${rec.id}','date',this.value)"
-        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);width:100%;">
+        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:#fff;width:100%;">
       <input type="time" value="${rec.time||''}"
         onchange="updatePaymentField('${rec.id}','time',this.value)"
-        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);width:100%;">
+        style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:#fff;width:100%;">
       <input type="text" value="${rec.ref||''}" placeholder="No. Ref / Nota"
         onchange="updatePaymentField('${rec.id}','ref',this.value)"
-        style="font-size:11px;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:var(--bg2);width:100%;">
+        style="font-size:11px;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:#fff;width:100%;">
       <button type="button" onclick="removePaymentRecord('${rec.id}')"
         style="background:var(--redbg);border:1px solid var(--redb);color:var(--red);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:12px;flex-shrink:0;">✕</button>
     </div>
@@ -10971,7 +11036,7 @@ function renderControlPanel(tab) {
 }
 
 function cpCard(title, subtitle, body) {
-  return `<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;">
+  return `<div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;">
     <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:${subtitle?'2px':'12px'};">${title}</div>
     ${subtitle?`<div style="font-size:11px;color:var(--textm);margin-bottom:12px;">${subtitle}</div>`:''}
     ${body}
@@ -11359,7 +11424,7 @@ function renderSalesKitPage() {
 
     <!-- Add/Edit Modal -->
     <div id="skModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-      <div style="background:var(--bg2);border-radius:14px;padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+      <div style="background:#fff;border-radius:14px;padding:24px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;" id="skModalTitle">Tambah Post Baru</div>
         
         <div style="margin-bottom:12px;">
@@ -11417,7 +11482,7 @@ function renderSalesKitFeed() {
 
     const mediaHtml = renderSkMedia(p);
 
-    return `<div id="skpost_${p.id}" style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;${p.pinned ? 'border-left:3px solid var(--blue);' : ''}">
+    return `<div id="skpost_${p.id}" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:14px;${p.pinned ? 'border-left:3px solid var(--blue);' : ''}">
       <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;">
         <div style="flex:1;">
@@ -12557,11 +12622,13 @@ window.filterProdTrackBySupplier = filterProdTrackBySupplier;
 // ======================================
 
 const DOC_TYPE_LABEL = {
-  invoice:   { icon: '🧾', label: 'Invoice' },
-  quotation: { icon: '📋', label: 'Quotation' },
-  receipt:   { icon: '✅', label: 'Receipt' },
-  po:        { icon: '📦', label: 'PO Supplier' },
-  reminder:  { icon: '📝', label: 'Reminder Letter' },
+  invoice:           { icon: '🧾', label: 'Invoice' },
+  quotation:         { icon: '📋', label: 'Quotation' },
+  receipt:           { icon: '✅', label: 'Receipt' },
+  po:                { icon: '📦', label: 'PO Supplier' },
+  reminder:          { icon: '📝', label: 'Reminder Letter' },
+  jobsheet_general:  { icon: '🏭', label: 'Jobsheet · General' },
+  jobsheet_brothers: { icon: '🏭', label: 'Jobsheet · Brothers' },
 };
 
 async function saveDocSnapshot(order, docType, payload) {
@@ -12574,12 +12641,12 @@ async function saveDocSnapshot(order, docType, payload) {
       generated_at: new Date().toISOString(),
       snapshot:     payload,
       notes:        order.name_job || '',
+      is_deleted:   false,
     };
     await supaFetch('/rest/v1/documents', {
       method: 'POST',
       body: JSON.stringify(snap),
     });
-    // Reload saved docs list if panel still open
     if (currentDetailRow?.id === order.id) {
       loadSavedDocs(order.id);
     }
@@ -12593,7 +12660,7 @@ async function loadSavedDocs(orderId) {
   if (!el) return;
   try {
     const rows = await supaGet('documents',
-      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes&order_id=eq.${encodeURIComponent(orderId)}&order=generated_at.desc`
+      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes,is_deleted&order_id=eq.${encodeURIComponent(orderId)}&is_deleted=not.is.true&order=generated_at.desc`
     );
     if (!rows || !rows.length) {
       el.innerHTML = '<div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Tiada dokumen tersimpan lagi</div>';
@@ -12608,7 +12675,8 @@ async function loadSavedDocs(orderId) {
           <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
           <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
         </div>
-        <button onclick="openSavedDoc('${doc.id}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
+        <button onclick="openSavedDoc('${doc.id}','${doc.doc_type}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
+        <button onclick="softDeleteDoc('${doc.id}')" title="Buang ke Bin" style="font-size:12px;padding:3px 7px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">🗑</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -12616,15 +12684,36 @@ async function loadSavedDocs(orderId) {
   }
 }
 
-async function openSavedDoc(docId) {
+async function softDeleteDoc(docId) {
+  if (!confirm('Buang dokumen ini ke Bin?')) return;
+  if (!confirm('Dokumen boleh dipulihkan dari Bin. Teruskan?')) return;
+  try {
+    const now = new Date().toISOString();
+    const who = currentUser?.name || 'unknown';
+    await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_deleted: true, deleted_at: now, deleted_by: who }),
+    });
+    showToast('Dokumen dibuang ke Bin ✓');
+    if (currentDetailRow) loadSavedDocs(currentDetailRow.id);
+  } catch(e) {
+    showToast('Gagal buang dokumen: ' + e.message, true);
+  }
+}
+
+async function openSavedDoc(docId, docType) {
   try {
     const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
     if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
     const doc = rows[0];
-    // Load snapshot payload - use the saved data, NOT current order data
     const payload = doc.snapshot;
-    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
-    window.open('dod-document-generator.html', '_blank');
+    if (docType && docType.startsWith('jobsheet')) {
+      const encoded = encodeURIComponent(JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=' + encoded, '_blank');
+    } else {
+      localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+      window.open('dod-document-generator.html', '_blank');
+    }
   } catch(e) {
     showToast('Gagal buka dokumen: ' + e.message, true);
   }
@@ -12633,6 +12722,22 @@ async function openSavedDoc(docId) {
 window.loadSavedDocs = loadSavedDocs;
 window.openSavedDoc = openSavedDoc;
 window.saveDocSnapshot = saveDocSnapshot;
+window.softDeleteDoc = softDeleteDoc;
+
+function openJobsheetFromOrder(orderId) {
+  const found = findRowById(orderId);
+  if (!found) { showToast('Order tidak dijumpai', true); return; }
+  const r = found.row;
+  const params = new URLSearchParams({
+    order_id:     r.id,
+    job_name:     r.name_job              || '',
+    kain_type:    r.kain_type             || '',
+    order_date:   r.date_submit_kilang    || '',
+    collect_date: r.production_date       || '',
+  });
+  window.open('dod-jobsheet.html?' + params.toString(), 'dod_jobsheet_' + r.id);
+}
+window.openJobsheetFromOrder = openJobsheetFromOrder;
 
 
 // Komisyen tiered untuk Sales Executive (Danial & role sales_executive)
