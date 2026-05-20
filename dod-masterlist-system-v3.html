@@ -1295,6 +1295,12 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-badge" style="background:var(--tealbg);color:var(--teal);">↗</span>
   </button>
 
+  <button class="sb-item" id="sbJobsheet" data-tip="Jobsheet Kilang" onclick="window.open('dod-jobsheet.html','dod_jobsheet')" style="display:none;">
+    <span class="sb-item-icon">🏭</span>
+    <span class="sb-item-label">Jobsheet</span>
+    <span class="sb-item-badge" style="background:var(--orangebg);color:var(--orange);">↗</span>
+  </button>
+
   <!-- ══ BAHAGIAN 2: OPERASI ══ -->
   <div class="sb-divider"></div>
   <div class="sb-section">Operasi</div>
@@ -3362,7 +3368,7 @@ async function supaUpsert(table, data) {
       'luar_paid','total_supplier','total_customer','first_payment',
       'balance_customer','supplier_outstanding','profit',
       'cust_name','cust_tel','cust_email','cust_addr',
-      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','pending_note','prod_archived',
+      'product_type','sizes','color_main','design_notes','board_col','items','supplier_name','production_date','production_status','cust_notes','pipeline_status','pending_note','prod_archived','date_submit_kilang',
       'pay1_date','pay1_time','pay1_method','pay1_ref',
       'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
       'payments',
@@ -3373,7 +3379,7 @@ async function supaUpsert(table, data) {
       ALLOWED.forEach(k => {
         let v = o[k];
         // Clean empty dates to null
-        if (['order_date','inv_date','due_date','production_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
+        if (['order_date','inv_date','due_date','production_date','date_submit_kilang'].includes(k) && (!v || v === '' || v === 'null')) v = null;
         if (k === 'production_status' && !v) v = 'job-submit';
         r[k] = v !== undefined ? v : null;
       });
@@ -3730,6 +3736,7 @@ function setupNavForRole() {
     sbShow('sbJobBoard');
     sbShow('sbSupplierOS');
     sbShow('sbDocGen');
+    sbShow('sbJobsheet');
     sbShow('sbUserMgmt');
     sbShow('sbSecurity');
     sbShow('sbBin');
@@ -3752,6 +3759,7 @@ function setupNavForRole() {
     sbShow('sbProdTrack');
     sbShow('sbJobBoard');
     sbShow('sbDocGen');
+    sbShow('sbJobsheet');
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
@@ -3771,6 +3779,7 @@ function setupNavForRole() {
     sbHide('sbMasterlist');
     sbShow('sbJobBoard');
     sbShow('sbDocGen');
+    sbHide('sbJobsheet');
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
@@ -4464,6 +4473,9 @@ function showDetail(id) {
       <button class="dp-doc-btn" onclick="openDoc('quotation')">📋 Quotation</button>
       <button class="dp-doc-btn" onclick="openDoc('receipt')">✅ Receipt</button>
       ${isAdmin?`<button class="dp-doc-btn" onclick="openDoc('po')">📦 PO Supplier</button>`:''}
+    </div>
+    <div style="margin-top:8px;">
+      <button onclick="openJobsheetFromOrder('${r.id}')" style="width:100%;padding:9px 14px;background:var(--orangebg);color:var(--orange);border:1px solid var(--orangeb);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s;">🏭 Jana Jobsheet</button>
     </div>
 
     <div style="margin-top:16px;">
@@ -8957,7 +8969,7 @@ function renderProdCard(o) {
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
         <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap;justify-content:flex-end;">
           ${dueDate?`<span style="background:${diffDue!==null&&diffDue<0?'var(--redbg)':'var(--bg3)'};border:1px solid ${diffDue!==null&&diffDue<0?'var(--redb)':'var(--line)'};padding:3px 8px;border-radius:5px;color:${diffDue!==null&&diffDue<0?'var(--red)':'var(--textd)'};">📅 Due: ${o.due_date}</span>`:''}
-          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textd);">🏭 Prod: ${o.production_date}</span>`:''}
+          ${prodDate?`<span style="background:var(--bg3);border:1px solid var(--line);padding:3px 8px;border-radius:5px;color:var(--textd);">🏭 Prod: ${o.production_date}</span>`:''}\n          ${o.date_submit_kilang?`<span style="background:var(--teal)22;border:1px solid var(--teal)66;padding:3px 8px;border-radius:5px;color:var(--teal);">📤 Submit: ${o.date_submit_kilang}</span>`:''}
         </div>
         ${hasOS?`<span style="font-size:11px;font-weight:600;color:var(--red);background:var(--redbg);border:1px solid var(--redb);padding:3px 8px;border-radius:5px;">💰 OS: ${fmt(balance)}</span>`:'<span style="font-size:11px;color:var(--green);background:var(--greenbg);border:1px solid var(--greenb);padding:3px 8px;border-radius:5px;">✓ Paid</span>'}
       </div>
@@ -9876,18 +9888,23 @@ async function renderBinView() {
   var el = document.getElementById('binContent');
   if (!el) return;
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--textm);">Memuatkan...</div>';
-  var deleted = [];
+
+  var deleted = [], deletedDocs = [];
   try {
-    deleted = await supaGet('orders', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200');
+    [deleted, deletedDocs] = await Promise.all([
+      supaGet('orders', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200'),
+      supaGet('documents', 'select=*&is_deleted=eq.true&order=deleted_at.desc&limit=200'),
+    ]);
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);">Gagal memuatkan data Bin.</div>';
     return;
   }
-  if (!deleted || !deleted.length) {
-    el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">Tong Sampah</div><div style="text-align:center;padding:60px;color:var(--textm);">Bin kosong</div>';
-    return;
-  }
-  var rows = deleted.map(function(o) {
+
+  deleted = deleted || [];
+  deletedDocs = deletedDocs || [];
+
+  // Build orders table
+  const orderRows = deleted.map(function(o) {
     var delDate = o.deleted_at ? new Date(o.deleted_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
     var safeId = (o.id||'').replace(/'/g, "\\'");
     return '<tr style="border-bottom:1px solid var(--line);">'
@@ -9899,25 +9916,70 @@ async function renderBinView() {
       + '<td style="padding:8px 10px;font-size:11px;color:var(--red);">' + (o.deleted_by||'-') + '</td>'
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + delDate + '</td>'
       + '<td style="padding:8px 10px;text-align:center;white-space:nowrap;">'
-        + '<button onclick="window.recoverOrder(' + "'" + safeId + "'" + ')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
-        + ' <button onclick="window.purgeBinOrder(' + "'" + safeId + "'" + ')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
+        + '<button onclick="window.recoverOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
+        + ' <button onclick="window.purgeBinOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
       + '</td>'
       + '</tr>';
   }).join('');
-  el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">Tong Sampah</div>'
-    + '<div style="font-size:12px;color:var(--textm);margin-bottom:16px;">' + deleted.length + ' order dipadam. Admin sahaja boleh recover atau purge kekal.</div>'
-    + '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">'
-    + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
-    + '<thead><tr style="background:var(--bg3);">'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">PIC</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Customer</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Bulan</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
-    + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
-    + '</tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+
+  // Build documents table
+  const docRows = deletedDocs.map(function(doc) {
+    var delDate = doc.deleted_at ? new Date(doc.deleted_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    var genDate = doc.generated_at ? new Date(doc.generated_at).toLocaleString('ms-MY', {timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-';
+    var info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
+    var safeId = (doc.id||'').replace(/'/g, "\\'");
+    var safeType = (doc.doc_type||'').replace(/'/g, "\\'");
+    return '<tr style="border-bottom:1px solid var(--line);">'
+      + '<td style="padding:8px 10px;font-size:14px;">' + info.icon + '</td>'
+      + '<td style="padding:8px 10px;font-size:12px;color:var(--text);">' + info.label + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (doc.notes||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">' + (doc.generated_by||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + genDate + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--red);">' + (doc.deleted_by||'-') + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + delDate + '</td>'
+      + '<td style="padding:8px 10px;text-align:center;white-space:nowrap;">'
+        + '<button onclick="window.openBinDoc(\'' + safeId + '\',\'' + safeType + '\')" style="font-size:10px;padding:4px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;">Buka</button>'
+        + ' <button onclick="window.recoverDoc(\'' + safeId + '\')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
+        + ' <button onclick="window.purgeDoc(\'' + safeId + '\')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
+      + '</td>'
+      + '</tr>';
+  }).join('');
+
+  el.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:16px;">🗑 Tong Sampah</div>'
+
+    // ORDERS section
+    + '<div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:8px;">📋 Order (' + deleted.length + ')</div>'
+    + (deleted.length ? (
+        '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px;">'
+        + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        + '<thead><tr style="background:var(--bg3);">'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:left;">Nama Job</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">PIC</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Customer</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:right;">Nilai</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Bulan</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+        + '</tr></thead><tbody>' + orderRows + '</tbody></table></div></div>'
+      ) : '<div style="font-size:12px;color:var(--textm);margin-bottom:20px;padding:16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center;">Tiada order dalam Bin</div>')
+
+    // DOCUMENTS section
+    + '<div style="font-size:13px;font-weight:700;color:var(--textd);margin-bottom:8px;">📄 Dokumen (' + deletedDocs.length + ')</div>'
+    + (deletedDocs.length ? (
+        '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">'
+        + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        + '<thead><tr style="background:var(--bg3);">'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Jenis</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Label</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Job Name</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dijana Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Jana</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
+        + '</tr></thead><tbody>' + docRows + '</tbody></table></div></div>'
+      ) : '<div style="font-size:12px;color:var(--textm);padding:16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center;">Tiada dokumen dalam Bin</div>');
 }
 
 async function recoverOrder(orderId) {
@@ -9948,6 +10010,54 @@ async function purgeBinOrder(orderId) {
   }
 }
 window.purgeBinOrder = purgeBinOrder;
+
+async function openBinDoc(docId, docType) {
+  try {
+    const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
+    if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
+    const payload = rows[0].snapshot;
+    if (docType && docType.startsWith('jobsheet')) {
+      sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=1', '_blank');
+    } else {
+      localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+      window.open('dod-document-generator.html', '_blank');
+    }
+  } catch(e) {
+    showToast('Gagal buka dokumen: ' + e.message, true);
+  }
+}
+window.openBinDoc = openBinDoc;
+
+async function recoverDoc(docId) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Pulihkan dokumen ini?')) return;
+  try {
+    await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_deleted: false, deleted_at: null, deleted_by: null }),
+    });
+    showToast('Dokumen berjaya dipulihkan ✓');
+    renderBinView();
+  } catch(e) {
+    showToast('Gagal pulihkan dokumen.', true);
+  }
+}
+window.recoverDoc = recoverDoc;
+
+async function purgeDoc(docId) {
+  if (!currentUser || currentUser.role !== 'admin') { showToast('Akses ditolak', true); return; }
+  if (!confirm('Padam KEKAL dokumen ini? Tidak boleh dibatalkan.')) return;
+  if (!confirm('Confirm sekali lagi - PADAM KEKAL?')) return;
+  try {
+    await supaDelete('documents', 'id=eq.' + encodeURIComponent(docId));
+    showToast('Dokumen dipadam kekal.');
+    renderBinView();
+  } catch(e) {
+    showToast('Gagal padam kekal.', true);
+  }
+}
+window.purgeDoc = purgeDoc;
 
 
 
@@ -12512,11 +12622,13 @@ window.filterProdTrackBySupplier = filterProdTrackBySupplier;
 // ======================================
 
 const DOC_TYPE_LABEL = {
-  invoice:   { icon: '🧾', label: 'Invoice' },
-  quotation: { icon: '📋', label: 'Quotation' },
-  receipt:   { icon: '✅', label: 'Receipt' },
-  po:        { icon: '📦', label: 'PO Supplier' },
-  reminder:  { icon: '📝', label: 'Reminder Letter' },
+  invoice:           { icon: '🧾', label: 'Invoice' },
+  quotation:         { icon: '📋', label: 'Quotation' },
+  receipt:           { icon: '✅', label: 'Receipt' },
+  po:                { icon: '📦', label: 'PO Supplier' },
+  reminder:          { icon: '📝', label: 'Reminder Letter' },
+  jobsheet_general:  { icon: '🏭', label: 'Jobsheet · General' },
+  jobsheet_brothers: { icon: '🏭', label: 'Jobsheet · Brothers' },
 };
 
 async function saveDocSnapshot(order, docType, payload) {
@@ -12529,12 +12641,12 @@ async function saveDocSnapshot(order, docType, payload) {
       generated_at: new Date().toISOString(),
       snapshot:     payload,
       notes:        order.name_job || '',
+      is_deleted:   false,
     };
     await supaFetch('/rest/v1/documents', {
       method: 'POST',
       body: JSON.stringify(snap),
     });
-    // Reload saved docs list if panel still open
     if (currentDetailRow?.id === order.id) {
       loadSavedDocs(order.id);
     }
@@ -12548,7 +12660,7 @@ async function loadSavedDocs(orderId) {
   if (!el) return;
   try {
     const rows = await supaGet('documents',
-      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes&order_id=eq.${encodeURIComponent(orderId)}&order=generated_at.desc`
+      `select=id,doc_type,inv_number,generated_by,generated_at,snapshot,notes,is_deleted&order_id=eq.${encodeURIComponent(orderId)}&is_deleted=not.is.true&order=generated_at.desc`
     );
     if (!rows || !rows.length) {
       el.innerHTML = '<div style="font-size:11px;color:var(--textm);text-align:center;padding:8px;">Tiada dokumen tersimpan lagi</div>';
@@ -12563,7 +12675,8 @@ async function loadSavedDocs(orderId) {
           <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
           <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
         </div>
-        <button onclick="openSavedDoc('${doc.id}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
+        <button onclick="openSavedDoc('${doc.id}','${doc.doc_type}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
+        <button onclick="softDeleteDoc('${doc.id}')" title="Buang ke Bin" style="font-size:12px;padding:3px 7px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">🗑</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -12571,15 +12684,36 @@ async function loadSavedDocs(orderId) {
   }
 }
 
-async function openSavedDoc(docId) {
+async function softDeleteDoc(docId) {
+  if (!confirm('Buang dokumen ini ke Bin?')) return;
+  if (!confirm('Dokumen boleh dipulihkan dari Bin. Teruskan?')) return;
+  try {
+    const now = new Date().toISOString();
+    const who = currentUser?.name || 'unknown';
+    await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_deleted: true, deleted_at: now, deleted_by: who }),
+    });
+    showToast('Dokumen dibuang ke Bin ✓');
+    if (currentDetailRow) loadSavedDocs(currentDetailRow.id);
+  } catch(e) {
+    showToast('Gagal buang dokumen: ' + e.message, true);
+  }
+}
+
+async function openSavedDoc(docId, docType) {
   try {
     const rows = await supaGet('documents', `select=*&id=eq.${encodeURIComponent(docId)}`);
     if (!rows || !rows.length) { showToast('Dokumen tidak dijumpai', true); return; }
     const doc = rows[0];
-    // Load snapshot payload - use the saved data, NOT current order data
     const payload = doc.snapshot;
-    localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
-    window.open('dod-document-generator.html', '_blank');
+    if (docType && docType.startsWith('jobsheet')) {
+      sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
+      window.open('dod-jobsheet.html?view=1', '_blank');
+    } else {
+      localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+      window.open('dod-document-generator.html', '_blank');
+    }
   } catch(e) {
     showToast('Gagal buka dokumen: ' + e.message, true);
   }
@@ -12588,6 +12722,22 @@ async function openSavedDoc(docId) {
 window.loadSavedDocs = loadSavedDocs;
 window.openSavedDoc = openSavedDoc;
 window.saveDocSnapshot = saveDocSnapshot;
+window.softDeleteDoc = softDeleteDoc;
+
+function openJobsheetFromOrder(orderId) {
+  const found = findRowById(orderId);
+  if (!found) { showToast('Order tidak dijumpai', true); return; }
+  const r = found.row;
+  const params = new URLSearchParams({
+    order_id:     r.id,
+    job_name:     r.name_job              || '',
+    kain_type:    r.kain_type             || '',
+    order_date:   r.date_submit_kilang    || '',
+    collect_date: r.production_date       || '',
+  });
+  window.open('dod-jobsheet.html?' + params.toString(), 'dod_jobsheet_' + r.id);
+}
+window.openJobsheetFromOrder = openJobsheetFromOrder;
 
 
 // Komisyen tiered untuk Sales Executive (Danial & role sales_executive)
