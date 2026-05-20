@@ -802,18 +802,39 @@ function checkViewMode() {
 }
 
 function renderViewMode(payload) {
-  const pages = Array.isArray(payload.jobsheets)
-    ? payload.jobsheets.map(js => buildPage(js, payload.shared))
-    : [buildPage(payload, { jobName: payload.jobName||'', custName: payload.custName||'—', kainType: payload.kainType||'', orderDateFmt: payload.orderDateFmt||'', collectDateFmt: payload.collectDateFmt||'', remark: payload.remark||'', neckReady: payload.neckReady||false, neckSubli: payload.neckSubli||false, printers: payload.printers||[] })];
+  try {
+    let pages = [];
+    const shared = payload.shared || {
+      jobName:        payload.jobName        || '',
+      custName:       payload.custName       || '—',
+      kainType:       payload.kainType       || '',
+      orderDateFmt:   payload.orderDateFmt   || '',
+      collectDateFmt: payload.collectDateFmt || '',
+      remark:         payload.remark         || '',
+      neckReady:      payload.neckReady      || false,
+      neckSubli:      payload.neckSubli      || false,
+      printers:       payload.printers       || [],
+    };
 
-  const win = window.open('', '_blank');
-  if (!win) {
-    // fallback: inject into current page
-    document.body.innerHTML = buildPrintDoc(payload.jobName||'Jobsheet', pages);
-    return;
+    if (payload.jobsheets && Array.isArray(payload.jobsheets)) {
+      pages = payload.jobsheets.map(js => buildGeneralPage(js, shared));
+    } else {
+      pages = [buildGeneralPage(payload, shared)];
+    }
+
+    const jobName = shared.jobName || 'Jobsheet';
+    const html = buildPrintDoc(jobName, pages);
+
+    // Replace entire page content with print view
+    document.open();
+    document.write(html);
+    document.close();
+  } catch(e) {
+    console.error('renderViewMode error:', e);
+    document.body.innerHTML = `<div style="padding:20px;color:red;font-family:sans-serif;">
+      <h3>Gagal render jobsheet</h3><pre>${e.message}</pre>
+    </div>`;
   }
-  win.document.write(buildPrintDoc(payload.jobName||'Jobsheet', pages));
-  win.document.close();
 }
 
 // ══════════════════════════════════════
