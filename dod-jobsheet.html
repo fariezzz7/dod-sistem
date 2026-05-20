@@ -230,21 +230,22 @@ function autoFillFromParams() {
   if (collectDate) document.getElementById('fCollectDate').value= collectDate;
   if (jobName)     document.getElementById('orderSearch').value = jobName;
   if (orderId) {
-    const tryFill = (n) => {
-      const m = allOrders.find(o => o.id === orderId);
-      if (m) {
-        if (!jobName && m.name_job) {
-          document.getElementById('fJobName').value = m.name_job;
-          document.getElementById('orderSearch').value = m.name_job;
-        }
-        if (!kainType && m.kain_type) document.getElementById('fKainType').value = m.kain_type;
-        if (!orderDate && m.date_submit_kilang) document.getElementById('fOrderDate').value = m.date_submit_kilang;
-        if (!collectDate && m.production_date) document.getElementById('fCollectDate').value = m.production_date;
-        const js = jobsheets[activeJsIdx];
-        if (js && m.product_type) { js.productType = m.product_type; renderActiveJobsheet(); }
-      } else if (n > 0) setTimeout(() => tryFill(n-1), 500);
-    };
-    setTimeout(() => tryFill(8), 400);
+    // Fetch order directly from Supabase
+    fetch(`${SUPA_URL}/rest/v1/orders?select=id,name_job,kain_type,product_type,date_submit_kilang,production_date&id=eq.${encodeURIComponent(orderId)}&limit=1`,
+      {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}})
+    .then(r=>r.json()).then(rows=>{
+      if(!Array.isArray(rows)||!rows.length) return;
+      const m=rows[0];
+      if(!jobName && m.name_job){
+        document.getElementById('fJobName').value=m.name_job;
+        document.getElementById('orderSearch').value=m.name_job;
+      }
+      if(!kainType && m.kain_type) document.getElementById('fKainType').value=m.kain_type;
+      if(!orderDate && m.date_submit_kilang) document.getElementById('fOrderDate').value=m.date_submit_kilang;
+      if(!collectDate && m.production_date) document.getElementById('fCollectDate').value=m.production_date;
+      const js=jobsheets[activeJsIdx];
+      if(js && m.product_type){js.productType=m.product_type;renderActiveJobsheet();}
+    }).catch(e=>console.warn('autoFill fetch failed',e));
   }
 }
 
@@ -255,10 +256,11 @@ function setDefaultDate(){
 
 async function loadOrders(){
   try{
-    const res=await fetch(`${SUPA_URL}/rest/v1/orders?select=id,name_job,inv_number,order_date,pcs,sizes,product_type,kain_type,ada_nama,cust_name&is_deleted=not.is.true&order=order_date.desc&limit=300`,
+    const res=await fetch(`${SUPA_URL}/rest/v1/orders?select=id,name_job,inv_number,order_date,pcs,sizes,product_type,kain_type,ada_nama,cust_name,date_submit_kilang,production_date&is_deleted=not.is.true&order=order_date.desc&limit=300`,
       {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
-    allOrders=await res.json();
-  }catch(e){console.warn('loadOrders failed',e);}
+    const data=await res.json();
+    allOrders=Array.isArray(data)?data:[];
+  }catch(e){allOrders=[];console.warn('loadOrders failed',e);}
 }
 
 async function loadSuppliers(){
