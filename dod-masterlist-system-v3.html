@@ -8046,6 +8046,7 @@ function renderSupplierDir(filterMonth) {
               ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="event.stopPropagation();copySupplierPortalLink('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;color:var(--blue);font-weight:600;">🔗 Portal Link</button>
               <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
               <button onclick="event.stopPropagation();deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:4px 9px;background:var(--redbg);border:1px solid var(--redb);border-radius:5px;cursor:pointer;color:var(--red);">🗑</button>
             </div>
@@ -8309,6 +8310,7 @@ async function loadSuppliers() {
         addr:    r.addr || '',
         bank:    [{ bank: r.bank_name||'', acc: r.bank_acc||'', holder: r.bank_holder||'' }],
         products: Array.isArray(r.products) ? r.products : (r.products ? JSON.parse(r.products) : []),
+        portal_key: r.portal_key || '',
       }));
       localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
       refreshSupplierDatalist();
@@ -8342,6 +8344,7 @@ async function saveSuppliers() {
     bank_acc:     s.bank[0]?.acc || '',
     bank_holder:  s.bank[0]?.holder || '',
     products:     s.products || [],
+    portal_key:   s.portal_key || '',
     updated_at:   new Date().toISOString(),
   }));
   try {
@@ -8353,6 +8356,30 @@ async function saveSuppliers() {
   } catch(e) {
     console.warn('Suppliers sync failed:', e);
     showToast('⚠ Gagal sync supplier ke server', true);
+  }
+}
+
+function generatePortalKey() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let key = '';
+  for (let i = 0; i < 12; i++) key += chars[Math.floor(Math.random() * chars.length)];
+  return key;
+}
+
+async function copySupplierPortalLink(supId) {
+  const s = SUPPLIERS.find(x => x.id === supId);
+  if (!s) return;
+  if (!s.portal_key) {
+    s.portal_key = generatePortalKey();
+    await saveSuppliers();
+  }
+  const base = window.location.href.replace(/\/[^/]*$/, '/');
+  const url = `${base}dod-supplier-portal.html?key=${s.portal_key}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast(`✅ Link portal ${s.short} disalin! Hantar kepada kilang.`);
+  } catch(e) {
+    prompt('Copy link portal kilang ini:', url);
   }
 }
 
@@ -8647,8 +8674,8 @@ function renderProdTrack() {
   const completeOrders = allOrders.filter(o => o.production_status === 'complete');
 
   const today = getMYTToday();
-  const overdue   = activeOrders.filter(o => o.due_date && new Date(o.due_date) < today);
-  const dueSoon   = activeOrders.filter(o => { if (!o.due_date) return false; const d=(new Date(o.due_date)-today)/86400000; return d>=0&&d<=3; });
+  const overdue   = activeOrders.filter(o => o.production_date && new Date(o.production_date) < today);
+  const dueSoon   = activeOrders.filter(o => { if (!o.production_date) return false; const d=(new Date(o.production_date)-today)/86400000; return d>=0&&d<=3; });
   const pendingK  = activeOrders.filter(o => (o.production_status||'job-submit')==='job-submit' && !!o.pending_note);
   const readyJ    = activeOrders.filter(o => o.production_status==='ready');
   const pendingPay= activeOrders.filter(o => o.production_status==='ready' && (o.balance_customer||0)>0);
@@ -8763,17 +8790,17 @@ function renderProdKanban(allOrders, autoFilter) {
     let cards = filtered.filter(o => col.match(o));
 
     // Apply overdue/duesoon filter to all cols
-    if (autoFilter === 'overdue') cards = cards.filter(o => o.due_date && new Date(o.due_date) < today);
+    if (autoFilter === 'overdue') cards = cards.filter(o => o.production_date && new Date(o.production_date) < today);
     if (autoFilter === 'duesoon') cards = cards.filter(o => {
-      if (!o.due_date) return false;
-      const d = (new Date(o.due_date) - today) / 86400000;
+      if (!o.production_date) return false;
+      const d = (new Date(o.production_date) - today) / 86400000;
       return d >= 0 && d <= 3;
     });
 
     // Sort overdue first
     cards.sort((a,b) => {
-      const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
-      const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+      const da = a.production_date ? new Date(a.production_date) : new Date('2099-01-01');
+      const db = b.production_date ? new Date(b.production_date) : new Date('2099-01-01');
       return da - db;
     });
 
@@ -8814,8 +8841,8 @@ function renderProdKanban(allOrders, autoFilter) {
 }
 
 function renderKanbanCard(o, col, today) {
-  const dueDate = o.due_date ? new Date(o.due_date) : null;
-  const diffDue = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const prodDate = o.production_date ? new Date(o.production_date) : null;
+  const diffDue = prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
   const isOverdue  = diffDue !== null && diffDue < 0;
   const isDueSoon  = diffDue !== null && diffDue >= 0 && diffDue <= 3;
   const cardBorder = isOverdue ? '2px solid var(--red)' : isDueSoon ? '2px solid var(--amber)' : '0.5px solid var(--line)';
@@ -8881,7 +8908,7 @@ function renderKanbanCard(o, col, today) {
     <!-- Meta -->
     <div style="font-size:11px;color:var(--textm);display:flex;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line);">
       <span>📦 ${o.pcs||0} pcs</span>
-      ${dueDate?`<span>📅 ${o.due_date}</span>`:''}
+      ${o.production_date?`<span>🏭 ${o.production_date}</span>`:''}
     </div>
     ${progressHtml}${pendingHtml}${actionBtn}
     <!-- Move dropdown -->
@@ -8911,8 +8938,8 @@ function renderProdList(allOrders) {
     .filter(o => prodFilterPic ? o.pic === prodFilterPic : true)
     .filter(o => searchQ2 ? (o.name_job||'').toLowerCase().includes(searchQ2) : true);
   filtered.sort((a,b) => {
-    const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
-    const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+    const da = a.production_date ? new Date(a.production_date) : new Date('2099-01-01');
+    const db = b.production_date ? new Date(b.production_date) : new Date('2099-01-01');
     return da - db;
   });
 
@@ -8937,12 +8964,12 @@ function renderProdCard(o) {
   const status   = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
   const dueDate  = o.due_date ? new Date(o.due_date) : null;
   const prodDate = o.production_date ? new Date(o.production_date) : null;
-  const diffDue  = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const diffDue  = prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
 
   let alertColor = 'var(--line)', alertText = '';
   if (status.id !== 'complete') {
-    if (diffDue !== null && diffDue < 0) { alertColor='var(--red)'; alertText='🔴 OVERDUE '+Math.abs(diffDue)+' hari'; }
-    else if (diffDue !== null && diffDue <= 3) { alertColor='var(--amber)'; alertText='🟡 Due dalam '+diffDue+' hari'; }
+    if (diffDue !== null && diffDue < 0) { alertColor='var(--red)'; alertText='🔴 OVERDUE '+Math.abs(diffDue)+' hari (kilang)'; }
+    else if (diffDue !== null && diffDue <= 3) { alertColor='var(--amber)'; alertText='🟡 Due kilang dalam '+diffDue+' hari'; }
   }
 
   const balance  = o.balance_customer || 0;
