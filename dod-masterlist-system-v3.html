@@ -12696,10 +12696,13 @@ async function loadSavedDocs(orderId) {
     el.innerHTML = rows.map(doc => {
       const dt = new Date(doc.generated_at).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
       const info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
+      const docLabel = doc.doc_type && doc.doc_type.startsWith('jobsheet') && doc.notes
+        ? `JS-${doc.notes}`
+        : `${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}`;
       return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:7px;border:1px solid var(--line);">
         <span style="font-size:14px;">${info.icon}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);">${docLabel}</div>
           <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
         </div>
         <button onclick="openSavedDoc('${doc.id}','${doc.doc_type}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>

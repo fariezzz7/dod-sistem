@@ -205,14 +205,43 @@ async function loadSupplier(key) {
 // ── Load orders for this supplier ────────────────────────────
 // Match supplier_name field in orders table
 async function loadOrders(supplierName) {
-  // We need all orders across all months — query Supabase directly
-  // Filter: pipeline_status != quotation, supplier_name matches
-  // Note: supplier_name stored as text, do ilike match
-  const encoded = encodeURIComponent(supplierName);
   const rows = await supaFetch(
     `/rest/v1/orders?supplier_name=ilike.${encodeURIComponent('%'+supplierName+'%')}&pipeline_status=neq.quotation&is_deleted=not.is.true&select=id,name_job,pcs,production_status,production_date,date_submit_kilang,due_date,inv_number,supplier_outstanding,supplier_payment_status,pipeline_status,balance_customer,month&order=production_date.asc.nullslast`
   );
   return rows || [];
+}
+
+// ── Jobsheet cache: { orderId: docRow | null } ────────────────
+let jobsheetCache = {};
+
+async function loadJobsheets(orderIds) {
+  if (!orderIds.length) return;
+  // Fetch latest jobsheet per order in one query
+  const idList = orderIds.map(id => `"${id}"`).join(',');
+  try {
+    const rows = await supaFetch(
+      `/rest/v1/documents?order_id=in.(${orderIds.map(id=>encodeURIComponent(id)).join(',')})&doc_type=like.jobsheet*&is_deleted=not.is.true&select=id,order_id,doc_type,generated_at,notes&order=generated_at.desc`
+    );
+    // Keep only latest per order_id
+    jobsheetCache = {};
+    (rows || []).forEach(r => {
+      if (!jobsheetCache[r.order_id]) jobsheetCache[r.order_id] = r;
+    });
+  } catch(e) {
+    console.warn('Jobsheet load failed:', e);
+  }
+}
+
+async function openJobsheet(docId) {
+  try {
+    const rows = await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}&select=*`);
+    if (!rows || !rows.length) { showToast('Jobsheet tidak dijumpai', 'error'); return; }
+    const doc = rows[0];
+    sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(doc.snapshot));
+    window.open('dod-jobsheet.html?view=1', '_blank');
+  } catch(e) {
+    showToast('Gagal buka jobsheet', 'error');
+  }
 }
 
 // ── Update production_status ──────────────────────────────────
@@ -368,6 +397,28 @@ function renderJobCard(o) {
       </div>
     </div>
     `}
+
+    <!-- Jobsheet section -->
+    ${(() => {
+      const js = jobsheetCache[o.id];
+      if (!js) return '';
+      const dt = new Date(js.generated_at).toLocaleString('ms-MY', {
+        timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit'
+      });
+      const kilangLabel = js.doc_type === 'jobsheet_brothers' ? 'Brothers' : 'General';
+      return `<div style="margin:0 14px 14px;padding:8px 12px;background:var(--orangebg);border:1px solid var(--orangeb);border-radius:8px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;flex-shrink:0;">📋</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:700;color:var(--orange);">Jobsheet · ${kilangLabel}</div>
+          <div style="font-size:10px;color:var(--textm);margin-top:1px;">${dt}</div>
+        </div>
+        <button onclick="event.stopPropagation();openJobsheet('${js.id}')"
+          style="padding:5px 12px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          Buka
+        </button>
+      </div>`;
+    })()}
   </div>`;
 }
 
@@ -473,10 +524,9 @@ async function doUpdate(orderId) {
 }
 
 async function refreshOrders() {
-  const app = document.getElementById('app');
-  // Keep header, just reload orders section
   try {
     allOrders = await loadOrders(supplierInfo.name);
+    if (allOrders.length) await loadJobsheets(allOrders.map(o => o.id));
     renderApp();
     showToast('✅ Data terkini dimuatkan');
   } catch(e) {
@@ -529,7 +579,12 @@ async function init() {
     // 2. Load orders for this supplier
     allOrders = await loadOrders(supplierInfo.name);
 
-    // 3. Render
+    // 3. Load jobsheets for all orders
+    if (allOrders.length) {
+      await loadJobsheets(allOrders.map(o => o.id));
+    }
+
+    // 4. Render
     renderApp();
 
   } catch(e) {
