@@ -431,7 +431,11 @@ function renderNamaTable(js){
         ${js.namaRows.map((r,i)=>renderNamaRow(js.id,i,r)).join('')}
       </tbody>
     </table>
-    <button class="btn-add-row" onclick="addNamaRow(${js.id})">＋ Tambah Baris</button>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button class="btn-add-row" style="margin-top:0;" onclick="addNamaRows(${js.id},1)">＋ 1 Baris</button>
+      <button class="btn-add-row" style="margin-top:0;" onclick="addNamaRows(${js.id},5)">＋ 5 Baris</button>
+      <button class="btn-add-row" style="margin-top:0;" onclick="addNamaRows(${js.id},10)">＋ 10 Baris</button>
+    </div>
     <div class="total-display">Total: <span style="color:var(--blue);">${calcJsTotal(js)} PCS</span></div>
   </div>`;
 }
@@ -440,7 +444,7 @@ function renderNamaRow(jsId,rowIdx,r){
   return `<tr id="js_${jsId}_namaRow_${rowIdx}">
     <td><input type="text" value="${esc(r.nama||'')}" placeholder="Nama" oninput="saveNamaField(${jsId},${rowIdx},'nama',this.value)"></td>
     <td><input type="text" value="${esc(r.nombor||'')}" placeholder="No." style="width:70px;" oninput="saveNamaField(${jsId},${rowIdx},'nombor',this.value)"></td>
-    <td><select onchange="saveNamaField(${jsId},${rowIdx},'saiz',this.value)" style="width:90px;">${[...SIZES,...KIDS_SIZES_FORM].map(s=>`<option value="${s}" ${r.saiz===s?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><select onchange="saveNamaField(${jsId},${rowIdx},'saiz',this.value)" style="width:90px;"><option value="">—</option>${[...SIZES,...KIDS_SIZES_FORM].map(s=>`<option value="${s}" ${r.saiz===s?'selected':''}>${s}</option>`).join('')}</select></td>
     <td><input type="number" min="1" value="${r.qty||1}" style="width:60px;text-align:center;" oninput="saveNamaField(${jsId},${rowIdx},'qty',this.value)"></td>
     <td><button class="btn-del-row" onclick="delNamaRow(${jsId},${rowIdx})">✕</button></td>
   </tr>`;
@@ -469,20 +473,25 @@ function refreshAdaNamaUI(js){
   const s=document.getElementById(`js_${js.id}_sizeSection`);
   if(s)s.innerHTML=js.adaNama?renderNamaTable(js):renderSizeGrid(js);
 }
-function addNamaRow(id){
+function addNamaRow(id){ addNamaRows(id,1); }
+
+function addNamaRows(id, count){
   const js=getJs(id);if(!js)return;
-  js.namaRows.push({nama:'',nombor:'',saiz:'S',qty:1});
   const tbody=document.getElementById(`js_${id}_namaBody`);
-  if(tbody){
-    const i=js.namaRows.length-1;
-    const tr=document.createElement('tr');
-    tr.id=`js_${id}_namaRow_${i}`;
-    tr.innerHTML=renderNamaRow(id,i,js.namaRows[i]).replace(/^<tr[^>]*>/,'').replace(/<\/tr>$/,'');
-    tbody.appendChild(tr);
-    updateNamaTotal(js);
-    tr.querySelector('input').focus();
+  for(let n=0;n<count;n++){
+    js.namaRows.push({nama:'',nombor:'',saiz:'',qty:''});
+    if(tbody){
+      const i=js.namaRows.length-1;
+      const tr=document.createElement('tr');
+      tr.id=`js_${id}_namaRow_${i}`;
+      tr.innerHTML=renderNamaRow(id,i,js.namaRows[i]).replace(/^<tr[^>]*>/,'').replace(/<\/tr>$/,'');
+      tbody.appendChild(tr);
+    }
   }
+  updateNamaTotal(js);
+  if(tbody) tbody.lastElementChild?.querySelector('input')?.focus();
 }
+window.addNamaRows=addNamaRows;
 function delNamaRow(id,rowIdx){
   const js=getJs(id);if(!js)return;
   js.namaRows.splice(rowIdx,1);
@@ -575,9 +584,9 @@ function buildGeneralPage(js,shared){
     if (!isNaN(diff) && diff <= 3) isUrgent = true;
   }
 
-  const urgentBadge = isUrgent
-    ? `<div style="position:absolute;top:12px;right:12px;border:3px solid #cc0000;border-radius:6px;padding:4px 14px;transform:rotate(-8deg);opacity:.85;">
-        <div style="font-size:18px;font-weight:900;color:#cc0000;letter-spacing:3px;font-family:Arial Black,sans-serif;">URGENT</div>
+  const urgentStamp = isUrgent
+    ? `<div style="border:3px solid #cc0000;border-radius:6px;padding:3px 12px;transform:rotate(-6deg);display:inline-block;margin-left:16px;">
+        <div style="font-size:20px;font-weight:900;color:#cc0000;letter-spacing:3px;font-family:Arial Black,sans-serif;">URGENT</div>
        </div>`
     : '';
 
@@ -588,36 +597,57 @@ function buildGeneralPage(js,shared){
     ?`<img src="${js.mockupDataUrl}" style="width:100%;height:100%;object-fit:contain;display:block;">`
     :`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:12px;gap:8px;"><div style="font-size:32px;opacity:.4;">⬜</div><span>MOCKUP</span></div>`;
 
-  // Nama table — 20 fixed rows, filled values bold
-  const NAMA_ROWS=20;
-  const filledRows=js.adaNama?js.namaRows:[];
-  const namaTableRows=Array.from({length:NAMA_ROWS},(_,i)=>{
-    const r=filledRows[i]||{nama:'',nombor:'',saiz:'',qty:''};
+  // Nama table row builder helper
+  const buildNamaRow=(r,i)=>{
     const bg=i%2===0?'#fff':'#fafafa';
-    const hasFill=!!(r.nama||r.nombor||r.saiz||r.qty);
+    const hasFill=!!(r.nama||r.nombor);
     return `<tr style="background:${bg};">
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;height:14px;font-weight:${hasFill?'700':'400'};">${h(r.nama||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${h(r.nombor||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${h(r.saiz||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${r.qty||''}</td>
+      <td style="border:1px solid #000;padding:2px 4px;font-size:9px;height:14px;font-weight:${hasFill?'700':'400'};">${h(r.nama||'')}</td>
+      <td style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${h(r.nombor||'')}</td>
+      <td style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${hasFill?h(r.saiz||''):''}</td>
+      <td style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${hasFill?(r.qty||''):''}</td>
     </tr>`;
+  };
+
+  // Nama rows — min 20, unlimited if more
+  const NAMA_MIN=20;
+  const filledRows=js.adaNama?js.namaRows:[];
+  const totalRows=Math.max(NAMA_MIN, filledRows.length);
+  const namaRows=Array.from({length:totalRows},(_,i)=>{
+    const r=filledRows[i]||{nama:'',nombor:'',saiz:'',qty:''};
+    return buildNamaRow(r,i);
   }).join('');
 
-  const VAL='font-weight:700;'; // bold value style
-  const RED='font-weight:700;color:#cc0000;'; // bold red
+  const VAL='font-weight:700;';
+  const RED='font-weight:700;color:#cc0000;';
 
-  return `<div class="page" style="position:relative;">
+  // Logo+urgent header row — inside thead so it repeats on page break
+  const logoHeaderRow=`<tr style="background:#fff;">
+    <td colspan="4" style="padding:8px 0 6px;text-align:center;border:none;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+        <img src="${DOD_LOGO}" style="height:44px;object-fit:contain;">
+        ${urgentStamp}
+      </div>
+      <div style="border-top:2px solid #000;margin-top:6px;"></div>
+    </td>
+  </tr>`;
 
-  ${urgentBadge}
+  return `<div class="page">
 
-  <!-- ══ TOP: LOGO CENTER ══ -->
-  <div style="text-align:center;margin-bottom:8px;">
-    <img src="${DOD_LOGO}" style="height:52px;object-fit:contain;">
-  </div>
+  <!-- ══ PAGE HEADER: logo wraps into every page via outer thead ══ -->
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr><td colspan="1" style="padding:0;border:none;">
+        <div style="display:flex;align-items:center;justify-content:center;margin-bottom:8px;min-height:60px;">
+          <img src="${DOD_LOGO}" style="height:52px;object-fit:contain;">
+          ${urgentStamp}
+        </div>
+        <div style="border-top:2px solid #000;margin-bottom:8px;"></div>
+      </td></tr>
+    </thead>
+    <tbody><tr><td style="padding:0;border:none;">
 
-  <div style="border-top:2px solid #000;margin-bottom:8px;"></div>
-
-  <!-- ══ HEADER ══ -->
+  <!-- ══ HEADER INFO ══ -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
     <tr>
       <td style="width:52%;vertical-align:top;padding-right:14px;">
@@ -662,56 +692,57 @@ function buildGeneralPage(js,shared){
         <table style="width:100%;border-collapse:collapse;">
           <thead>
             <tr style="background:#e8e8e8;">
-              <th style="border:1px solid #bbb;padding:2px 4px;font-size:9px;text-align:left;font-weight:700;">NAMA</th>
-              <th style="border:1px solid #bbb;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:28px;">NO.</th>
-              <th style="border:1px solid #bbb;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:28px;">SAIZ</th>
-              <th style="border:1px solid #bbb;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:22px;">QTY</th>
+              <th style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:left;font-weight:700;">NAMA</th>
+              <th style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:28px;">NO.</th>
+              <th style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:28px;">SAIZ</th>
+              <th style="border:1px solid #000;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;width:22px;">QTY</th>
             </tr>
           </thead>
-          <tbody>${namaTableRows}</tbody>
+          <tbody>${namaRows}</tbody>
         </table>
       </td>
     </tr>
   </table>
 
-  <!-- ══ QUANTITY ══ -->
-  <div style="margin-bottom:8px;">
+  <!-- ══ QUANTITY + REMARK ══ -->
+  <div style="page-break-inside:avoid;margin-top:16px;">
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">QUANTITY</div>
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <!-- Adult sizes header -->
       <tr>
+        <td style="border:1px solid #000;padding:4px 3px;background:#f0f0f0;font-weight:700;font-size:9px;text-align:center;width:40px;">ADULT</td>
         ${ADULT_SIZES.map(s=>`<th style="border:1px solid #000;padding:4px 2px;text-align:center;background:#f0f0f0;font-weight:700;font-size:9px;">${s}</th>`).join('')}
-        <th rowspan="4" style="border:1px solid #000;padding:5px 4px;text-align:center;background:#ddd;font-weight:700;font-size:10px;vertical-align:middle;color:#cc0000;">TOTAL</th>
+        <th rowspan="4" style="border:1px solid #000;padding:5px 4px;text-align:center;background:#ddd;font-weight:700;font-size:10px;vertical-align:middle;color:#cc0000;width:42px;">TOTAL</th>
       </tr>
-      <!-- Adult sizes values -->
       <tr>
+        <td style="border:1px solid #000;padding:5px 3px;background:#fafafa;height:24px;"></td>
         ${adultSizeRow}
       </tr>
-      <!-- Kids sizes header -->
       <tr>
+        <td style="border:1px solid #000;padding:4px 3px;background:#e8f0f8;font-weight:700;font-size:9px;text-align:center;">KIDS</td>
         ${KIDS_SIZES.map(s=>`<th style="border:1px solid #000;padding:4px 2px;text-align:center;background:#e8f0f8;font-weight:700;font-size:9px;">${s}</th>`).join('')}
         ${Array(ADULT_SIZES.length - KIDS_SIZES.length).fill(`<th style="border:1px solid #000;background:#e8f0f8;"></th>`).join('')}
       </tr>
-      <!-- Kids sizes values -->
       <tr>
+        <td style="border:1px solid #000;padding:5px 3px;background:#fafafa;height:24px;"></td>
         ${kidsSizeRow}
-        ${Array(ADULT_SIZES.length - KIDS_SIZES.length).fill(`<td style="border:1px solid #000;"></td>`).join('')}
+        ${Array(ADULT_SIZES.length - KIDS_SIZES.length).fill(`<td style="border:1px solid #000;padding:5px 2px;height:24px;"></td>`).join('')}
       </tr>
-      <!-- Total row spanning full width -->
       <tr>
-        <td colspan="${ADULT_SIZES.length}" style="border:1px solid #000;padding:2px 4px;font-size:9px;color:#555;text-align:right;padding-right:8px;background:#f8f8f8;">Adult + Kids</td>
+        <td colspan="${ADULT_SIZES.length + 1}" style="border:1px solid #000;padding:2px 6px;font-size:9px;color:#555;text-align:right;background:#f8f8f8;">Adult + Kids</td>
         <td style="border:1px solid #000;padding:6px 4px;text-align:center;font-weight:900;font-size:14px;color:#cc0000;">${totalPcs||''}</td>
       </tr>
     </table>
   </div>
 
-  <!-- ══ REMARK ══ -->
-  <div>
+  <div style="margin-top:8px;">
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">REMARK</div>
     <div style="border:1px solid #000;min-height:44px;padding:6px 8px;font-size:11px;${shared.remark?RED:''}">${h(shared.remark||'')}&nbsp;</div>
   </div>
 
   <div style="margin-top:8px;font-size:8.5px;color:#bbb;text-align:center;">Generated by DOD Sistem · ${new Date().toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'})}</div>
+
+    </td></tr></tbody>
+  </table>
 </div>`;
 }
 
@@ -796,13 +827,15 @@ function buildPrintDoc(jobName,pages){
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:Arial,sans-serif;background:#fff;color:#000;}
-  .page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;page-break-after:always;display:flex;flex-direction:column;}
+  .page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;page-break-after:always;}
   .page:last-child{page-break-after:avoid;}
+  .page-header{display:flex;align-items:center;justify-content:center;margin-bottom:8px;min-height:60px;}
   @media print{
     body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .no-print{display:none!important;}
     @page{size:A4;margin:0;}
     .page{padding:12mm 14mm;margin:0;}
+    thead{display:table-header-group;}
   }
 </style></head><body>
 <div class="no-print" style="text-align:right;padding:10px 20px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:99;">
