@@ -327,7 +327,7 @@ function selectOrder(i){
 // ── JOBSHEET MANAGEMENT ──
 function addJobsheet(){
   const id=++jsCounter;
-  jobsheets.push({id,label:`Jobsheet ${jobsheets.length+1}`,customLabel:false,productType:'',collarType:'',collarColour:'',sleeveType:'SHORT SLEEVE',adaNama:false,sizeQtys:{},namaRows:[],mockupDataUrl:null});
+  jobsheets.push({id,label:`Jobsheet ${jobsheets.length+1}`,customLabel:false,productType:'',collarType:'',collarColour:'',sleeveType:'SHORT SLEEVE',adaNama:false,urgent:false,sizeQtys:{},namaRows:[],mockupDataUrl:null});
   renderTabs();
   setActiveTab(jobsheets.length-1);
 }
@@ -382,6 +382,13 @@ function renderActiveJobsheet(){
             <span style="font-size:13px;font-weight:600;">${js.adaNama?'Ada Nama':'Tiada Nama'}</span>
           </div>
         </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <label>Urgent</label>
+          <div class="ada-nama-toggle ${js.urgent?'active':''}" id="js_${js.id}_urgentToggle" onclick="toggleUrgent(${js.id})" style="${js.urgent?'border-color:var(--red);background:var(--redbg);':''}">
+            <div class="toggle-dot" style="${js.urgent?'background:var(--red);':''}"></div>
+            <span style="font-size:13px;font-weight:600;${js.urgent?'color:var(--red);':''}">${js.urgent?'🚨 URGENT':'Normal'}</span>
+          </div>
+        </div>
       </div>
 
       <div id="js_${js.id}_sizeSection">
@@ -399,11 +406,18 @@ function renderActiveJobsheet(){
     </div>`;
 }
 
+const KIDS_SIZES_FORM=['22','24','26','28','30','32','34'];
+
 function renderSizeGrid(js){
+  const allSizes=[...SIZES,...KIDS_SIZES_FORM];
   return `<div>
-    <label style="display:block;margin-bottom:8px;">Pecahan Saiz</label>
+    <label style="display:block;margin-bottom:6px;">Pecahan Saiz — Adult</label>
     <div class="size-grid">
       ${SIZES.map(s=>`<div class="size-cell"><div class="size-cell-label">${s}</div><input type="number" min="0" id="js_${js.id}_sz_${s}" value="${js.sizeQtys[s]||''}" placeholder="0" oninput="saveSizeQty(${js.id},'${s}',this.value)"></div>`).join('')}
+    </div>
+    <label style="display:block;margin-top:10px;margin-bottom:6px;">Pecahan Saiz — Kids</label>
+    <div class="size-grid">
+      ${KIDS_SIZES_FORM.map(s=>`<div class="size-cell"><div class="size-cell-label">${s}</div><input type="number" min="0" id="js_${js.id}_sz_${s}" value="${js.sizeQtys[s]||''}" placeholder="0" oninput="saveSizeQty(${js.id},'${s}',this.value)"></div>`).join('')}
     </div>
     <div class="total-display">Total: <span id="js_${js.id}_total" style="color:var(--blue);">${calcJsTotal(js)} PCS</span></div>
   </div>`;
@@ -426,7 +440,7 @@ function renderNamaRow(jsId,rowIdx,r){
   return `<tr id="js_${jsId}_namaRow_${rowIdx}">
     <td><input type="text" value="${esc(r.nama||'')}" placeholder="Nama" oninput="saveNamaField(${jsId},${rowIdx},'nama',this.value)"></td>
     <td><input type="text" value="${esc(r.nombor||'')}" placeholder="No." style="width:70px;" oninput="saveNamaField(${jsId},${rowIdx},'nombor',this.value)"></td>
-    <td><select onchange="saveNamaField(${jsId},${rowIdx},'saiz',this.value)" style="width:90px;">${SIZES.map(s=>`<option value="${s}" ${r.saiz===s?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><select onchange="saveNamaField(${jsId},${rowIdx},'saiz',this.value)" style="width:90px;">${[...SIZES,...KIDS_SIZES_FORM].map(s=>`<option value="${s}" ${r.saiz===s?'selected':''}>${s}</option>`).join('')}</select></td>
     <td><input type="number" min="1" value="${r.qty||1}" style="width:60px;text-align:center;" oninput="saveNamaField(${jsId},${rowIdx},'qty',this.value)"></td>
     <td><button class="btn-del-row" onclick="delNamaRow(${jsId},${rowIdx})">✕</button></td>
   </tr>`;
@@ -443,9 +457,12 @@ function saveSizeQty(id,size,val){
 }
 function calcJsTotal(js){
   if(js.adaNama)return js.namaRows.reduce((s,r)=>s+(parseInt(r.qty)||1),0);
-  return Object.values(js.sizeQtys).reduce((s,v)=>s+(parseInt(v)||0),0);
+  const allSizes=[...SIZES,...KIDS_SIZES_FORM];
+  return allSizes.reduce((s,sz)=>s+(parseInt(js.sizeQtys[sz])||0),0);
 }
 function toggleAdaNama(id){const js=getJs(id);if(!js)return;js.adaNama=!js.adaNama;refreshAdaNamaUI(js);}
+function toggleUrgent(id){const js=getJs(id);if(!js)return;js.urgent=!js.urgent;renderActiveJobsheet();}
+window.toggleUrgent=toggleUrgent;
 function refreshAdaNamaUI(js){
   const t=document.getElementById(`js_${js.id}_toggle`);
   if(t){t.className=`ada-nama-toggle ${js.adaNama?'active':''}`;t.querySelector('span').textContent=js.adaNama?'Ada Nama':'Tiada Nama';}
@@ -514,7 +531,7 @@ function generateAll(){
   if(!jobName){showToast('Sila isi Nama Job','error');document.getElementById('fJobName').focus();return;}
   if(!kainType){showToast('Sila isi Material / Kain','error');document.getElementById('fKainType').focus();return;}
 
-  const shared={jobName,custName:custName||'—',kainType,orderDateFmt:fmtDate(orderDate),collectDateFmt:fmtDate(collectDate),remark,neckReady,neckSubli,printers};
+  const shared={jobName,custName:custName||'—',kainType,orderDateFmt:fmtDate(orderDate),collectDateFmt:fmtDate(collectDate),orderDate,collectDate,remark,neckReady,neckSubli,printers};
   const pages=jobsheets.map(js=>buildGeneralPage(js,shared));
   const win=window.open('','_blank');
   if(!win){showToast('Popup disekat. Benarkan popup browser.','error');return;}
@@ -523,20 +540,46 @@ function generateAll(){
 }
 
 function buildGeneralPage(js,shared){
-  const totalPcs=calcJsTotal(js);
+  const ADULT_SIZES=['XS','S','M','L','XL','2XL','3XL','4XL','5XL','6XL','7XL','8XL'];
+  const KIDS_SIZES=['22','24','26','28','30','32','34'];
 
-  // Build size qty map (works for both modes)
+  // Build size qty map
   const sizeQtyMap={};
-  SIZES.forEach(s=>{
+  [...ADULT_SIZES,...KIDS_SIZES].forEach(s=>{
     sizeQtyMap[s]=js.adaNama
       ?js.namaRows.filter(r=>r.saiz===s).reduce((sum,r)=>sum+(parseInt(r.qty)||1),0)
       :(js.sizeQtys[s]||0);
   });
 
-  const sizeRow=SIZES.map(s=>{
+  // Total = adult + kids combined
+  const totalPcs=[...ADULT_SIZES,...KIDS_SIZES].reduce((sum,s)=>sum+(sizeQtyMap[s]||0),0);
+
+  // Adult size row
+  const adultSizeRow=ADULT_SIZES.map(s=>{
     const qty=sizeQtyMap[s];
     return `<td style="border:1px solid #000;padding:5px 2px;text-align:center;font-size:10px;font-weight:${qty>0?'700':'400'};color:${qty>0?'#000':'#ccc'};">${qty||''}</td>`;
   }).join('');
+
+  // Kids size row
+  const kidsSizeRow=KIDS_SIZES.map(s=>{
+    const qty=sizeQtyMap[s];
+    return `<td style="border:1px solid #000;padding:5px 2px;text-align:center;font-size:10px;font-weight:${qty>0?'700':'400'};color:${qty>0?'#000':'#ccc'};">${qty||''}</td>`;
+  }).join('');
+
+  // URGENT detection
+  let isUrgent = js.urgent || false;
+  if (!isUrgent && shared.orderDate && shared.collectDate) {
+    const d1 = new Date(shared.orderDate+'T00:00:00');
+    const d2 = new Date(shared.collectDate+'T00:00:00');
+    const diff = Math.round((d2-d1)/(1000*60*60*24));
+    if (!isNaN(diff) && diff <= 3) isUrgent = true;
+  }
+
+  const urgentBadge = isUrgent
+    ? `<div style="position:absolute;top:12px;right:12px;border:3px solid #cc0000;border-radius:6px;padding:4px 14px;transform:rotate(-8deg);opacity:.85;">
+        <div style="font-size:18px;font-weight:900;color:#cc0000;letter-spacing:3px;font-family:Arial Black,sans-serif;">URGENT</div>
+       </div>`
+    : '';
 
   const neckBoxes=`<span style="margin-right:12px;">${shared.neckReady?'☑':'☐'} Ready</span><span>${shared.neckSubli?'☑':'☐'} Sublimation</span>`;
   const printerChecked=[1,2,3,4].map(n=>`<span style="margin-right:10px;">${shared.printers.includes(n)?'☑':'☐'} ${n}</span>`).join('');
@@ -545,21 +588,27 @@ function buildGeneralPage(js,shared){
     ?`<img src="${js.mockupDataUrl}" style="width:100%;height:100%;object-fit:contain;display:block;">`
     :`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:12px;gap:8px;"><div style="font-size:32px;opacity:.4;">⬜</div><span>MOCKUP</span></div>`;
 
-  // Build 20-row fixed nama table — always render 20 rows regardless of input
+  // Nama table — 20 fixed rows, filled values bold
   const NAMA_ROWS=20;
   const filledRows=js.adaNama?js.namaRows:[];
   const namaTableRows=Array.from({length:NAMA_ROWS},(_,i)=>{
     const r=filledRows[i]||{nama:'',nombor:'',saiz:'',qty:''};
     const bg=i%2===0?'#fff':'#fafafa';
+    const hasFill=!!(r.nama||r.nombor||r.saiz||r.qty);
     return `<tr style="background:${bg};">
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;height:14px;font-weight:600;">${h(r.nama||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;color:#555;">${h(r.nombor||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:700;">${h(r.saiz||'')}</td>
-      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;">${r.qty||''}</td>
+      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;height:14px;font-weight:${hasFill?'700':'400'};">${h(r.nama||'')}</td>
+      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${h(r.nombor||'')}</td>
+      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${h(r.saiz||'')}</td>
+      <td style="border:1px solid #ddd;padding:2px 4px;font-size:9px;text-align:center;font-weight:${hasFill?'700':'400'};">${r.qty||''}</td>
     </tr>`;
   }).join('');
 
-  return `<div class="page">
+  const VAL='font-weight:700;'; // bold value style
+  const RED='font-weight:700;color:#cc0000;'; // bold red
+
+  return `<div class="page" style="position:relative;">
+
+  ${urgentBadge}
 
   <!-- ══ TOP: LOGO CENTER ══ -->
   <div style="text-align:center;margin-bottom:8px;">
@@ -573,17 +622,17 @@ function buildGeneralPage(js,shared){
     <tr>
       <td style="width:52%;vertical-align:top;padding-right:14px;">
         <table style="width:100%;font-size:11px;line-height:1.6;">
-          <tr><td style="font-weight:700;white-space:nowrap;width:72px;">CUSTOMER</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;width:100%;padding-bottom:1px;">${h(shared.custName)}</td></tr>
-          <tr><td style="font-weight:700;white-space:nowrap;">JOB NAME</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(shared.jobName)}</td></tr>
-          <tr><td style="font-weight:700;white-space:nowrap;">MATERIAL</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(shared.kainType)}</td></tr>
-          <tr><td style="font-weight:700;white-space:nowrap;">NECK</td><td style="padding:0 5px;color:#555;">:</td><td style="padding:2px 0;">${neckBoxes}</td></tr>
-          <tr><td style="font-weight:700;white-space:nowrap;">PRINTER</td><td style="padding:0 5px;color:#555;">:</td><td style="padding:2px 0;">${printerChecked}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;width:72px;">CUSTOMER</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;width:100%;padding-bottom:1px;${VAL}">${h(shared.custName)}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;">JOB NAME</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${VAL}">${h(shared.jobName)}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;">MATERIAL</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${VAL}">${h(shared.kainType)}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;">NECK</td><td style="padding:0 5px;color:#555;">:</td><td style="padding:2px 0;${VAL}">${neckBoxes}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;">PRINTER</td><td style="padding:0 5px;color:#555;">:</td><td style="padding:2px 0;${VAL}">${printerChecked}</td></tr>
         </table>
       </td>
       <td style="vertical-align:top;">
         <table style="font-size:11px;line-height:1.6;">
-          <tr><td style="font-weight:700;white-space:nowrap;width:80px;">ORDER DATE</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;min-width:100px;padding-bottom:1px;">${shared.orderDateFmt}</td></tr>
-          <tr><td style="font-weight:700;white-space:nowrap;">COLLECT ON</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${shared.collectDateFmt}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;width:80px;">ORDER DATE</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;min-width:100px;padding-bottom:1px;${VAL}">${shared.orderDateFmt}</td></tr>
+          <tr><td style="font-weight:700;white-space:nowrap;">COLLECT ON</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${VAL}">${shared.collectDateFmt}</td></tr>
           <tr><td style="font-weight:700;white-space:nowrap;">HEATER NO</td><td style="padding:0 5px;color:#555;">:</td><td>☐ 1 &nbsp; ☐ 2</td></tr>
           <tr><td style="font-weight:700;white-space:nowrap;">PRESS</td><td style="padding:0 5px;color:#555;">:</td><td style="border-bottom:1.5px solid #000;">&nbsp;</td></tr>
         </table>
@@ -596,26 +645,19 @@ function buildGeneralPage(js,shared){
   <!-- ══ BODY: MOCKUP LEFT | DETAILS + NAMA RIGHT ══ -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
     <tr style="vertical-align:top;">
-
-      <!-- MOCKUP (left, large) -->
       <td style="width:62%;padding-right:12px;">
         <div style="border:1.5px solid #000;width:100%;height:480px;overflow:hidden;background:#f7f7f7;">
           ${mockupHtml}
         </div>
       </td>
-
-      <!-- RIGHT COLUMN: product/collar/sleeve/colour + nama table -->
       <td style="vertical-align:top;">
-
-        <!-- Product/Collar/Sleeve/Colour details -->
-        <table style="width:100%;font-size:10px;margin-bottom:6px;line-height:1.5;">
-          <tr><td style="font-weight:700;width:45%;">PRODUCT TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(js.productType||'')}</td></tr>
-          <tr><td style="font-weight:700;">COLLAR TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(js.collarType||'')}</td></tr>
-          <tr><td style="font-weight:700;">SLEEVE TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(js.sleeveType||'')}</td></tr>
-          <tr><td style="font-weight:700;">COLLAR COLOUR</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;">${h(js.collarColour||'')}</td></tr>
+        <table style="width:100%;font-size:10px;margin-bottom:6px;line-height:1.6;">
+          <tr><td style="font-weight:700;width:45%;">PRODUCT TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${RED}">${h(js.productType||'')}</td></tr>
+          <tr><td style="font-weight:700;">COLLAR TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${RED}">${h(js.collarType||'')}</td></tr>
+          <tr><td style="font-weight:700;">SLEEVE TYPE</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${RED}">${h(js.sleeveType||'')}</td></tr>
+          <tr><td style="font-weight:700;">COLLAR COLOUR</td><td style="border-bottom:1.5px solid #000;padding-bottom:1px;${RED}">${h(js.collarColour||'')}</td></tr>
         </table>
 
-        <!-- SENARAI NAMA — always 20 rows -->
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#444;margin-bottom:3px;">SENARAI NAMA</div>
         <table style="width:100%;border-collapse:collapse;">
           <thead>
@@ -636,13 +678,29 @@ function buildGeneralPage(js,shared){
   <div style="margin-bottom:8px;">
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">QUANTITY</div>
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <!-- Adult sizes header -->
       <tr>
-        ${SIZES.map(s=>`<th style="border:1px solid #000;padding:5px 2px;text-align:center;background:#f0f0f0;font-weight:700;font-size:10px;">${s}</th>`).join('')}
-        <th style="border:1px solid #000;padding:5px 2px;text-align:center;background:#ddd;font-weight:700;font-size:10px;">TOTAL</th>
+        ${ADULT_SIZES.map(s=>`<th style="border:1px solid #000;padding:4px 2px;text-align:center;background:#f0f0f0;font-weight:700;font-size:9px;">${s}</th>`).join('')}
+        <th rowspan="4" style="border:1px solid #000;padding:5px 4px;text-align:center;background:#ddd;font-weight:700;font-size:10px;vertical-align:middle;color:#cc0000;">TOTAL</th>
       </tr>
+      <!-- Adult sizes values -->
       <tr>
-        ${sizeRow}
-        <td style="border:1px solid #000;padding:5px 2px;text-align:center;font-weight:900;font-size:13px;">${totalPcs||''}</td>
+        ${adultSizeRow}
+      </tr>
+      <!-- Kids sizes header -->
+      <tr>
+        ${KIDS_SIZES.map(s=>`<th style="border:1px solid #000;padding:4px 2px;text-align:center;background:#e8f0f8;font-weight:700;font-size:9px;">${s}</th>`).join('')}
+        ${Array(ADULT_SIZES.length - KIDS_SIZES.length).fill(`<th style="border:1px solid #000;background:#e8f0f8;"></th>`).join('')}
+      </tr>
+      <!-- Kids sizes values -->
+      <tr>
+        ${kidsSizeRow}
+        ${Array(ADULT_SIZES.length - KIDS_SIZES.length).fill(`<td style="border:1px solid #000;"></td>`).join('')}
+      </tr>
+      <!-- Total row spanning full width -->
+      <tr>
+        <td colspan="${ADULT_SIZES.length}" style="border:1px solid #000;padding:2px 4px;font-size:9px;color:#555;text-align:right;padding-right:8px;background:#f8f8f8;">Adult + Kids</td>
+        <td style="border:1px solid #000;padding:6px 4px;text-align:center;font-weight:900;font-size:14px;color:#cc0000;">${totalPcs||''}</td>
       </tr>
     </table>
   </div>
@@ -650,7 +708,7 @@ function buildGeneralPage(js,shared){
   <!-- ══ REMARK ══ -->
   <div>
     <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">REMARK</div>
-    <div style="border:1px solid #000;min-height:44px;padding:6px 8px;font-size:11px;">${h(shared.remark||'')}&nbsp;</div>
+    <div style="border:1px solid #000;min-height:44px;padding:6px 8px;font-size:11px;${shared.remark?RED:''}">${h(shared.remark||'')}&nbsp;</div>
   </div>
 
   <div style="margin-top:8px;font-size:8.5px;color:#bbb;text-align:center;">Generated by DOD Sistem · ${new Date().toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur'})}</div>
