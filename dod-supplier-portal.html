@@ -237,12 +237,13 @@ async function openJobsheet(docId) {
     const rows = await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}&select=*`);
     if (!rows || !rows.length) { showToast('Jobsheet tidak dijumpai', 'error'); return; }
     const doc = rows[0];
-    sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(doc.snapshot));
+    localStorage.setItem('dod_jobsheet_view', JSON.stringify(doc.snapshot));
     window.open('dod-jobsheet.html?view=1', '_blank');
   } catch(e) {
     showToast('Gagal buka jobsheet', 'error');
   }
 }
+window.openJobsheet = openJobsheet;
 
 // ── Update production_status ──────────────────────────────────
 async function updateStatus(orderId, newStatus) {
@@ -602,6 +603,11 @@ async function init() {
 }
 
 // ── Start ─────────────────────────────────────────────────────
+window.setFilter     = setFilter;
+window.doUpdate      = doUpdate;
+window.refreshOrders = refreshOrders;
+window.openJobsheet  = openJobsheet;
+
 init();
 
 // Auto-refresh every 60 seconds
