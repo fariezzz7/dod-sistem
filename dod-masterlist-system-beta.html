@@ -2189,7 +2189,7 @@ tr:hover .row-actions{opacity:1;}
           <div class="form-field full">
             <label class="fl">Nama Supplier</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;">
+              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;" oninput="recalcSupCostFromItems()">
               <div id="supplierShortcuts" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;"></div>
             </div>
           </div>
@@ -3582,6 +3582,8 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Preload katalog harga for item breakdown dropdown
+  khLoadAll().catch(()=>{});
   // Check memos for this user
   setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
@@ -7925,29 +7927,32 @@ function recalcItems() {
 
 // Auto-calculate supplier cost from item rows
 function recalcSupCostFromItems() {
-  // Get current supplier IDs from order form
-  const sup1Input = document.getElementById('f_supplier');
-  const sup2Input = document.getElementById('f_supplier2');
-  const sup1Id = sup1Input ? (sup1Input.value||'').toLowerCase().trim() : '';
-  const sup2Id = sup2Input ? (sup2Input.value||'').toLowerCase().trim() : '';
+  if (typeof KH_SKUS === 'undefined' || !KH_SKUS.length) return;
+  if (typeof KH_SUP_TIERS === 'undefined' || !KH_SUP_TIERS.length) return;
 
-  // Find supplier IDs from SUPPLIERS array by name match
+  const sup1NameEl = document.getElementById('f_supplier_name');
+  const sup2NameEl = document.getElementById('f_supplier2_name');
+  const sup1Name = sup1NameEl ? (sup1NameEl.value||'').trim() : '';
+  const sup2Name = sup2NameEl ? (sup2NameEl.value||'').trim() : '';
+
   const findSupId = (nameVal) => {
-    if (!nameVal) return null;
+    if (!nameVal || typeof SUPPLIERS === 'undefined') return null;
     const s = SUPPLIERS.find(x =>
       x.name.toLowerCase().includes(nameVal.toLowerCase()) ||
-      x.short.toLowerCase().includes(nameVal.toLowerCase()) ||
+      (x.short && x.short.toLowerCase().includes(nameVal.toLowerCase())) ||
       x.id.toLowerCase() === nameVal.toLowerCase()
     );
     return s ? s.id : null;
   };
 
-  const sup1DbId = findSupId(sup1Id);
-  const sup2DbId = findSupId(sup2Id);
+  const sup1DbId = findSupId(sup1Name);
+  const sup2DbId = findSupId(sup2Name);
 
   let costS1 = 0, costS2 = 0;
+  let hasS1 = false, hasS2 = false;
+
   itemRows.forEach(row => {
-    if (!row.skuDbId) return; // only auto-calc for SKU-linked rows
+    if (!row.skuDbId) return;
     const qty = parseFloat(row.qty) || 0;
     if (!qty) return;
     const slot = row.supSlot || 's1';
@@ -7956,19 +7961,19 @@ function recalcSupCostFromItems() {
     const cost = khGetSupCost(row.skuDbId, qty, supDbId);
     if (cost === null) return;
     const rowCost = qty * cost;
-    if (slot === 's2') costS2 += rowCost;
-    else costS1 += rowCost;
+    if (slot === 's2') { costS2 += rowCost; hasS2 = true; }
+    else { costS1 += rowCost; hasS1 = true; }
   });
 
-  // Only update if there's auto-calculated value — don't overwrite manual entries
-  if (costS1 > 0) {
-    const s1El = document.getElementById('f_sup_cost');
-    if (s1El && (parseFloat(s1El.value)||0) === 0) s1El.value = costS1.toFixed(2);
+  if (hasS1) {
+    const s1El = document.getElementById('f_nohad_amt');
+    if (s1El) s1El.value = costS1.toFixed(2);
   }
-  if (costS2 > 0) {
-    const s2El = document.getElementById('f_sup2_cost');
-    if (s2El && (parseFloat(s2El.value)||0) === 0) s2El.value = costS2.toFixed(2);
+  if (hasS2) {
+    const s2El = document.getElementById('f_sup2_amt');
+    if (s2El) s2El.value = costS2.toFixed(2);
   }
+  recalc();
 }
 
 function clearItemRows() {
@@ -8092,6 +8097,7 @@ function _buildAndOpenDoc(r, month) {
 function setSupplier(name) {
   const el = document.getElementById('f_supplier_name');
   if (el) el.value = name;
+  recalcSupCostFromItems();
 }
 
 
