@@ -1340,6 +1340,11 @@ tr:hover .row-actions{opacity:1;}
   <div class="sb-divider"></div>
   <div class="sb-section">Sistem</div>
 
+  <button class="sb-item" id="sbKatalogHarga" data-tip="Katalog Harga" onclick="sbNav('katalogharga')" style="display:none;">
+    <span class="sb-item-icon">🏷️</span>
+    <span class="sb-item-label">Katalog Harga</span>
+  </button>
+
   <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
     <span class="sb-item-icon">⚙️</span>
     <span class="sb-item-label">Control Panel</span>
@@ -1618,6 +1623,11 @@ tr:hover .row-actions{opacity:1;}
   <!-- CONTROL PANEL VIEW -->
   <div id="controlPanelView" style="display:none;padding:24px 28px;">
     <div id="controlPanelContent"></div>
+  </div>
+
+  <!-- KATALOG HARGA VIEW -->
+  <div id="katalogHargaView" style="display:none;padding:24px 28px;">
+    <div id="katalogHargaContent"></div>
   </div>
 
   <!-- SALES KIT VIEW -->
@@ -3644,7 +3654,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView','chatView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','katalogHargaView','salesKitView','chatView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3752,6 +3762,9 @@ function setupNavForRole() {
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
+    // Katalog Harga: root_admin sahaja
+    const khBtn = document.getElementById('sbKatalogHarga');
+    if (khBtn) khBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -3883,6 +3896,11 @@ function sbNav(view) {
     case 'memo':
       document.getElementById('sbMemo').classList.add('active');
       showMemoView();
+      showSbMonths(false);
+      break;
+    case 'katalogharga':
+      document.getElementById('sbKatalogHarga') && document.getElementById('sbKatalogHarga').classList.add('active');
+      showKatalogHargaView();
       showSbMonths(false);
       break;
     case 'controlpanel':
@@ -8046,6 +8064,7 @@ function renderSupplierDir(filterMonth) {
               ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button onclick="event.stopPropagation();copySupplierPortalLink('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;color:var(--blue);font-weight:600;">🔗 Portal Link</button>
               <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
               <button onclick="event.stopPropagation();deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:4px 9px;background:var(--redbg);border:1px solid var(--redb);border-radius:5px;cursor:pointer;color:var(--red);">🗑</button>
             </div>
@@ -8309,6 +8328,7 @@ async function loadSuppliers() {
         addr:    r.addr || '',
         bank:    [{ bank: r.bank_name||'', acc: r.bank_acc||'', holder: r.bank_holder||'' }],
         products: Array.isArray(r.products) ? r.products : (r.products ? JSON.parse(r.products) : []),
+        portal_key: r.portal_key || '',
       }));
       localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
       refreshSupplierDatalist();
@@ -8342,6 +8362,7 @@ async function saveSuppliers() {
     bank_acc:     s.bank[0]?.acc || '',
     bank_holder:  s.bank[0]?.holder || '',
     products:     s.products || [],
+    portal_key:   s.portal_key || '',
     updated_at:   new Date().toISOString(),
   }));
   try {
@@ -8353,6 +8374,30 @@ async function saveSuppliers() {
   } catch(e) {
     console.warn('Suppliers sync failed:', e);
     showToast('⚠ Gagal sync supplier ke server', true);
+  }
+}
+
+function generatePortalKey() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let key = '';
+  for (let i = 0; i < 12; i++) key += chars[Math.floor(Math.random() * chars.length)];
+  return key;
+}
+
+async function copySupplierPortalLink(supId) {
+  const s = SUPPLIERS.find(x => x.id === supId);
+  if (!s) return;
+  if (!s.portal_key) {
+    s.portal_key = generatePortalKey();
+    await saveSuppliers();
+  }
+  const base = window.location.href.replace(/\/[^/]*$/, '/');
+  const url = `${base}dod-supplier-portal.html?key=${s.portal_key}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast(`✅ Link portal ${s.short} disalin! Hantar kepada kilang.`);
+  } catch(e) {
+    prompt('Copy link portal kilang ini:', url);
   }
 }
 
@@ -8647,8 +8692,8 @@ function renderProdTrack() {
   const completeOrders = allOrders.filter(o => o.production_status === 'complete');
 
   const today = getMYTToday();
-  const overdue   = activeOrders.filter(o => o.due_date && new Date(o.due_date) < today);
-  const dueSoon   = activeOrders.filter(o => { if (!o.due_date) return false; const d=(new Date(o.due_date)-today)/86400000; return d>=0&&d<=3; });
+  const overdue   = activeOrders.filter(o => o.production_date && new Date(o.production_date) < today);
+  const dueSoon   = activeOrders.filter(o => { if (!o.production_date) return false; const d=(new Date(o.production_date)-today)/86400000; return d>=0&&d<=3; });
   const pendingK  = activeOrders.filter(o => (o.production_status||'job-submit')==='job-submit' && !!o.pending_note);
   const readyJ    = activeOrders.filter(o => o.production_status==='ready');
   const pendingPay= activeOrders.filter(o => o.production_status==='ready' && (o.balance_customer||0)>0);
@@ -8763,17 +8808,17 @@ function renderProdKanban(allOrders, autoFilter) {
     let cards = filtered.filter(o => col.match(o));
 
     // Apply overdue/duesoon filter to all cols
-    if (autoFilter === 'overdue') cards = cards.filter(o => o.due_date && new Date(o.due_date) < today);
+    if (autoFilter === 'overdue') cards = cards.filter(o => o.production_date && new Date(o.production_date) < today);
     if (autoFilter === 'duesoon') cards = cards.filter(o => {
-      if (!o.due_date) return false;
-      const d = (new Date(o.due_date) - today) / 86400000;
+      if (!o.production_date) return false;
+      const d = (new Date(o.production_date) - today) / 86400000;
       return d >= 0 && d <= 3;
     });
 
     // Sort overdue first
     cards.sort((a,b) => {
-      const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
-      const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+      const da = a.production_date ? new Date(a.production_date) : new Date('2099-01-01');
+      const db = b.production_date ? new Date(b.production_date) : new Date('2099-01-01');
       return da - db;
     });
 
@@ -8814,8 +8859,8 @@ function renderProdKanban(allOrders, autoFilter) {
 }
 
 function renderKanbanCard(o, col, today) {
-  const dueDate = o.due_date ? new Date(o.due_date) : null;
-  const diffDue = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const prodDate = o.production_date ? new Date(o.production_date) : null;
+  const diffDue = prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
   const isOverdue  = diffDue !== null && diffDue < 0;
   const isDueSoon  = diffDue !== null && diffDue >= 0 && diffDue <= 3;
   const cardBorder = isOverdue ? '2px solid var(--red)' : isDueSoon ? '2px solid var(--amber)' : '0.5px solid var(--line)';
@@ -8881,7 +8926,7 @@ function renderKanbanCard(o, col, today) {
     <!-- Meta -->
     <div style="font-size:11px;color:var(--textm);display:flex;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line);">
       <span>📦 ${o.pcs||0} pcs</span>
-      ${dueDate?`<span>📅 ${o.due_date}</span>`:''}
+      ${o.production_date?`<span>🏭 ${o.production_date}</span>`:''}
     </div>
     ${progressHtml}${pendingHtml}${actionBtn}
     <!-- Move dropdown -->
@@ -8911,8 +8956,8 @@ function renderProdList(allOrders) {
     .filter(o => prodFilterPic ? o.pic === prodFilterPic : true)
     .filter(o => searchQ2 ? (o.name_job||'').toLowerCase().includes(searchQ2) : true);
   filtered.sort((a,b) => {
-    const da = a.due_date ? new Date(a.due_date) : new Date('2099-01-01');
-    const db = b.due_date ? new Date(b.due_date) : new Date('2099-01-01');
+    const da = a.production_date ? new Date(a.production_date) : new Date('2099-01-01');
+    const db = b.production_date ? new Date(b.production_date) : new Date('2099-01-01');
     return da - db;
   });
 
@@ -8937,12 +8982,12 @@ function renderProdCard(o) {
   const status   = PROD_STATUS_MAP[o.production_status || 'job-submit'] || PROD_STATUSES[0];
   const dueDate  = o.due_date ? new Date(o.due_date) : null;
   const prodDate = o.production_date ? new Date(o.production_date) : null;
-  const diffDue  = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+  const diffDue  = prodDate ? Math.ceil((prodDate - today) / 86400000) : null;
 
   let alertColor = 'var(--line)', alertText = '';
   if (status.id !== 'complete') {
-    if (diffDue !== null && diffDue < 0) { alertColor='var(--red)'; alertText='🔴 OVERDUE '+Math.abs(diffDue)+' hari'; }
-    else if (diffDue !== null && diffDue <= 3) { alertColor='var(--amber)'; alertText='🟡 Due dalam '+diffDue+' hari'; }
+    if (diffDue !== null && diffDue < 0) { alertColor='var(--red)'; alertText='🔴 OVERDUE '+Math.abs(diffDue)+' hari (kilang)'; }
+    else if (diffDue !== null && diffDue <= 3) { alertColor='var(--amber)'; alertText='🟡 Due kilang dalam '+diffDue+' hari'; }
   }
 
   const balance  = o.balance_customer || 0;
@@ -10137,7 +10182,7 @@ function renderPaymentRecords() {
         <option value="balance" ${rec.type==='balance'?'selected':''}>Balance</option>
       </select>
       <input type="number" value="${rec.amount||''}" placeholder="0.00" min="0" step="0.01"
-        onchange="updatePaymentField('${rec.id}','amount',this.value)"
+        oninput="updatePaymentField('${rec.id}','amount',this.value)"
         style="font-family:'Fira Code',monospace;font-size:11px;font-weight:600;padding:4px 7px;border-radius:5px;border:1px solid var(--line);background:#fff;width:100%;">
       <select onchange="updatePaymentField('${rec.id}','method',this.value)"
         style="font-size:11px;padding:4px 5px;border-radius:5px;border:1px solid var(--line);background:#fff;cursor:pointer;">
@@ -10200,7 +10245,7 @@ function loadPaymentRecordsData(records) {
   payRecId = 0;
   if (Array.isArray(records)) {
     records.forEach(r => {
-      paymentRecords.push({ id: 'pr_' + (++payRecId), ...r });
+      paymentRecords.push({ ...r, id: 'pr_' + (++payRecId) });
     });
   }
   renderPaymentRecords();
@@ -12669,10 +12714,13 @@ async function loadSavedDocs(orderId) {
     el.innerHTML = rows.map(doc => {
       const dt = new Date(doc.generated_at).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
       const info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
+      const docLabel = doc.doc_type && doc.doc_type.startsWith('jobsheet') && doc.notes
+        ? `JS-${doc.notes}`
+        : `${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}`;
       return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:7px;border:1px solid var(--line);">
         <span style="font-size:14px;">${info.icon}</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;font-weight:600;color:var(--text);">${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text);">${docLabel}</div>
           <div style="font-size:10px;color:var(--textm);">${dt} · ${doc.generated_by}</div>
         </div>
         <button onclick="openSavedDoc('${doc.id}','${doc.doc_type}')" style="font-size:10px;padding:3px 10px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">Buka</button>
@@ -13736,6 +13784,563 @@ function mAddNotifSilent({ icon, title, sub, type }) {
   mRenderNotifPanel();
   mShakeBell();
 }
+
+// ======================================
+// KATALOG HARGA — SKU / HARGA JUALAN / HARGA SUPPLIER
+// ======================================
+
+// ── In-memory state ──
+let KH_SKUS = [];          // [{id, sku_code, name, category, jenis, saiz, status, created_at}]
+let KH_SELL_TIERS = [];    // [{id, sku_id, type (sekolah/nonsekolah), min_qty, max_qty, price}]
+let KH_SUP_TIERS = [];     // [{id, sku_id, supplier_id, min_qty, max_qty, cost}]
+
+let khActiveTab = 'sku';
+let khSellPriceType = 'sekolah';
+let khSelSupplier = '';
+
+// ── Constants ──
+const KH_CATEGORIES = ['Jersey / Sukan','Korporat','Outerwear','Add-on','Postage','Lain-lain'];
+const KH_JENIS = ['Produk Utama','Add-on','Postage'];
+const KH_SAIZ = ['Adult','Kids','Unisex','— Tiada'];
+
+// ── Supabase helpers ──
+async function khLoadAll() {
+  try {
+    const [skus, sell, sup] = await Promise.all([
+      supaGet('product_sku','select=*&order=category.asc,name.asc'),
+      supaGet('selling_price_tiers','select=*&order=sku_id.asc,type.asc,min_qty.asc'),
+      supaGet('supplier_price_tiers','select=*&order=sku_id.asc,supplier_id.asc,min_qty.asc'),
+    ]);
+    KH_SKUS = skus || [];
+    KH_SELL_TIERS = sell || [];
+    KH_SUP_TIERS = sup || [];
+  } catch(e) {
+    // tables may not exist yet — show empty state
+    KH_SKUS = []; KH_SELL_TIERS = []; KH_SUP_TIERS = [];
+  }
+}
+
+async function khSaveSku(obj) {
+  if (obj.id) {
+    return supaFetch('/rest/v1/product_sku?id=eq.'+obj.id, {method:'PATCH', prefer:'return=representation', body:JSON.stringify(obj)});
+  } else {
+    return supaFetch('/rest/v1/product_sku', {method:'POST', prefer:'return=representation', body:JSON.stringify(obj)});
+  }
+}
+
+async function khDeleteSku(id) {
+  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
+  await supaFetch('/rest/v1/product_sku?id=eq.'+id, {method:'DELETE'});
+}
+
+async function khSaveSellTiers(skuId, type, rows) {
+  // Delete existing for this sku+type, then insert new
+  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+skuId+'&type=eq.'+type, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/selling_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+async function khSaveSupTiers(skuId, supId, rows) {
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+// ── View entry point ──
+async function showKatalogHargaView() {
+  setAllViewsHidden();
+  document.getElementById('katalogHargaView').style.display = 'block';
+  const el = document.getElementById('katalogHargaContent');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--textm);font-size:12px;">Memuatkan katalog...</div>';
+  await khLoadAll();
+  renderKatalogHarga();
+}
+
+function renderKatalogHarga() {
+  const el = document.getElementById('katalogHargaContent');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);">🏷️ Katalog Harga</div>
+        <div style="font-size:11px;color:var(--textm);margin-top:3px;">Urus senarai produk, harga jualan, dan kos supplier</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:18px;">
+      ${[['sku','📦 Produk / SKU'],['sell','💰 Harga Jualan'],['supplier','🏭 Harga Supplier']].map(([k,l])=>`
+        <button onclick="khSwitchTab('${k}')" style="padding:9px 20px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:${khActiveTab===k?'var(--blue)':'var(--textm)'};border-bottom:2px solid ${khActiveTab===k?'var(--blue)':'transparent'};margin-bottom:-1px;transition:all .12s;">${l}</button>
+      `).join('')}
+    </div>
+    <div id="khTabContent"></div>
+  `;
+  khRenderTab();
+}
+
+function khSwitchTab(tab) {
+  khActiveTab = tab;
+  renderKatalogHarga();
+}
+
+function khRenderTab() {
+  const el = document.getElementById('khTabContent');
+  if (!el) return;
+  if (khActiveTab === 'sku') khRenderSkuTab(el);
+  else if (khActiveTab === 'sell') khRenderSellTab(el);
+  else khRenderSupTab(el);
+}
+
+// ─────────────────────────────────────────
+// TAB 1 — SKU
+// ─────────────────────────────────────────
+function khRenderSkuTab(el) {
+  const cats = [...new Set(KH_SKUS.map(s=>s.category))].sort();
+  const grouped = {};
+  KH_SKUS.forEach(s => { if (!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--textm);">${KH_SKUS.length} SKU terdaftar</span>
+      <button onclick="khOpenSkuForm()" style="padding:7px 14px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah SKU</button>
+    </div>
+    <div id="khSkuFormWrap"></div>
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Kategori</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Jenis</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Saiz</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Status</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;border-bottom:1px solid var(--line);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${KH_SKUS.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;font-size:12px;color:var(--textm);">Tiada SKU. Klik "+ Tambah SKU" untuk mula.</td></tr>` :
+            Object.keys(grouped).map(cat => `
+              <tr><td colspan="7" style="background:var(--bg3);padding:6px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+              ${grouped[cat].map(s => `
+                <tr id="khSkuRow_${s.id}" style="border-bottom:1px solid var(--line);">
+                  <td style="padding:7px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+                  <td style="padding:7px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.category)}</span></td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.jenis||'—')}</span></td>
+                  <td style="padding:7px 10px;text-align:center;font-size:11px;color:var(--textm);">${escHtmlForm(s.saiz||'—')}</td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:${s.status==='Aktif'?'var(--greenbg)':'var(--redbg)'};color:${s.status==='Aktif'?'var(--green)':'var(--red)'};border-radius:20px;padding:2px 8px;">${escHtmlForm(s.status)}</span></td>
+                  <td style="padding:7px 8px;"><div style="display:flex;gap:4px;">
+                    <button onclick="khOpenSkuForm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">✏️</button>
+                    <button onclick="khDeleteSkuConfirm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">🗑</button>
+                  </div></td>
+                </tr>
+              `).join('')}
+            `).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function khOpenSkuForm(id) {
+  const wrap = document.getElementById('khSkuFormWrap');
+  if (!wrap) return;
+  const s = id ? KH_SKUS.find(x=>x.id===id) : null;
+  wrap.innerHTML = `
+    <div style="background:var(--bg);border:1.5px solid var(--blue);border-radius:10px;padding:16px 18px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">${s?'✏️ Edit SKU':'＋ Tambah SKU Baru'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kod SKU</div>
+          <input id="khf_sku" value="${escHtmlForm(s?.sku_code||'')}" placeholder="cth: RNSS/A" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;font-family:'Fira Code',monospace;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Nama Produk</div>
+          <input id="khf_name" value="${escHtmlForm(s?.name||'')}" placeholder="cth: Round Neck Short Sleeve" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kategori</div>
+          <select id="khf_cat" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_CATEGORIES.map(c=>`<option value="${c}" ${(s?.category||'')==c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Jenis</div>
+          <select id="khf_jenis" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_JENIS.map(j=>`<option value="${j}" ${(s?.jenis||'')==j?'selected':''}>${j}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Saiz</div>
+          <select id="khf_saiz" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_SAIZ.map(z=>`<option value="${z}" ${(s?.saiz||'')==z?'selected':''}>${z}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Status</div>
+          <select id="khf_status" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            <option value="Aktif" ${(s?.status||'Aktif')==='Aktif'?'selected':''}>Aktif</option>
+            <option value="Tidak Aktif" ${s?.status==='Tidak Aktif'?'selected':''}>Tidak Aktif</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="document.getElementById('khSkuFormWrap').innerHTML=''" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">Batal</button>
+        <button onclick="khSaveSkuForm('${id||''}')" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff;border:1px solid var(--blue);">✓ Simpan SKU</button>
+      </div>
+    </div>
+  `;
+}
+
+async function khSaveSkuForm(id) {
+  const sku_code = document.getElementById('khf_sku')?.value.trim();
+  const name = document.getElementById('khf_name')?.value.trim();
+  const category = document.getElementById('khf_cat')?.value;
+  const jenis = document.getElementById('khf_jenis')?.value;
+  const saiz = document.getElementById('khf_saiz')?.value;
+  const status = document.getElementById('khf_status')?.value;
+  if (!sku_code || !name) { showToast('Kod SKU dan Nama wajib diisi','warning'); return; }
+  const obj = { sku_code, name, category, jenis, saiz, status };
+  if (id) obj.id = id;
+  try {
+    const res = await khSaveSku(obj);
+    await khLoadAll();
+    showToast(id ? 'SKU dikemaskini' : 'SKU baru disimpan');
+    renderKatalogHarga();
+  } catch(e) {
+    showToast('Ralat: ' + e.message, 'error');
+  }
+}
+
+async function khDeleteSkuConfirm(id) {
+  const s = KH_SKUS.find(x=>x.id===id);
+  if (!confirm(`Padam SKU "${s?.sku_code} — ${s?.name}"?\n\nSemua harga jualan dan harga supplier untuk SKU ini juga akan dipadam.`)) return;
+  try {
+    await khDeleteSku(id);
+    await khLoadAll();
+    showToast('SKU dipadam');
+    renderKatalogHarga();
+  } catch(e) {
+    showToast('Ralat: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────
+// TAB 2 — HARGA JUALAN
+// ─────────────────────────────────────────
+function khRenderSellTab(el) {
+  // Build tier columns from all existing tiers for current type
+  const type = khSellPriceType;
+  const allTiers = KH_SELL_TIERS.filter(t=>t.type===type);
+  // Collect unique tier ranges
+  const tierSet = {};
+  allTiers.forEach(t => { const k = t.min_qty+'_'+(t.max_qty||''); tierSet[k] = {min:t.min_qty, max:t.max_qty}; });
+  // Default tiers if none exist
+  if (Object.keys(tierSet).length === 0) {
+    [{min:1,max:9},{min:10,max:49},{min:50,max:99},{min:100,max:299}].forEach(t => { tierSet[t.min+'_'+t.max]={min:t.min,max:t.max}; });
+  }
+  const tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
+
+  // Build pending edits state
+  if (!window._khSellEdits) window._khSellEdits = {};
+
+  const skuList = KH_SKUS.filter(s=>s.status==='Aktif'||true);
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--textm);">Jenis Harga:</span>
+        <button onclick="khSellToggle('sekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='sekolah'?'var(--blueb)':'var(--line)'};background:${type==='sekolah'?'var(--bluebg)':'var(--bg3)'};color:${type==='sekolah'?'var(--blue)':'var(--textm)'};">Sekolah</button>
+        <button onclick="khSellToggle('nonsekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='nonsekolah'?'var(--amberb)':'var(--line)'};background:${type==='nonsekolah'?'var(--amberbg)':'var(--bg3)'};color:${type==='nonsekolah'?'var(--amber)':'var(--textm)'};">Non-Sekolah</button>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="khSellAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
+        <button onclick="khSellSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
+      <table id="khSellGrid" style="width:100%;border-collapse:collapse;min-width:600px;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:100px;">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:170px;">Nama Produk</th>
+            ${tiers.map((t,i)=>`
+              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;position:relative;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span>Harga/pcs</span>
+                  <input data-tier-idx="${i}" data-tier-field="label" value="${t.min}${t.max?'–'+t.max:'+'}pcs" style="width:72px;text-align:center;font-size:9px;background:transparent;border:none;border-bottom:1px dashed var(--line);color:var(--textm);outline:none;font-family:'Fira Code',monospace;">
+                  <div style="display:flex;gap:2px;">
+                    <input data-tier-idx="${i}" data-tier-field="min" value="${t.min}" placeholder="min" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">—</span>
+                    <input data-tier-idx="${i}" data-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                  </div>
+                </div>
+              </th>
+            `).join('')}
+            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${khBuildSellRows(skuList, tiers, type)}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage — harga di sini adalah caj kepada customer sahaja, tidak dikira dalam kos supplier.</div>
+  `;
+  // Store tiers for later use
+  window._khCurrentSellTiers = tiers;
+  window._khCurrentSellType = type;
+}
+
+function khBuildSellRows(skuList, tiers, type) {
+  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU. Tambah SKU dalam Tab 1 dahulu.</td></tr>`;
+  const cats = [...new Set(skuList.map(s=>s.category))].sort();
+  const grouped = {};
+  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+
+  return cats.map(cat=>`
+    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+    ${grouped[cat].map(s=>{
+      return `<tr style="border-bottom:1px solid var(--line);${s.category==='Postage'?'opacity:.6;':''}" ${s.category==='Postage'?'title="Postage — kos tidak dikira dalam supplier"':''}>
+        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+        ${tiers.map((t,i)=>{
+          const existing = KH_SELL_TIERS.find(r=>r.sku_id===s.id && r.type===type && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
+          const val = existing ? existing.price : '';
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="0.00" style="width:72px;text-align:right;font-size:11px;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+        }).join('')}
+        <td style="border-left:1px dashed var(--line);"></td>
+      </tr>`;
+    }).join('')}
+  `).join('');
+}
+
+function khSellToggle(type) {
+  khSellPriceType = type;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+function khSellAddTier() {
+  // Add a new tier column
+  const tbl = document.getElementById('khSellGrid');
+  if (!tbl) return;
+  const tiers = window._khCurrentSellTiers || [];
+  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
+  tiers.push({min:newMin, max:null});
+  window._khCurrentSellTiers = tiers;
+  // Re-render sell tab
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+async function khSellSaveAll() {
+  const tbl = document.getElementById('khSellGrid');
+  if (!tbl) return;
+  const type = window._khCurrentSellType || khSellPriceType;
+  // Collect all tier headers
+  const tiers = window._khCurrentSellTiers || [];
+  // Collect all inputs grouped by sku_id
+  const inputs = tbl.querySelectorAll('input[data-sku]');
+  const bySkuId = {};
+  inputs.forEach(inp => {
+    const skuId = inp.getAttribute('data-sku');
+    const min = parseInt(inp.getAttribute('data-tier-min'));
+    const maxRaw = inp.getAttribute('data-tier-max');
+    const max = maxRaw ? parseInt(maxRaw) : null;
+    const price = parseFloat(inp.value);
+    if (!bySkuId[skuId]) bySkuId[skuId] = [];
+    if (!isNaN(price) && inp.value.trim() !== '') {
+      bySkuId[skuId].push({sku_id:skuId, type, min_qty:min, max_qty:max, price});
+    }
+  });
+  try {
+    const skuIds = Object.keys(bySkuId);
+    for (const skuId of skuIds) {
+      await khSaveSellTiers(skuId, type, bySkuId[skuId]);
+    }
+    await khLoadAll();
+    showToast('Harga jualan disimpan');
+    const el = document.getElementById('khTabContent');
+    if (el) khRenderSellTab(el);
+  } catch(e) {
+    showToast('Ralat simpan: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────
+// TAB 3 — HARGA SUPPLIER
+// ─────────────────────────────────────────
+function khRenderSupTab(el) {
+  const supId = khSelSupplier || (SUPPLIERS.length ? SUPPLIERS[0].id : '');
+  if (!khSelSupplier && SUPPLIERS.length) khSelSupplier = SUPPLIERS[0].id;
+  const selSup = SUPPLIERS.find(s=>s.id===supId);
+  const color = selSup ? selSup.color : '#1A5CC8';
+
+  const allTiers = KH_SUP_TIERS.filter(t=>t.supplier_id===supId);
+  const tierSet = {};
+  allTiers.forEach(t => { const k=t.min_qty+'_'+(t.max_qty||''); tierSet[k]={min:t.min_qty,max:t.max_qty}; });
+  if (Object.keys(tierSet).length===0) {
+    [{min:1,max:49},{min:50,max:299},{min:300,max:null}].forEach(t=>{tierSet[t.min+'_'+(t.max||'')]={min:t.min,max:t.max};});
+  }
+  const tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
+  window._khCurrentSupTiers = tiers;
+  window._khCurrentSupId = supId;
+
+  const skuList = KH_SKUS.filter(s=>s.category!=='Postage');
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 14px;">
+        <span style="font-size:11px;font-weight:600;color:var(--textm);">Supplier:</span>
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <select onchange="khSelSupplier=this.value;khRenderSupTab(document.getElementById('khTabContent'))" style="background:none;border:none;color:var(--text);font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:200px;">
+          ${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===supId?'selected':''}>${s.name}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="khSupAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
+        <button onclick="khSupSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
+      <table id="khSupGrid" style="width:100%;border-collapse:collapse;min-width:600px;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:100px;">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:170px;">Nama Produk</th>
+            ${tiers.map((t,i)=>`
+              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span>Kos/pcs</span>
+                  <div style="display:flex;gap:2px;align-items:center;">
+                    <input data-sup-tier-idx="${i}" data-sup-tier-field="min" value="${t.min}" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">—</span>
+                    <input data-sup-tier-idx="${i}" data-sup-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">pcs</span>
+                  </div>
+                </div>
+              </th>
+            `).join('')}
+            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${khBuildSupRows(skuList, tiers, supId)}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage dikecualikan — bukan kos supplier. Kosongkan cell jika SKU tidak ditawarkan oleh supplier ini.</div>
+  `;
+}
+
+function khBuildSupRows(skuList, tiers, supId) {
+  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU.</td></tr>`;
+  const cats = [...new Set(skuList.map(s=>s.category))].sort();
+  const grouped = {};
+  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+
+  return cats.map(cat=>`
+    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+    ${grouped[cat].map(s=>`
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+        ${tiers.map(t=>{
+          const existing = KH_SUP_TIERS.find(r=>r.sku_id===s.id && r.supplier_id===supId && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
+          const val = existing ? existing.cost : '';
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="—" style="width:72px;text-align:right;font-size:11px;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+        }).join('')}
+        <td style="border-left:1px dashed var(--line);"></td>
+      </tr>
+    `).join('')}
+  `).join('');
+}
+
+function khSupAddTier() {
+  const tiers = window._khCurrentSupTiers || [];
+  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
+  tiers.push({min:newMin, max:null});
+  window._khCurrentSupTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSupTab(el);
+}
+
+async function khSupSaveAll() {
+  const tbl = document.getElementById('khSupGrid');
+  if (!tbl) return;
+  const supId = window._khCurrentSupId || khSelSupplier;
+  const inputs = tbl.querySelectorAll('input[data-sku]');
+  const bySkuId = {};
+  inputs.forEach(inp => {
+    const skuId = inp.getAttribute('data-sku');
+    const min = parseInt(inp.getAttribute('data-tier-min'));
+    const maxRaw = inp.getAttribute('data-tier-max');
+    const max = maxRaw ? parseInt(maxRaw) : null;
+    const cost = parseFloat(inp.value);
+    if (!bySkuId[skuId]) bySkuId[skuId] = [];
+    if (!isNaN(cost) && inp.value.trim() !== '' && inp.value.trim() !== '—') {
+      bySkuId[skuId].push({sku_id:skuId, supplier_id:supId, min_qty:min, max_qty:max, cost});
+    }
+  });
+  try {
+    const skuIds = Object.keys(bySkuId);
+    for (const skuId of skuIds) {
+      await khSupSaveSupTiers(skuId, supId, bySkuId[skuId]);
+    }
+    await khLoadAll();
+    showToast('Harga supplier disimpan');
+    const el = document.getElementById('khTabContent');
+    if (el) khRenderSupTab(el);
+  } catch(e) {
+    showToast('Ralat simpan: ' + e.message, 'error');
+  }
+}
+
+async function khSupSaveSupTiers(skuId, supId, rows) {
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+// ── Helper: lookup selling price for a given SKU + qty + source ──
+function khGetSellPrice(skuId, qty, source) {
+  const type = (source||'').toUpperCase()==='SEKOLAH' ? 'sekolah' : 'nonsekolah';
+  const tiers = KH_SELL_TIERS.filter(t=>t.sku_id===skuId && t.type===type).sort((a,b)=>b.min_qty-a.min_qty);
+  for (const t of tiers) {
+    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.price;
+  }
+  return null;
+}
+
+// ── Helper: lookup supplier cost for a given SKU + qty + supplier_id ──
+function khGetSupCost(skuId, qty, supId) {
+  const tiers = KH_SUP_TIERS.filter(t=>t.sku_id===skuId && t.supplier_id===supId).sort((a,b)=>b.min_qty-a.min_qty);
+  for (const t of tiers) {
+    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.cost;
+  }
+  return null;
+}
+
+// ── Expose to window ──
+window.showKatalogHargaView = showKatalogHargaView;
+window.khSwitchTab = khSwitchTab;
+window.khOpenSkuForm = khOpenSkuForm;
+window.khSaveSkuForm = khSaveSkuForm;
+window.khDeleteSkuConfirm = khDeleteSkuConfirm;
+window.khSellToggle = khSellToggle;
+window.khSellAddTier = khSellAddTier;
+window.khSellSaveAll = khSellSaveAll;
+window.khSupAddTier = khSupAddTier;
+window.khSupSaveAll = khSupSaveAll;
+window.khGetSellPrice = khGetSellPrice;
+window.khGetSupCost = khGetSupCost;
 
 // ── INIT — called by initApp() after login ──
 function initNotifications() {
