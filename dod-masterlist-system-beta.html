@@ -7648,7 +7648,7 @@ function submitChpw() {
 let itemRows = [];
 let itemRowId = 0;
 
-// Item catalogue {sku: description} — SKU hidden, description shown to user
+// Legacy catalogue kept for backwards compat (datalist fallback)
 const ITEM_CATALOGUE = [
   { sku:'SUB A SS COL',   desc:'Sublimation Adult Short Sleeve' },
   { sku:'SUBLIMATION LS', desc:'Sublimation Adult Long Sleeve' },
@@ -7672,11 +7672,111 @@ const ITEM_CATALOGUE = [
 ];
 const ITEM_TYPES = ITEM_CATALOGUE.map(i => i.desc);
 
-function addItemRow(desc='', qty=0, price=0, isAddon=false) {
-  const id = 'ir_' + (++itemRowId);
-  itemRows.push({ id, desc, qty, price, isAddon });
+// ── SKU suggestion dropdown helpers ──
+let _skuDropdownActive = null; // rowId of active dropdown
+
+function buildSkuSuggestions(query) {
+  // Combine KH_SKUS (Supabase) + legacy catalogue
+  const q = (query||'').toLowerCase().trim();
+  const results = [];
+  // From Supabase katalog
+  if (typeof KH_SKUS !== 'undefined') {
+    KH_SKUS.filter(s => s.status === 'Aktif').forEach(s => {
+      const label = s.sku_code + ' — ' + s.name + (s.saiz && s.saiz !== '— Tiada' ? ' (' + s.saiz + ')' : '');
+      if (!q || label.toLowerCase().includes(q) || s.sku_code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)) {
+        results.push({ id: s.id, sku_code: s.sku_code, label, isAddon: s.jenis === 'Add-on', isPostage: s.category === 'Postage' });
+      }
+    });
+  }
+  // From legacy catalogue (only if not already covered)
+  ITEM_CATALOGUE.forEach(c => {
+    if (!q || c.desc.toLowerCase().includes(q)) {
+      if (!results.find(r => r.label.toLowerCase().includes(c.desc.toLowerCase()))) {
+        results.push({ id: null, sku_code: c.sku, label: c.desc, isAddon: false, isPostage: c.sku === 'POSTAGE' });
+      }
+    }
+  });
+  return results.slice(0, 12);
+}
+
+function showSkuDropdown(rowId, query) {
+  closeSkuDropdown();
+  const input = document.getElementById('id_' + rowId);
+  if (!input) return;
+  const suggestions = buildSkuSuggestions(query);
+  if (!suggestions.length) return;
+  _skuDropdownActive = rowId;
+  const wrap = input.closest('td');
+  const dd = document.createElement('div');
+  dd.id = 'sku-dd-' + rowId;
+  dd.style.cssText = 'position:absolute;z-index:9999;background:var(--bg);border:1px solid var(--blue);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;max-height:220px;overflow-y:auto;';
+  dd.innerHTML = suggestions.map((s,i) => `
+    <div onclick="selectSkuSuggestion('${rowId}','${escHtmlForm(s.sku_code)}','${escHtmlForm(s.label)}','${s.id||''}',${s.isAddon},${s.isPostage})"
+      style="padding:7px 12px;font-size:11px;cursor:pointer;border-bottom:0.5px solid var(--line);display:flex;align-items:center;gap:8px;"
+      onmouseover="this.style.background='var(--bluebg)'" onmouseout="this.style.background=''">
+      <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);min-width:70px;">${escHtmlForm(s.sku_code)}</span>
+      <span style="color:var(--text);">${escHtmlForm(s.label.split(' — ').slice(1).join(' — ') || s.label)}</span>
+      ${s.isAddon ? '<span style="font-size:9px;background:var(--amberbg);color:var(--amber);border-radius:3px;padding:1px 5px;margin-left:auto;">ADDON</span>' : ''}
+      ${s.isPostage ? '<span style="font-size:9px;background:var(--bg3);color:var(--textm);border-radius:3px;padding:1px 5px;margin-left:auto;">POSTAGE</span>' : ''}
+    </div>
+  `).join('');
+  // Position below input
+  const rect = input.getBoundingClientRect();
+  const appRect = document.getElementById('mainApp').getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = (rect.bottom + 2) + 'px';
+  dd.style.left = rect.left + 'px';
+  document.body.appendChild(dd);
+}
+
+function closeSkuDropdown() {
+  const existing = document.querySelector('[id^="sku-dd-"]');
+  if (existing) existing.remove();
+  _skuDropdownActive = null;
+}
+
+function selectSkuSuggestion(rowId, skuCode, label, skuDbId, isAddon, isPostage) {
+  const row = itemRows.find(r => r.id === rowId);
+  if (!row) return;
+  // Set description
+  const displayName = label.includes(' — ') ? label.split(' — ').slice(1).join(' — ') : label;
+  row.desc = displayName;
+  row.skuCode = skuCode;
+  row.skuDbId = skuDbId || null;
+  // Auto-set addon flag
+  if (isAddon) row.isAddon = true;
+  if (isPostage) { row.isAddon = true; row.isPostage = true; }
+  const input = document.getElementById('id_' + rowId);
+  if (input) input.value = displayName;
+  closeSkuDropdown();
+  // Auto-fill price if qty already set
+  autoFillPrice(rowId);
   renderItemRows();
-  // Focus new desc field
+  recalcItems();
+}
+
+function autoFillPrice(rowId) {
+  const row = itemRows.find(r => r.id === rowId);
+  if (!row || !row.skuDbId) return;
+  const qty = parseFloat(row.qty) || 0;
+  if (!qty) return;
+  // Detect sekolah/nonsekolah from current order source
+  const sourceEl = document.getElementById('f_sumber');
+  const source = sourceEl ? sourceEl.value : '';
+  const price = khGetSellPrice(row.skuDbId, qty, source);
+  if (price !== null) {
+    row.price = price;
+    const priceEl = document.getElementById('ip_' + rowId);
+    if (priceEl) priceEl.value = price.toFixed(2);
+    const totalEl = document.getElementById('it_' + rowId);
+    if (totalEl) totalEl.textContent = fmt(qty * price);
+  }
+}
+
+function addItemRow(desc='', qty=0, price=0, isAddon=false, supSlot='s1') {
+  const id = 'ir_' + (++itemRowId);
+  itemRows.push({ id, desc, qty, price, isAddon, supSlot: supSlot || 's1' });
+  renderItemRows();
   setTimeout(() => {
     const el = document.getElementById('id_' + id);
     if (el) el.focus();
@@ -7685,6 +7785,7 @@ function addItemRow(desc='', qty=0, price=0, isAddon=false) {
 
 function removeItemRow(id) {
   itemRows = itemRows.filter(r => r.id !== id);
+  closeSkuDropdown();
   renderItemRows();
   recalcItems();
 }
@@ -7694,19 +7795,23 @@ function renderItemRows() {
   if (!tbody) return;
   tbody.innerHTML = itemRows.map((row, i) => {
     const isAddon = row.isAddon || false;
+    const supSlot = row.supSlot || 's1';
+    const isS2 = supSlot === 's2';
     return `
-    <tr style="${isAddon ? 'background:rgba(184,114,10,0.05);' : ''}">
+    <tr style="${isAddon ? 'background:rgba(184,114,10,0.04);' : ''}">
       <td class="td-no">${i+1}</td>
-      <td class="td-desc">
+      <td class="td-desc" style="position:relative;">
         <input type="text" id="id_${row.id}" value="${escHtmlForm(row.desc)}"
-          list="itemTypesList"
           placeholder="cth: Jersey Player"
-          oninput="updateItemField('${row.id}','desc',this.value)">
+          autocomplete="off"
+          oninput="updateItemField('${row.id}','desc',this.value);showSkuDropdown('${row.id}',this.value)"
+          onblur="setTimeout(()=>closeSkuDropdown(),180)"
+          onfocus="if(this.value.length===0)showSkuDropdown('${row.id}','')">
       </td>
       <td class="td-qty">
         <input type="number" id="iq_${row.id}" value="${row.qty||''}"
           placeholder="0" min="0"
-          oninput="updateItemField('${row.id}','qty',this.value);recalcItems()">
+          oninput="updateItemField('${row.id}','qty',this.value);autoFillPrice('${row.id}');recalcItems()">
       </td>
       <td class="td-price">
         <input type="number" id="ip_${row.id}" value="${row.price||''}"
@@ -7716,12 +7821,12 @@ function renderItemRows() {
       <td class="td-total" id="it_${row.id}">
         ${row.qty && row.price ? fmt(row.qty * row.price) : '—'}
       </td>
-      <td style="width:58px;padding:3px 3px;">
+      <td style="width:56px;padding:3px 3px;">
         <button type="button"
           onclick="toggleItemAddon('${row.id}')"
           title="${isAddon ? 'Klik untuk tukar ke ITEM (dikira PCS)' : 'Klik untuk tukar ke ADDON (tidak dikira PCS)'}"
           style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
-            padding:3px 8px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
+            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
             border:1px solid ${isAddon ? 'var(--amberb)' : 'var(--blueb)'};
             background:${isAddon ? 'var(--amberbg)' : 'var(--bluebg)'};
             color:${isAddon ? 'var(--amber)' : 'var(--blue)'};
@@ -7729,12 +7834,25 @@ function renderItemRows() {
           ${isAddon ? 'ADDON' : 'ITEM'}
         </button>
       </td>
+      <td style="width:48px;padding:3px 3px;">
+        <button type="button"
+          onclick="toggleSupSlot('${row.id}')"
+          title="Assign ke Supplier 1 atau Supplier 2"
+          style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
+            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
+            border:1px solid ${isS2 ? 'var(--greenb)' : 'var(--line)'};
+            background:${isS2 ? 'var(--greenbg)' : 'var(--bg3)'};
+            color:${isS2 ? 'var(--green)' : 'var(--textm)'};
+            transition:all .12s;">
+          ${isS2 ? 'S2' : 'S1'}
+        </button>
+      </td>
       <td class="td-del">
         <button type="button" class="item-del-btn" onclick="removeItemRow('${row.id}')"
           title="Buang item">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="7" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
+  }).join('') || `<tr><td colspan="8" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
     Tiada item. Klik "＋ Tambah Item" untuk mula.
   </td></tr>`;
 }
@@ -7747,25 +7865,30 @@ function toggleItemAddon(id) {
   recalcItems();
 }
 
+function toggleSupSlot(id) {
+  const row = itemRows.find(r => r.id === id);
+  if (!row) return;
+  row.supSlot = (row.supSlot === 's2') ? 's1' : 's2';
+  renderItemRows();
+  recalcSupCostFromItems();
+}
+
 function updateItemField(id, field, val) {
   const row = itemRows.find(r => r.id === id);
   if (!row) return;
   if (field === 'qty' || field === 'price') row[field] = parseFloat(val)||0;
   else {
     row[field] = val;
-    // Auto-store SKU when description matches catalogue (hidden)
     if (field === 'desc') {
+      // Try match legacy catalogue
       const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === val.toLowerCase());
       row.sku = cat ? cat.sku : '';
+      // If desc cleared, clear skuDbId
+      if (!val) { row.skuDbId = null; row.skuCode = ''; }
     }
   }
-  // Update total cell
   const totalEl = document.getElementById('it_' + id);
-  if (totalEl && row.qty && row.price) {
-    totalEl.textContent = fmt(row.qty * row.price);
-  } else if (totalEl) {
-    totalEl.textContent = '—';
-  }
+  if (totalEl) totalEl.textContent = row.qty && row.price ? fmt(row.qty * row.price) : '—';
 }
 
 function recalcItems() {
@@ -7790,20 +7913,68 @@ function recalcItems() {
     const tot = (parseFloat(row.qty)||0)*(parseFloat(row.price)||0);
     if (el) el.textContent = tot > 0 ? fmt(tot) : '—';
   });
-  // PCS: product items only (ITEM type)
   const pcsField = document.getElementById('f_pcs');
   if (pcsField && totalPcs > 0) pcsField.value = totalPcs;
-  // Revenue: all items incl addon
   if (totalAmt > 0) {
     const custField = document.getElementById('f_inv_cust');
     if (custField) custField.value = totalAmt.toFixed(2);
   }
+  recalcSupCostFromItems();
   recalc();
+}
+
+// Auto-calculate supplier cost from item rows
+function recalcSupCostFromItems() {
+  // Get current supplier IDs from order form
+  const sup1Input = document.getElementById('f_supplier');
+  const sup2Input = document.getElementById('f_supplier2');
+  const sup1Id = sup1Input ? (sup1Input.value||'').toLowerCase().trim() : '';
+  const sup2Id = sup2Input ? (sup2Input.value||'').toLowerCase().trim() : '';
+
+  // Find supplier IDs from SUPPLIERS array by name match
+  const findSupId = (nameVal) => {
+    if (!nameVal) return null;
+    const s = SUPPLIERS.find(x =>
+      x.name.toLowerCase().includes(nameVal.toLowerCase()) ||
+      x.short.toLowerCase().includes(nameVal.toLowerCase()) ||
+      x.id.toLowerCase() === nameVal.toLowerCase()
+    );
+    return s ? s.id : null;
+  };
+
+  const sup1DbId = findSupId(sup1Id);
+  const sup2DbId = findSupId(sup2Id);
+
+  let costS1 = 0, costS2 = 0;
+  itemRows.forEach(row => {
+    if (!row.skuDbId) return; // only auto-calc for SKU-linked rows
+    const qty = parseFloat(row.qty) || 0;
+    if (!qty) return;
+    const slot = row.supSlot || 's1';
+    const supDbId = slot === 's2' ? sup2DbId : sup1DbId;
+    if (!supDbId) return;
+    const cost = khGetSupCost(row.skuDbId, qty, supDbId);
+    if (cost === null) return;
+    const rowCost = qty * cost;
+    if (slot === 's2') costS2 += rowCost;
+    else costS1 += rowCost;
+  });
+
+  // Only update if there's auto-calculated value — don't overwrite manual entries
+  if (costS1 > 0) {
+    const s1El = document.getElementById('f_sup_cost');
+    if (s1El && (parseFloat(s1El.value)||0) === 0) s1El.value = costS1.toFixed(2);
+  }
+  if (costS2 > 0) {
+    const s2El = document.getElementById('f_sup2_cost');
+    if (s2El && (parseFloat(s2El.value)||0) === 0) s2El.value = costS2.toFixed(2);
+  }
 }
 
 function clearItemRows() {
   itemRows = [];
   itemRowId = 0;
+  closeSkuDropdown();
   renderItemRows();
   const pcsEl = document.getElementById('itemTotalPcs');
   const amtEl = document.getElementById('itemTotalAmt');
@@ -7813,15 +7984,17 @@ function clearItemRows() {
 
 function getItemsData() {
   return itemRows.filter(r => r.desc || r.qty || r.price).map(r => {
-    // Lookup SKU from catalogue if not already stored
     const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === (r.desc||'').toLowerCase());
     return {
-      sku:     r.sku || (cat ? cat.sku : ''),
-      desc:    r.desc || '',
-      qty:     parseFloat(r.qty)||0,
-      price:   parseFloat(r.price)||0,
-      total:   (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
-      isAddon: r.isAddon || false,
+      sku:      r.sku || (cat ? cat.sku : ''),
+      skuCode:  r.skuCode || '',
+      skuDbId:  r.skuDbId || null,
+      desc:     r.desc || '',
+      qty:      parseFloat(r.qty)||0,
+      price:    parseFloat(r.price)||0,
+      total:    (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
+      isAddon:  r.isAddon || false,
+      supSlot:  r.supSlot || 's1',
     };
   });
 }
@@ -7832,7 +8005,16 @@ function loadItemsData(items) {
   if (items && items.length) {
     items.forEach(item => {
       const id = 'ir_' + (++itemRowId);
-      itemRows.push({ id, desc: item.desc||'', qty: item.qty||0, price: item.price||0, isAddon: item.isAddon||false });
+      itemRows.push({
+        id,
+        desc:     item.desc||'',
+        qty:      item.qty||0,
+        price:    item.price||0,
+        isAddon:  item.isAddon||false,
+        supSlot:  item.supSlot||'s1',
+        skuCode:  item.skuCode||'',
+        skuDbId:  item.skuDbId||null,
+      });
     });
   }
   renderItemRows();
@@ -14331,6 +14513,16 @@ function khGetSupCost(skuId, qty, supId) {
 // ── Expose to window ──
 window.showKatalogHargaView = showKatalogHargaView;
 window.khSwitchTab = khSwitchTab;
+window.toggleItemAddon = toggleItemAddon;
+window.toggleSupSlot = toggleSupSlot;
+window.removeItemRow = removeItemRow;
+window.addItemRow = addItemRow;
+window.updateItemField = updateItemField;
+window.recalcItems = recalcItems;
+window.showSkuDropdown = showSkuDropdown;
+window.closeSkuDropdown = closeSkuDropdown;
+window.selectSkuSuggestion = selectSkuSuggestion;
+window.autoFillPrice = autoFillPrice;
 window.khOpenSkuForm = khOpenSkuForm;
 window.khSaveSkuForm = khSaveSkuForm;
 window.khDeleteSkuConfirm = khDeleteSkuConfirm;
