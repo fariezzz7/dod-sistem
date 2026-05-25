@@ -3762,9 +3762,9 @@ function setupNavForRole() {
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
-    // Katalog Harga: root_admin sahaja
+    // Katalog Harga: semua admin
     const khBtn = document.getElementById('sbKatalogHarga');
-    if (khBtn) khBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
+    if (khBtn) khBtn.style.display = 'flex';
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
