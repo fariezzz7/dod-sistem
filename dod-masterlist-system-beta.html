@@ -14104,17 +14104,17 @@ function khRenderSkuTab(el) {
             <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Jenis</th>
             <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Saiz</th>
             <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Status</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;border-bottom:1px solid var(--line);"></th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;border-bottom:1px solid var(--line);width:1%;"></th>
           </tr>
         </thead>
         <tbody>
           ${KH_SKUS.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;font-size:12px;color:var(--textm);">Tiada SKU. Klik "+ Tambah SKU" untuk mula.</td></tr>` :
             Object.keys(grouped).map(cat => `
               <tr><td colspan="7" style="background:var(--bg3);padding:6px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
-              ${grouped[cat].map(s => `
-                <tr id="khSkuRow_${s.id}" style="border-bottom:1px solid var(--line);">
+              ${grouped[cat].map((s,si) => `
+                <tr id="khSkuRow_${s.id}" style="border-bottom:1px solid var(--line);${si%2===1?'background:var(--bg3);':''}">
                   <td style="padding:7px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-                  <td style="padding:7px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+                  <td style="padding:7px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
                   <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.category)}</span></td>
                   <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.jenis||'—')}</span></td>
                   <td style="padding:7px 10px;text-align:center;font-size:11px;color:var(--textm);">${escHtmlForm(s.saiz||'—')}</td>
@@ -14222,21 +14222,23 @@ async function khDeleteSkuConfirm(id) {
 // TAB 2 — HARGA JUALAN
 // ─────────────────────────────────────────
 function khRenderSellTab(el) {
-  // Build tier columns from all existing tiers for current type
   const type = khSellPriceType;
-  const allTiers = KH_SELL_TIERS.filter(t=>t.type===type);
-  // Collect unique tier ranges
-  const tierSet = {};
-  allTiers.forEach(t => { const k = t.min_qty+'_'+(t.max_qty||''); tierSet[k] = {min:t.min_qty, max:t.max_qty}; });
-  // Default tiers if none exist
-  if (Object.keys(tierSet).length === 0) {
-    [{min:1,max:9},{min:10,max:49},{min:50,max:99},{min:100,max:299}].forEach(t => { tierSet[t.min+'_'+t.max]={min:t.min,max:t.max}; });
+
+  // Use cached tiers if same type (e.g. after addTier), else rebuild from DB
+  let tiers;
+  if (window._khCurrentSellTiers && window._khCurrentSellType === type) {
+    tiers = window._khCurrentSellTiers;
+  } else {
+    const allTiers = KH_SELL_TIERS.filter(t=>t.type===type);
+    const tierSet = {};
+    allTiers.forEach(t => { const k = t.min_qty+'_'+(t.max_qty||''); tierSet[k] = {min:t.min_qty, max:t.max_qty}; });
+    if (Object.keys(tierSet).length === 0) {
+      [{min:1,max:9},{min:10,max:49},{min:50,max:99},{min:100,max:299}].forEach(t => { tierSet[t.min+'_'+t.max]={min:t.min,max:t.max}; });
+    }
+    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
   }
-  const tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
 
-  // Build pending edits state
   if (!window._khSellEdits) window._khSellEdits = {};
-
   const skuList = KH_SKUS.filter(s=>s.status==='Aktif'||true);
 
   el.innerHTML = `
@@ -14252,15 +14254,18 @@ function khRenderSellTab(el) {
       </div>
     </div>
     <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
-      <table id="khSellGrid" style="width:100%;border-collapse:collapse;min-width:600px;">
+      <table id="khSellGrid" style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:var(--bg3);">
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:100px;">Kod SKU</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:170px;">Nama Produk</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
             ${tiers.map((t,i)=>`
               <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;position:relative;">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                  <span>Harga/pcs</span>
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <span>Harga/pcs</span>
+                    <button onclick="khSellDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
+                  </div>
                   <input data-tier-idx="${i}" data-tier-field="label" value="${t.min}${t.max?'–'+t.max:'+'}pcs" style="width:72px;text-align:center;font-size:9px;background:transparent;border:none;border-bottom:1px dashed var(--line);color:var(--textm);outline:none;font-family:'Fira Code',monospace;">
                   <div style="display:flex;gap:2px;">
                     <input data-tier-idx="${i}" data-tier-field="min" value="${t.min}" placeholder="min" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
@@ -14290,17 +14295,18 @@ function khBuildSellRows(skuList, tiers, type) {
   const cats = [...new Set(skuList.map(s=>s.category))].sort();
   const grouped = {};
   skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
-
+  let rowIdx = 0;
   return cats.map(cat=>`
     <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
     ${grouped[cat].map(s=>{
-      return `<tr style="border-bottom:1px solid var(--line);${s.category==='Postage'?'opacity:.6;':''}" ${s.category==='Postage'?'title="Postage — kos tidak dikira dalam supplier"':''}>
+      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
+      return `<tr style="border-bottom:1px solid var(--line);${zebra}${s.category==='Postage'?'opacity:.6;':''}" ${s.category==='Postage'?'title="Postage — kos tidak dikira dalam supplier"':''}>
         <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-        <td style="padding:5px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
         ${tiers.map((t,i)=>{
           const existing = KH_SELL_TIERS.find(r=>r.sku_id===s.id && r.type===type && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
           const val = existing ? existing.price : '';
-          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="0.00" style="width:72px;text-align:right;font-size:11px;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="0.00" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
         }).join('')}
         <td style="border-left:1px dashed var(--line);"></td>
       </tr>`;
@@ -14310,8 +14316,36 @@ function khBuildSellRows(skuList, tiers, type) {
 
 function khSellToggle(type) {
   khSellPriceType = type;
+  window._khCurrentSellTiers = null; // reset cache on type switch
+  window._khCurrentSellType = null;
   const el = document.getElementById('khTabContent');
   if (el) khRenderSellTab(el);
+}
+
+function khSellDeleteTier(idx) {
+  const tiers = window._khCurrentSellTiers || [];
+  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
+  const t = tiers[idx];
+  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
+  if (!confirm(`Padam tier "${label}"?\n\nSemua harga dalam tier ini akan hilang selepas Simpan.`)) return;
+  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
+  tiers.splice(idx, 1);
+  window._khCurrentSellTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+function khSupDeleteTier(idx) {
+  const tiers = window._khCurrentSupTiers || [];
+  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
+  const t = tiers[idx];
+  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
+  if (!confirm(`Padam tier "${label}"?\n\nSemua kos dalam tier ini akan hilang selepas Simpan.`)) return;
+  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
+  tiers.splice(idx, 1);
+  window._khCurrentSupTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSupTab(el);
 }
 
 function khSellAddTier() {
@@ -14370,13 +14404,19 @@ function khRenderSupTab(el) {
   const selSup = SUPPLIERS.find(s=>s.id===supId);
   const color = selSup ? selSup.color : '#1A5CC8';
 
-  const allTiers = KH_SUP_TIERS.filter(t=>t.supplier_id===supId);
-  const tierSet = {};
-  allTiers.forEach(t => { const k=t.min_qty+'_'+(t.max_qty||''); tierSet[k]={min:t.min_qty,max:t.max_qty}; });
-  if (Object.keys(tierSet).length===0) {
-    [{min:1,max:49},{min:50,max:299},{min:300,max:null}].forEach(t=>{tierSet[t.min+'_'+(t.max||'')]={min:t.min,max:t.max};});
+  // Use cached tiers if same supplier (e.g. after addTier), else rebuild from DB
+  let tiers;
+  if (window._khCurrentSupTiers && window._khCurrentSupId === supId) {
+    tiers = window._khCurrentSupTiers;
+  } else {
+    const allTiers = KH_SUP_TIERS.filter(t=>t.supplier_id===supId);
+    const tierSet = {};
+    allTiers.forEach(t => { const k=t.min_qty+'_'+(t.max_qty||''); tierSet[k]={min:t.min_qty,max:t.max_qty}; });
+    if (Object.keys(tierSet).length===0) {
+      [{min:1,max:49},{min:50,max:299},{min:300,max:null}].forEach(t=>{tierSet[t.min+'_'+(t.max||'')]={min:t.min,max:t.max};});
+    }
+    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
   }
-  const tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
   window._khCurrentSupTiers = tiers;
   window._khCurrentSupId = supId;
 
@@ -14387,7 +14427,7 @@ function khRenderSupTab(el) {
       <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 14px;">
         <span style="font-size:11px;font-weight:600;color:var(--textm);">Supplier:</span>
         <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <select onchange="khSelSupplier=this.value;khRenderSupTab(document.getElementById('khTabContent'))" style="background:none;border:none;color:var(--text);font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:200px;">
+        <select onchange="khSelSupplier=this.value;window._khCurrentSupTiers=null;window._khCurrentSupId=null;khRenderSupTab(document.getElementById('khTabContent'))" style="background:none;border:none;color:var(--text);font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:200px;">
           ${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===supId?'selected':''}>${s.name}</option>`).join('')}
         </select>
       </div>
@@ -14397,15 +14437,18 @@ function khRenderSupTab(el) {
       </div>
     </div>
     <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
-      <table id="khSupGrid" style="width:100%;border-collapse:collapse;min-width:600px;">
+      <table id="khSupGrid" style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:var(--bg3);">
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:100px;">Kod SKU</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);min-width:170px;">Nama Produk</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
             ${tiers.map((t,i)=>`
               <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                  <span>Kos/pcs</span>
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <span>Kos/pcs</span>
+                    <button onclick="khSupDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
+                  </div>
                   <div style="display:flex;gap:2px;align-items:center;">
                     <input data-sup-tier-idx="${i}" data-sup-tier-field="min" value="${t.min}" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
                     <span style="font-size:9px;color:var(--textm);">—</span>
@@ -14432,21 +14475,22 @@ function khBuildSupRows(skuList, tiers, supId) {
   const cats = [...new Set(skuList.map(s=>s.category))].sort();
   const grouped = {};
   skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
-
+  let rowIdx = 0;
   return cats.map(cat=>`
     <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
-    ${grouped[cat].map(s=>`
-      <tr style="border-bottom:1px solid var(--line);">
+    ${grouped[cat].map(s=>{
+      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
+      return `<tr style="border-bottom:1px solid var(--line);${zebra}">
         <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-        <td style="padding:5px 10px;font-size:12px;color:var(--text);">${escHtmlForm(s.name)}</td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
         ${tiers.map(t=>{
           const existing = KH_SUP_TIERS.find(r=>r.sku_id===s.id && r.supplier_id===supId && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
           const val = existing ? existing.cost : '';
-          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="—" style="width:72px;text-align:right;font-size:11px;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="—" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
         }).join('')}
         <td style="border-left:1px dashed var(--line);"></td>
-      </tr>
-    `).join('')}
+      </tr>`;
+    }).join('')}
   `).join('');
 }
 
@@ -14518,6 +14562,8 @@ function khGetSupCost(skuId, qty, supId) {
 
 // ── Expose to window ──
 window.showKatalogHargaView = showKatalogHargaView;
+window.khSellDeleteTier = khSellDeleteTier;
+window.khSupDeleteTier = khSupDeleteTier;
 window.khSwitchTab = khSwitchTab;
 window.toggleItemAddon = toggleItemAddon;
 window.toggleSupSlot = toggleSupSlot;
