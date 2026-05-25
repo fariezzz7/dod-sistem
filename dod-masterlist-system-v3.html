@@ -1340,6 +1340,11 @@ tr:hover .row-actions{opacity:1;}
   <div class="sb-divider"></div>
   <div class="sb-section">Sistem</div>
 
+  <button class="sb-item" id="sbKatalogHarga" data-tip="Katalog Harga" onclick="sbNav('katalogharga')" style="display:none;">
+    <span class="sb-item-icon">🏷️</span>
+    <span class="sb-item-label">Katalog Harga</span>
+  </button>
+
   <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
     <span class="sb-item-icon">⚙️</span>
     <span class="sb-item-label">Control Panel</span>
@@ -1618,6 +1623,11 @@ tr:hover .row-actions{opacity:1;}
   <!-- CONTROL PANEL VIEW -->
   <div id="controlPanelView" style="display:none;padding:24px 28px;">
     <div id="controlPanelContent"></div>
+  </div>
+
+  <!-- KATALOG HARGA VIEW -->
+  <div id="katalogHargaView" style="display:none;padding:24px 28px;">
+    <div id="katalogHargaContent"></div>
   </div>
 
   <!-- SALES KIT VIEW -->
@@ -2179,7 +2189,7 @@ tr:hover .row-actions{opacity:1;}
           <div class="form-field full">
             <label class="fl">Nama Supplier</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;">
+              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;" oninput="recalcSupCostFromItems()">
               <div id="supplierShortcuts" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;"></div>
             </div>
           </div>
@@ -3572,6 +3582,8 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
+  // Preload katalog harga for item breakdown dropdown
+  khLoadAll().catch(()=>{});
   // Check memos for this user
   setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
@@ -3644,7 +3656,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView','chatView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','katalogHargaView','salesKitView','chatView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3752,6 +3764,9 @@ function setupNavForRole() {
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
+    // Katalog Harga: semua admin
+    const khBtn = document.getElementById('sbKatalogHarga');
+    if (khBtn) khBtn.style.display = 'flex';
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -3883,6 +3898,11 @@ function sbNav(view) {
     case 'memo':
       document.getElementById('sbMemo').classList.add('active');
       showMemoView();
+      showSbMonths(false);
+      break;
+    case 'katalogharga':
+      document.getElementById('sbKatalogHarga') && document.getElementById('sbKatalogHarga').classList.add('active');
+      showKatalogHargaView();
       showSbMonths(false);
       break;
     case 'controlpanel':
@@ -7630,7 +7650,7 @@ function submitChpw() {
 let itemRows = [];
 let itemRowId = 0;
 
-// Item catalogue {sku: description} — SKU hidden, description shown to user
+// Legacy catalogue kept for backwards compat (datalist fallback)
 const ITEM_CATALOGUE = [
   { sku:'SUB A SS COL',   desc:'Sublimation Adult Short Sleeve' },
   { sku:'SUBLIMATION LS', desc:'Sublimation Adult Long Sleeve' },
@@ -7654,11 +7674,111 @@ const ITEM_CATALOGUE = [
 ];
 const ITEM_TYPES = ITEM_CATALOGUE.map(i => i.desc);
 
-function addItemRow(desc='', qty=0, price=0, isAddon=false) {
-  const id = 'ir_' + (++itemRowId);
-  itemRows.push({ id, desc, qty, price, isAddon });
+// ── SKU suggestion dropdown helpers ──
+let _skuDropdownActive = null; // rowId of active dropdown
+
+function buildSkuSuggestions(query) {
+  // Combine KH_SKUS (Supabase) + legacy catalogue
+  const q = (query||'').toLowerCase().trim();
+  const results = [];
+  // From Supabase katalog
+  if (typeof KH_SKUS !== 'undefined') {
+    KH_SKUS.filter(s => s.status === 'Aktif').forEach(s => {
+      const label = s.sku_code + ' — ' + s.name + (s.saiz && s.saiz !== '— Tiada' ? ' (' + s.saiz + ')' : '');
+      if (!q || label.toLowerCase().includes(q) || s.sku_code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)) {
+        results.push({ id: s.id, sku_code: s.sku_code, label, isAddon: s.jenis === 'Add-on', isPostage: s.category === 'Postage' });
+      }
+    });
+  }
+  // From legacy catalogue (only if not already covered)
+  ITEM_CATALOGUE.forEach(c => {
+    if (!q || c.desc.toLowerCase().includes(q)) {
+      if (!results.find(r => r.label.toLowerCase().includes(c.desc.toLowerCase()))) {
+        results.push({ id: null, sku_code: c.sku, label: c.desc, isAddon: false, isPostage: c.sku === 'POSTAGE' });
+      }
+    }
+  });
+  return results.slice(0, 12);
+}
+
+function showSkuDropdown(rowId, query) {
+  closeSkuDropdown();
+  const input = document.getElementById('id_' + rowId);
+  if (!input) return;
+  const suggestions = buildSkuSuggestions(query);
+  if (!suggestions.length) return;
+  _skuDropdownActive = rowId;
+  const wrap = input.closest('td');
+  const dd = document.createElement('div');
+  dd.id = 'sku-dd-' + rowId;
+  dd.style.cssText = 'position:absolute;z-index:9999;background:var(--bg);border:1px solid var(--blue);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;max-height:220px;overflow-y:auto;';
+  dd.innerHTML = suggestions.map((s,i) => `
+    <div onclick="selectSkuSuggestion('${rowId}','${escHtmlForm(s.sku_code)}','${escHtmlForm(s.label)}','${s.id||''}',${s.isAddon},${s.isPostage})"
+      style="padding:7px 12px;font-size:11px;cursor:pointer;border-bottom:0.5px solid var(--line);display:flex;align-items:center;gap:8px;"
+      onmouseover="this.style.background='var(--bluebg)'" onmouseout="this.style.background=''">
+      <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);min-width:70px;">${escHtmlForm(s.sku_code)}</span>
+      <span style="color:var(--text);">${escHtmlForm(s.label.split(' — ').slice(1).join(' — ') || s.label)}</span>
+      ${s.isAddon ? '<span style="font-size:9px;background:var(--amberbg);color:var(--amber);border-radius:3px;padding:1px 5px;margin-left:auto;">ADDON</span>' : ''}
+      ${s.isPostage ? '<span style="font-size:9px;background:var(--bg3);color:var(--textm);border-radius:3px;padding:1px 5px;margin-left:auto;">POSTAGE</span>' : ''}
+    </div>
+  `).join('');
+  // Position below input
+  const rect = input.getBoundingClientRect();
+  const appRect = document.getElementById('mainApp').getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = (rect.bottom + 2) + 'px';
+  dd.style.left = rect.left + 'px';
+  document.body.appendChild(dd);
+}
+
+function closeSkuDropdown() {
+  const existing = document.querySelector('[id^="sku-dd-"]');
+  if (existing) existing.remove();
+  _skuDropdownActive = null;
+}
+
+function selectSkuSuggestion(rowId, skuCode, label, skuDbId, isAddon, isPostage) {
+  const row = itemRows.find(r => r.id === rowId);
+  if (!row) return;
+  // Set description
+  const displayName = label.includes(' — ') ? label.split(' — ').slice(1).join(' — ') : label;
+  row.desc = displayName;
+  row.skuCode = skuCode;
+  row.skuDbId = skuDbId || null;
+  // Auto-set addon flag
+  if (isAddon) row.isAddon = true;
+  if (isPostage) { row.isAddon = true; row.isPostage = true; }
+  const input = document.getElementById('id_' + rowId);
+  if (input) input.value = displayName;
+  closeSkuDropdown();
+  // Auto-fill price if qty already set
+  autoFillPrice(rowId);
   renderItemRows();
-  // Focus new desc field
+  recalcItems();
+}
+
+function autoFillPrice(rowId) {
+  const row = itemRows.find(r => r.id === rowId);
+  if (!row || !row.skuDbId) return;
+  const qty = parseFloat(row.qty) || 0;
+  if (!qty) return;
+  // Detect sekolah/nonsekolah from current order source
+  const sourceEl = document.getElementById('f_sumber');
+  const source = sourceEl ? sourceEl.value : '';
+  const price = khGetSellPrice(row.skuDbId, qty, source);
+  if (price !== null) {
+    row.price = price;
+    const priceEl = document.getElementById('ip_' + rowId);
+    if (priceEl) priceEl.value = price.toFixed(2);
+    const totalEl = document.getElementById('it_' + rowId);
+    if (totalEl) totalEl.textContent = fmt(qty * price);
+  }
+}
+
+function addItemRow(desc='', qty=0, price=0, isAddon=false, supSlot='s1') {
+  const id = 'ir_' + (++itemRowId);
+  itemRows.push({ id, desc, qty, price, isAddon, supSlot: supSlot || 's1' });
+  renderItemRows();
   setTimeout(() => {
     const el = document.getElementById('id_' + id);
     if (el) el.focus();
@@ -7667,6 +7787,7 @@ function addItemRow(desc='', qty=0, price=0, isAddon=false) {
 
 function removeItemRow(id) {
   itemRows = itemRows.filter(r => r.id !== id);
+  closeSkuDropdown();
   renderItemRows();
   recalcItems();
 }
@@ -7676,19 +7797,23 @@ function renderItemRows() {
   if (!tbody) return;
   tbody.innerHTML = itemRows.map((row, i) => {
     const isAddon = row.isAddon || false;
+    const supSlot = row.supSlot || 's1';
+    const isS2 = supSlot === 's2';
     return `
-    <tr style="${isAddon ? 'background:rgba(184,114,10,0.05);' : ''}">
+    <tr style="${isAddon ? 'background:rgba(184,114,10,0.04);' : ''}">
       <td class="td-no">${i+1}</td>
-      <td class="td-desc">
+      <td class="td-desc" style="position:relative;">
         <input type="text" id="id_${row.id}" value="${escHtmlForm(row.desc)}"
-          list="itemTypesList"
           placeholder="cth: Jersey Player"
-          oninput="updateItemField('${row.id}','desc',this.value)">
+          autocomplete="off"
+          oninput="updateItemField('${row.id}','desc',this.value);showSkuDropdown('${row.id}',this.value)"
+          onblur="setTimeout(()=>closeSkuDropdown(),180)"
+          onfocus="if(this.value.length===0)showSkuDropdown('${row.id}','')">
       </td>
       <td class="td-qty">
         <input type="number" id="iq_${row.id}" value="${row.qty||''}"
           placeholder="0" min="0"
-          oninput="updateItemField('${row.id}','qty',this.value);recalcItems()">
+          oninput="updateItemField('${row.id}','qty',this.value);autoFillPrice('${row.id}');recalcItems()">
       </td>
       <td class="td-price">
         <input type="number" id="ip_${row.id}" value="${row.price||''}"
@@ -7698,12 +7823,12 @@ function renderItemRows() {
       <td class="td-total" id="it_${row.id}">
         ${row.qty && row.price ? fmt(row.qty * row.price) : '—'}
       </td>
-      <td style="width:58px;padding:3px 3px;">
+      <td style="width:56px;padding:3px 3px;">
         <button type="button"
           onclick="toggleItemAddon('${row.id}')"
           title="${isAddon ? 'Klik untuk tukar ke ITEM (dikira PCS)' : 'Klik untuk tukar ke ADDON (tidak dikira PCS)'}"
           style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
-            padding:3px 8px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
+            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
             border:1px solid ${isAddon ? 'var(--amberb)' : 'var(--blueb)'};
             background:${isAddon ? 'var(--amberbg)' : 'var(--bluebg)'};
             color:${isAddon ? 'var(--amber)' : 'var(--blue)'};
@@ -7711,12 +7836,25 @@ function renderItemRows() {
           ${isAddon ? 'ADDON' : 'ITEM'}
         </button>
       </td>
+      <td style="width:48px;padding:3px 3px;">
+        <button type="button"
+          onclick="toggleSupSlot('${row.id}')"
+          title="Assign ke Supplier 1 atau Supplier 2"
+          style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
+            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
+            border:1px solid ${isS2 ? 'var(--greenb)' : 'var(--line)'};
+            background:${isS2 ? 'var(--greenbg)' : 'var(--bg3)'};
+            color:${isS2 ? 'var(--green)' : 'var(--textm)'};
+            transition:all .12s;">
+          ${isS2 ? 'S2' : 'S1'}
+        </button>
+      </td>
       <td class="td-del">
         <button type="button" class="item-del-btn" onclick="removeItemRow('${row.id}')"
           title="Buang item">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="7" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
+  }).join('') || `<tr><td colspan="8" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
     Tiada item. Klik "＋ Tambah Item" untuk mula.
   </td></tr>`;
 }
@@ -7729,25 +7867,30 @@ function toggleItemAddon(id) {
   recalcItems();
 }
 
+function toggleSupSlot(id) {
+  const row = itemRows.find(r => r.id === id);
+  if (!row) return;
+  row.supSlot = (row.supSlot === 's2') ? 's1' : 's2';
+  renderItemRows();
+  recalcSupCostFromItems();
+}
+
 function updateItemField(id, field, val) {
   const row = itemRows.find(r => r.id === id);
   if (!row) return;
   if (field === 'qty' || field === 'price') row[field] = parseFloat(val)||0;
   else {
     row[field] = val;
-    // Auto-store SKU when description matches catalogue (hidden)
     if (field === 'desc') {
+      // Try match legacy catalogue
       const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === val.toLowerCase());
       row.sku = cat ? cat.sku : '';
+      // If desc cleared, clear skuDbId
+      if (!val) { row.skuDbId = null; row.skuCode = ''; }
     }
   }
-  // Update total cell
   const totalEl = document.getElementById('it_' + id);
-  if (totalEl && row.qty && row.price) {
-    totalEl.textContent = fmt(row.qty * row.price);
-  } else if (totalEl) {
-    totalEl.textContent = '—';
-  }
+  if (totalEl) totalEl.textContent = row.qty && row.price ? fmt(row.qty * row.price) : '—';
 }
 
 function recalcItems() {
@@ -7772,13 +7915,63 @@ function recalcItems() {
     const tot = (parseFloat(row.qty)||0)*(parseFloat(row.price)||0);
     if (el) el.textContent = tot > 0 ? fmt(tot) : '—';
   });
-  // PCS: product items only (ITEM type)
   const pcsField = document.getElementById('f_pcs');
   if (pcsField && totalPcs > 0) pcsField.value = totalPcs;
-  // Revenue: all items incl addon
   if (totalAmt > 0) {
     const custField = document.getElementById('f_inv_cust');
     if (custField) custField.value = totalAmt.toFixed(2);
+  }
+  recalcSupCostFromItems();
+  recalc();
+}
+
+// Auto-calculate supplier cost from item rows
+function recalcSupCostFromItems() {
+  if (typeof KH_SKUS === 'undefined' || !KH_SKUS.length) return;
+  if (typeof KH_SUP_TIERS === 'undefined' || !KH_SUP_TIERS.length) return;
+
+  const sup1NameEl = document.getElementById('f_supplier_name');
+  const sup2NameEl = document.getElementById('f_supplier2_name');
+  const sup1Name = sup1NameEl ? (sup1NameEl.value||'').trim() : '';
+  const sup2Name = sup2NameEl ? (sup2NameEl.value||'').trim() : '';
+
+  const findSupId = (nameVal) => {
+    if (!nameVal || typeof SUPPLIERS === 'undefined') return null;
+    const s = SUPPLIERS.find(x =>
+      x.name.toLowerCase().includes(nameVal.toLowerCase()) ||
+      (x.short && x.short.toLowerCase().includes(nameVal.toLowerCase())) ||
+      x.id.toLowerCase() === nameVal.toLowerCase()
+    );
+    return s ? s.id : null;
+  };
+
+  const sup1DbId = findSupId(sup1Name);
+  const sup2DbId = findSupId(sup2Name);
+
+  let costS1 = 0, costS2 = 0;
+  let hasS1 = false, hasS2 = false;
+
+  itemRows.forEach(row => {
+    if (!row.skuDbId) return;
+    const qty = parseFloat(row.qty) || 0;
+    if (!qty) return;
+    const slot = row.supSlot || 's1';
+    const supDbId = slot === 's2' ? sup2DbId : sup1DbId;
+    if (!supDbId) return;
+    const cost = khGetSupCost(row.skuDbId, qty, supDbId);
+    if (cost === null) return;
+    const rowCost = qty * cost;
+    if (slot === 's2') { costS2 += rowCost; hasS2 = true; }
+    else { costS1 += rowCost; hasS1 = true; }
+  });
+
+  if (hasS1) {
+    const s1El = document.getElementById('f_nohad_amt');
+    if (s1El) s1El.value = costS1.toFixed(2);
+  }
+  if (hasS2) {
+    const s2El = document.getElementById('f_sup2_amt');
+    if (s2El) s2El.value = costS2.toFixed(2);
   }
   recalc();
 }
@@ -7786,6 +7979,7 @@ function recalcItems() {
 function clearItemRows() {
   itemRows = [];
   itemRowId = 0;
+  closeSkuDropdown();
   renderItemRows();
   const pcsEl = document.getElementById('itemTotalPcs');
   const amtEl = document.getElementById('itemTotalAmt');
@@ -7795,15 +7989,17 @@ function clearItemRows() {
 
 function getItemsData() {
   return itemRows.filter(r => r.desc || r.qty || r.price).map(r => {
-    // Lookup SKU from catalogue if not already stored
     const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === (r.desc||'').toLowerCase());
     return {
-      sku:     r.sku || (cat ? cat.sku : ''),
-      desc:    r.desc || '',
-      qty:     parseFloat(r.qty)||0,
-      price:   parseFloat(r.price)||0,
-      total:   (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
-      isAddon: r.isAddon || false,
+      sku:      r.sku || (cat ? cat.sku : ''),
+      skuCode:  r.skuCode || '',
+      skuDbId:  r.skuDbId || null,
+      desc:     r.desc || '',
+      qty:      parseFloat(r.qty)||0,
+      price:    parseFloat(r.price)||0,
+      total:    (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
+      isAddon:  r.isAddon || false,
+      supSlot:  r.supSlot || 's1',
     };
   });
 }
@@ -7814,7 +8010,16 @@ function loadItemsData(items) {
   if (items && items.length) {
     items.forEach(item => {
       const id = 'ir_' + (++itemRowId);
-      itemRows.push({ id, desc: item.desc||'', qty: item.qty||0, price: item.price||0, isAddon: item.isAddon||false });
+      itemRows.push({
+        id,
+        desc:     item.desc||'',
+        qty:      item.qty||0,
+        price:    item.price||0,
+        isAddon:  item.isAddon||false,
+        supSlot:  item.supSlot||'s1',
+        skuCode:  item.skuCode||'',
+        skuDbId:  item.skuDbId||null,
+      });
     });
   }
   renderItemRows();
@@ -7892,6 +8097,7 @@ function _buildAndOpenDoc(r, month) {
 function setSupplier(name) {
   const el = document.getElementById('f_supplier_name');
   if (el) el.value = name;
+  recalcSupCostFromItems();
 }
 
 
@@ -13766,6 +13972,619 @@ function mAddNotifSilent({ icon, title, sub, type }) {
   mRenderNotifPanel();
   mShakeBell();
 }
+
+// ======================================
+// KATALOG HARGA — SKU / HARGA JUALAN / HARGA SUPPLIER
+// ======================================
+
+// ── In-memory state ──
+let KH_SKUS = [];          // [{id, sku_code, name, category, jenis, saiz, status, created_at}]
+let KH_SELL_TIERS = [];    // [{id, sku_id, type (sekolah/nonsekolah), min_qty, max_qty, price}]
+let KH_SUP_TIERS = [];     // [{id, sku_id, supplier_id, min_qty, max_qty, cost}]
+
+let khActiveTab = 'sku';
+let khSellPriceType = 'sekolah';
+let khSelSupplier = '';
+
+// ── Constants ──
+const KH_CATEGORIES = ['Jersey / Sukan','Korporat','Outerwear','Add-on','Postage','Lain-lain'];
+const KH_JENIS = ['Produk Utama','Add-on','Postage'];
+const KH_SAIZ = ['Adult','Kids','Unisex','— Tiada'];
+
+// ── Supabase helpers ──
+async function khLoadAll() {
+  try {
+    const [skus, sell, sup] = await Promise.all([
+      supaGet('product_sku','select=*&order=category.asc,name.asc'),
+      supaGet('selling_price_tiers','select=*&order=sku_id.asc,type.asc,min_qty.asc'),
+      supaGet('supplier_price_tiers','select=*&order=sku_id.asc,supplier_id.asc,min_qty.asc'),
+    ]);
+    KH_SKUS = skus || [];
+    KH_SELL_TIERS = sell || [];
+    KH_SUP_TIERS = sup || [];
+  } catch(e) {
+    // tables may not exist yet — show empty state
+    KH_SKUS = []; KH_SELL_TIERS = []; KH_SUP_TIERS = [];
+  }
+}
+
+async function khSaveSku(obj) {
+  if (obj.id) {
+    return supaFetch('/rest/v1/product_sku?id=eq.'+obj.id, {method:'PATCH', prefer:'return=representation', body:JSON.stringify(obj)});
+  } else {
+    return supaFetch('/rest/v1/product_sku', {method:'POST', prefer:'return=representation', body:JSON.stringify(obj)});
+  }
+}
+
+async function khDeleteSku(id) {
+  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
+  await supaFetch('/rest/v1/product_sku?id=eq.'+id, {method:'DELETE'});
+}
+
+async function khSaveSellTiers(skuId, type, rows) {
+  // Delete existing for this sku+type, then insert new
+  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+skuId+'&type=eq.'+type, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/selling_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+async function khSaveSupTiers(skuId, supId, rows) {
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+// ── View entry point ──
+async function showKatalogHargaView() {
+  setAllViewsHidden();
+  document.getElementById('katalogHargaView').style.display = 'block';
+  const el = document.getElementById('katalogHargaContent');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--textm);font-size:12px;">Memuatkan katalog...</div>';
+  await khLoadAll();
+  renderKatalogHarga();
+}
+
+function renderKatalogHarga() {
+  const el = document.getElementById('katalogHargaContent');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);">🏷️ Katalog Harga</div>
+        <div style="font-size:11px;color:var(--textm);margin-top:3px;">Urus senarai produk, harga jualan, dan kos supplier</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:18px;">
+      ${[['sku','📦 Produk / SKU'],['sell','💰 Harga Jualan'],['supplier','🏭 Harga Supplier']].map(([k,l])=>`
+        <button onclick="khSwitchTab('${k}')" style="padding:9px 20px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:${khActiveTab===k?'var(--blue)':'var(--textm)'};border-bottom:2px solid ${khActiveTab===k?'var(--blue)':'transparent'};margin-bottom:-1px;transition:all .12s;">${l}</button>
+      `).join('')}
+    </div>
+    <div id="khTabContent"></div>
+  `;
+  khRenderTab();
+}
+
+function khSwitchTab(tab) {
+  khActiveTab = tab;
+  renderKatalogHarga();
+}
+
+function khRenderTab() {
+  const el = document.getElementById('khTabContent');
+  if (!el) return;
+  if (khActiveTab === 'sku') khRenderSkuTab(el);
+  else if (khActiveTab === 'sell') khRenderSellTab(el);
+  else khRenderSupTab(el);
+}
+
+// ─────────────────────────────────────────
+// TAB 1 — SKU
+// ─────────────────────────────────────────
+function khRenderSkuTab(el) {
+  const cats = [...new Set(KH_SKUS.map(s=>s.category))].sort();
+  const grouped = {};
+  KH_SKUS.forEach(s => { if (!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:12px;color:var(--textm);">${KH_SKUS.length} SKU terdaftar</span>
+      <button onclick="khOpenSkuForm()" style="padding:7px 14px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah SKU</button>
+    </div>
+    <div id="khSkuFormWrap"></div>
+    <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Kategori</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Jenis</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Saiz</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Status</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;border-bottom:1px solid var(--line);width:1%;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${KH_SKUS.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;font-size:12px;color:var(--textm);">Tiada SKU. Klik "+ Tambah SKU" untuk mula.</td></tr>` :
+            Object.keys(grouped).map(cat => `
+              <tr><td colspan="7" style="background:var(--bg3);padding:6px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+              ${grouped[cat].map((s,si) => `
+                <tr id="khSkuRow_${s.id}" style="border-bottom:1px solid var(--line);${si%2===1?'background:var(--bg3);':''}">
+                  <td style="padding:7px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+                  <td style="padding:7px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.category)}</span></td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.jenis||'—')}</span></td>
+                  <td style="padding:7px 10px;text-align:center;font-size:11px;color:var(--textm);">${escHtmlForm(s.saiz||'—')}</td>
+                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:${s.status==='Aktif'?'var(--greenbg)':'var(--redbg)'};color:${s.status==='Aktif'?'var(--green)':'var(--red)'};border-radius:20px;padding:2px 8px;">${escHtmlForm(s.status)}</span></td>
+                  <td style="padding:7px 8px;"><div style="display:flex;gap:4px;">
+                    <button onclick="khOpenSkuForm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">✏️</button>
+                    <button onclick="khDeleteSkuConfirm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">🗑</button>
+                  </div></td>
+                </tr>
+              `).join('')}
+            `).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function khOpenSkuForm(id) {
+  const wrap = document.getElementById('khSkuFormWrap');
+  if (!wrap) return;
+  const s = id ? KH_SKUS.find(x=>x.id===id) : null;
+  wrap.innerHTML = `
+    <div style="background:var(--bg);border:1.5px solid var(--blue);border-radius:10px;padding:16px 18px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">${s?'✏️ Edit SKU':'＋ Tambah SKU Baru'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kod SKU</div>
+          <input id="khf_sku" value="${escHtmlForm(s?.sku_code||'')}" placeholder="cth: RNSS/A" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;font-family:'Fira Code',monospace;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Nama Produk</div>
+          <input id="khf_name" value="${escHtmlForm(s?.name||'')}" placeholder="cth: Round Neck Short Sleeve" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kategori</div>
+          <select id="khf_cat" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_CATEGORIES.map(c=>`<option value="${c}" ${(s?.category||'')==c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Jenis</div>
+          <select id="khf_jenis" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_JENIS.map(j=>`<option value="${j}" ${(s?.jenis||'')==j?'selected':''}>${j}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Saiz</div>
+          <select id="khf_saiz" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            ${KH_SAIZ.map(z=>`<option value="${z}" ${(s?.saiz||'')==z?'selected':''}>${z}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Status</div>
+          <select id="khf_status" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
+            <option value="Aktif" ${(s?.status||'Aktif')==='Aktif'?'selected':''}>Aktif</option>
+            <option value="Tidak Aktif" ${s?.status==='Tidak Aktif'?'selected':''}>Tidak Aktif</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="document.getElementById('khSkuFormWrap').innerHTML=''" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">Batal</button>
+        <button onclick="khSaveSkuForm('${id||''}')" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff;border:1px solid var(--blue);">✓ Simpan SKU</button>
+      </div>
+    </div>
+  `;
+}
+
+async function khSaveSkuForm(id) {
+  const sku_code = document.getElementById('khf_sku')?.value.trim();
+  const name = document.getElementById('khf_name')?.value.trim();
+  const category = document.getElementById('khf_cat')?.value;
+  const jenis = document.getElementById('khf_jenis')?.value;
+  const saiz = document.getElementById('khf_saiz')?.value;
+  const status = document.getElementById('khf_status')?.value;
+  if (!sku_code || !name) { showToast('Kod SKU dan Nama wajib diisi','warning'); return; }
+  const obj = { sku_code, name, category, jenis, saiz, status };
+  if (id) obj.id = id;
+  try {
+    const res = await khSaveSku(obj);
+    await khLoadAll();
+    showToast(id ? 'SKU dikemaskini' : 'SKU baru disimpan');
+    renderKatalogHarga();
+  } catch(e) {
+    showToast('Ralat: ' + e.message, 'error');
+  }
+}
+
+async function khDeleteSkuConfirm(id) {
+  const s = KH_SKUS.find(x=>x.id===id);
+  if (!confirm(`Padam SKU "${s?.sku_code} — ${s?.name}"?\n\nSemua harga jualan dan harga supplier untuk SKU ini juga akan dipadam.`)) return;
+  try {
+    await khDeleteSku(id);
+    await khLoadAll();
+    showToast('SKU dipadam');
+    renderKatalogHarga();
+  } catch(e) {
+    showToast('Ralat: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────
+// TAB 2 — HARGA JUALAN
+// ─────────────────────────────────────────
+function khRenderSellTab(el) {
+  const type = khSellPriceType;
+
+  // Use cached tiers if same type (e.g. after addTier), else rebuild from DB
+  let tiers;
+  if (window._khCurrentSellTiers && window._khCurrentSellType === type) {
+    tiers = window._khCurrentSellTiers;
+  } else {
+    const allTiers = KH_SELL_TIERS.filter(t=>t.type===type);
+    const tierSet = {};
+    allTiers.forEach(t => { const k = t.min_qty+'_'+(t.max_qty||''); tierSet[k] = {min:t.min_qty, max:t.max_qty}; });
+    if (Object.keys(tierSet).length === 0) {
+      [{min:1,max:9},{min:10,max:49},{min:50,max:99},{min:100,max:299}].forEach(t => { tierSet[t.min+'_'+t.max]={min:t.min,max:t.max}; });
+    }
+    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
+  }
+
+  if (!window._khSellEdits) window._khSellEdits = {};
+  const skuList = KH_SKUS.filter(s=>s.status==='Aktif'||true);
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--textm);">Jenis Harga:</span>
+        <button onclick="khSellToggle('sekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='sekolah'?'var(--blueb)':'var(--line)'};background:${type==='sekolah'?'var(--bluebg)':'var(--bg3)'};color:${type==='sekolah'?'var(--blue)':'var(--textm)'};">Sekolah</button>
+        <button onclick="khSellToggle('nonsekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='nonsekolah'?'var(--amberb)':'var(--line)'};background:${type==='nonsekolah'?'var(--amberbg)':'var(--bg3)'};color:${type==='nonsekolah'?'var(--amber)':'var(--textm)'};">Non-Sekolah</button>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="khSellAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
+        <button onclick="khSellSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
+      <table id="khSellGrid" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
+            ${tiers.map((t,i)=>`
+              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;position:relative;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <span>Harga/pcs</span>
+                    <button onclick="khSellDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
+                  </div>
+                  <input data-tier-idx="${i}" data-tier-field="label" value="${t.min}${t.max?'–'+t.max:'+'}pcs" style="width:72px;text-align:center;font-size:9px;background:transparent;border:none;border-bottom:1px dashed var(--line);color:var(--textm);outline:none;font-family:'Fira Code',monospace;">
+                  <div style="display:flex;gap:2px;">
+                    <input data-tier-idx="${i}" data-tier-field="min" value="${t.min}" placeholder="min" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">—</span>
+                    <input data-tier-idx="${i}" data-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                  </div>
+                </div>
+              </th>
+            `).join('')}
+            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${khBuildSellRows(skuList, tiers, type)}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage — harga di sini adalah caj kepada customer sahaja, tidak dikira dalam kos supplier.</div>
+  `;
+  // Store tiers for later use
+  window._khCurrentSellTiers = tiers;
+  window._khCurrentSellType = type;
+}
+
+function khBuildSellRows(skuList, tiers, type) {
+  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU. Tambah SKU dalam Tab 1 dahulu.</td></tr>`;
+  const cats = [...new Set(skuList.map(s=>s.category))].sort();
+  const grouped = {};
+  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+  let rowIdx = 0;
+  return cats.map(cat=>`
+    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+    ${grouped[cat].map(s=>{
+      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
+      return `<tr style="border-bottom:1px solid var(--line);${zebra}${s.category==='Postage'?'opacity:.6;':''}" ${s.category==='Postage'?'title="Postage — kos tidak dikira dalam supplier"':''}>
+        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
+        ${tiers.map((t,i)=>{
+          const existing = KH_SELL_TIERS.find(r=>r.sku_id===s.id && r.type===type && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
+          const val = existing ? existing.price : '';
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="0.00" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+        }).join('')}
+        <td style="border-left:1px dashed var(--line);"></td>
+      </tr>`;
+    }).join('')}
+  `).join('');
+}
+
+function khSellToggle(type) {
+  khSellPriceType = type;
+  window._khCurrentSellTiers = null; // reset cache on type switch
+  window._khCurrentSellType = null;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+function khSellDeleteTier(idx) {
+  const tiers = window._khCurrentSellTiers || [];
+  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
+  const t = tiers[idx];
+  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
+  if (!confirm(`Padam tier "${label}"?\n\nSemua harga dalam tier ini akan hilang selepas Simpan.`)) return;
+  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
+  tiers.splice(idx, 1);
+  window._khCurrentSellTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+function khSupDeleteTier(idx) {
+  const tiers = window._khCurrentSupTiers || [];
+  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
+  const t = tiers[idx];
+  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
+  if (!confirm(`Padam tier "${label}"?\n\nSemua kos dalam tier ini akan hilang selepas Simpan.`)) return;
+  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
+  tiers.splice(idx, 1);
+  window._khCurrentSupTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSupTab(el);
+}
+
+function khSellAddTier() {
+  // Add a new tier column
+  const tbl = document.getElementById('khSellGrid');
+  if (!tbl) return;
+  const tiers = window._khCurrentSellTiers || [];
+  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
+  tiers.push({min:newMin, max:null});
+  window._khCurrentSellTiers = tiers;
+  // Re-render sell tab
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSellTab(el);
+}
+
+async function khSellSaveAll() {
+  const tbl = document.getElementById('khSellGrid');
+  if (!tbl) return;
+  const type = window._khCurrentSellType || khSellPriceType;
+  // Collect all tier headers
+  const tiers = window._khCurrentSellTiers || [];
+  // Collect all inputs grouped by sku_id
+  const inputs = tbl.querySelectorAll('input[data-sku]');
+  const bySkuId = {};
+  inputs.forEach(inp => {
+    const skuId = inp.getAttribute('data-sku');
+    const min = parseInt(inp.getAttribute('data-tier-min'));
+    const maxRaw = inp.getAttribute('data-tier-max');
+    const max = maxRaw ? parseInt(maxRaw) : null;
+    const price = parseFloat(inp.value);
+    if (!bySkuId[skuId]) bySkuId[skuId] = [];
+    if (!isNaN(price) && inp.value.trim() !== '') {
+      bySkuId[skuId].push({sku_id:skuId, type, min_qty:min, max_qty:max, price});
+    }
+  });
+  try {
+    const skuIds = Object.keys(bySkuId);
+    for (const skuId of skuIds) {
+      await khSaveSellTiers(skuId, type, bySkuId[skuId]);
+    }
+    await khLoadAll();
+    showToast('Harga jualan disimpan');
+    const el = document.getElementById('khTabContent');
+    if (el) khRenderSellTab(el);
+  } catch(e) {
+    showToast('Ralat simpan: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────
+// TAB 3 — HARGA SUPPLIER
+// ─────────────────────────────────────────
+function khRenderSupTab(el) {
+  const supId = khSelSupplier || (SUPPLIERS.length ? SUPPLIERS[0].id : '');
+  if (!khSelSupplier && SUPPLIERS.length) khSelSupplier = SUPPLIERS[0].id;
+  const selSup = SUPPLIERS.find(s=>s.id===supId);
+  const color = selSup ? selSup.color : '#1A5CC8';
+
+  // Use cached tiers if same supplier (e.g. after addTier), else rebuild from DB
+  let tiers;
+  if (window._khCurrentSupTiers && window._khCurrentSupId === supId) {
+    tiers = window._khCurrentSupTiers;
+  } else {
+    const allTiers = KH_SUP_TIERS.filter(t=>t.supplier_id===supId);
+    const tierSet = {};
+    allTiers.forEach(t => { const k=t.min_qty+'_'+(t.max_qty||''); tierSet[k]={min:t.min_qty,max:t.max_qty}; });
+    if (Object.keys(tierSet).length===0) {
+      [{min:1,max:49},{min:50,max:299},{min:300,max:null}].forEach(t=>{tierSet[t.min+'_'+(t.max||'')]={min:t.min,max:t.max};});
+    }
+    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
+  }
+  window._khCurrentSupTiers = tiers;
+  window._khCurrentSupId = supId;
+
+  const skuList = KH_SKUS.filter(s=>s.category!=='Postage');
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 14px;">
+        <span style="font-size:11px;font-weight:600;color:var(--textm);">Supplier:</span>
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <select onchange="khSelSupplier=this.value;window._khCurrentSupTiers=null;window._khCurrentSupId=null;khRenderSupTab(document.getElementById('khTabContent'))" style="background:none;border:none;color:var(--text);font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:200px;">
+          ${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===supId?'selected':''}>${s.name}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="khSupAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
+        <button onclick="khSupSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
+      <table id="khSupGrid" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
+            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
+            ${tiers.map((t,i)=>`
+              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <span>Kos/pcs</span>
+                    <button onclick="khSupDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
+                  </div>
+                  <div style="display:flex;gap:2px;align-items:center;">
+                    <input data-sup-tier-idx="${i}" data-sup-tier-field="min" value="${t.min}" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">—</span>
+                    <input data-sup-tier-idx="${i}" data-sup-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
+                    <span style="font-size:9px;color:var(--textm);">pcs</span>
+                  </div>
+                </div>
+              </th>
+            `).join('')}
+            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${khBuildSupRows(skuList, tiers, supId)}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage dikecualikan — bukan kos supplier. Kosongkan cell jika SKU tidak ditawarkan oleh supplier ini.</div>
+  `;
+}
+
+function khBuildSupRows(skuList, tiers, supId) {
+  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU.</td></tr>`;
+  const cats = [...new Set(skuList.map(s=>s.category))].sort();
+  const grouped = {};
+  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
+  let rowIdx = 0;
+  return cats.map(cat=>`
+    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
+    ${grouped[cat].map(s=>{
+      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
+      return `<tr style="border-bottom:1px solid var(--line);${zebra}">
+        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
+        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
+        ${tiers.map(t=>{
+          const existing = KH_SUP_TIERS.find(r=>r.sku_id===s.id && r.supplier_id===supId && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
+          const val = existing ? existing.cost : '';
+          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="—" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
+        }).join('')}
+        <td style="border-left:1px dashed var(--line);"></td>
+      </tr>`;
+    }).join('')}
+  `).join('');
+}
+
+function khSupAddTier() {
+  const tiers = window._khCurrentSupTiers || [];
+  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
+  tiers.push({min:newMin, max:null});
+  window._khCurrentSupTiers = tiers;
+  const el = document.getElementById('khTabContent');
+  if (el) khRenderSupTab(el);
+}
+
+async function khSupSaveAll() {
+  const tbl = document.getElementById('khSupGrid');
+  if (!tbl) return;
+  const supId = window._khCurrentSupId || khSelSupplier;
+  const inputs = tbl.querySelectorAll('input[data-sku]');
+  const bySkuId = {};
+  inputs.forEach(inp => {
+    const skuId = inp.getAttribute('data-sku');
+    const min = parseInt(inp.getAttribute('data-tier-min'));
+    const maxRaw = inp.getAttribute('data-tier-max');
+    const max = maxRaw ? parseInt(maxRaw) : null;
+    const cost = parseFloat(inp.value);
+    if (!bySkuId[skuId]) bySkuId[skuId] = [];
+    if (!isNaN(cost) && inp.value.trim() !== '' && inp.value.trim() !== '—') {
+      bySkuId[skuId].push({sku_id:skuId, supplier_id:supId, min_qty:min, max_qty:max, cost});
+    }
+  });
+  try {
+    const skuIds = Object.keys(bySkuId);
+    for (const skuId of skuIds) {
+      await khSupSaveSupTiers(skuId, supId, bySkuId[skuId]);
+    }
+    await khLoadAll();
+    showToast('Harga supplier disimpan');
+    const el = document.getElementById('khTabContent');
+    if (el) khRenderSupTab(el);
+  } catch(e) {
+    showToast('Ralat simpan: ' + e.message, 'error');
+  }
+}
+
+async function khSupSaveSupTiers(skuId, supId, rows) {
+  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
+  if (rows.length) {
+    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
+  }
+}
+
+// ── Helper: lookup selling price for a given SKU + qty + source ──
+function khGetSellPrice(skuId, qty, source) {
+  const type = (source||'').toUpperCase()==='SEKOLAH' ? 'sekolah' : 'nonsekolah';
+  const tiers = KH_SELL_TIERS.filter(t=>t.sku_id===skuId && t.type===type).sort((a,b)=>b.min_qty-a.min_qty);
+  for (const t of tiers) {
+    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.price;
+  }
+  return null;
+}
+
+// ── Helper: lookup supplier cost for a given SKU + qty + supplier_id ──
+function khGetSupCost(skuId, qty, supId) {
+  const tiers = KH_SUP_TIERS.filter(t=>t.sku_id===skuId && t.supplier_id===supId).sort((a,b)=>b.min_qty-a.min_qty);
+  for (const t of tiers) {
+    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.cost;
+  }
+  return null;
+}
+
+// ── Expose to window ──
+window.showKatalogHargaView = showKatalogHargaView;
+window.khSellDeleteTier = khSellDeleteTier;
+window.khSupDeleteTier = khSupDeleteTier;
+window.khSwitchTab = khSwitchTab;
+window.toggleItemAddon = toggleItemAddon;
+window.toggleSupSlot = toggleSupSlot;
+window.removeItemRow = removeItemRow;
+window.addItemRow = addItemRow;
+window.updateItemField = updateItemField;
+window.recalcItems = recalcItems;
+window.showSkuDropdown = showSkuDropdown;
+window.closeSkuDropdown = closeSkuDropdown;
+window.selectSkuSuggestion = selectSkuSuggestion;
+window.autoFillPrice = autoFillPrice;
+window.khOpenSkuForm = khOpenSkuForm;
+window.khSaveSkuForm = khSaveSkuForm;
+window.khDeleteSkuConfirm = khDeleteSkuConfirm;
+window.khSellToggle = khSellToggle;
+window.khSellAddTier = khSellAddTier;
+window.khSellSaveAll = khSellSaveAll;
+window.khSupAddTier = khSupAddTier;
+window.khSupSaveAll = khSupSaveAll;
+window.khGetSellPrice = khGetSellPrice;
+window.khGetSupCost = khGetSupCost;
 
 // ── INIT — called by initApp() after login ──
 function initNotifications() {
