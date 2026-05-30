@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEwklEQVR4nO1WXWwUVRQ+987szOzOzG7/pQ92aQETYssSIUJNgNaEECEpDVgeAYOlqAlC1QT8wQRIsOLPmxSEF+GhBUpQecGkWoM0qfbHUIECAdopKy2xsMB2d6Zz7z0+XMBSWvpgSDThPNxMzvnOd879OecMQUR4kkKfKPvTAP+JAKoQYlwDIiKioiiEEPk9FkEIJQQAGGOEEELIuDxk0mfquq5hGOOaPM/Tdf3x7mRRWfmjWlVR8/OnlJWXraqqOnnyh127dkUyMlAgAgIAAUIpvXVraOPGt1etqmpqOtbc3ByPx33GHh9sHJkx47lTp375/Isvx6QFANu2fdze3lEya9YkFMGQpRshI2Q9euG6EQKgmqadP39+y5ato03V62scxwmHIwBgBM2JaIMhi1AloAYCKHhdXd20okIhBCGUMb+9vWNPfX0qlebMf7ag4Ldf21pbWwEIIUQIvnDhwrLyl7vPnNGNoKLQmpqa0tL5WkBDFITQwcGBTZtqGeeICHnP5Ac0nVBaWbkCH5aOjo6srGzdCAHAV3v2jDY1NDbK3E3Lbmn5eYzjmrWvASGaHgxHMuH7EycoVYIhCwA+qfsUEV3XZYy5rouI23fsBABCSMXySsaY53nSunrNWvkuN22uHeOyd98+eUQA8M3BQ4CI77z7HgDY4QzLss+dO4eIjDHGGOe8uflHeabz5r+EiEIIzjkiLl68ROqbmo4xxnzfl3rHcbKzcyw7DADr1lUjIviMpdPp54tLpENh0fShv4Y4557nCSEOHz4i9YvKyhGRc84YQ8SK5ZVyB/V798kdcM7v3LkTm/2CxEejhYlEgjGmUkIMw2hsbGhsaNCNYDJ5N/5nPCs7S9M0AKiv30sVVXBWUlwMAA/KPhaLffftcUUN7P96//rq12W5DQ4OLn1lSVXVq56brqhYHolEOOeA44kQore3d/XqNQAQMm0A6Or6fTTgypUrihKQB71i5cpLly4JIcalInPmvgiIAgXnggAggKIoiOLq1d7biZuWnZG8m/jgw4+WLVu6oWaDbgQJgOumdu/+7OzZs7W1my07krx727LD04qmUUXhnN8joZRSChM0KAAAqgSAKADwxptv3bhxIxqdCgAARJZxbm5ef3//lq3vSyxVtAmJsnPyJEjSyZVQVTdCsdjs/QcOdHZ2FhRMBQBCA/eRKgDk5OSdPt168NChOXPmGsEQAAWg9zMgsi9YdoT09PQMDAwoiuq6rm1byeSwaZrDw8mCaHTG9OkA8FNLi+DcNK1UKmWapjfiAaJAZL6v6/qCBQsAwHGceDzueSOaphFChBAIKDjPzMy6166PHD3a19fHGNc1Tfb2WGy24zhtbW0ls0ouX76cPyUfAFzXHbp5s6iwMJ1OG8Fg/Nq1kGlev3595syZfb1980vndXZ2GbruM4aIO3dsBwBVFsjFCxcDWiCRSETC4VQqpWkBy7KSyWQ4HDZNs7S0tLv7D0oJpTQ3Nzc6Napp2oWeC2nX5ULYltXvOCP+SGp42LYs13V1Xc/KzPR9n8hpJS9DCEEplStjTFVVRBw9p6RpwsucQB6aaJJxzCqpFUWB+4VGCAX4xyqRMhUhxAO9zGbykfkv5f//2/I0wKTyNxyCw6cNtTIsAAAAAElFTkSuQmCC">
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEwklEQVR4nO1WXWwUVRQ+987szOzOzG7/pQ92aQETYssSIUJNgNaEECEpDVgeAYOlqAlC1QT8wQRIsOLPmxSEF+GhBUpQecGkWoM0qfbHUIECAdopKy2xsMB2d6Zz7z0+XMBSWvpgSDThPNxMzvnOd879OecMQUR4kkKfKPvTAP+JAKoQYlwDIiKioiiEEPk9FkEIJQQAGGOEEELIuDxk0mfquq5hGOOaPM/Tdf3x7mRRWfmjWlVR8/OnlJWXraqqOnnyh127dkUyMlAgAgIAAUIpvXVraOPGt1etqmpqOtbc3ByPx33GHh9sHJkx47lTp375/Isvx6QFANu2fdze3lEya9YkFMGQpRshI2Q9euG6EQKgmqadP39+y5ato03V62scxwmHIwBgBM2JaIMhi1AloAYCKHhdXd20okIhBCGUMb+9vWNPfX0qlebMf7ag4Ldf21pbWwEIIUQIvnDhwrLyl7vPnNGNoKLQmpqa0tL5WkBDFITQwcGBTZtqGeeICHnP5Ac0nVBaWbkCH5aOjo6srGzdCAHAV3v2jDY1NDbK3E3Lbmn5eYzjmrWvASGaHgxHMuH7EycoVYIhCwA+qfsUEV3XZYy5rouI23fsBABCSMXySsaY53nSunrNWvkuN22uHeOyd98+eUQA8M3BQ4CI77z7HgDY4QzLss+dO4eIjDHGGOe8uflHeabz5r+EiEIIzjkiLl68ROqbmo4xxnzfl3rHcbKzcyw7DADr1lUjIviMpdPp54tLpENh0fShv4Y4557nCSEOHz4i9YvKyhGRc84YQ8SK5ZVyB/V798kdcM7v3LkTm/2CxEejhYlEgjGmUkIMw2hsbGhsaNCNYDJ5N/5nPCs7S9M0AKiv30sVVXBWUlwMAA/KPhaLffftcUUN7P96//rq12W5DQ4OLn1lSVXVq56brqhYHolEOOeA44kQore3d/XqNQAQMm0A6Or6fTTgypUrihKQB71i5cpLly4JIcalInPmvgiIAgXnggAggKIoiOLq1d7biZuWnZG8m/jgw4+WLVu6oWaDbgQJgOumdu/+7OzZs7W1my07krx727LD04qmUUXhnN8joZRSChM0KAAAqgSAKADwxptv3bhxIxqdCgAARJZxbm5ef3//lq3vSyxVtAmJsnPyJEjSyZVQVTdCsdjs/QcOdHZ2FhRMBQBCA/eRKgDk5OSdPt168NChOXPmGsEQAAWg9zMgsi9YdoT09PQMDAwoiuq6rm1byeSwaZrDw8mCaHTG9OkA8FNLi+DcNK1UKmWapjfiAaJAZL6v6/qCBQsAwHGceDzueSOaphFChBAIKDjPzMy6166PHD3a19fHGNc1Tfb2WGy24zhtbW0ls0ouX76cPyUfAFzXHbp5s6iwMJ1OG8Fg/Nq1kGlev3595syZfb1980vndXZ2GbruM4aIO3dsBwBVFsjFCxcDWiCRSETC4VQqpWkBy7KSyWQ4HDZNs7S0tLv7D0oJpTQ3Nzc6Napp2oWeC2nX5ULYltXvOCP+SGp42LYs13V1Xc/KzPR9n8hpJS9DCEEplStjTFVVRBw9p6RpwsucQB6aaJJxzCqpFUWB+4VGCAX4xyqRMhUhxAO9zGbykfkv5f//2/I0wKTyNxyCw6cNtTIsAAAAAElFTkSuQmCC">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DOD — Masterlist Invoice System v3</title>
@@ -135,9 +135,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
   width:28px;height:28px;border-radius:7px;
   background:rgba(255,255,255,0.15);
   display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;overflow:hidden;
+  font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:#fff;
+  flex-shrink:0;
 }
-.sb-logo-mark img{width:28px;height:28px;border-radius:7px;object-fit:cover;display:block;}
 .sb-logo-text{
   font-family:'Fira Code',monospace;font-size:11px;font-weight:600;
   color:#fff;white-space:nowrap;overflow:hidden;
@@ -1223,7 +1223,7 @@ tr:hover .row-actions{opacity:1;}
 
   <!-- Logo / Header -->
   <div class="sb-header">
-    <div class="sb-logo-mark"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEwklEQVR4nO1WXWwUVRQ+987szOzOzG7/pQ92aQETYssSIUJNgNaEECEpDVgeAYOlqAlC1QT8wQRIsOLPmxSEF+GhBUpQecGkWoM0qfbHUIECAdopKy2xsMB2d6Zz7z0+XMBSWvpgSDThPNxMzvnOd879OecMQUR4kkKfKPvTAP+JAKoQYlwDIiKioiiEEPk9FkEIJQQAGGOEEELIuDxk0mfquq5hGOOaPM/Tdf3x7mRRWfmjWlVR8/OnlJWXraqqOnnyh127dkUyMlAgAgIAAUIpvXVraOPGt1etqmpqOtbc3ByPx33GHh9sHJkx47lTp375/Isvx6QFANu2fdze3lEya9YkFMGQpRshI2Q9euG6EQKgmqadP39+y5ato03V62scxwmHIwBgBM2JaIMhi1AloAYCKHhdXd20okIhBCGUMb+9vWNPfX0qlebMf7ag4Ldf21pbWwEIIUQIvnDhwrLyl7vPnNGNoKLQmpqa0tL5WkBDFITQwcGBTZtqGeeICHnP5Ac0nVBaWbkCH5aOjo6srGzdCAHAV3v2jDY1NDbK3E3Lbmn5eYzjmrWvASGaHgxHMuH7EycoVYIhCwA+qfsUEV3XZYy5rouI23fsBABCSMXySsaY53nSunrNWvkuN22uHeOyd98+eUQA8M3BQ4CI77z7HgDY4QzLss+dO4eIjDHGGOe8uflHeabz5r+EiEIIzjkiLl68ROqbmo4xxnzfl3rHcbKzcyw7DADr1lUjIviMpdPp54tLpENh0fShv4Y4557nCSEOHz4i9YvKyhGRc84YQ8SK5ZVyB/V798kdcM7v3LkTm/2CxEejhYlEgjGmUkIMw2hsbGhsaNCNYDJ5N/5nPCs7S9M0AKiv30sVVXBWUlwMAA/KPhaLffftcUUN7P96//rq12W5DQ4OLn1lSVXVq56brqhYHolEOOeA44kQore3d/XqNQAQMm0A6Or6fTTgypUrihKQB71i5cpLly4JIcalInPmvgiIAgXnggAggKIoiOLq1d7biZuWnZG8m/jgw4+WLVu6oWaDbgQJgOumdu/+7OzZs7W1my07krx727LD04qmUUXhnN8joZRSChM0KAAAqgSAKADwxptv3bhxIxqdCgAARJZxbm5ef3//lq3vSyxVtAmJsnPyJEjSyZVQVTdCsdjs/QcOdHZ2FhRMBQBCA/eRKgDk5OSdPt168NChOXPmGsEQAAWg9zMgsi9YdoT09PQMDAwoiuq6rm1byeSwaZrDw8mCaHTG9OkA8FNLi+DcNK1UKmWapjfiAaJAZL6v6/qCBQsAwHGceDzueSOaphFChBAIKDjPzMy6166PHD3a19fHGNc1Tfb2WGy24zhtbW0ls0ouX76cPyUfAFzXHbp5s6iwMJ1OG8Fg/Nq1kGlev3595syZfb1980vndXZ2GbruM4aIO3dsBwBVFsjFCxcDWiCRSETC4VQqpWkBy7KSyWQ4HDZNs7S0tLv7D0oJpTQ3Nzc6Napp2oWeC2nX5ULYltXvOCP+SGp42LYs13V1Xc/KzPR9n8hpJS9DCEEplStjTFVVRBw9p6RpwsucQB6aaJJxzCqpFUWB+4VGCAX4xyqRMhUhxAO9zGbykfkv5f//2/I0wKTyNxyCw6cNtTIsAAAAAElFTkSuQmCC" alt="DOD"></div>
+    <div class="sb-logo-mark" style="background:transparent;padding:0;overflow:hidden;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAADBUlEQVR4nO2Wy4tcVRCHv7p9J+khhjEkRoIPHMRHAhoQN66UqEFDkOQPUJduo0ZcuDYxBAdx5cK9rkQwIIgwPrKIqGDAjcZkNOqYF4xO4iRm7P5c3LrTx6adzGLcpaA591T96len6tap23BdVllCjWUBEQKsFm5FonZWAwNNhpuAv0dxAETEH0l4M3AV6ANRYCpgLCLOJW6i5R7BWYc6DdyXRNVQwD7wGzAFnADeT1uL6yduD3AvsA/YkvYyYMt9PNS9wHv/WYOBvJjr60P654EaOLwCjr1NKvq52lMXHS2t/jH1eKH/Rn18CDPKt6d+uhRW3ZXGvvqO+oi6MwO8lg599SN1Un00f5Pqx2nrqQfTZ2dyvJs21SfaYJUa6pdp+GG4tdXDabuSzdPqt6RO9dCQT6in0vZF7ivUOgF7ijK8lIBxtaPerl5O267UddTdqVtQb0vdePq+XPA9lTHqMstK/Tprfkrttpmqa9WT6fx0kcUzqTuhriky66ozyfVVyw+D9q4iog8czI6bBF6ICBNYA93ELhaVa5+7QK1WOXH2A3ek34HkrkhFHswa+AB4C9gMbFK7EXFF3U5zvwBml0oDs7neAtwfEcfULrCR5qqdBY4kXlYi6g3q0ey28xYjTK3VC2n7TF13Lb5Qx4BXgZvyFGOFvQ88BNyV+yngW+Dh3H8CbKeZMADfA8cYvCoZjM3zwCvtSd/w2nJafUC9WOjmU/fzCvyn2mChblAvLQM+o+5Qp0fYptN2Zhn/S+qNatRARMSc+hzwYJahk7+/gBngbeAe4DTwJoNhLDAOzGXZnwXupunednisBY5GxO9qVX6Ab02nhST7tXivm4H1wBHgTmAC+DPfzwaaa3E2g88C2/JQ88AvNLfhJ/Khioie+iSwg+abNw+cBHanwyKwDtharCbJRuAc8F3iZ4Be0TALwIcR8aPaWZqZ6vqiDAFcLkp2Ne9jm/HFXNcUpSf3UXy0K2AiIub4PyUbsUxm6XmkkuaY/gs4tF9O2j9ULW+5vy6rLv8AHXxxLctVLscAAAAASUVORK5CYII=" style="width:28px;height:28px;object-fit:contain;"></div>
     <div class="sb-logo-text">DOD<small>Masterlist v4</small></div>
     <button class="sb-toggle" onclick="toggleSidebar()" title="Lipat/Buka sidebar">‹</button>
   </div>
@@ -1340,11 +1340,6 @@ tr:hover .row-actions{opacity:1;}
   <!-- ══ BAHAGIAN 3: SISTEM ══ -->
   <div class="sb-divider"></div>
   <div class="sb-section">Sistem</div>
-
-  <button class="sb-item" id="sbKatalogHarga" data-tip="Katalog Harga" onclick="sbNav('katalogharga')" style="display:none;">
-    <span class="sb-item-icon">🏷️</span>
-    <span class="sb-item-label">Katalog Harga</span>
-  </button>
 
   <button class="sb-item" id="sbControlPanel" data-tip="Control Panel" onclick="sbNav('controlpanel')" style="display:none;">
     <span class="sb-item-icon">⚙️</span>
@@ -1624,11 +1619,6 @@ tr:hover .row-actions{opacity:1;}
   <!-- CONTROL PANEL VIEW -->
   <div id="controlPanelView" style="display:none;padding:24px 28px;">
     <div id="controlPanelContent"></div>
-  </div>
-
-  <!-- KATALOG HARGA VIEW -->
-  <div id="katalogHargaView" style="display:none;padding:24px 28px;">
-    <div id="katalogHargaContent"></div>
   </div>
 
   <!-- SALES KIT VIEW -->
@@ -2190,7 +2180,7 @@ tr:hover .row-actions{opacity:1;}
           <div class="form-field full">
             <label class="fl">Nama Supplier</label>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;" oninput="recalcSupCostFromItems()">
+              <input class="fi" type="text" id="f_supplier_name" placeholder="Nama supplier" list="supplierList" style="flex:1;min-width:160px;">
               <div id="supplierShortcuts" style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;"></div>
             </div>
           </div>
@@ -3583,8 +3573,6 @@ async function initApp() {
   showHomeView();
   // Load data from Supabase
   loadOrdersFromSupabase();
-  // Preload katalog harga for item breakdown dropdown
-  khLoadAll().catch(()=>{});
   // Check memos for this user
   setTimeout(() => memoCheckAndShow(), 2000);
   // Weekly auto backup (runs on Mondays)
@@ -3657,7 +3645,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','katalogHargaView','salesKitView','chatView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','salesKitView','chatView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3765,9 +3753,6 @@ function setupNavForRole() {
     // Control Panel: root_admin sahaja
     const cpBtn = document.getElementById('sbControlPanel');
     if (cpBtn) cpBtn.style.display = (currentUser.id === 'fariz' || currentUser.cp_role === 'root_admin') ? 'flex' : 'none';
-    // Katalog Harga: semua admin
-    const khBtn = document.getElementById('sbKatalogHarga');
-    if (khBtn) khBtn.style.display = 'flex';
   } else if (role === 'sales' || role === 'sales_executive') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
@@ -3899,11 +3884,6 @@ function sbNav(view) {
     case 'memo':
       document.getElementById('sbMemo').classList.add('active');
       showMemoView();
-      showSbMonths(false);
-      break;
-    case 'katalogharga':
-      document.getElementById('sbKatalogHarga') && document.getElementById('sbKatalogHarga').classList.add('active');
-      showKatalogHargaView();
       showSbMonths(false);
       break;
     case 'controlpanel':
@@ -7651,7 +7631,7 @@ function submitChpw() {
 let itemRows = [];
 let itemRowId = 0;
 
-// Legacy catalogue kept for backwards compat (datalist fallback)
+// Item catalogue {sku: description} — SKU hidden, description shown to user
 const ITEM_CATALOGUE = [
   { sku:'SUB A SS COL',   desc:'Sublimation Adult Short Sleeve' },
   { sku:'SUBLIMATION LS', desc:'Sublimation Adult Long Sleeve' },
@@ -7675,111 +7655,11 @@ const ITEM_CATALOGUE = [
 ];
 const ITEM_TYPES = ITEM_CATALOGUE.map(i => i.desc);
 
-// ── SKU suggestion dropdown helpers ──
-let _skuDropdownActive = null; // rowId of active dropdown
-
-function buildSkuSuggestions(query) {
-  // Combine KH_SKUS (Supabase) + legacy catalogue
-  const q = (query||'').toLowerCase().trim();
-  const results = [];
-  // From Supabase katalog
-  if (typeof KH_SKUS !== 'undefined') {
-    KH_SKUS.filter(s => s.status === 'Aktif').forEach(s => {
-      const label = s.sku_code + ' — ' + s.name + (s.saiz && s.saiz !== '— Tiada' ? ' (' + s.saiz + ')' : '');
-      if (!q || label.toLowerCase().includes(q) || s.sku_code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)) {
-        results.push({ id: s.id, sku_code: s.sku_code, label, isAddon: s.jenis === 'Add-on', isPostage: s.category === 'Postage' });
-      }
-    });
-  }
-  // From legacy catalogue (only if not already covered)
-  ITEM_CATALOGUE.forEach(c => {
-    if (!q || c.desc.toLowerCase().includes(q)) {
-      if (!results.find(r => r.label.toLowerCase().includes(c.desc.toLowerCase()))) {
-        results.push({ id: null, sku_code: c.sku, label: c.desc, isAddon: false, isPostage: c.sku === 'POSTAGE' });
-      }
-    }
-  });
-  return results.slice(0, 12);
-}
-
-function showSkuDropdown(rowId, query) {
-  closeSkuDropdown();
-  const input = document.getElementById('id_' + rowId);
-  if (!input) return;
-  const suggestions = buildSkuSuggestions(query);
-  if (!suggestions.length) return;
-  _skuDropdownActive = rowId;
-  const wrap = input.closest('td');
-  const dd = document.createElement('div');
-  dd.id = 'sku-dd-' + rowId;
-  dd.style.cssText = 'position:absolute;z-index:9999;background:var(--bg);border:1px solid var(--blue);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:280px;max-height:220px;overflow-y:auto;';
-  dd.innerHTML = suggestions.map((s,i) => `
-    <div onclick="selectSkuSuggestion('${rowId}','${escHtmlForm(s.sku_code)}','${escHtmlForm(s.label)}','${s.id||''}',${s.isAddon},${s.isPostage})"
-      style="padding:7px 12px;font-size:11px;cursor:pointer;border-bottom:0.5px solid var(--line);display:flex;align-items:center;gap:8px;"
-      onmouseover="this.style.background='var(--bluebg)'" onmouseout="this.style.background=''">
-      <span style="font-family:'Fira Code',monospace;font-size:9px;color:var(--textm);min-width:70px;">${escHtmlForm(s.sku_code)}</span>
-      <span style="color:var(--text);">${escHtmlForm(s.label.split(' — ').slice(1).join(' — ') || s.label)}</span>
-      ${s.isAddon ? '<span style="font-size:9px;background:var(--amberbg);color:var(--amber);border-radius:3px;padding:1px 5px;margin-left:auto;">ADDON</span>' : ''}
-      ${s.isPostage ? '<span style="font-size:9px;background:var(--bg3);color:var(--textm);border-radius:3px;padding:1px 5px;margin-left:auto;">POSTAGE</span>' : ''}
-    </div>
-  `).join('');
-  // Position below input
-  const rect = input.getBoundingClientRect();
-  const appRect = document.getElementById('mainApp').getBoundingClientRect();
-  dd.style.position = 'fixed';
-  dd.style.top = (rect.bottom + 2) + 'px';
-  dd.style.left = rect.left + 'px';
-  document.body.appendChild(dd);
-}
-
-function closeSkuDropdown() {
-  const existing = document.querySelector('[id^="sku-dd-"]');
-  if (existing) existing.remove();
-  _skuDropdownActive = null;
-}
-
-function selectSkuSuggestion(rowId, skuCode, label, skuDbId, isAddon, isPostage) {
-  const row = itemRows.find(r => r.id === rowId);
-  if (!row) return;
-  // Set description
-  const displayName = label.includes(' — ') ? label.split(' — ').slice(1).join(' — ') : label;
-  row.desc = displayName;
-  row.skuCode = skuCode;
-  row.skuDbId = skuDbId || null;
-  // Auto-set addon flag
-  if (isAddon) row.isAddon = true;
-  if (isPostage) { row.isAddon = true; row.isPostage = true; }
-  const input = document.getElementById('id_' + rowId);
-  if (input) input.value = displayName;
-  closeSkuDropdown();
-  // Auto-fill price if qty already set
-  autoFillPrice(rowId);
-  renderItemRows();
-  recalcItems();
-}
-
-function autoFillPrice(rowId) {
-  const row = itemRows.find(r => r.id === rowId);
-  if (!row || !row.skuDbId) return;
-  const qty = parseFloat(row.qty) || 0;
-  if (!qty) return;
-  // Detect sekolah/nonsekolah from current order source
-  const sourceEl = document.getElementById('f_sumber');
-  const source = sourceEl ? sourceEl.value : '';
-  const price = khGetSellPrice(row.skuDbId, qty, source);
-  if (price !== null) {
-    row.price = price;
-    const priceEl = document.getElementById('ip_' + rowId);
-    if (priceEl) priceEl.value = price.toFixed(2);
-    const totalEl = document.getElementById('it_' + rowId);
-    if (totalEl) totalEl.textContent = fmt(qty * price);
-  }
-}
-
-function addItemRow(desc='', qty=0, price=0, isAddon=false, supSlot='s1') {
+function addItemRow(desc='', qty=0, price=0, isAddon=false) {
   const id = 'ir_' + (++itemRowId);
-  itemRows.push({ id, desc, qty, price, isAddon, supSlot: supSlot || 's1' });
+  itemRows.push({ id, desc, qty, price, isAddon });
   renderItemRows();
+  // Focus new desc field
   setTimeout(() => {
     const el = document.getElementById('id_' + id);
     if (el) el.focus();
@@ -7788,7 +7668,6 @@ function addItemRow(desc='', qty=0, price=0, isAddon=false, supSlot='s1') {
 
 function removeItemRow(id) {
   itemRows = itemRows.filter(r => r.id !== id);
-  closeSkuDropdown();
   renderItemRows();
   recalcItems();
 }
@@ -7798,23 +7677,19 @@ function renderItemRows() {
   if (!tbody) return;
   tbody.innerHTML = itemRows.map((row, i) => {
     const isAddon = row.isAddon || false;
-    const supSlot = row.supSlot || 's1';
-    const isS2 = supSlot === 's2';
     return `
-    <tr style="${isAddon ? 'background:rgba(184,114,10,0.04);' : ''}">
+    <tr style="${isAddon ? 'background:rgba(184,114,10,0.05);' : ''}">
       <td class="td-no">${i+1}</td>
-      <td class="td-desc" style="position:relative;">
+      <td class="td-desc">
         <input type="text" id="id_${row.id}" value="${escHtmlForm(row.desc)}"
+          list="itemTypesList"
           placeholder="cth: Jersey Player"
-          autocomplete="off"
-          oninput="updateItemField('${row.id}','desc',this.value);showSkuDropdown('${row.id}',this.value)"
-          onblur="setTimeout(()=>closeSkuDropdown(),180)"
-          onfocus="if(this.value.length===0)showSkuDropdown('${row.id}','')">
+          oninput="updateItemField('${row.id}','desc',this.value)">
       </td>
       <td class="td-qty">
         <input type="number" id="iq_${row.id}" value="${row.qty||''}"
           placeholder="0" min="0"
-          oninput="updateItemField('${row.id}','qty',this.value);autoFillPrice('${row.id}');recalcItems()">
+          oninput="updateItemField('${row.id}','qty',this.value);recalcItems()">
       </td>
       <td class="td-price">
         <input type="number" id="ip_${row.id}" value="${row.price||''}"
@@ -7824,12 +7699,12 @@ function renderItemRows() {
       <td class="td-total" id="it_${row.id}">
         ${row.qty && row.price ? fmt(row.qty * row.price) : '—'}
       </td>
-      <td style="width:56px;padding:3px 3px;">
+      <td style="width:58px;padding:3px 3px;">
         <button type="button"
           onclick="toggleItemAddon('${row.id}')"
           title="${isAddon ? 'Klik untuk tukar ke ITEM (dikira PCS)' : 'Klik untuk tukar ke ADDON (tidak dikira PCS)'}"
           style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
-            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
+            padding:3px 8px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
             border:1px solid ${isAddon ? 'var(--amberb)' : 'var(--blueb)'};
             background:${isAddon ? 'var(--amberbg)' : 'var(--bluebg)'};
             color:${isAddon ? 'var(--amber)' : 'var(--blue)'};
@@ -7837,25 +7712,12 @@ function renderItemRows() {
           ${isAddon ? 'ADDON' : 'ITEM'}
         </button>
       </td>
-      <td style="width:48px;padding:3px 3px;">
-        <button type="button"
-          onclick="toggleSupSlot('${row.id}')"
-          title="Assign ke Supplier 1 atau Supplier 2"
-          style="font-family:'Fira Code',monospace;font-size:9px;font-weight:700;letter-spacing:.04em;
-            padding:3px 6px;border-radius:5px;cursor:pointer;white-space:nowrap;width:100%;
-            border:1px solid ${isS2 ? 'var(--greenb)' : 'var(--line)'};
-            background:${isS2 ? 'var(--greenbg)' : 'var(--bg3)'};
-            color:${isS2 ? 'var(--green)' : 'var(--textm)'};
-            transition:all .12s;">
-          ${isS2 ? 'S2' : 'S1'}
-        </button>
-      </td>
       <td class="td-del">
         <button type="button" class="item-del-btn" onclick="removeItemRow('${row.id}')"
           title="Buang item">✕</button>
       </td>
     </tr>`;
-  }).join('') || `<tr><td colspan="8" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
+  }).join('') || `<tr><td colspan="7" style="text-align:center;padding:16px;font-size:12px;color:var(--textm);">
     Tiada item. Klik "＋ Tambah Item" untuk mula.
   </td></tr>`;
 }
@@ -7868,30 +7730,25 @@ function toggleItemAddon(id) {
   recalcItems();
 }
 
-function toggleSupSlot(id) {
-  const row = itemRows.find(r => r.id === id);
-  if (!row) return;
-  row.supSlot = (row.supSlot === 's2') ? 's1' : 's2';
-  renderItemRows();
-  recalcSupCostFromItems();
-}
-
 function updateItemField(id, field, val) {
   const row = itemRows.find(r => r.id === id);
   if (!row) return;
   if (field === 'qty' || field === 'price') row[field] = parseFloat(val)||0;
   else {
     row[field] = val;
+    // Auto-store SKU when description matches catalogue (hidden)
     if (field === 'desc') {
-      // Try match legacy catalogue
       const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === val.toLowerCase());
       row.sku = cat ? cat.sku : '';
-      // If desc cleared, clear skuDbId
-      if (!val) { row.skuDbId = null; row.skuCode = ''; }
     }
   }
+  // Update total cell
   const totalEl = document.getElementById('it_' + id);
-  if (totalEl) totalEl.textContent = row.qty && row.price ? fmt(row.qty * row.price) : '—';
+  if (totalEl && row.qty && row.price) {
+    totalEl.textContent = fmt(row.qty * row.price);
+  } else if (totalEl) {
+    totalEl.textContent = '—';
+  }
 }
 
 function recalcItems() {
@@ -7916,63 +7773,13 @@ function recalcItems() {
     const tot = (parseFloat(row.qty)||0)*(parseFloat(row.price)||0);
     if (el) el.textContent = tot > 0 ? fmt(tot) : '—';
   });
+  // PCS: product items only (ITEM type)
   const pcsField = document.getElementById('f_pcs');
   if (pcsField && totalPcs > 0) pcsField.value = totalPcs;
+  // Revenue: all items incl addon
   if (totalAmt > 0) {
     const custField = document.getElementById('f_inv_cust');
     if (custField) custField.value = totalAmt.toFixed(2);
-  }
-  recalcSupCostFromItems();
-  recalc();
-}
-
-// Auto-calculate supplier cost from item rows
-function recalcSupCostFromItems() {
-  if (typeof KH_SKUS === 'undefined' || !KH_SKUS.length) return;
-  if (typeof KH_SUP_TIERS === 'undefined' || !KH_SUP_TIERS.length) return;
-
-  const sup1NameEl = document.getElementById('f_supplier_name');
-  const sup2NameEl = document.getElementById('f_supplier2_name');
-  const sup1Name = sup1NameEl ? (sup1NameEl.value||'').trim() : '';
-  const sup2Name = sup2NameEl ? (sup2NameEl.value||'').trim() : '';
-
-  const findSupId = (nameVal) => {
-    if (!nameVal || typeof SUPPLIERS === 'undefined') return null;
-    const s = SUPPLIERS.find(x =>
-      x.name.toLowerCase().includes(nameVal.toLowerCase()) ||
-      (x.short && x.short.toLowerCase().includes(nameVal.toLowerCase())) ||
-      x.id.toLowerCase() === nameVal.toLowerCase()
-    );
-    return s ? s.id : null;
-  };
-
-  const sup1DbId = findSupId(sup1Name);
-  const sup2DbId = findSupId(sup2Name);
-
-  let costS1 = 0, costS2 = 0;
-  let hasS1 = false, hasS2 = false;
-
-  itemRows.forEach(row => {
-    if (!row.skuDbId) return;
-    const qty = parseFloat(row.qty) || 0;
-    if (!qty) return;
-    const slot = row.supSlot || 's1';
-    const supDbId = slot === 's2' ? sup2DbId : sup1DbId;
-    if (!supDbId) return;
-    const cost = khGetSupCost(row.skuDbId, qty, supDbId);
-    if (cost === null) return;
-    const rowCost = qty * cost;
-    if (slot === 's2') { costS2 += rowCost; hasS2 = true; }
-    else { costS1 += rowCost; hasS1 = true; }
-  });
-
-  if (hasS1) {
-    const s1El = document.getElementById('f_nohad_amt');
-    if (s1El) s1El.value = costS1.toFixed(2);
-  }
-  if (hasS2) {
-    const s2El = document.getElementById('f_sup2_amt');
-    if (s2El) s2El.value = costS2.toFixed(2);
   }
   recalc();
 }
@@ -7980,7 +7787,6 @@ function recalcSupCostFromItems() {
 function clearItemRows() {
   itemRows = [];
   itemRowId = 0;
-  closeSkuDropdown();
   renderItemRows();
   const pcsEl = document.getElementById('itemTotalPcs');
   const amtEl = document.getElementById('itemTotalAmt');
@@ -7990,17 +7796,15 @@ function clearItemRows() {
 
 function getItemsData() {
   return itemRows.filter(r => r.desc || r.qty || r.price).map(r => {
+    // Lookup SKU from catalogue if not already stored
     const cat = ITEM_CATALOGUE.find(i => i.desc.toLowerCase() === (r.desc||'').toLowerCase());
     return {
-      sku:      r.sku || (cat ? cat.sku : ''),
-      skuCode:  r.skuCode || '',
-      skuDbId:  r.skuDbId || null,
-      desc:     r.desc || '',
-      qty:      parseFloat(r.qty)||0,
-      price:    parseFloat(r.price)||0,
-      total:    (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
-      isAddon:  r.isAddon || false,
-      supSlot:  r.supSlot || 's1',
+      sku:     r.sku || (cat ? cat.sku : ''),
+      desc:    r.desc || '',
+      qty:     parseFloat(r.qty)||0,
+      price:   parseFloat(r.price)||0,
+      total:   (parseFloat(r.qty)||0) * (parseFloat(r.price)||0),
+      isAddon: r.isAddon || false,
     };
   });
 }
@@ -8011,16 +7815,7 @@ function loadItemsData(items) {
   if (items && items.length) {
     items.forEach(item => {
       const id = 'ir_' + (++itemRowId);
-      itemRows.push({
-        id,
-        desc:     item.desc||'',
-        qty:      item.qty||0,
-        price:    item.price||0,
-        isAddon:  item.isAddon||false,
-        supSlot:  item.supSlot||'s1',
-        skuCode:  item.skuCode||'',
-        skuDbId:  item.skuDbId||null,
-      });
+      itemRows.push({ id, desc: item.desc||'', qty: item.qty||0, price: item.price||0, isAddon: item.isAddon||false });
     });
   }
   renderItemRows();
@@ -8098,7 +7893,6 @@ function _buildAndOpenDoc(r, month) {
 function setSupplier(name) {
   const el = document.getElementById('f_supplier_name');
   if (el) el.value = name;
-  recalcSupCostFromItems();
 }
 
 
@@ -13973,619 +13767,6 @@ function mAddNotifSilent({ icon, title, sub, type }) {
   mRenderNotifPanel();
   mShakeBell();
 }
-
-// ======================================
-// KATALOG HARGA — SKU / HARGA JUALAN / HARGA SUPPLIER
-// ======================================
-
-// ── In-memory state ──
-let KH_SKUS = [];          // [{id, sku_code, name, category, jenis, saiz, status, created_at}]
-let KH_SELL_TIERS = [];    // [{id, sku_id, type (sekolah/nonsekolah), min_qty, max_qty, price}]
-let KH_SUP_TIERS = [];     // [{id, sku_id, supplier_id, min_qty, max_qty, cost}]
-
-let khActiveTab = 'sku';
-let khSellPriceType = 'sekolah';
-let khSelSupplier = '';
-
-// ── Constants ──
-const KH_CATEGORIES = ['Jersey / Sukan','Korporat','Outerwear','Add-on','Postage','Lain-lain'];
-const KH_JENIS = ['Produk Utama','Add-on','Postage'];
-const KH_SAIZ = ['Adult','Kids','Unisex','— Tiada'];
-
-// ── Supabase helpers ──
-async function khLoadAll() {
-  try {
-    const [skus, sell, sup] = await Promise.all([
-      supaGet('product_sku','select=*&order=category.asc,name.asc'),
-      supaGet('selling_price_tiers','select=*&order=sku_id.asc,type.asc,min_qty.asc'),
-      supaGet('supplier_price_tiers','select=*&order=sku_id.asc,supplier_id.asc,min_qty.asc'),
-    ]);
-    KH_SKUS = skus || [];
-    KH_SELL_TIERS = sell || [];
-    KH_SUP_TIERS = sup || [];
-  } catch(e) {
-    // tables may not exist yet — show empty state
-    KH_SKUS = []; KH_SELL_TIERS = []; KH_SUP_TIERS = [];
-  }
-}
-
-async function khSaveSku(obj) {
-  if (obj.id) {
-    return supaFetch('/rest/v1/product_sku?id=eq.'+obj.id, {method:'PATCH', prefer:'return=representation', body:JSON.stringify(obj)});
-  } else {
-    return supaFetch('/rest/v1/product_sku', {method:'POST', prefer:'return=representation', body:JSON.stringify(obj)});
-  }
-}
-
-async function khDeleteSku(id) {
-  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
-  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+id, {method:'DELETE'});
-  await supaFetch('/rest/v1/product_sku?id=eq.'+id, {method:'DELETE'});
-}
-
-async function khSaveSellTiers(skuId, type, rows) {
-  // Delete existing for this sku+type, then insert new
-  await supaFetch('/rest/v1/selling_price_tiers?sku_id=eq.'+skuId+'&type=eq.'+type, {method:'DELETE'});
-  if (rows.length) {
-    await supaFetch('/rest/v1/selling_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
-  }
-}
-
-async function khSaveSupTiers(skuId, supId, rows) {
-  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
-  if (rows.length) {
-    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
-  }
-}
-
-// ── View entry point ──
-async function showKatalogHargaView() {
-  setAllViewsHidden();
-  document.getElementById('katalogHargaView').style.display = 'block';
-  const el = document.getElementById('katalogHargaContent');
-  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--textm);font-size:12px;">Memuatkan katalog...</div>';
-  await khLoadAll();
-  renderKatalogHarga();
-}
-
-function renderKatalogHarga() {
-  const el = document.getElementById('katalogHargaContent');
-  if (!el) return;
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--text);">🏷️ Katalog Harga</div>
-        <div style="font-size:11px;color:var(--textm);margin-top:3px;">Urus senarai produk, harga jualan, dan kos supplier</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:18px;">
-      ${[['sku','📦 Produk / SKU'],['sell','💰 Harga Jualan'],['supplier','🏭 Harga Supplier']].map(([k,l])=>`
-        <button onclick="khSwitchTab('${k}')" style="padding:9px 20px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:${khActiveTab===k?'var(--blue)':'var(--textm)'};border-bottom:2px solid ${khActiveTab===k?'var(--blue)':'transparent'};margin-bottom:-1px;transition:all .12s;">${l}</button>
-      `).join('')}
-    </div>
-    <div id="khTabContent"></div>
-  `;
-  khRenderTab();
-}
-
-function khSwitchTab(tab) {
-  khActiveTab = tab;
-  renderKatalogHarga();
-}
-
-function khRenderTab() {
-  const el = document.getElementById('khTabContent');
-  if (!el) return;
-  if (khActiveTab === 'sku') khRenderSkuTab(el);
-  else if (khActiveTab === 'sell') khRenderSellTab(el);
-  else khRenderSupTab(el);
-}
-
-// ─────────────────────────────────────────
-// TAB 1 — SKU
-// ─────────────────────────────────────────
-function khRenderSkuTab(el) {
-  const cats = [...new Set(KH_SKUS.map(s=>s.category))].sort();
-  const grouped = {};
-  KH_SKUS.forEach(s => { if (!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <span style="font-size:12px;color:var(--textm);">${KH_SKUS.length} SKU terdaftar</span>
-      <button onclick="khOpenSkuForm()" style="padding:7px 14px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah SKU</button>
-    </div>
-    <div id="khSkuFormWrap"></div>
-    <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="background:var(--bg3);">
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Kategori</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Jenis</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Saiz</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:center;border-bottom:1px solid var(--line);">Status</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;border-bottom:1px solid var(--line);width:1%;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${KH_SKUS.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:32px;font-size:12px;color:var(--textm);">Tiada SKU. Klik "+ Tambah SKU" untuk mula.</td></tr>` :
-            Object.keys(grouped).map(cat => `
-              <tr><td colspan="7" style="background:var(--bg3);padding:6px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
-              ${grouped[cat].map((s,si) => `
-                <tr id="khSkuRow_${s.id}" style="border-bottom:1px solid var(--line);${si%2===1?'background:var(--bg3);':''}">
-                  <td style="padding:7px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-                  <td style="padding:7px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
-                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bluebg);color:var(--blue);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.category)}</span></td>
-                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:20px;padding:2px 8px;">${escHtmlForm(s.jenis||'—')}</span></td>
-                  <td style="padding:7px 10px;text-align:center;font-size:11px;color:var(--textm);">${escHtmlForm(s.saiz||'—')}</td>
-                  <td style="padding:7px 10px;text-align:center;"><span style="font-size:10px;background:${s.status==='Aktif'?'var(--greenbg)':'var(--redbg)'};color:${s.status==='Aktif'?'var(--green)':'var(--red)'};border-radius:20px;padding:2px 8px;">${escHtmlForm(s.status)}</span></td>
-                  <td style="padding:7px 8px;"><div style="display:flex;gap:4px;">
-                    <button onclick="khOpenSkuForm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">✏️</button>
-                    <button onclick="khDeleteSkuConfirm('${s.id}')" style="padding:3px 8px;font-size:10px;border-radius:5px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">🗑</button>
-                  </div></td>
-                </tr>
-              `).join('')}
-            `).join('')
-          }
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function khOpenSkuForm(id) {
-  const wrap = document.getElementById('khSkuFormWrap');
-  if (!wrap) return;
-  const s = id ? KH_SKUS.find(x=>x.id===id) : null;
-  wrap.innerHTML = `
-    <div style="background:var(--bg);border:1.5px solid var(--blue);border-radius:10px;padding:16px 18px;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">${s?'✏️ Edit SKU':'＋ Tambah SKU Baru'}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kod SKU</div>
-          <input id="khf_sku" value="${escHtmlForm(s?.sku_code||'')}" placeholder="cth: RNSS/A" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;font-family:'Fira Code',monospace;outline:none;">
-        </div>
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Nama Produk</div>
-          <input id="khf_name" value="${escHtmlForm(s?.name||'')}" placeholder="cth: Round Neck Short Sleeve" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
-        </div>
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Kategori</div>
-          <select id="khf_cat" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
-            ${KH_CATEGORIES.map(c=>`<option value="${c}" ${(s?.category||'')==c?'selected':''}>${c}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Jenis</div>
-          <select id="khf_jenis" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
-            ${KH_JENIS.map(j=>`<option value="${j}" ${(s?.jenis||'')==j?'selected':''}>${j}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Saiz</div>
-          <select id="khf_saiz" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
-            ${KH_SAIZ.map(z=>`<option value="${z}" ${(s?.saiz||'')==z?'selected':''}>${z}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <div style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);margin-bottom:4px;">Status</div>
-          <select id="khf_status" style="width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:7px;font-size:12px;outline:none;">
-            <option value="Aktif" ${(s?.status||'Aktif')==='Aktif'?'selected':''}>Aktif</option>
-            <option value="Tidak Aktif" ${s?.status==='Tidak Aktif'?'selected':''}>Tidak Aktif</option>
-          </select>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="document.getElementById('khSkuFormWrap').innerHTML=''" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--bg3);border:1px solid var(--line);color:var(--textd);">Batal</button>
-        <button onclick="khSaveSkuForm('${id||''}')" style="padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;background:var(--blue);color:#fff;border:1px solid var(--blue);">✓ Simpan SKU</button>
-      </div>
-    </div>
-  `;
-}
-
-async function khSaveSkuForm(id) {
-  const sku_code = document.getElementById('khf_sku')?.value.trim();
-  const name = document.getElementById('khf_name')?.value.trim();
-  const category = document.getElementById('khf_cat')?.value;
-  const jenis = document.getElementById('khf_jenis')?.value;
-  const saiz = document.getElementById('khf_saiz')?.value;
-  const status = document.getElementById('khf_status')?.value;
-  if (!sku_code || !name) { showToast('Kod SKU dan Nama wajib diisi','warning'); return; }
-  const obj = { sku_code, name, category, jenis, saiz, status };
-  if (id) obj.id = id;
-  try {
-    const res = await khSaveSku(obj);
-    await khLoadAll();
-    showToast(id ? 'SKU dikemaskini' : 'SKU baru disimpan');
-    renderKatalogHarga();
-  } catch(e) {
-    showToast('Ralat: ' + e.message, 'error');
-  }
-}
-
-async function khDeleteSkuConfirm(id) {
-  const s = KH_SKUS.find(x=>x.id===id);
-  if (!confirm(`Padam SKU "${s?.sku_code} — ${s?.name}"?\n\nSemua harga jualan dan harga supplier untuk SKU ini juga akan dipadam.`)) return;
-  try {
-    await khDeleteSku(id);
-    await khLoadAll();
-    showToast('SKU dipadam');
-    renderKatalogHarga();
-  } catch(e) {
-    showToast('Ralat: ' + e.message, 'error');
-  }
-}
-
-// ─────────────────────────────────────────
-// TAB 2 — HARGA JUALAN
-// ─────────────────────────────────────────
-function khRenderSellTab(el) {
-  const type = khSellPriceType;
-
-  // Use cached tiers if same type (e.g. after addTier), else rebuild from DB
-  let tiers;
-  if (window._khCurrentSellTiers && window._khCurrentSellType === type) {
-    tiers = window._khCurrentSellTiers;
-  } else {
-    const allTiers = KH_SELL_TIERS.filter(t=>t.type===type);
-    const tierSet = {};
-    allTiers.forEach(t => { const k = t.min_qty+'_'+(t.max_qty||''); tierSet[k] = {min:t.min_qty, max:t.max_qty}; });
-    if (Object.keys(tierSet).length === 0) {
-      [{min:1,max:9},{min:10,max:49},{min:50,max:99},{min:100,max:299}].forEach(t => { tierSet[t.min+'_'+t.max]={min:t.min,max:t.max}; });
-    }
-    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
-  }
-
-  if (!window._khSellEdits) window._khSellEdits = {};
-  const skuList = KH_SKUS.filter(s=>s.status==='Aktif'||true);
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span style="font-size:11px;color:var(--textm);">Jenis Harga:</span>
-        <button onclick="khSellToggle('sekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='sekolah'?'var(--blueb)':'var(--line)'};background:${type==='sekolah'?'var(--bluebg)':'var(--bg3)'};color:${type==='sekolah'?'var(--blue)':'var(--textm)'};">Sekolah</button>
-        <button onclick="khSellToggle('nonsekolah')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${type==='nonsekolah'?'var(--amberb)':'var(--line)'};background:${type==='nonsekolah'?'var(--amberbg)':'var(--bg3)'};color:${type==='nonsekolah'?'var(--amber)':'var(--textm)'};">Non-Sekolah</button>
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button onclick="khSellAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
-        <button onclick="khSellSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
-      </div>
-    </div>
-    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
-      <table id="khSellGrid" style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="background:var(--bg3);">
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
-            ${tiers.map((t,i)=>`
-              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;position:relative;">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                  <div style="display:flex;align-items:center;gap:3px;">
-                    <span>Harga/pcs</span>
-                    <button onclick="khSellDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
-                  </div>
-                  <input data-tier-idx="${i}" data-tier-field="label" value="${t.min}${t.max?'–'+t.max:'+'}pcs" style="width:72px;text-align:center;font-size:9px;background:transparent;border:none;border-bottom:1px dashed var(--line);color:var(--textm);outline:none;font-family:'Fira Code',monospace;">
-                  <div style="display:flex;gap:2px;">
-                    <input data-tier-idx="${i}" data-tier-field="min" value="${t.min}" placeholder="min" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
-                    <span style="font-size:9px;color:var(--textm);">—</span>
-                    <input data-tier-idx="${i}" data-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
-                  </div>
-                </div>
-              </th>
-            `).join('')}
-            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${khBuildSellRows(skuList, tiers, type)}
-        </tbody>
-      </table>
-    </div>
-    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage — harga di sini adalah caj kepada customer sahaja, tidak dikira dalam kos supplier.</div>
-  `;
-  // Store tiers for later use
-  window._khCurrentSellTiers = tiers;
-  window._khCurrentSellType = type;
-}
-
-function khBuildSellRows(skuList, tiers, type) {
-  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU. Tambah SKU dalam Tab 1 dahulu.</td></tr>`;
-  const cats = [...new Set(skuList.map(s=>s.category))].sort();
-  const grouped = {};
-  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
-  let rowIdx = 0;
-  return cats.map(cat=>`
-    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
-    ${grouped[cat].map(s=>{
-      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
-      return `<tr style="border-bottom:1px solid var(--line);${zebra}${s.category==='Postage'?'opacity:.6;':''}" ${s.category==='Postage'?'title="Postage — kos tidak dikira dalam supplier"':''}>
-        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
-        ${tiers.map((t,i)=>{
-          const existing = KH_SELL_TIERS.find(r=>r.sku_id===s.id && r.type===type && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
-          const val = existing ? existing.price : '';
-          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="0.00" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
-        }).join('')}
-        <td style="border-left:1px dashed var(--line);"></td>
-      </tr>`;
-    }).join('')}
-  `).join('');
-}
-
-function khSellToggle(type) {
-  khSellPriceType = type;
-  window._khCurrentSellTiers = null; // reset cache on type switch
-  window._khCurrentSellType = null;
-  const el = document.getElementById('khTabContent');
-  if (el) khRenderSellTab(el);
-}
-
-function khSellDeleteTier(idx) {
-  const tiers = window._khCurrentSellTiers || [];
-  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
-  const t = tiers[idx];
-  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
-  if (!confirm(`Padam tier "${label}"?\n\nSemua harga dalam tier ini akan hilang selepas Simpan.`)) return;
-  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
-  tiers.splice(idx, 1);
-  window._khCurrentSellTiers = tiers;
-  const el = document.getElementById('khTabContent');
-  if (el) khRenderSellTab(el);
-}
-
-function khSupDeleteTier(idx) {
-  const tiers = window._khCurrentSupTiers || [];
-  if (tiers.length <= 1) { showToast('Mesti ada sekurang-kurangnya 1 tier', 'warning'); return; }
-  const t = tiers[idx];
-  const label = t.min + (t.max ? '–'+t.max : '+') + ' pcs';
-  if (!confirm(`Padam tier "${label}"?\n\nSemua kos dalam tier ini akan hilang selepas Simpan.`)) return;
-  if (!confirm(`Confirm padam tier "${label}"? Tindakan ini tidak boleh diundo.`)) return;
-  tiers.splice(idx, 1);
-  window._khCurrentSupTiers = tiers;
-  const el = document.getElementById('khTabContent');
-  if (el) khRenderSupTab(el);
-}
-
-function khSellAddTier() {
-  // Add a new tier column
-  const tbl = document.getElementById('khSellGrid');
-  if (!tbl) return;
-  const tiers = window._khCurrentSellTiers || [];
-  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
-  tiers.push({min:newMin, max:null});
-  window._khCurrentSellTiers = tiers;
-  // Re-render sell tab
-  const el = document.getElementById('khTabContent');
-  if (el) khRenderSellTab(el);
-}
-
-async function khSellSaveAll() {
-  const tbl = document.getElementById('khSellGrid');
-  if (!tbl) return;
-  const type = window._khCurrentSellType || khSellPriceType;
-  // Collect all tier headers
-  const tiers = window._khCurrentSellTiers || [];
-  // Collect all inputs grouped by sku_id
-  const inputs = tbl.querySelectorAll('input[data-sku]');
-  const bySkuId = {};
-  inputs.forEach(inp => {
-    const skuId = inp.getAttribute('data-sku');
-    const min = parseInt(inp.getAttribute('data-tier-min'));
-    const maxRaw = inp.getAttribute('data-tier-max');
-    const max = maxRaw ? parseInt(maxRaw) : null;
-    const price = parseFloat(inp.value);
-    if (!bySkuId[skuId]) bySkuId[skuId] = [];
-    if (!isNaN(price) && inp.value.trim() !== '') {
-      bySkuId[skuId].push({sku_id:skuId, type, min_qty:min, max_qty:max, price});
-    }
-  });
-  try {
-    const skuIds = Object.keys(bySkuId);
-    for (const skuId of skuIds) {
-      await khSaveSellTiers(skuId, type, bySkuId[skuId]);
-    }
-    await khLoadAll();
-    showToast('Harga jualan disimpan');
-    const el = document.getElementById('khTabContent');
-    if (el) khRenderSellTab(el);
-  } catch(e) {
-    showToast('Ralat simpan: ' + e.message, 'error');
-  }
-}
-
-// ─────────────────────────────────────────
-// TAB 3 — HARGA SUPPLIER
-// ─────────────────────────────────────────
-function khRenderSupTab(el) {
-  const supId = khSelSupplier || (SUPPLIERS.length ? SUPPLIERS[0].id : '');
-  if (!khSelSupplier && SUPPLIERS.length) khSelSupplier = SUPPLIERS[0].id;
-  const selSup = SUPPLIERS.find(s=>s.id===supId);
-  const color = selSup ? selSup.color : '#1A5CC8';
-
-  // Use cached tiers if same supplier (e.g. after addTier), else rebuild from DB
-  let tiers;
-  if (window._khCurrentSupTiers && window._khCurrentSupId === supId) {
-    tiers = window._khCurrentSupTiers;
-  } else {
-    const allTiers = KH_SUP_TIERS.filter(t=>t.supplier_id===supId);
-    const tierSet = {};
-    allTiers.forEach(t => { const k=t.min_qty+'_'+(t.max_qty||''); tierSet[k]={min:t.min_qty,max:t.max_qty}; });
-    if (Object.keys(tierSet).length===0) {
-      [{min:1,max:49},{min:50,max:299},{min:300,max:null}].forEach(t=>{tierSet[t.min+'_'+(t.max||'')]={min:t.min,max:t.max};});
-    }
-    tiers = Object.values(tierSet).sort((a,b)=>a.min-b.min);
-  }
-  window._khCurrentSupTiers = tiers;
-  window._khCurrentSupId = supId;
-
-  const skuList = KH_SKUS.filter(s=>s.category!=='Postage');
-
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 14px;">
-        <span style="font-size:11px;font-weight:600;color:var(--textm);">Supplier:</span>
-        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <select onchange="khSelSupplier=this.value;window._khCurrentSupTiers=null;window._khCurrentSupId=null;khRenderSupTab(document.getElementById('khTabContent'))" style="background:none;border:none;color:var(--text);font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:200px;">
-          ${SUPPLIERS.map(s=>`<option value="${s.id}" ${s.id===supId?'selected':''}>${s.name}</option>`).join('')}
-        </select>
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button onclick="khSupAddTier()" style="padding:6px 13px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">＋ Tambah Tier</button>
-        <button onclick="khSupSaveAll()" style="padding:6px 13px;background:var(--blue);color:#fff;border:1px solid var(--blue);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;">💾 Simpan Semua</button>
-      </div>
-    </div>
-    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:10px;">
-      <table id="khSupGrid" style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="background:var(--bg3);">
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Kod SKU</th>
-            <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);">Nama Produk</th>
-            ${tiers.map((t,i)=>`
-              <th style="font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);min-width:90px;">
-                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                  <div style="display:flex;align-items:center;gap:3px;">
-                    <span>Kos/pcs</span>
-                    <button onclick="khSupDeleteTier(${i})" title="Padam tier ini" style="font-size:9px;line-height:1;padding:0 3px;border-radius:3px;cursor:pointer;background:var(--redbg);border:1px solid var(--redb);color:var(--red);">✕</button>
-                  </div>
-                  <div style="display:flex;gap:2px;align-items:center;">
-                    <input data-sup-tier-idx="${i}" data-sup-tier-field="min" value="${t.min}" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
-                    <span style="font-size:9px;color:var(--textm);">—</span>
-                    <input data-sup-tier-idx="${i}" data-sup-tier-field="max" value="${t.max||''}" placeholder="∞" style="width:32px;text-align:center;font-size:9px;background:var(--bg3);border:1px solid var(--line);border-radius:3px;color:var(--text);outline:none;padding:1px 3px;">
-                    <span style="font-size:9px;color:var(--textm);">pcs</span>
-                  </div>
-                </div>
-              </th>
-            `).join('')}
-            <th style="background:var(--bg3);border-bottom:1px solid var(--line);width:36px;border-left:1px dashed var(--line);"></th>
-          </tr>
-        </thead>
-        <tbody>
-          ${khBuildSupRows(skuList, tiers, supId)}
-        </tbody>
-      </table>
-    </div>
-    <div style="font-size:10px;color:var(--textm);margin-top:6px;">ℹ️ Postage dikecualikan — bukan kos supplier. Kosongkan cell jika SKU tidak ditawarkan oleh supplier ini.</div>
-  `;
-}
-
-function khBuildSupRows(skuList, tiers, supId) {
-  if (!skuList.length) return `<tr><td colspan="${tiers.length+3}" style="text-align:center;padding:24px;font-size:12px;color:var(--textm);">Tiada SKU.</td></tr>`;
-  const cats = [...new Set(skuList.map(s=>s.category))].sort();
-  const grouped = {};
-  skuList.forEach(s=>{ if(!grouped[s.category]) grouped[s.category]=[]; grouped[s.category].push(s); });
-  let rowIdx = 0;
-  return cats.map(cat=>`
-    <tr><td colspan="${tiers.length+3}" style="background:var(--bg3);padding:5px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);border-bottom:1px solid var(--line);">${cat}</td></tr>
-    ${grouped[cat].map(s=>{
-      const zebra = (rowIdx++ % 2 === 0) ? '' : 'background:var(--bg3);';
-      return `<tr style="border-bottom:1px solid var(--line);${zebra}">
-        <td style="padding:5px 10px;"><span style="font-family:'Fira Code',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;color:var(--textm);">${escHtmlForm(s.sku_code)}</span></td>
-        <td style="padding:5px 10px;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtmlForm(s.name)}</td>
-        ${tiers.map(t=>{
-          const existing = KH_SUP_TIERS.find(r=>r.sku_id===s.id && r.supplier_id===supId && r.min_qty===t.min && (r.max_qty===t.max||(t.max===null&&r.max_qty===null)));
-          const val = existing ? existing.cost : '';
-          return `<td style="padding:4px 5px;text-align:center;"><input data-sku="${s.id}" data-tier-min="${t.min}" data-tier-max="${t.max||''}" value="${val}" placeholder="—" style="width:72px;text-align:right;font-size:11px;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:4px 6px;border-radius:5px;outline:none;"></td>`;
-        }).join('')}
-        <td style="border-left:1px dashed var(--line);"></td>
-      </tr>`;
-    }).join('')}
-  `).join('');
-}
-
-function khSupAddTier() {
-  const tiers = window._khCurrentSupTiers || [];
-  const newMin = tiers.length ? (tiers[tiers.length-1].max ? parseInt(tiers[tiers.length-1].max)+1 : 300) : 1;
-  tiers.push({min:newMin, max:null});
-  window._khCurrentSupTiers = tiers;
-  const el = document.getElementById('khTabContent');
-  if (el) khRenderSupTab(el);
-}
-
-async function khSupSaveAll() {
-  const tbl = document.getElementById('khSupGrid');
-  if (!tbl) return;
-  const supId = window._khCurrentSupId || khSelSupplier;
-  const inputs = tbl.querySelectorAll('input[data-sku]');
-  const bySkuId = {};
-  inputs.forEach(inp => {
-    const skuId = inp.getAttribute('data-sku');
-    const min = parseInt(inp.getAttribute('data-tier-min'));
-    const maxRaw = inp.getAttribute('data-tier-max');
-    const max = maxRaw ? parseInt(maxRaw) : null;
-    const cost = parseFloat(inp.value);
-    if (!bySkuId[skuId]) bySkuId[skuId] = [];
-    if (!isNaN(cost) && inp.value.trim() !== '' && inp.value.trim() !== '—') {
-      bySkuId[skuId].push({sku_id:skuId, supplier_id:supId, min_qty:min, max_qty:max, cost});
-    }
-  });
-  try {
-    const skuIds = Object.keys(bySkuId);
-    for (const skuId of skuIds) {
-      await khSupSaveSupTiers(skuId, supId, bySkuId[skuId]);
-    }
-    await khLoadAll();
-    showToast('Harga supplier disimpan');
-    const el = document.getElementById('khTabContent');
-    if (el) khRenderSupTab(el);
-  } catch(e) {
-    showToast('Ralat simpan: ' + e.message, 'error');
-  }
-}
-
-async function khSupSaveSupTiers(skuId, supId, rows) {
-  await supaFetch('/rest/v1/supplier_price_tiers?sku_id=eq.'+skuId+'&supplier_id=eq.'+supId, {method:'DELETE'});
-  if (rows.length) {
-    await supaFetch('/rest/v1/supplier_price_tiers', {method:'POST', prefer:'return=representation', body:JSON.stringify(rows)});
-  }
-}
-
-// ── Helper: lookup selling price for a given SKU + qty + source ──
-function khGetSellPrice(skuId, qty, source) {
-  const type = (source||'').toUpperCase()==='SEKOLAH' ? 'sekolah' : 'nonsekolah';
-  const tiers = KH_SELL_TIERS.filter(t=>t.sku_id===skuId && t.type===type).sort((a,b)=>b.min_qty-a.min_qty);
-  for (const t of tiers) {
-    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.price;
-  }
-  return null;
-}
-
-// ── Helper: lookup supplier cost for a given SKU + qty + supplier_id ──
-function khGetSupCost(skuId, qty, supId) {
-  const tiers = KH_SUP_TIERS.filter(t=>t.sku_id===skuId && t.supplier_id===supId).sort((a,b)=>b.min_qty-a.min_qty);
-  for (const t of tiers) {
-    if (qty >= t.min_qty && (t.max_qty===null || qty <= t.max_qty)) return t.cost;
-  }
-  return null;
-}
-
-// ── Expose to window ──
-window.showKatalogHargaView = showKatalogHargaView;
-window.khSellDeleteTier = khSellDeleteTier;
-window.khSupDeleteTier = khSupDeleteTier;
-window.khSwitchTab = khSwitchTab;
-window.toggleItemAddon = toggleItemAddon;
-window.toggleSupSlot = toggleSupSlot;
-window.removeItemRow = removeItemRow;
-window.addItemRow = addItemRow;
-window.updateItemField = updateItemField;
-window.recalcItems = recalcItems;
-window.showSkuDropdown = showSkuDropdown;
-window.closeSkuDropdown = closeSkuDropdown;
-window.selectSkuSuggestion = selectSkuSuggestion;
-window.autoFillPrice = autoFillPrice;
-window.khOpenSkuForm = khOpenSkuForm;
-window.khSaveSkuForm = khSaveSkuForm;
-window.khDeleteSkuConfirm = khDeleteSkuConfirm;
-window.khSellToggle = khSellToggle;
-window.khSellAddTier = khSellAddTier;
-window.khSellSaveAll = khSellSaveAll;
-window.khSupAddTier = khSupAddTier;
-window.khSupSaveAll = khSupSaveAll;
-window.khGetSellPrice = khGetSellPrice;
-window.khGetSupCost = khGetSupCost;
 
 // ── INIT — called by initApp() after login ──
 function initNotifications() {
