@@ -1719,26 +1719,44 @@ function renderKpi() {
     return (new Date() - new Date(c.col_entered_at)) / 3600000;
   }
 
+  // ── Identify the "ON GOING" column per board by LABEL (robust to renames) ──
+  // Column IDs no longer reliably map to meaning after renaming in Control Panel,
+  // so we match by label ("ON GOING" / "On-going" / "Content On-going" all qualify).
+  function ongoingColId(board) {
+    const map = COL_MAP_BY_BOARD[board] || {};
+    const hit = Object.values(map).find(c =>
+      (c.label || '').toLowerCase().replace(/[^a-z]/g, '').includes('ongoing'));
+    return hit ? hit.id : 'design-on'; // fallback to legacy default
+  }
+  // Classify job type by the LABEL of the column the card came FROM (robust to renames)
+  function paceJobType(fromColId, board) {
+    const map = COL_MAP_BY_BOARD[board] || {};
+    const lbl = (map[fromColId] && map[fromColId].label || '').toLowerCase();
+    if (lbl.includes('amend'))  return 'Amend';
+    if (lbl.includes('mockup')) return 'Mockup';
+    return 'Baru';
+  }
+
   // ── Avg time in ON GOING per job type ──────────────────────
-  function calcPaceMetrics(cards) {
-    // For each card, find how long it stayed in 'design-on' (ON GOING)
+  function calcPaceMetrics(cards, board) {
+    const onId = ongoingColId(board);
+    // For each card, find how long it stayed in the ON GOING column
     const segments = { new:[], amend:[], mockup:[] };
     cards.forEach(card => {
       const hist = (card.history||[]).filter(h=>h.type==='moved').sort((a,b)=>new Date(a.ts)-new Date(b.ts));
       for (let i=0; i<hist.length; i++) {
         const h = hist[i];
-        if (h.to === 'design-on') {
-          // Find when it left design-on
-          const exit = hist.slice(i+1).find(x => x.from === 'design-on');
+        if (h.to === onId) {
+          // Find when it left the ON GOING column (to anywhere)
+          const exit = hist.slice(i+1).find(x => x.from === onId);
           if (!exit) continue;
           const hrs = (new Date(exit.ts) - new Date(h.ts)) / 3600000;
           if (hrs <= 0 || hrs > 720) continue; // skip outliers >30 days
-          // Classify by what column it came FROM
-          const from = h.from || '';
-          if (from === 'job-list' || from === 'new')       segments.new.push(hrs);
-          else if (from === 'amended')                     segments.amend.push(hrs);
-          else if (from === 'mockup')                      segments.mockup.push(hrs);
-          else                                             segments.new.push(hrs);
+          // Classify by what column it came FROM (by label)
+          const jt = paceJobType(h.from || '', board);
+          if (jt === 'Amend')       segments.amend.push(hrs);
+          else if (jt === 'Mockup') segments.mockup.push(hrs);
+          else                      segments.new.push(hrs);
         }
       }
     });
@@ -1792,7 +1810,7 @@ function renderKpi() {
     const assistCount = assistCards.filter(c => c.col==='complete' && isInMonth(c)).length;
 
     // Pace: avg time in ON GOING
-    const pace = calcPaceMetrics(primaryCards);
+    const pace = calcPaceMetrics(primaryCards, primaryBoard);
 
     const pipeline = getBoardCols(primaryBoard).filter(col => !['complete'].includes(col.id)).map(col => ({
       label: col.label, cnt: primaryCards.filter(c => c.col === col.id).length, accent: col.accent
@@ -1927,10 +1945,11 @@ function renderKpi() {
     const m    = designerMetrics(name);
     const info = DESIGNER_INFO[name] || { color:'#9AA0B8' };
     const bColMap = COL_MAP_BY_BOARD[m.primaryBoard] || COL_MAP;
+    const onId    = ongoingColId(m.primaryBoard);
 
     // ── Build transition log ──────────────────────────────────
     // For each card, find pairs: [X → ON GOING] then [ON GOING → Y]
-    // Clock starts when designer enters ON GOING, stops when they leave
+    // Clock starts when designer enters ON GOING, stops when they leave (to anywhere)
     const transitions = [];
 
     m.primaryCards.forEach(card => {
@@ -1941,19 +1960,17 @@ function renderKpi() {
       for (let i = 0; i < hist.length; i++) {
         const h = hist[i];
         // Clock START: designer enters ON GOING
-        if (h.to !== 'design-on') continue;
+        if (h.to !== onId) continue;
         if ((h.user||'').toUpperCase() !== name.toUpperCase()) continue;
 
         const clockStart = new Date(h.ts);
         const fromCol    = h.from || '';
 
-        // Classify job type by what column it came FROM
-        let jobType = 'Baru';
-        if (fromCol === 'amended')      jobType = 'Amend';
-        else if (fromCol === 'mockup')  jobType = 'Mockup';
+        // Classify job type by the LABEL of the column it came FROM
+        const jobType = paceJobType(fromCol, m.primaryBoard);
 
-        // Clock STOP: next time designer leaves ON GOING
-        const exitMove = hist.slice(i+1).find(x => x.from === 'design-on');
+        // Clock STOP: next time designer leaves ON GOING (to anywhere)
+        const exitMove = hist.slice(i+1).find(x => x.from === onId);
         if (!exitMove) continue; // still in ON GOING
 
         const clockStop  = new Date(exitMove.ts);
