@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talent Fit — Penilaian Psikologi Calon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b2a2f;--ink-soft:#3d5158;--cream:#f4efe6;--cream-2:#ece4d6;
+  --paper:#fffdf8;--teal:#0f5a55;--teal-2:#14746e;--gold:#c08a2d;
+  --line:#ddd3c2;--good:#1f7a4d;--mid:#b8860b;--warn:#b4452f;
+  --shadow:0 1px 2px rgba(27,42,47,.04),0 10px 30px rgba(27,42,47,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Hanken Grotesk',sans-serif;background:var(--cream);color:var(--ink);
+  line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background-image:
+    radial-gradient(circle at 12% 0%,rgba(20,116,110,.06),transparent 42%),
+    radial-gradient(circle at 88% 100%,rgba(192,138,45,.06),transparent 42%);
+}
+.wrap{max-width:760px;margin:0 auto;padding:36px 20px 90px}
+.wrap.wide{max-width:1060px}
+h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.015em;line-height:1.12}
+.brand{display:flex;align-items:center;gap:11px;margin-bottom:28px}
+.brand .dot{width:32px;height:32px;border-radius:10px;background:var(--teal);display:grid;place-items:center;color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:18px;box-shadow:0 2px 8px rgba(15,90,85,.35);flex:0 0 auto}
+.brand-text b{font-family:'Fraunces',serif;font-weight:600;font-size:18px;display:block}
+.brand-text small{color:var(--ink-soft);font-size:12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px;box-shadow:var(--shadow)}
+.field{margin-bottom:18px}
+label{display:block;font-weight:600;font-size:13.5px;margin-bottom:7px;color:var(--ink-soft)}
+input,select{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:12px;font-family:inherit;font-size:15px;background:var(--cream);color:var(--ink);transition:.18s}
+input:focus,select:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(15,90,85,.12)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--teal);color:#fff;border:none;padding:13px 26px;border-radius:12px;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;transition:.18s;box-shadow:0 2px 8px rgba(15,90,85,.25)}
+.btn:hover{background:var(--teal-2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,90,85,.3)}
+.btn:active{transform:none}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn.ghost{background:transparent;color:var(--teal);border:1.5px solid var(--line);box-shadow:none}
+.btn.ghost:hover{background:var(--cream-2);box-shadow:none;transform:none}
+.btn.sm{padding:8px 16px;font-size:13px;border-radius:9px}
+.btn.danger{background:#b4452f}
+.btn.danger:hover{background:#9a3a26}
+.prog-wrap{margin:0 0 22px}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.prog-label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.prog-num{font-size:12px;color:var(--ink-soft)}
+.prog{height:5px;background:var(--cream-2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));transition:.45s cubic-bezier(.4,0,.2,1);border-radius:99px}
+.dimtag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--teal);background:rgba(15,90,85,.1);padding:4px 11px;border-radius:99px;margin-bottom:12px}
+.qtext{font-family:'Fraunces',serif;font-size:21px;font-weight:500;line-height:1.35;margin-bottom:24px;color:var(--ink)}
+.likert{display:grid;gap:9px}
+.opt{display:flex;align-items:center;gap:13px;padding:14px 16px;border:1.5px solid var(--line);border-radius:13px;cursor:pointer;background:var(--cream);transition:.15s;font-size:14.5px}
+.opt:hover{border-color:var(--teal);background:#fff}
+.opt.sel{border-color:var(--teal);background:rgba(15,90,85,.06);box-shadow:0 0 0 2px rgba(15,90,85,.15)}
+.mk{width:21px;height:21px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;display:grid;place-items:center;transition:.15s}
+.opt.sel .mk{border-color:var(--teal)}
+.opt.sel .mk::after{content:'';width:11px;height:11px;border-radius:50%;background:var(--teal);display:block}
+.opt-letter{font-weight:700;color:var(--gold);min-width:16px}
+.navrow{display:flex;justify-content:space-between;gap:12px;margin-top:28px}
+.done{text-align:center;padding:16px 10px}
+.done .tick{width:62px;height:62px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center;font-size:30px;margin:0 auto 20px;box-shadow:0 4px 16px rgba(31,122,77,.3)}
+.login-wrap{max-width:400px;margin:60px auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);padding:11px 14px;border-bottom:2px solid var(--line);font-weight:700}
+td{padding:13px 14px;border-bottom:1px solid var(--line)}
+tr.row{cursor:pointer;transition:.12s}
+tr.row:hover td{background:rgba(236,228,214,.5)}
+.pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700}
+.pill.s4{background:rgba(31,122,77,.12);color:var(--good)}
+.pill.s3{background:rgba(15,90,85,.12);color:var(--teal)}
+.pill.s2{background:rgba(184,134,11,.14);color:var(--mid)}
+.pill.s1{background:rgba(180,69,47,.12);color:var(--warn)}
+.back-btn{background:none;border:none;color:var(--teal);font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;padding:0;display:flex;align-items:center;gap:6px;margin-bottom:18px}
+.back-btn:hover{opacity:.7}
+.sec-h{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin:28px 0 12px;display:flex;align-items:center;gap:10px}
+.sec-h::before{content:'';width:4px;height:18px;background:var(--gold);border-radius:99px;flex:0 0 auto}
+.totalbox{display:flex;align-items:center;gap:22px;border:1px solid var(--line);border-radius:16px;padding:22px 26px;background:linear-gradient(130deg,var(--paper),var(--cream));margin:4px 0 20px;flex-wrap:wrap}
+.totalbox .big{font-family:'Fraunces',serif;font-size:58px;font-weight:700;line-height:1}
+.totalbox .big small{font-size:22px;color:var(--ink-soft);font-weight:400}
+.scoregrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:2px 0 20px}
+.sc{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--cream)}
+.sc .dn{font-size:12px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em}
+.sc .dv{font-family:'Fraunces',serif;font-size:28px;font-weight:600;margin:4px 0 8px}
+.sc .bar{height:5px;background:var(--cream-2);border-radius:99px;overflow:hidden}
+.sc .bar i{display:block;height:100%;border-radius:99px}
+.summary{font-size:15px;line-height:1.75;color:var(--ink-soft)}
+.summary b{color:var(--ink);font-weight:600}
+.flagbox{border:1px solid rgba(180,69,47,.25);background:rgba(180,69,47,.05);border-radius:13px;padding:16px 18px;margin:12px 0}
+.flagbox .fh{font-weight:700;color:var(--warn);margin-bottom:8px;font-size:14px}
+.flagbox ul{margin:0;padding-left:20px;font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.qbank{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--cream)}
+.qb-item{padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.6}
+.qb-item:last-child{border-bottom:none}
+.qb-item .qd{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--teal);display:block;margin-bottom:4px}
+.qb-item.hot{background:#fff;border-left:3px solid var(--gold)}
+.ans-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.ans-row:last-child{border-bottom:none}
+.ans-row .aq{flex:1;color:var(--ink-soft)}
+.ans-row .av{font-weight:600;color:var(--teal);text-align:right;max-width:50%;font-size:13px}
+.badge-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.user-info{font-size:13px;color:var(--ink-soft)}
+.user-info b{color:var(--ink)}
+.empty{padding:40px;text-align:center;color:var(--ink-soft);font-size:15px}
+.err-msg{color:var(--warn);font-size:13.5px;font-weight:600;margin-top:10px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.denied{text-align:center;padding:28px 0}
+@media(max-width:580px){.card{padding:22px 18px}.totalbox .big{font-size:46px}.navrow{flex-direction:column-reverse}.btn{width:100%}}
+</style>
+</head>
+<body>
+<div id="app"><div class="wrap"><div class="empty">Memuatkan…</div></div></div>
+
+<script>
+/* ── SUPABASE CONFIG ── */
+const SUPA_URL = 'https://nsvhdilgrurpbjlsyviv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdmhkaWxncnVycGJqbHN5dml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Nzk4NjYsImV4cCI6MjA5MjE1NTg2Nn0.XKT6hZd2RGB7c-61aq5QDoZaYfIOgfkyTJ0bsiuqPOo';
+
+async function supaFetch(path, opts = {}) {
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    ...(opts.prefer ? { 'Prefer': opts.prefer } : {}),
+    ...(opts.headers || {}),
+  };
+  const res = await fetch(SUPA_URL + path, {
+    method: opts.method || 'GET',
+    headers,
+    body: opts.body || undefined,
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error('Supabase ' + res.status + ': ' + t.slice(0, 200));
+  }
+  const t = await res.text();
+  return t ? JSON.parse(t) : null;
+}
+
+/* ── DIMENSI ── */
+const DIMS = {
+  A:{name:"Ceria / Positif",            short:"Ceria"},
+  B:{name:"Extrovert",                   short:"Extrovert"},
+  C:{name:"Disiplin",                    short:"Disiplin"},
+  D:{name:"Mudah Ikut Arahan",           short:"Ikut Arahan"},
+  E:{name:"Sikap Kerja & Akauntabiliti", short:"Sikap Kerja"},
+};
+
+/* ── 20 SOALAN ── */
+const Q = [
+  {dim:"A",type:"likert",text:"Bila jumpa orang baru di tempat kerja, saya rasa seronok dan senang nak mesra."},
+  {dim:"A",type:"likert",text:"Walaupun kerja banyak atau hari teruk, saya masih boleh nampak sisi positif."},
+  {dim:"A",type:"likert",reverse:true,text:"Saya mudah rasa down dan susah nak recover bila ada masalah kecil."},
+  {dim:"A",type:"sit",text:"Pagi sampai opis, mood semua orang flat. Biasanya saya:",
+   opts:[{t:"Cuba cheer up / sembang ringan supaya suasana lebih hidup",s:5},
+         {t:"Buat kerja sendiri tanpa ganggu sesiapa",s:3},
+         {t:"Ikut je mood orang sekeliling",s:2},
+         {t:"Rasa annoyed dengan suasana macam tu",s:1}]},
+
+  {dim:"B",type:"likert",text:"Saya lebih suka kerja dalam team dengan banyak interaksi berbanding kerja sorang-sorang."},
+  {dim:"B",type:"likert",text:"Saya okay je bila kena present atau bercakap di depan ramai orang."},
+  {dim:"B",type:"likert",reverse:true,text:"Saya rasa jauh lebih selesa bila kerja sendiri tanpa perlu banyak berbual."},
+  {dim:"B",type:"sit",text:"Ada customer baru kena dilayan, saya tak kenal dia langsung. Saya:",
+   opts:[{t:"Excited nak kenal dan terus mula sembang",s:5},
+         {t:"Buat je sebab memang kerja",s:3},
+         {t:"Rasa awkward tapi tetap cuba",s:2},
+         {t:"Cuba elak kalau boleh",s:1}]},
+
+  {dim:"C",type:"likert",text:"Saya siapkan kerja sebelum deadline, bukan saat-saat akhir."},
+  {dim:"C",type:"likert",text:"Kerja, fail atau jadual saya biasanya tersusun dan kemas."},
+  {dim:"C",type:"likert",reverse:true,text:"Kadang saya terlupa atau tertangguh benda yang saya dah janji nak buat."},
+  {dim:"C",type:"sit",text:"Dah plan nak habiskan kerja A hari ni, tiba-tiba boss bagi kerja urgent B. Saya:",
+   opts:[{t:"Cek prioriti dengan boss, susun jadual semula",s:5},
+         {t:"Stop A, buat B yang urgent dulu",s:4},
+         {t:"Habiskan A dulu baru pegang B",s:2},
+         {t:"Cuba buat dua-dua serentak, jadi stress",s:1}]},
+
+  {dim:"D",type:"likert",text:"Bila boss bagi arahan, saya ikut dulu walaupun ada pendapat lain — boleh raise kemudian."},
+  {dim:"D",type:"likert",text:"Saya ambil teguran sebagai peluang nak improve, bukan serangan peribadi."},
+  {dim:"D",type:"likert",reverse:true,text:"Saya rasa cara saya selalunya lebih betul daripada cara yang diajar."},
+  {dim:"D",type:"sit",text:"Boss tegur kerja saya ada silap, di depan team. Saya:",
+   opts:[{t:"Terima, betulkan, dan ucap terima kasih",s:5},
+         {t:"Terima tapi terasa sikit dalam hati",s:3},
+         {t:"Diam tapi simpan dalam hati, rasa tidak puas",s:2},
+         {t:"Defend diri atau bagi alasan kenapa",s:1}]},
+
+  {dim:"E",type:"likert",text:"Kalau saya buat silap, saya akui dan betulkan — bukan cari siapa nak salahkan."},
+  {dim:"E",type:"likert",text:"Saya sanggup buat kerja \"bukan skop saya\" kalau team perlukan bantuan."},
+  {dim:"E",type:"likert",reverse:true,text:"Walaupun baru masuk kerja, saya rasa saya patut dapat lebih dari apa yang ditawarkan."},
+  {dim:"E",type:"sit",text:"Dah kerja 6 bulan, kerja makin mencabar. Saya:",
+   opts:[{t:"Anggap peluang belajar dan berkembang, terus stay",s:5},
+         {t:"Stay dulu tapi mula tengok-tengok tempat lain",s:3},
+         {t:"Buat kerja cukup-cukup makan je",s:2},
+         {t:"Rasa burnout, mula fikir nak resign",s:1}]},
+];
+
+/* ── SOALAN INTERVIEW HR ── */
+const HR_Q = {
+  A:["Ceritakan satu hari kerja yang paling teruk untuk awak. Macam mana awak handle mood awak ketika itu?",
+     "Macam mana awak biasanya buat rakan sekerja rasa selesa pada hari pertama dia masuk?"],
+  B:["Ceritakan situasi awak terpaksa berurusan dengan orang yang awak baru kenal. Apa yang awak buat?",
+     "Awak rasa lebih bertenaga lepas kerja berkumpulan, atau lepas masa bersendirian? Kenapa?"],
+  C:["Bila kali terakhir awak hampir terlepas deadline? Apa punca dan apa awak buat?",
+     "Macam mana awak susun kerja bila ada 3-4 tugasan datang serentak pada masa sama?"],
+  D:["Bila kali terakhir awak kena teguran kuat dari boss? Apa reaksi awak masa tu dan selepasnya?",
+     "Pernah tak awak tak setuju dengan arahan yang diberi? Macam mana awak handle situasi tu?"],
+  E:["Ceritakan satu silap besar yang awak pernah buat di tempat kerja. Apa awak buat selepas tu?",
+     "Apa yang buat awak rasa nak terus kekal bekerja di satu tempat walaupun keadaan susah?"],
+};
+
+/* ── PEMARKAHAN ── */
+function calcScore(answers) {
+  const dim = {A:0,B:0,C:0,D:0,E:0};
+  let idealCount = 0;
+  Q.forEach((q, i) => {
+    const a = answers[i];
+    let s;
+    if (q.type === 'likert') {
+      s = q.reverse ? (6 - a) : a;
+      if (q.reverse ? a === 1 : a === 5) idealCount++;
+    } else {
+      s = a;
+      if (a === 5) idealCount++;
+    }
+    dim[q.dim] += s;
+  });
+  const total = Object.values(dim).reduce((x, y) => x + y, 0);
+  const flags = [];
+  if (answers[1] >= 4 && answers[2] >= 4)
+    flags.push("Jawapan S2 (positif walaupun teruk) tinggi tetapi S3 (mudah down) juga tinggi — tidak konsisten.");
+  if (answers[8] >= 4 && answers[10] >= 4)
+    flags.push("Jawapan S9 (siap awal) tinggi tetapi S11 (sering tangguh) juga tinggi — tidak konsisten.");
+  if (answers[13] >= 4 && answers[14] >= 4)
+    flags.push("Jawapan S14 (terima teguran) tinggi tetapi S15 (cara sendiri lebih betul) juga tinggi — ego mungkin tinggi.");
+  if (idealCount >= 17)
+    flags.push("Hampir semua jawapan sempurna (" + idealCount + "/20) — kemungkinan 'fake good'. Gali dengan teliti semasa interview.");
+  return { dim, total, flags };
+}
+
+function rating(total) {
+  if (total >= 80) return { label:"Sangat Sesuai", cls:"s4" };
+  if (total >= 65) return { label:"Sesuai",        cls:"s3" };
+  if (total >= 50) return { label:"Sederhana",     cls:"s2" };
+  return               { label:"Perlu Diteliti",  cls:"s1" };
+}
+function dimCls(v)  { return v>=16?"s4":v>=12?"s3":v>=8?"s2":"s1"; }
+function dimWord(v) { return v>=16?"kuat":v>=12?"memadai":v>=8?"sederhana":"lemah"; }
+function barCol(c)  { return c==="s4"?"var(--good)":c==="s3"?"var(--teal)":c==="s2"?"var(--mid)":"var(--warn)"; }
+
+function buildSummary(dim) {
+  const sorted = Object.keys(DIMS).sort((a, b) => dim[b] - dim[a]);
+  const top = sorted[0], bot = sorted[sorted.length - 1];
+  let s = `Calon ini paling menonjol dalam aspek <b>${DIMS[top].name}</b> (${dim[top]}/20) dan perlu perhatian khusus pada <b>${DIMS[bot].name}</b> (${dim[bot]}/20). `;
+  Object.keys(DIMS).forEach(d => { s += `Tahap <b>${DIMS[d].short}</b> adalah ${dimWord(dim[d])}. `; });
+  const weak = Object.keys(DIMS).filter(d => dim[d] < 12);
+  if (weak.length) s += `<br><br>Cadangan HR: Tumpukan soalan interview pada dimensi <b>${weak.map(d => DIMS[d].short).join(", ")}</b> kerana skor berada di tahap rendah. Gunakan soalan bertanda <span style="color:var(--gold);font-weight:700">• Fokus</span> di bawah.`;
+  else s += `<br><br>Profil seimbang merentas semua dimensi. Gunakan sesi interview untuk sahkan kejujuran jawapan, terutama jika terdapat flag di atas.`;
+  return s;
+}
+
+/* ── STATE ── */
+let cand = { name:'', contact:'', position:'' };
+let answers = new Array(Q.length).fill(null);
+let step = -1;
+let adminUser = null;
+
+/* ── UTILS ── */
+const app = document.getElementById('app');
+function html(s) { app.innerHTML = s; }
+function esc(s)  { return String(s ?? '').replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ── ROUTING ── */
+function route() {
+  if (location.hash.toLowerCase().startsWith('#admin')) initAdmin();
+  else renderCandidateStep();
+}
+window.addEventListener('hashchange', route);
+
+/* ═══════════════════════════════════════════
+   PAPARAN CALON
+════════════════════════════════════════════ */
+function renderCandidateStep() {
+  if (step === -1) return renderCandidateInfo();
+  if (step === 'done') return;
+  renderQuestion();
+}
+
+function renderCandidateInfo() {
+  html(`<div class="wrap">
+    <div class="brand"><div class="dot">T</div><div class="brand-text"><b>Talent Fit</b><small>DOD Worldwide Supplies</small></div></div>
+    <div class="card">
+      <span class="dimtag">± 5 minit · 20 Soalan</span>
+      <h1 style="font-size:clamp(26px,5vw,38px);margin:14px 0 10px">Penilaian Calon Staf</h1>
+      <p style="color:var(--ink-soft);font-size:15px;margin-bottom:28px;max-width:52ch">
+        Jawab setiap soalan dengan <b style="color:var(--ink)">jujur</b> — tiada jawapan betul atau salah.
+        Jawapan yang paling jujur selalunya yang paling membantu anda.
+      </p>
+      <div class="field"><label>Nama Penuh</label><input id="f-name" placeholder="Nama anda" value="${esc(cand.name)}"></div>
+      <div class="field"><label>No. Telefon / Email</label><input id="f-contact" placeholder="Untuk rujukan HR" value="${esc(cand.contact)}"></div>
+      <div class="field"><label>Jawatan Dipohon</label><input id="f-pos" placeholder="cth: Sales Executive, Designer" value="${esc(cand.position)}"></div>
+      <button class="btn" id="start-btn" style="width:100%;margin-top:6px">Mula Penilaian →</button>
+    </div>
+  </div>`);
+  document.getElementById('start-btn').onclick = () => {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { alert('Sila masukkan nama anda.'); return; }
+    cand.name    = name;
+    cand.contact = document.getElementById('f-contact').value.trim();
+    cand.position= document.getElementById('f-pos').value.trim();
+    step = 0; renderQuestion();
+  };
+}
+
+function renderQuestion() {
+  const q = Q[step], sel = answers[step];
+  const pct = Math.round((step / Q.length) * 100);
+  const isLast = step === Q.length - 1;
+  let optsHtml = '';
+  if (q.type === 'likert') {
+    const labels = [["1","Sangat Tidak Setuju"],["2","Tidak Setuju"],["3","Neutral"],["4","Setuju"],["5","Sangat Setuju"]];
+    optsHtml = `<div class="likert">` + labels.map(([v, t]) =>
+      `<div class="opt ${sel == v ? 'sel' : ''}" data-v="${v}"><span class="mk"></span><span class="opt-letter">${v}</span><span>${t}</span></div>`
+    ).join('') + `</div>`;
+  } else {
+    optsHtml = `<div class="likert">` + q.opts.map((o, i) =>
+      `<div class="opt ${sel === o.s ? 'sel' : ''}" data-v="${o.s}"><span class="mk"></span><span class="opt-letter">${'ABCD'[i]}</span><span>${o.t}</span></div>`
+    ).join('') + `</div>`;
+  }
+  html(`<div class="wrap">
+    <div class="brand"><div class="dot">T</div><div class="brand-text"><b>Talent Fit</b><small>${esc(cand.name)}</small></div></div>
+    <div class="prog-wrap">
+      <div class="prog-row"><span class="prog-label">${DIMS[q.dim].name}</span><span class="prog-num">Soalan ${step+1} / ${Q.length}</span></div>
+      <div class="prog"><i style="width:${pct}%"></i></div>
+    </div>
+    <div class="card">
+      <span class="dimtag">${DIMS[q.dim].short}</span>
+      <div class="qtext">${q.text}</div>
+      ${optsHtml}
+      <div class="navrow">
+        <button class="btn ghost" id="prev-btn" ${step===0?'style="visibility:hidden"':''}>← Sebelum</button>
+        <button class="btn" id="next-btn" ${sel==null?'disabled':''}>${isLast?'Hantar ✓':'Seterusnya →'}</button>
+      </div>
+    </div>
+  </div>`);
+  app.querySelectorAll('.opt').forEach(el => el.onclick = () => {
+    answers[step] = parseInt(el.dataset.v); renderQuestion();
+  });
+  const prev = document.getElementById('prev-btn');
+  if (prev) prev.onclick = () => { step--; renderQuestion(); };
+  document.getElementById('next-btn').onclick = () => {
+    if (answers[step] == null) return;
+    if (isLast) submitCandidate(); else { step++; renderQuestion(); }
+  };
+}
+
+async function submitCandidate() {
+  html(`<div class="wrap"><div class="card done"><div style="font-size:32px;margin-bottom:12px">⏳</div><p style="color:var(--ink-soft)">Menghantar jawapan…</p></div></div>`);
+  const { dim, total, flags } = calcScore(answers);
+  const rt = rating(total);
+  try {
+    await supaFetch('/rest/v1/candidate_assessments', {
+      method: 'POST', prefer: 'return=minimal',
+      body: JSON.stringify({
+        candidate_name: cand.name, candidate_contact: cand.contact,
+        position: cand.position, answers, dim_scores: dim,
+        total_score: total, rating: rt.label, flags,
+      }),
+    });
+  } catch(e) { console.warn('Submit error:', e); }
+  step = 'done';
+  answers = new Array(Q.length).fill(null);
+  cand = { name:'', contact:'', position:'' };
+  html(`<div class="wrap"><div class="card done">
+    <div class="tick">✓</div>
+    <h2 style="font-size:26px;margin-bottom:10px">Terima kasih!</h2>
+    <p style="color:var(--ink-soft);font-size:15px;max-width:42ch;margin:0 auto">
+      Penilaian anda telah berjaya direkodkan. Pasukan HR kami akan menyemak
+      dan menghubungi anda. Anda boleh tutup tab ini.
+    </p>
+  </div></div>`);
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN — guna DOD session (localStorage)
+   + users table (sama seperti sistem DOD)
+════════════════════════════════════════════ */
+function getDodSession() {
+  try {
+    const raw = localStorage.getItem('dod_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function initAdmin() {
+  const sess = getDodSession();
+  if (sess && sess.role === 'admin') {
+    adminUser = sess;
+    renderAdminList();
+  } else {
+    renderAdminLogin();
+  }
+}
+
+function renderAdminLogin() {
+  html(`<div class="wrap">
+    <div class="login-wrap">
+      <div class="brand" style="margin-bottom:22px"><div class="dot">T</div><div class="brand-text"><b>Talent Fit</b><small>Portal Admin</small></div></div>
+      <div class="card">
+        <h2 style="font-size:22px;margin-bottom:6px">Log Masuk Admin</h2>
+        <p style="color:var(--ink-soft);font-size:14px;margin-bottom:22px">Guna ID &amp; kata laluan sistem DOD anda.</p>
+        <div class="field"><label>ID Pengguna</label><input id="a-id" placeholder="ID anda (cth: fariz)"></div>
+        <div class="field"><label>Kata Laluan</label><input type="password" id="a-pw" placeholder="••••••••"></div>
+        <button class="btn" id="a-login" style="width:100%">Log Masuk</button>
+        <div id="a-err"></div>
+      </div>
+    </div>
+  </div>`);
+  const doLogin = async () => {
+    const userId = document.getElementById('a-id').value.trim().toLowerCase().replace(/^@/, '');
+    const pw     = document.getElementById('a-pw').value;
+    const btn    = document.getElementById('a-login');
+    const err    = document.getElementById('a-err');
+    if (!userId || !pw) { err.innerHTML = `<p class="err-msg">Sila isi ID dan kata laluan.</p>`; return; }
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin"></span> Mengesahkan…`;
+    err.innerHTML = '';
+    try {
+      const rows = await supaFetch(`/rest/v1/users?select=id,name,role,color,bg,password,active&id=eq.${encodeURIComponent(userId)}`);
+      if (!rows || !rows.length) throw new Error('ID tidak dijumpai.');
+      const u = rows[0];
+      if (u.active === false) throw new Error('Akaun ini tidak aktif.');
+      if (pw !== (u.password || 'DOD2026')) throw new Error('Kata laluan salah.');
+      if (u.role !== 'admin') throw new Error('Akaun ini tiada akses Admin.');
+      const sess = { id:u.id, name:u.name, role:u.role, color:u.color||'#1A5CC8', bg:u.bg||'#EEF4FF' };
+      localStorage.setItem('dod_session', JSON.stringify(sess));
+      adminUser = sess;
+      renderAdminList();
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = 'Log Masuk';
+      err.innerHTML = `<p class="err-msg">${esc(e.message)}</p>`;
+    }
+  };
+  document.getElementById('a-login').onclick = doLogin;
+  document.getElementById('a-pw').onkeydown = e => { if (e.key === 'Enter') doLogin(); };
+}
+
+async function renderAdminList() {
+  html(`<div class="wrap wide">
+    <div class="topbar">
+      <div class="brand" style="margin-bottom:0"><div class="dot">T</div><div class="brand-text"><b>Talent Fit</b><small>Hasil Penilaian Calon</small></div></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="user-info">Log masuk sebagai: <b>${esc(adminUser?.name)}</b></span>
+        <button class="btn ghost sm" id="btn-refresh">↻ Refresh</button>
+        <button class="btn sm danger" id="btn-out">Log Keluar</button>
+      </div>
+    </div>
+    <div class="card" id="list-wrap"><div class="empty">Memuatkan senarai calon…</div></div>
+  </div>`);
+  document.getElementById('btn-refresh').onclick = renderAdminList;
+  document.getElementById('btn-out').onclick = () => {
+    localStorage.removeItem('dod_session'); adminUser = null; renderAdminLogin();
+  };
+  let data = [];
+  try {
+    data = await supaFetch('/rest/v1/candidate_assessments?select=*&order=created_at.desc') || [];
+  } catch(e) {
+    document.getElementById('list-wrap').innerHTML = `<p class="err-msg" style="padding:20px">Gagal memuatkan: ${esc(e.message)}</p>`; return;
+  }
+  const wrap = document.getElementById('list-wrap');
+  if (!data.length) { wrap.innerHTML = `<div class="empty">Belum ada calon menjawab.<br>Kongsi link halaman ini (tanpa #admin) kepada calon.</div>`; return; }
+  const rows = data.map((r, i) => {
+    const rt = rating(r.total_score);
+    const hasFlag = r.flags?.length > 0;
+    const d = new Date(r.created_at).toLocaleDateString('ms-MY',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<tr class="row" data-i="${i}">
+      <td><b>${esc(r.candidate_name)}</b>${hasFlag?' <span style="color:var(--warn);font-size:13px">⚠</span>':''}</td>
+      <td>${esc(r.position||'—')}</td>
+      <td>${esc(r.candidate_contact||'—')}</td>
+      <td><b>${r.total_score}</b><span style="color:var(--ink-soft)">/100</span></td>
+      <td><span class="pill ${rt.cls}">${rt.label}</span></td>
+      <td style="color:var(--ink-soft);font-size:13px">${d}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table>
+    <thead><tr><th>Nama</th><th>Jawatan</th><th>Hubungi</th><th>Skor</th><th>Rating</th><th>Tarikh</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+  wrap.querySelectorAll('tr.row').forEach(tr => tr.onclick = () => renderDetail(data[+tr.dataset.i]));
+}
+
+function renderDetail(r) {
+  const dim = r.dim_scores || {}, total = r.total_score, flags = r.flags || [];
+  const rt = rating(total);
+  const scoreGrid = Object.keys(DIMS).map(d => {
+    const v = dim[d] || 0, cls = dimCls(v);
+    return `<div class="sc"><div class="dn">${DIMS[d].name}</div>
+      <div class="dv" style="color:${barCol(cls)}">${v}<span style="font-size:16px;color:var(--ink-soft)">/20</span></div>
+      <div class="bar"><i style="width:${v/20*100}%;background:${barCol(cls)}"></i></div></div>`;
+  }).join('');
+  const weak = Object.keys(DIMS).filter(d => (dim[d]||0) < 12);
+  const hrOrder = [...weak, ...Object.keys(DIMS).filter(d => !weak.includes(d))];
+  const hrHtml = hrOrder.flatMap(d => HR_Q[d].map(q =>
+    `<div class="qb-item ${weak.includes(d)?'hot':''}"><span class="qd">${DIMS[d].short}${weak.includes(d)?' · Fokus':''}</span>${q}</div>`
+  )).join('');
+  const ansHtml = Q.map((q, i) => {
+    const a = (r.answers||[])[i];
+    let disp = '—';
+    if (q.type === 'likert') disp = ["—","1 — Sangat Tidak Setuju","2 — Tidak Setuju","3 — Neutral","4 — Setuju","5 — Sangat Setuju"][a]||'—';
+    else { const idx = q.opts.findIndex(o => o.s === a); if (idx >= 0) disp = `${'ABCD'[idx]} — ${q.opts[idx].t}`; }
+    return `<div class="ans-row"><span class="aq">${i+1}. ${q.text}</span><span class="av">${esc(disp)}</span></div>`;
+  }).join('');
+  const created = new Date(r.created_at).toLocaleDateString('ms-MY',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  html(`<div class="wrap wide">
+    <button class="back-btn" id="back-btn">← Kembali ke Senarai</button>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:6px">
+        <div>
+          <h2 style="font-size:clamp(22px,4vw,30px)">${esc(r.candidate_name)}</h2>
+          <div class="badge-row">
+            <span style="color:var(--ink-soft);font-size:14px">${esc(r.position||'Jawatan tidak dinyatakan')}</span>
+            <span style="color:var(--ink-soft)">·</span>
+            <span style="color:var(--ink-soft);font-size:14px">${esc(r.candidate_contact||'—')}</span>
+          </div>
+          <div style="margin-top:6px;color:var(--ink-soft);font-size:13px">${created}</div>
+        </div>
+        <span class="pill ${rt.cls}" style="font-size:14px;padding:8px 18px">${rt.label}</span>
+      </div>
+
+      <div class="sec-h">Skor Keseluruhan</div>
+      <div class="totalbox">
+        <div class="big">${total}<small>/100</small></div>
+        <div style="flex:1"><p style="color:var(--ink-soft);font-size:13.5px;line-height:1.9">
+          <b style="color:var(--ink)">80–100</b> Sangat Sesuai &nbsp;·&nbsp;
+          <b style="color:var(--ink)">65–79</b> Sesuai &nbsp;·&nbsp;
+          <b style="color:var(--ink)">50–64</b> Sederhana &nbsp;·&nbsp;
+          <b style="color:var(--ink)">&lt;50</b> Perlu Diteliti
+        </p></div>
+      </div>
+
+      <div class="sec-h">Skor Mengikut Dimensi</div>
+      <div class="scoregrid">${scoreGrid}</div>
+
+      <div class="sec-h">Ringkasan Calon</div>
+      <p class="summary">${buildSummary(dim)}</p>
+
+      ${flags.length
+        ? `<div class="flagbox"><div class="fh">⚠ Amaran — Periksa Semasa Interview</div><ul>${flags.map(f=>`<li>${esc(f)}</li>`).join('')}</ul></div>`
+        : `<div style="padding:10px 0 2px;color:var(--good);font-size:13.5px;font-weight:600">✓ Tiada flag konsistensi dikesan.</div>`}
+
+      <div class="sec-h">Cadangan Soalan Interview HR</div>
+      <p style="color:var(--ink-soft);font-size:13.5px;margin-bottom:10px">
+        Soalan bertanda <b style="color:var(--gold)">· Fokus</b> adalah untuk dimensi berskor rendah.
+      </p>
+      <div class="qbank">${hrHtml}</div>
+
+      <div class="sec-h">Jawapan Penuh Calon</div>
+      <div style="border:1px solid var(--line);border-radius:14px;padding:6px 18px;background:var(--cream)">${ansHtml}</div>
+    </div>
+  </div>`);
+  document.getElementById('back-btn').onclick = renderAdminList;
+}
+
+/* ── INIT ── */
+route();
+</script>
+
+<!--
+===========================================================
+SUPABASE SQL — Jalankan sekali dalam SQL Editor Supabase
+===========================================================
+
+create table if not exists candidate_assessments (
+  id                uuid default gen_random_uuid() primary key,
+  created_at        timestamptz default now(),
+  candidate_name    text not null,
+  candidate_contact text,
+  position          text,
+  answers           jsonb not null,
+  dim_scores        jsonb not null,
+  total_score       int not null,
+  rating            text,
+  flags             jsonb
+);
+
+alter table candidate_assessments enable row level security;
+
+create policy "candidate_insert" on candidate_assessments
+  for insert to anon with check (true);
+
+create policy "admin_select" on candidate_assessments
+  for select to anon using (true);
+
+===========================================================
+-->
+</body>
+</html>
