@@ -134,7 +134,25 @@ PROD_STATUSES.forEach(s => STATUS_MAP[s.id] = s);
 
 let supplierInfo = null;
 let allOrders    = [];
-let activeFilter = 'active'; // 'active' | 'complete' | 'summary'
+let activeFilter = 'active'; // 'active' | 'overdue' | 'complete' | 'summary'
+let searchQuery = '';
+
+function applySearch(list) {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(o =>
+    String(o.name_job||'').toLowerCase().includes(q) ||
+    String(o.inv_number||'').toLowerCase().includes(q)
+  );
+}
+function onSearchInput(v) {
+  searchQuery = v;
+  renderApp(true);
+}
+function clearSearch() {
+  searchQuery = '';
+  renderApp(true);
+}
 let _toast       = null;
 
 // ── Supabase helpers ──────────────────────────────────────────
@@ -258,13 +276,16 @@ async function updateStatus(orderId, newStatus) {
 }
 
 // ── Render ────────────────────────────────────────────────────
-function renderApp() {
+function renderApp(keepSearchFocus) {
   const app = document.getElementById('app');
 
-  const active   = allOrders.filter(o => (o.production_status||'job-submit') !== 'complete');
-  const complete = allOrders.filter(o => o.production_status === 'complete');
+  const active   = applySearch(allOrders.filter(o => (o.production_status||'job-submit') !== 'complete'));
+  const complete = applySearch(allOrders.filter(o => o.production_status === 'complete'));
   const overdue  = active.filter(o => o.production_date && diffDays(o.production_date) < 0);
-  const showing  = activeFilter === 'active' ? active : activeFilter === 'complete' ? complete : allOrders;
+  const allShown = applySearch(allOrders);
+  const showing  = activeFilter === 'active' ? active
+                 : activeFilter === 'overdue' ? overdue
+                 : activeFilter === 'complete' ? complete : allShown;
 
   app.innerHTML = `
     <!-- HEADER -->
@@ -290,7 +311,7 @@ function renderApp() {
           <div class="stat-num" style="color:var(--blue);">${active.length}</div>
           <div class="stat-label">Aktif</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="setFilter('overdue')" style="cursor:pointer;${activeFilter==='overdue'?'border-color:var(--red);box-shadow:0 0 0 1px var(--red);':''}" title="Klik untuk lihat job overdue">
           <div class="stat-num" style="color:var(--red);">${overdue.length}</div>
           <div class="stat-label">Overdue</div>
         </div>
@@ -300,17 +321,30 @@ function renderApp() {
         </div>
       </div>
 
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:12px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;">🔍</span>
+        <input type="text" id="jobSearch" placeholder="Cari job atau no. invois..."
+          value="${searchQuery.replace(/"/g,'&quot;')}"
+          oninput="onSearchInput(this.value)"
+          style="width:100%;box-sizing:border-box;padding:10px 36px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+        ${searchQuery ? `<button onclick="clearSearch()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:14px;color:var(--textm);cursor:pointer;padding:4px;">✕</button>` : ''}
+      </div>
+
       <!-- Filter tabs + refresh -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div class="filter-tabs" style="margin-bottom:0;flex:1;">
           <button class="ftab ${activeFilter==='active'?'active':''}" onclick="setFilter('active')">
             In Progress (${active.length})
           </button>
+          <button class="ftab ${activeFilter==='overdue'?'active':''}" onclick="setFilter('overdue')" style="${activeFilter==='overdue'?'background:var(--red);border-color:var(--red);color:#fff;':overdue.length?'color:var(--red);border-color:var(--redb);':''}">
+            🔴 Overdue (${overdue.length})
+          </button>
           <button class="ftab ${activeFilter==='complete'?'active':''}" onclick="setFilter('complete')">
             Siap (${complete.length})
           </button>
           <button class="ftab ${activeFilter==='summary'?'active':''}" onclick="setFilter('summary')">
-            Ringkasan (${allOrders.length})
+            Ringkasan (${allShown.length})
           </button>
         </div>
         <button class="refresh-btn" onclick="refreshOrders()" style="margin-left:8px;flex-shrink:0;">
@@ -319,13 +353,13 @@ function renderApp() {
       </div>
 
       <!-- Job list / Summary -->
-      ${activeFilter === 'summary' ? renderSummaryTable(allOrders) : `
-        <div class="section-hd">${activeFilter==='active'?'Job Semasa':'Job Selesai'}</div>
+      ${activeFilter === 'summary' ? renderSummaryTable(allShown) : `
+        <div class="section-hd">${activeFilter==='active'?'Job Semasa':activeFilter==='overdue'?'Job Overdue':'Job Selesai'}</div>
         ${showing.length === 0 ? `
           <div class="empty">
-            <div class="empty-icon">${activeFilter==='active'?'🎉':'📦'}</div>
-            <div class="empty-text">${activeFilter==='active'?'Tiada job aktif sekarang':'Tiada rekod selesai'}</div>
-            <div class="empty-sub">${activeFilter==='active'?'Semua job telah siap!':''}</div>
+            <div class="empty-icon">${searchQuery?'🔍':activeFilter==='active'?'🎉':activeFilter==='overdue'?'✅':'📦'}</div>
+            <div class="empty-text">${searchQuery?'Tiada job sepadan dengan carian':activeFilter==='active'?'Tiada job aktif sekarang':activeFilter==='overdue'?'Tiada job overdue':'Tiada rekod selesai'}</div>
+            <div class="empty-sub">${searchQuery?('Carian: "'+searchQuery+'"'):activeFilter==='active'?'Semua job telah siap!':activeFilter==='overdue'?'Semua job ikut jadual 👍':''}</div>
           </div>
         ` : showing.map(o => renderJobCard(o)).join('')}
       `}
@@ -333,6 +367,10 @@ function renderApp() {
       <div style="height:40px;"></div>
     </div>
   `;
+  if (keepSearchFocus) {
+    const el = document.getElementById('jobSearch');
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }
 }
 
 function renderJobCard(o) {

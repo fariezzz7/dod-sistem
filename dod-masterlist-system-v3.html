@@ -331,7 +331,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .cal-legend{display:flex;align-items:center;gap:14px;}
 .cal-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--textd);}
 .cal-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.cal-stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.cal-stats-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
 .cal-stat{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
 .cal-stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .cal-stat-num{font-family:'Fira Code',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1;}
@@ -358,6 +358,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .cal-evt.e-due{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
 .cal-evt.e-holiday{background:var(--redbg);color:var(--red);border:1px solid var(--redb);}
 .cal-evt.e-note{background:var(--amberbg);color:var(--amber);border:1px solid var(--amberb);}
+.cal-evt.e-prod{background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);}
+.cal-filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.cal-filter-lbl{font-size:11px;font-weight:700;color:var(--textm);letter-spacing:.06em;text-transform:uppercase;}
+.cal-filter-chip{font-size:11px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg2);color:var(--textm);cursor:pointer;user-select:none;transition:all .15s;}
+.cal-filter-chip.on{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(46,107,255,0.25);}
 .cal-more-lbl{font-size:9px;color:var(--textm);font-family:'Fira Code',monospace;padding:1px 3px;cursor:pointer;}
 .cal-more-lbl:hover{color:var(--blue);}
 #calPanel{position:fixed;top:0;right:-460px;width:420px;height:100vh;background:var(--bg2);border-left:1px solid var(--line);z-index:320;display:flex;flex-direction:column;transition:right .26s cubic-bezier(0.4,0,0.2,1);box-shadow:-4px 0 24px rgba(0,0,0,0.08);}
@@ -388,6 +393,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .cp-event-card{border-radius:8px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
 .cp-event-card.ev-holiday{background:var(--redbg);border:1px solid var(--redb);}
 .cp-event-card.ev-note{background:var(--amberbg);border:1px solid var(--amberb);}
+.cp-event-card.ev-annual_leave,.cp-event-card.ev-company_event,.cp-event-card.ev-team_activity{background:var(--greenbg);border:1px solid var(--greenb);}
 .cp-event-title{font-weight:600;font-size:12px;}
 .cp-event-del{background:none;border:none;cursor:pointer;font-size:13px;opacity:0.45;transition:opacity .15s;padding:2px;}
 .cp-event-del:hover{opacity:1;}
@@ -1854,12 +1860,16 @@ tr:hover .row-actions{opacity:1;}
     <!-- Stats -->
     <div class="cal-stats-bar">
       <div class="cal-stat">
-        <div class="cal-stat-icon" style="background:var(--bluebg);">💰</div>
-        <div><div class="cal-stat-num" id="calStatSubmit">—</div><div class="cal-stat-lbl">Deposit Masuk</div></div>
+        <div class="cal-stat-icon" style="background:var(--greenbg);">🏭</div>
+        <div><div class="cal-stat-num" id="calStatProd">—</div><div class="cal-stat-lbl">Production Ready</div></div>
       </div>
       <div class="cal-stat">
         <div class="cal-stat-icon" style="background:var(--redbg);">🔴</div>
-        <div><div class="cal-stat-num" id="calStatDue">—</div><div class="cal-stat-lbl">Tarikh Due</div></div>
+        <div><div class="cal-stat-num" id="calStatDue">—</div><div class="cal-stat-lbl">Due Customer</div></div>
+      </div>
+      <div class="cal-stat">
+        <div class="cal-stat-icon" style="background:var(--bluebg);">💰</div>
+        <div><div class="cal-stat-num" id="calStatSubmit">—</div><div class="cal-stat-lbl">Duit Masuk</div></div>
       </div>
       <div class="cal-stat">
         <div class="cal-stat-icon" style="background:var(--amberbg);">⚠️</div>
@@ -1870,6 +1880,15 @@ tr:hover .row-actions{opacity:1;}
         <div><div class="cal-stat-num" id="calStatHoliday">—</div><div class="cal-stat-lbl">Cuti Bulan Ini</div></div>
       </div>
     </div>
+    <!-- CR04: Filter buttons (multi-select) -->
+    <div class="cal-filter-bar">
+      <span class="cal-filter-lbl">Filter:</span>
+      <div class="cal-filter-chip on" id="calFilterChip_prod" onclick="calToggleFilter('prod')">🏭 Production Ready</div>
+      <div class="cal-filter-chip" id="calFilterChip_due" onclick="calToggleFilter('due')">🔴 Due Customer</div>
+      <div class="cal-filter-chip" id="calFilterChip_duit" onclick="calToggleFilter('duit')">💰 Duit Masuk</div>
+      <div class="cal-filter-chip" id="calFilterChip_nota" onclick="calToggleFilter('nota')">📌 Nota</div>
+      <div class="cal-filter-chip" id="calFilterChip_cuti" onclick="calToggleFilter('cuti')">⛔ Cuti</div>
+    </div>
     <!-- Month Nav -->
     <div class="cal-month-nav">
       <div class="cal-month-center">
@@ -1879,8 +1898,9 @@ tr:hover .row-actions{opacity:1;}
         <button class="cal-today-btn" onclick="calGoToday()">Hari Ini</button>
       </div>
       <div class="cal-legend">
-        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--blue);"></div>Deposit Masuk</div>
-        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--red);"></div>Tarikh Due</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--green);"></div>Production Ready</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--red);"></div>Due Customer</div>
+        <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--blue);"></div>Duit Masuk</div>
         <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--amber);"></div>Nota</div>
         <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#bbb;"></div>Cuti</div>
       </div>
@@ -1916,7 +1936,10 @@ tr:hover .row-actions{opacity:1;}
       <div class="cpanel-add-row">
         <input type="text" class="cpanel-add-inp" id="calAddTitle" placeholder="Nama cuti / nota...">
         <select class="cpanel-add-sel" id="calAddType">
-          <option value="holiday">⛔ Cuti</option>
+          <option value="holiday">⛔ Public Holiday / Cuti</option>
+          <option value="annual_leave">🏖️ Annual Leave</option>
+          <option value="company_event">🎉 Company Event</option>
+          <option value="team_activity">🤝 Team Activity</option>
           <option value="note">📌 Nota</option>
         </select>
         <button class="cpanel-add-btn" onclick="calAddEvent()">Tambah</button>
@@ -2335,7 +2358,8 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Kos Supplier — Jumlah (RM)</label>
-            <input class="fi" type="number" id="f_nohad_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
+            <input class="fi" type="number" id="f_nohad_amt" placeholder="0.00" min="0" step="0.01" oninput="markSupCostManual();recalc();autoUpdateSupStatus()">
+            <div id="supCostModeBadge" onclick="resetSupCostAuto()" style="display:none;margin-top:4px;font-size:10px;font-weight:700;color:var(--amber);cursor:pointer;" title="Klik untuk reset ke auto-calc dari item breakdown">🔒 MANUAL — klik untuk reset auto</div>
           </div>
           <div class="form-field">
             <label class="fl">Kos Supplier — Dah Bayar (RM)</label>
@@ -2359,7 +2383,7 @@ tr:hover .row-actions{opacity:1;}
               </div>
               <div class="form-field">
                 <label class="fl">Kos Supplier Kedua — Jumlah (RM)</label>
-                <input class="fi" type="number" id="f_sup2_amt" placeholder="0.00" min="0" step="0.01" oninput="recalc();autoUpdateSupStatus()">
+                <input class="fi" type="number" id="f_sup2_amt" placeholder="0.00" min="0" step="0.01" oninput="markSupCostManual();recalc();autoUpdateSupStatus()">
               </div>
               <div class="form-field">
                 <label class="fl">Kos Supplier Kedua — Dah Bayar (RM)</label>
@@ -3523,7 +3547,8 @@ async function supaUpsert(table, data) {
       'pay2_amount','pay2_date','pay2_time','pay2_method','pay2_ref',
       'payments',
       'supplier2_name','supplier2_amount','supplier2_paid',
-      'pipeline_notes','is_deleted','deleted_at','deleted_by'];
+      'pipeline_notes','is_deleted','deleted_at','deleted_by',
+      'was_quotation','supplier_cost_mode'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
@@ -4818,6 +4843,8 @@ function openEditModalById(id) {
   document.getElementById('f_sizes').value = r.sizes || '';
   document.getElementById('f_design_notes').value = r.design_notes || '';
   document.getElementById('f_nohad_amt').value = r.nohad_amount || '';
+  // CR02: restore supplier cost mode SEBELUM loadItemsData supaya auto-recalc tak overwrite nilai manual
+  setSupCostMode(r.supplier_cost_mode === 'manual' ? 'manual' : 'auto');
   document.getElementById('f_nohad_paid').value = r.nohad_paid || '';
   document.getElementById('f_luar_amt').value = r.luar_amount || '';
   document.getElementById('f_luar_paid').value = r.luar_paid || '';
@@ -4893,6 +4920,8 @@ function clearForm() {
   // Clear manual flag on f_pay1
   const pay1El = document.getElementById('f_pay1');
   if (pay1El) { pay1El.value = '0'; delete pay1El.dataset.manual; }
+  // CR02: reset supplier cost mode ke auto untuk order baru
+  setSupCostMode('auto');
 }
 
 function closeModal() {
@@ -4993,6 +5022,8 @@ function saveOrder() {
   const prodDate      = document.getElementById('f_prod_date')?.value || '';
   const prodStatus    = document.getElementById('f_prod_status')?.value || 'job-submit';
   const pipelineStatus = document.getElementById('f_pipeline_status')?.value || 'confirmed';
+  // CR02: supplier cost mode (manual override vs auto dari item breakdown)
+  const supCostMode = (document.getElementById('f_nohad_amt')?.dataset.manual === '1') ? 'manual' : 'auto';
 
   if (!name) { showToast('Sila isi Nama Job', true); return; }
 
@@ -5053,6 +5084,8 @@ function saveOrder() {
       supplier_outstanding:supOS, profit, items:editItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
+      was_quotation: (oldOrder.was_quotation===true) || ((oldOrder.pipeline_status||'')==='quotation') || (pipelineStatus==='quotation'),
+      supplier_cost_mode: supCostMode,
       payments: getPaymentRecordsData()
     };
     
@@ -5120,6 +5153,8 @@ function saveOrder() {
       supplier_outstanding:supOS, profit, board_col:'job-list', items:newItems,
       production_date:prodDate, production_status:prodStatus,
       pipeline_status:pipelineStatus,
+      was_quotation: pipelineStatus==='quotation',
+      supplier_cost_mode: supCostMode,
       payments: getPaymentRecordsData()
     });
     showToast('Order baru ditambah ✓');
@@ -5337,6 +5372,20 @@ function openDoc(docType) {
         balance: Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0)),
       };
     }
+  } else if (docType === 'receipt') {
+    // CR03: Receipt WAJIB ikut actual payment, bukan total order
+    const pays = (Array.isArray(r.payments) ? r.payments : []).filter(p => (parseFloat(p.amount)||0) > 0);
+    const legacyPaid = parseFloat(r.first_payment)||0;
+    if (!pays.length && legacyPaid <= 0) {
+      showToast('⚠ Tiada payment direkod untuk order ini — receipt tidak boleh dijana.', true);
+      return;
+    }
+    if (pays.length > 1) {
+      openReceiptChooser(r, pays);
+      return; // payload dijana selepas user pilih payment
+    }
+    const pay = pays[0] || { amount: legacyPaid, date: r.pay1_date||'', method: r.pay1_method||'', ref: r.pay1_ref||'' };
+    payload = buildReceiptPayload(r, pay, pays.length ? 1 : 0, parseFloat(pay.amount)||0);
   } else {
     payload = {
       type: docType,
@@ -5362,6 +5411,103 @@ function openDoc(docType) {
   // Save snapshot to Supabase
   saveDocSnapshot(r, docType, payload);
 }
+
+// ── CR03: RECEIPT IKUT ACTUAL PAYMENT ─────────────────────────
+function buildReceiptItems(r) {
+  return (r.items && r.items.length) ? r.items.map(it => ({
+    sku:   it.sku || '',
+    desc:  it.desc || '',
+    qty:   parseFloat(it.qty) || 0,
+    price: parseFloat(it.price) || 0,
+    total: (parseFloat(it.qty)||0) * (parseFloat(it.price)||0),
+  })) : [
+    { desc: r.name_job || '', qty: r.pcs || 0,
+      price: r.pcs > 0 ? parseFloat((r.total_customer/r.pcs).toFixed(2)) : 0,
+      total: r.total_customer || 0 }
+  ];
+}
+
+function buildReceiptPayload(r, pay, idx, cumPaid) {
+  const total = parseFloat(r.total_customer)||0;
+  const amt   = parseFloat(pay.amount)||0;
+  const baseNum = r.inv_number_supplier || r.inv_number || '';
+  return {
+    type: 'receipt',
+    inv_number: baseNum + (idx > 0 ? '-' + idx : ''),
+    inv_date: pay.date || r.inv_date || r.order_date || getMYTDateStr(),
+    due_date: r.due_date || '',
+    cust_name: r.cust_name || '',
+    cust_tel: r.cust_tel || '',
+    cust_email: r.cust_email || '',
+    cust_addr: r.cust_addr || '',
+    name_job: (r.name_job || '') + (baseNum ? ' · Order ' + baseNum : ''),
+    items: buildReceiptItems(r),
+    total,
+    paid: amt,                                   // amount untuk receipt INI
+    payAmt: amt,
+    payDate: pay.date || '',
+    payMethod: pay.method || '',
+    payRef: pay.ref || '',
+    receiptIndex: idx,
+    totalPaid: cumPaid,                          // kumulatif setakat payment ini
+    balance: Math.max(0, total - cumPaid),       // Balance Remaining = Order Total − Total Paid
+  };
+}
+
+function openReceiptChooser(r, pays) {
+  const total = parseFloat(r.total_customer)||0;
+  let cum = 0;
+  const rows = pays.map((p, i) => {
+    const amt = parseFloat(p.amount)||0;
+    cum += amt;
+    const bal = Math.max(0, total - cum);
+    return `<button class="btn-new" style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:8px;text-align:left;background:var(--bg3);color:var(--text);border:1px solid var(--line);"
+      onclick="generateReceiptFor('${r.id}', ${i})">
+      <span>🧾 Receipt #${i+1} — RM ${fmt(amt)}<br><span style="font-size:10px;color:var(--textm);font-weight:400;">${p.date||'—'} · ${p.method||'—'}${p.ref?(' · '+p.ref):''}</span></span>
+      <span style="font-size:10px;color:var(--textm);">Baki selepas: RM ${fmt(bal)}</span>
+    </button>`;
+  }).join('');
+  let bg = document.getElementById('receiptChooserBg');
+  if (!bg) {
+    bg = document.createElement('div');
+    bg.id = 'receiptChooserBg';
+    bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(bg);
+  }
+  bg.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(420px,92vw);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+    <div style="font-size:14px;font-weight:800;margin-bottom:4px;color:var(--text);">Pilih Payment untuk Receipt</div>
+    <div style="font-size:11px;color:var(--textm);margin-bottom:14px;">${r.name_job||''} · Total Order RM ${fmt(total)}</div>
+    ${rows}
+    <button class="btn-new" style="width:100%;background:transparent;color:var(--textm);border:1px solid var(--line);box-shadow:none;" onclick="closeReceiptChooser()">Batal</button>
+  </div>`;
+  bg.style.display = 'flex';
+  bg.onclick = e => { if (e.target === bg) closeReceiptChooser(); };
+}
+
+function closeReceiptChooser() {
+  const bg = document.getElementById('receiptChooserBg');
+  if (bg) bg.style.display = 'none';
+}
+
+function generateReceiptFor(orderId, payIdx) {
+  closeReceiptChooser();
+  let r = null;
+  for (const m of Object.keys(sessionData)) {
+    const found = sessionData[m].find(o => o.id === orderId);
+    if (found) { r = found; break; }
+  }
+  if (!r) return;
+  const pays = (Array.isArray(r.payments) ? r.payments : []).filter(p => (parseFloat(p.amount)||0) > 0);
+  const pay = pays[payIdx];
+  if (!pay) return;
+  const cumPaid = pays.slice(0, payIdx + 1).reduce((s,p) => s + (parseFloat(p.amount)||0), 0);
+  const payload = buildReceiptPayload(r, pay, payIdx + 1, cumPaid);
+  localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
+  window.open('dod-document-generator.html', '_blank');
+  saveDocSnapshot(r, 'receipt', payload);
+}
+window.generateReceiptFor = generateReceiptFor;
+window.closeReceiptChooser = closeReceiptChooser;
 
 // ======================================
 // KPI DASHBOARD (Sales Admin)
@@ -7335,9 +7481,12 @@ function mrFmtDur(min){ min=Math.round(Number(min)||0); if(min<=0) return '—';
 function mrSafeDiv(a,b){ return (b && isFinite(a/b)) ? a/b : 0; }
 
 // status helpers ---------------------------------------------
-function mrIsQuotation(o){ const s=String(o.status||'').toLowerCase(); return s.includes('quotation') || s.includes('sebut harga'); }
-function mrIsCancelled(o){ const s=String(o.status||'').toLowerCase(); return s.includes('cancel') || s.includes('batal'); }
+function mrIsQuotation(o){ return (o.pipeline_status||'confirmed')==='quotation'; }
+function mrIsCancelled(o){ const s=String(o.status||'').toLowerCase(); return s.includes('cancel') || s.includes('batal') || s.includes('draft'); }
 function mrIsActual(o){ return !mrIsQuotation(o) && !mrIsCancelled(o); }
+// Quotation tracking (CR01): order pernah jadi quotation (was_quotation) atau masih quotation
+function mrIsQuoteCreated(o){ return o.was_quotation===true || mrIsQuotation(o); }
+function mrIsQuoteClosed(o){ return o.was_quotation===true && !mrIsQuotation(o) && !mrIsCancelled(o); }
 
 // settings ---------------------------------------------------
 function mrLoadSettings(){ try{ const s=JSON.parse(localStorage.getItem(MR_STORE_KEY)); return s && typeof s==='object' ? { overhead:s.overhead||{}, staffSpend:s.staffSpend||{} } : { overhead:{}, staffSpend:{} }; }catch(e){ return { overhead:{}, staffSpend:{} }; } }
@@ -7425,6 +7574,8 @@ function mrAggregate(month, adminFilter, channelFilter){
   if(channelFilter) orders=orders.filter(o=>String(o.channel||'').toUpperCase()===channelFilter);
   const actual=orders.filter(mrIsActual);
   const quote =orders.filter(mrIsQuotation);
+  const quoteCreated=orders.filter(mrIsQuoteCreated);
+  const quoteClosed =orders.filter(mrIsQuoteClosed);
   const sum=(arr,f)=>arr.reduce((s,o)=>s+(Number(f(o))||0),0);
   const sales=sum(actual,o=>o.total_customer);
   const cost =sum(actual,o=>o.total_supplier);
@@ -7451,6 +7602,11 @@ function mrAggregate(month, adminFilter, channelFilter){
     sales, cost, pcs, profit, orderCount,
     aov: mrSafeDiv(sales,orderCount), pricePerPcs: mrSafeDiv(sales,pcs),
     quoteCount: quote.length, quoteAmount: sum(quote,o=>o.total_customer), quotePcs: sum(quote,o=>o.pcs),
+    quoteCreatedCount: quoteCreated.length,
+    quoteCreatedValue: sum(quoteCreated,o=>o.total_customer),
+    quoteClosedCount: quoteClosed.length,
+    quoteClosedValue: sum(quoteClosed,o=>o.total_customer),
+    quoteClosingRate: mrSafeDiv(quoteClosed.length, quoteCreated.length)*100,
     leads, adsSpend, overhead,
     cpl: mrSafeDiv(adsSpend,leads), roas: mrSafeDiv(sales,adsSpend), cac: mrSafeDiv(adsSpend,orderCount), costPerPcs: mrSafeDiv(adsSpend,pcs),
     closingRate: mrSafeDiv(orderCount,leads)*100, conversionRate: mrSafeDiv(orderCount,leads)*100,
@@ -7558,15 +7714,26 @@ function mrCardEl(label, valHtml, prevTxt, delta, valColor){
   return `<div class="mr-card"><div class="mr-card-label">${label}</div><div class="mr-card-val"${valColor?` style="color:${valColor};"`:''}>${valHtml}</div>${prevTxt!=null?`<div class="mr-card-prev">Sebelum: ${prevTxt}</div>`:''}<div>${delta||''}</div></div>`;
 }
 function mrRenderCards(c, p){
-  const cards=[
-    mrCardEl('Actual Sales', mrFmtRM(c.sales), p?mrFmtRM(p.sales):null, p?mrDelta(c.sales,p.sales,false):''),
+  const actualCards=[
+    mrCardEl('Actual Sales (Revenue)', mrFmtRM(c.sales), p?mrFmtRM(p.sales):null, p?mrDelta(c.sales,p.sales,false):''),
     mrCardEl('Total Order', mrFmtNum(c.orderCount), p?mrFmtNum(p.orderCount):null, p?mrDelta(c.orderCount,p.orderCount,false):''),
     mrCardEl('Total PCS', mrFmtNum(c.pcs), p?mrFmtNum(p.pcs):null, p?mrDelta(c.pcs,p.pcs,false):''),
+    mrCardEl('Average Order Value', mrFmtRM(c.aov), p?mrFmtRM(p.aov):null, p?mrDelta(c.aov,p.aov,false):''),
     mrCardEl('Gross Profit', mrFmtRM(c.grossProfit), p?mrFmtRM(p.grossProfit):null, p?mrDelta(c.grossProfit,p.grossProfit,false):''),
-    mrCardEl('Net Selepas Overhead', mrFmtRM(c.netAfterOH), p?mrFmtRM(p.netAfterOH):null, p?mrDelta(c.netAfterOH,p.netAfterOH,false):'', c.netAfterOH<0?MR_PAL.red:MR_PAL.green),
-    mrCardEl('Quotation', mrFmtRM(c.quoteAmount)+` <span style="font-size:12px;color:var(--textm);">(${c.quoteCount})</span>`, p?mrFmtRM(p.quoteAmount):null, p?mrDelta(c.quoteAmount,p.quoteAmount,false):'')
+    mrCardEl('Net Selepas Overhead', mrFmtRM(c.netAfterOH), p?mrFmtRM(p.netAfterOH):null, p?mrDelta(c.netAfterOH,p.netAfterOH,false):'', c.netAfterOH<0?MR_PAL.red:MR_PAL.green)
   ];
-  document.getElementById('mrCards').innerHTML=cards.join('');
+  const quoteCards=[
+    mrCardEl('Total Quotation', mrFmtNum(c.quoteCreatedCount), p?mrFmtNum(p.quoteCreatedCount):null, p?mrDelta(c.quoteCreatedCount,p.quoteCreatedCount,false):''),
+    mrCardEl('Total Quotation Value', mrFmtRM(c.quoteCreatedValue), p?mrFmtRM(p.quoteCreatedValue):null, p?mrDelta(c.quoteCreatedValue,p.quoteCreatedValue,false):''),
+    mrCardEl('Closed Quotation', mrFmtNum(c.quoteClosedCount), p?mrFmtNum(p.quoteClosedCount):null, p?mrDelta(c.quoteClosedCount,p.quoteClosedCount,false):''),
+    mrCardEl('Closed Revenue', mrFmtRM(c.quoteClosedValue), p?mrFmtRM(p.quoteClosedValue):null, p?mrDelta(c.quoteClosedValue,p.quoteClosedValue,false):''),
+    mrCardEl('Closing Rate', mrFmtPct(c.quoteClosingRate), p?mrFmtPct(p.quoteClosingRate):null, p?mrDelta(c.quoteClosingRate,p.quoteClosingRate,false):'', c.quoteClosingRate>=30?MR_PAL.green:(c.quoteClosingRate>=15?MR_PAL.amber:MR_PAL.red))
+  ];
+  const secTitle = t => `<div style="grid-column:1/-1;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--textm);font-family:'Fira Code',monospace;margin:4px 0 -2px;">${t}</div>`;
+  const pendingNote = `<div style="grid-column:1/-1;font-size:10px;color:var(--textm);margin-top:-4px;">Quotation belum close: ${mrFmtNum(c.quoteCount)} (${mrFmtRM(c.quoteAmount)}) — tidak dikira dalam Actual Sales</div>`;
+  document.getElementById('mrCards').innerHTML =
+    secTitle('💵 Actual Sales — Confirmed / In Production / Completed sahaja') + actualCards.join('') +
+    secTitle('📋 Quotation') + quoteCards.join('') + pendingNote;
 }
 
 // GAUGES ----------------------------------------------------
@@ -8564,7 +8731,35 @@ function recalcItems() {
 }
 
 // Auto-calculate supplier cost from item rows
+// CR02: jika user dah override manual (dataset.manual='1'), JANGAN tulis ganti nilai
+function isSupCostManual() {
+  const el = document.getElementById('f_nohad_amt');
+  return !!(el && el.dataset.manual === '1');
+}
+function markSupCostManual() {
+  const el = document.getElementById('f_nohad_amt');
+  if (el) el.dataset.manual = '1';
+  updateSupCostModeBadge();
+}
+function resetSupCostAuto() {
+  const el = document.getElementById('f_nohad_amt');
+  if (el) delete el.dataset.manual;
+  updateSupCostModeBadge();
+  recalcSupCostFromItems();
+  showToast('Kos supplier kembali ke auto-calc ✓');
+}
+function setSupCostMode(mode) {
+  const el = document.getElementById('f_nohad_amt');
+  if (!el) return;
+  if (mode === 'manual') el.dataset.manual = '1'; else delete el.dataset.manual;
+  updateSupCostModeBadge();
+}
+function updateSupCostModeBadge() {
+  const b = document.getElementById('supCostModeBadge');
+  if (b) b.style.display = isSupCostManual() ? 'block' : 'none';
+}
 function recalcSupCostFromItems() {
+  if (isSupCostManual()) { recalc(); return; } // CR02: hormat manual override
   if (typeof KH_SKUS === 'undefined' || !KH_SKUS.length) return;
   if (typeof KH_SUP_TIERS === 'undefined' || !KH_SUP_TIERS.length) return;
 
@@ -10565,7 +10760,8 @@ async function confirmOrder(orderId) {
 
   sessionData[foundMonth][idx] = {
     ...sessionData[foundMonth][idx],
-    pipeline_status: 'confirmed'
+    pipeline_status: 'confirmed',
+    was_quotation: (sessionData[foundMonth][idx].was_quotation===true) || ((sessionData[foundMonth][idx].pipeline_status||'')==='quotation')
   };
 
   // Sync to Supabase
@@ -13661,6 +13857,59 @@ let calEvents = [];
 let calSelectedDate = null;
 let calEventsLoaded = false;
 
+// CR04: multi-filter — default hanya Production Ready ON
+let calFilters = { prod:true, due:false, duit:false, nota:false, cuti:false };
+const CAL_CUTI_TYPES = ['holiday','annual_leave','company_event','team_activity'];
+const CAL_EVT_ICON = { holiday:'⛔', annual_leave:'🏖️', company_event:'🎉', team_activity:'🤝', note:'📌' };
+
+function calToggleFilter(key) {
+  calFilters[key] = !calFilters[key];
+  const chip = document.getElementById('calFilterChip_' + key);
+  if (chip) chip.classList.toggle('on', calFilters[key]);
+  renderCalendar();
+}
+window.calToggleFilter = calToggleFilter;
+
+// CR04: bina semua event maps dari sessionData + calendar_events
+function calBuildMaps() {
+  const prodMap = {}, dueMap = {}, duitMap = {}, notaMap = {}, cutiMap = {};
+  Object.values(sessionData || {}).flat().forEach(o => {
+    // Production Ready Date
+    if (o.production_date) {
+      const k = String(o.production_date).substring(0,10);
+      if (!prodMap[k]) prodMap[k] = [];
+      prodMap[k].push(o);
+    }
+    // Due Customer
+    if (o.due_date) {
+      const k = String(o.due_date).substring(0,10);
+      if (!dueMap[k]) dueMap[k] = [];
+      dueMap[k].push(o);
+    }
+    // Duit Masuk — source: Payment History; fallback inv_date untuk order lama tanpa payments
+    const pays = (Array.isArray(o.payments) ? o.payments : []).filter(p => (parseFloat(p.amount)||0) > 0);
+    if (pays.length) {
+      pays.forEach(p => {
+        if (!p.date) return;
+        const k = String(p.date).substring(0,10);
+        if (!duitMap[k]) duitMap[k] = [];
+        duitMap[k].push({ ...o, _payAmount: parseFloat(p.amount)||0, _payMethod: p.method||'' });
+      });
+    } else if (o.inv_date && (parseFloat(o.first_payment)||0) > 0) {
+      const k = String(o.inv_date).substring(0,10);
+      if (!duitMap[k]) duitMap[k] = [];
+      duitMap[k].push({ ...o, _payAmount: parseFloat(o.first_payment)||0, _payMethod: '' });
+    }
+  });
+  calEvents.forEach(e => {
+    const k = String(e.event_date).substring(0,10);
+    const map = CAL_CUTI_TYPES.includes(e.event_type) ? cutiMap : notaMap;
+    if (!map[k]) map[k] = [];
+    map[k].push(e);
+  });
+  return { prodMap, dueMap, duitMap, notaMap, cutiMap };
+}
+
 function showCalendarView() {
   setAllViewsHidden();
   document.getElementById('calendarView').style.display = 'block';
@@ -13694,24 +13943,11 @@ async function renderCalendar() {
   const daysInMo  = new Date(calYear, calMonth+1, 0).getDate();
   const prevDays  = new Date(calYear, calMonth, 0).getDate();
 
-  // Build maps from sessionData (all months)
-  // Designer: only show their design due dates from jobboard cards
+  // CR04: bina semua maps; designer hanya nampak design due dari jobboard
   const isDesigner = currentUser?.role === 'designer';
-  const submitMap = {};
-  const dueMap    = {};
+  let prodMap={}, dueMap={}, duitMap={}, notaMap={}, cutiMap={};
   if (!isDesigner) {
-    Object.values(sessionData || {}).flat().forEach(o => {
-      if (o.inv_date) {
-        const k = o.inv_date.substring(0,10);
-        if (!submitMap[k]) submitMap[k] = [];
-        submitMap[k].push(o);
-      }
-      if (o.due_date) {
-        const k = o.due_date.substring(0,10);
-        if (!dueMap[k]) dueMap[k] = [];
-        dueMap[k].push(o);
-      }
-    });
+    ({ prodMap, dueMap, duitMap, notaMap, cutiMap } = calBuildMaps());
   } else {
     // Designer: load their jobboard cards due dates
     try {
@@ -13725,25 +13961,37 @@ async function renderCalendar() {
         dueMap[k].push({ name_job: c.title, due_date: c.due_date, _isDesignJob: true });
       });
     } catch(e) { console.warn('Designer calendar load failed:', e); }
+    calEvents.forEach(e => {
+      const k = String(e.event_date).substring(0,10);
+      const map = CAL_CUTI_TYPES.includes(e.event_type) ? cutiMap : notaMap;
+      if (!map[k]) map[k] = [];
+      map[k].push(e);
+    });
   }
-  const eventMap = {};
-  calEvents.forEach(e => {
-    const k = e.event_date.substring(0,10);
-    if (!eventMap[k]) eventMap[k] = [];
-    eventMap[k].push(e);
-  });
 
-  // Stats
-  let cSubmit=0, cDue=0, cOverdue=0, cHoliday=0;
+  // Filter flags — designer sentiasa nampak design due mereka
+  const F = {
+    prod: !isDesigner && calFilters.prod,
+    due:  isDesigner ? true : calFilters.due,
+    duit: !isDesigner && calFilters.duit,
+    nota: calFilters.nota,
+    cuti: calFilters.cuti,
+  };
+
+  // Stats (bulan semasa — tidak terikat filter)
+  let cProd=0, cSubmit=0, cDue=0, cOverdue=0, cHoliday=0;
   for (let d=1; d<=daysInMo; d++) {
     const k = `${calYear}-${calPad(calMonth+1)}-${calPad(d)}`;
-    if (submitMap[k]) cSubmit += submitMap[k].length;
-    if (dueMap[k])    cDue    += dueMap[k].length;
-    if (eventMap[k])  cHoliday += eventMap[k].filter(e=>e.event_type==='holiday').length;
+    if (prodMap[k]) cProd   += prodMap[k].length;
+    if (duitMap[k]) cSubmit += duitMap[k].length;
+    if (dueMap[k])  cDue    += dueMap[k].length;
+    if (cutiMap[k]) cHoliday += cutiMap[k].length;
   }
   Object.values(sessionData||{}).flat().forEach(o => {
     if (o.due_date && o.due_date < todayStr && o.pipeline_status !== 'completed') cOverdue++;
   });
+  const statProd = document.getElementById('calStatProd');
+  if (statProd) statProd.textContent = cProd;
   document.getElementById('calStatSubmit').textContent  = cSubmit;
   document.getElementById('calStatDue').textContent     = cDue;
   document.getElementById('calStatOverdue').textContent = cOverdue;
@@ -13765,10 +14013,12 @@ async function renderCalendar() {
     const isToday   = dk===todayStr;
     const isSat     = (i%7===6);
     const isSun     = (i%7===0);
-    const submits   = submitMap[dk]||[];
-    const dues      = dueMap[dk]||[];
-    const events    = eventMap[dk]||[];
-    const isHoliday = events.some(e=>e.event_type==='holiday');
+    const prods     = F.prod ? (prodMap[dk]||[]) : [];
+    const duits     = F.duit ? (duitMap[dk]||[]) : [];
+    const dues      = F.due  ? (dueMap[dk]||[])  : [];
+    const notas     = F.nota ? (notaMap[dk]||[]) : [];
+    const cutis     = F.cuti ? (cutiMap[dk]||[]) : [];
+    const isHoliday = (cutiMap[dk]||[]).some(e=>e.event_type==='holiday');
 
     let cls = 'cal-cell';
     if (!isCurrentMo) cls += ' other-mo';
@@ -13777,18 +14027,24 @@ async function renderCalendar() {
     if (isSat||isSun) cls += ' is-weekend';
 
     let evHtml=''; let shown=0; const maxShow=3;
-    const totalItems=events.length+submits.length+dues.length;
-    events.slice(0,maxShow-shown).forEach(ev=>{
-      const ec=ev.event_type==='holiday'?'e-holiday':'e-note';
-      const ico=ev.event_type==='holiday'?'⛔':'📌';
-      evHtml+=`<div class="cal-evt ${ec}">${ico} ${calTrunc(ev.title,16)}</div>`;
+    const totalItems=prods.length+duits.length+dues.length+notas.length+cutis.length;
+    cutis.slice(0,maxShow-shown).forEach(ev=>{
+      evHtml+=`<div class="cal-evt e-holiday">${CAL_EVT_ICON[ev.event_type]||'⛔'} ${calTrunc(ev.title,16)}</div>`;
       shown++;
     });
-    submits.slice(0,maxShow-shown).forEach(o=>{
+    notas.slice(0,Math.max(0,maxShow-shown)).forEach(ev=>{
+      evHtml+=`<div class="cal-evt e-note">📌 ${calTrunc(ev.title,16)}</div>`;
+      shown++;
+    });
+    prods.slice(0,Math.max(0,maxShow-shown)).forEach(o=>{
+      evHtml+=`<div class="cal-evt e-prod">🏭 ${calTrunc(o.name_job||o.inv_number||'—',16)}</div>`;
+      shown++;
+    });
+    duits.slice(0,Math.max(0,maxShow-shown)).forEach(o=>{
       evHtml+=`<div class="cal-evt e-submit">💰 ${calTrunc(o.name_job,16)}</div>`;
       shown++;
     });
-    dues.slice(0,maxShow-shown).forEach(o=>{
+    dues.slice(0,Math.max(0,maxShow-shown)).forEach(o=>{
       evHtml+=`<div class="cal-evt e-due">🔴 ${calTrunc(o.name_job,16)}</div>`;
       shown++;
     });
@@ -13822,57 +14078,95 @@ function calClosePanel() {
 
 function calRenderPanel(dk) {
   const todayStr = calFmtDate(new Date());
-  // Build maps
-  const submitMap={}, dueMap={};
-  Object.values(sessionData||{}).flat().forEach(o=>{
-    if(o.inv_date){const k=o.inv_date.substring(0,10);if(!submitMap[k])submitMap[k]=[];submitMap[k].push(o);}
-    if(o.due_date){const k=o.due_date.substring(0,10);if(!dueMap[k])dueMap[k]=[];dueMap[k].push(o);}
-  });
-  const eventMap={};
-  calEvents.forEach(e=>{const k=e.event_date.substring(0,10);if(!eventMap[k])eventMap[k]=[];eventMap[k].push(e);});
+  const { prodMap, dueMap, duitMap, notaMap, cutiMap } = calBuildMaps();
 
-  const submits = submitMap[dk]||[];
-  const dues    = dueMap[dk]||[];
-  const events  = eventMap[dk]||[];
+  const prods = prodMap[dk]||[];
+  const duits = duitMap[dk]||[];
+  const dues  = dueMap[dk]||[];
+  const notas = notaMap[dk]||[];
+  const cutis = cutiMap[dk]||[];
   let html='';
 
-  if (events.length) {
+  if (cutis.length || notas.length) {
     html+=`<div class="cpanel-sec-title">Cuti & Nota</div>`;
-    events.forEach(ev=>{
+    [...cutis, ...notas].forEach(ev=>{
       const canDel = currentUser.role==='admin';
       html+=`<div class="cp-event-card ev-${ev.event_type}">
-        <div class="cp-event-title">${ev.event_type==='holiday'?'⛔':'📌'} ${ev.title}</div>
+        <div class="cp-event-title">${CAL_EVT_ICON[ev.event_type]||'📌'} ${ev.title}</div>
         ${canDel?`<button class="cp-event-del" onclick="calDeleteEvent('${ev.id}','${dk}')">🗑</button>`:''}
       </div>`;
     });
   }
-  if (submits.length) {
-    html+=`<div class="cpanel-sec-title">💰 Deposit Masuk (${submits.length})</div>`;
-    submits.forEach(o=>{ html+=calOrderCard(o,'submit',dk,todayStr,dueMap); });
+  if (prods.length) {
+    html+=`<div class="cpanel-sec-title">🏭 Production Ready (${prods.length})</div>`;
+    prods.forEach(o=>{ html+=calOrderCard(o,'prod',dk,todayStr); });
+  }
+  if (duits.length) {
+    html+=`<div class="cpanel-sec-title">💰 Duit Masuk (${duits.length})</div>`;
+    duits.forEach(o=>{ html+=calOrderCard(o,'duit',dk,todayStr); });
   }
   if (dues.length) {
-    html+=`<div class="cpanel-sec-title">🔴 Tarikh Due (${dues.length})</div>`;
+    html+=`<div class="cpanel-sec-title">🔴 Due Customer (${dues.length})</div>`;
     dues.forEach(o=>{
       const isOv = o.due_date && o.due_date<todayStr && o.pipeline_status!=='completed';
-      html+=calOrderCard(o,isOv?'overdue':'due',dk,todayStr,submitMap);
+      html+=calOrderCard(o,isOv?'overdue':'due',dk,todayStr);
     });
   }
-  if (!submits.length && !dues.length && !events.length) {
+  if (!prods.length && !duits.length && !dues.length && !notas.length && !cutis.length) {
     html=`<div class="cpanel-empty">Tiada aktiviti pada hari ini.</div>`;
   }
   document.getElementById('cpanelBody').innerHTML = html;
 }
 
-function calOrderCard(o, type, dk, todayStr, otherMap) {
+function calOrderCard(o, type, dk, todayStr) {
   const isOv = type==='overdue';
   let badgeCls='bs', badgeTxt='SUBMIT';
+  if(type==='duit'){badgeCls='bs';badgeTxt='💰 PAYMENT';}
+  if(type==='prod'){badgeCls='bs';badgeTxt='🏭 READY';}
   if(type==='due'||type==='overdue'){badgeCls='bd';badgeTxt='DUE';}
   if(isOv){badgeCls='bov';badgeTxt='⚠ OVERDUE';}
   const picColor = PIC_COLORS[o.pic] || '#9AA0B8';
   const pcs  = o.pcs?`${o.pcs} pcs`:'';
+  const style = isOv?'border-color:var(--red);background:var(--redbg);':'';
+
+  // CR04: Production Ready card — Order No, Customer, Ready date, Factory, PIC
+  // Badge papar STATUS PRODUCTION SEMASA dari Production Tracker
+  if (type==='prod') {
+    const ps = PROD_STATUS_MAP[o.production_status||'job-submit'] || PROD_STATUSES[0];
+    return `<div class="cp-order" style="${style}">
+      <div class="cp-order-top">
+        <div class="cp-order-name">${o.name_job||'—'}</div>
+        <div class="cp-order-badge" style="background:${ps.color}1A;color:${ps.color};border:1px solid ${ps.color}55;">${ps.icon} ${ps.label.toUpperCase()} · ${ps.pct}%</div>
+      </div>
+      <div class="cp-order-meta">
+        ${o.cust_name?`<div class="cp-order-tag">👤 ${o.cust_name}</div>`:''}
+        ${o.inv_number?`<div class="cp-order-tag">🧾 ${o.inv_number}</div>`:''}
+        <div class="cp-order-tag">📅 Ready: ${o.production_date||'—'}</div>
+        <div class="cp-order-tag">🏭 Factory: ${o.supplier_name||'—'}</div>
+        ${o.pic?`<div class="cp-pic-chip" style="color:${picColor};">PIC: ${o.pic}</div>`:''}
+        ${pcs?`<div class="cp-order-tag">📦 ${pcs}</div>`:''}
+      </div>
+    </div>`;
+  }
+
+  // Duit Masuk card — amount payment hari tu
+  if (type==='duit') {
+    return `<div class="cp-order">
+      <div class="cp-order-top">
+        <div class="cp-order-name">${o.name_job||'—'}</div>
+        <div class="cp-order-badge ${badgeCls}">${badgeTxt}</div>
+      </div>
+      <div class="cp-order-meta">
+        ${o.pic?`<div class="cp-pic-chip" style="color:${picColor};">${o.pic}</div>`:''}
+        <div class="cp-order-tag">💰 RM${fmt(o._payAmount||0)}</div>
+        ${o._payMethod?`<div class="cp-order-tag">🏦 ${o._payMethod}</div>`:''}
+        ${o.total_customer>0?`<div class="cp-order-tag">💵 RM${fmt(o.total_customer)} total</div>`:''}
+      </div>
+    </div>`;
+  }
+
   const dep  = o.first_payment>0?`RM${fmt(o.first_payment)} deposit`:'';
   const tot  = o.total_customer>0?`RM${fmt(o.total_customer)} total`:'';
-  const style = isOv?'border-color:var(--red);background:var(--redbg);':'';
   return `<div class="cp-order" style="${style}">
     <div class="cp-order-top">
       <div class="cp-order-name">${o.name_job||'—'}</div>

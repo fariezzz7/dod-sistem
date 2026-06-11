@@ -419,6 +419,10 @@ window.addEventListener("load", () => {
         ref:    p.name_job || p.inv_number || "",
         items:  p.items || [],
         payAmt: p.paid || 0,
+        payDate: p.payDate || "",
+        payMethod: p.payMethod || "",
+        balance: p.balance,
+        total: p.total,
       };
       // Set address field separately
       if (data.toAddr) {
@@ -483,6 +487,16 @@ function autoFillFromMasterlist(d) {
     document.getElementById("f_payamt").value = d.payAmt;
     if(!document.getElementById("f_paydate").value)
       document.getElementById("f_paydate").value = new Date().toISOString().split("T")[0];
+  }
+  // CR03: payment date & method dari Payment History masterlist
+  if(d.payDate) document.getElementById("f_paydate").value = d.payDate;
+  if(d.payMethod) {
+    const methEl = document.getElementById("f_paymeth");
+    if(methEl) {
+      const exists = [...methEl.options].some(o => o.value === d.payMethod || o.text === d.payMethod);
+      if(!exists) { const op = document.createElement("option"); op.text = d.payMethod; methEl.add(op); }
+      methEl.value = d.payMethod;
+    }
   }
   // Store balance for invoice display
   if(d.balance !== undefined) window._docBalance = d.balance;
@@ -655,11 +669,21 @@ function buildDocHTML() {
 
   let rcvdHTML="";
   if(docType==="receipt") {
-    // Receipt: show amount received + outstanding if any
-    const dispAmt = pamt>0?pamt:total;
+    // CR03: receipt WAJIB papar amount yang dibayar sahaja — TIADA fallback ke total order
+    const dispAmt = pamt;
+    const payMeth = document.getElementById("f_paymeth")?.value || "—";
+    const payDt   = document.getElementById("f_paydate")?.value || "";
+    // Balance Remaining = Order Total − Total Paid (dari masterlist jika ada, else total − pamt)
+    const balRem  = (typeof window._docBalance === "number" && isFinite(window._docBalance))
+                    ? window._docBalance
+                    : Math.max(0, total - pamt);
     rcvdHTML=`<div class="d-rcvd"><span class="d-rcvd-lbl">Amount Received</span><span class="d-rcvd-val">${fmtRM(dispAmt)}</span></div>`;
-    if(pamt>0 && pamt<total)
-      rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Outstanding Balance</span><span class="d-os-val">${fmtRM(total-pamt)}</span></div>`;
+    rcvdHTML+=`<div class="d-os" style="border:1px solid #e5e7eb;"><span class="d-os-lbl">Payment Method</span><span class="d-os-val" style="color:#374151;font-weight:600;">${payMeth}</span></div>`;
+    rcvdHTML+=`<div class="d-os" style="border:1px solid #e5e7eb;"><span class="d-os-lbl">Payment Date</span><span class="d-os-val" style="color:#374151;font-weight:600;">${payDt?fmtDate(payDt):"—"}</span></div>`;
+    if(balRem > 0)
+      rcvdHTML+=`<div class="d-os"><span class="d-os-lbl">Balance Remaining</span><span class="d-os-val">${fmtRM(balRem)}</span></div>`;
+    else
+      rcvdHTML+=`<div class="d-os" style="border:1px solid #BBE5CF;background:#EAF7F0;"><span class="d-os-lbl" style="color:#0F7A48;">Balance Remaining</span><span class="d-os-val" style="color:#0F7A48;">RM 0.00 — FULLY PAID</span></div>`;
   } else if(docType==="quotation") {
     if(terms === "70% Deposit" && total > 500) {
       rcvdHTML=`<div class="d-rcvd" style="background:#FEF3C7;border:1px solid #FDE68A;">
@@ -739,7 +763,7 @@ function buildDocHTML() {
     </div>
   </div>
 
-  <div class="d-words">${n2w(docType==="receipt"&&pamt>0?pamt:(docType==="invoice"&&pamt>0&&pamt<total?(total-pamt):total))}</div>
+  <div class="d-words">${n2w(docType==="receipt"?pamt:(docType==="invoice"&&pamt>0&&pamt<total?(total-pamt):total))}</div>
   ${payHTML}
   ${notesHTML}
   ${sigsHTML}
@@ -782,7 +806,13 @@ function buildLetterHTML({num,date,due,toNm,toAd,toTel,ref}) {
   const notes = document.getElementById("f_notes").value || "";
   const pamt  = parseFloat(document.getElementById("f_payamt").value)||0;
   const validItems = items.filter(i=>i.desc||i.price>0);
-  const totalOS = validItems.reduce((s,i)=>s+(i.qty*i.price),0);
+  const itemsTotal = validItems.reduce((s,i)=>s+(i.qty*i.price),0);
+  // FIX: JUMLAH TERTUNGGAK = outstanding SEMASA (balance dari masterlist jika ada),
+  // bukan total order penuh. Fallback manual: total item − bayaran diterima.
+  const totalOS = (typeof window._docBalance === "number" && isFinite(window._docBalance))
+    ? Math.max(0, window._docBalance)
+    : Math.max(0, itemsTotal - pamt);
+  const paidShown = Math.max(0, itemsTotal - totalOS);
 
   const dateFmt = date ? new Date(date).toLocaleDateString("ms-MY",{day:"numeric",month:"long",year:"numeric"}) : "—";
   const dueFmt  = due  ? new Date(due).toLocaleDateString("ms-MY",{day:"numeric",month:"long",year:"numeric"})  : "—";
@@ -805,6 +835,15 @@ function buildLetterHTML({num,date,due,toNm,toAd,toTel,ref}) {
         <td style="padding:6pt 8pt;border:1px solid #ddd;">${it.desc||"—"}</td>
         <td style="padding:6pt 8pt;text-align:right;border:1px solid #ddd;font-family:monospace;">${Number(it.price).toFixed(2)}</td>
       </tr>`).join("")}
+      ${paidShown > 0 ? `
+      <tr>
+        <td style="padding:6pt 8pt;border:1px solid #ddd;text-align:right;color:#555;">JUMLAH PESANAN</td>
+        <td style="padding:6pt 8pt;text-align:right;border:1px solid #ddd;font-family:monospace;color:#555;">${itemsTotal.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6pt 8pt;border:1px solid #ddd;text-align:right;color:#0F7A48;">(−) BAYARAN DITERIMA</td>
+        <td style="padding:6pt 8pt;text-align:right;border:1px solid #ddd;font-family:monospace;color:#0F7A48;">${paidShown.toFixed(2)}</td>
+      </tr>` : ""}
       <tr style="background:#fff3f3;">
         <td style="padding:8pt;border:1px solid #ddd;font-weight:700;text-align:right;">JUMLAH TERTUNGGAK</td>
         <td style="padding:8pt;border:1px solid #ddd;font-weight:700;text-align:right;font-family:monospace;color:#c00;">${fmtRM(totalOS)}</td>
