@@ -1405,6 +1405,12 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Dashboard</span>
   </button>
 
+  <button class="sb-item" id="sbAccounting" data-tip="Accounting" onclick="window.open('dod-accounting.html','dod_accounting')" style="display:none;">
+    <span class="sb-item-icon">💼</span>
+    <span class="sb-item-label">Accounting</span>
+    <span class="sb-item-badge" style="background:var(--greenbg);color:var(--green);">↗</span>
+  </button>
+
   <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
     <span class="sb-item-icon">🏭</span>
     <span class="sb-item-label">Supplier</span>
@@ -3963,6 +3969,7 @@ function setupNavForRole() {
   if (role === 'admin') {
     sbShow('sbMasterlist');
     sbShow('sbDashboard');
+    sbShow('sbAccounting');
     sbShow('sbCustomer');
     sbShow('sbSupplierDir');
     sbShow('sbProdTrack');
@@ -4001,6 +4008,7 @@ function setupNavForRole() {
     sbShow('sbPenerimaan');
     sbShow('sbCalendar');
     sbHide('sbDashboard');
+    sbHide('sbAccounting');
     sbHide('sbSupplierDir');
     sbHide('sbSupplierOS');
     sbHide('sbUserMgmt');
@@ -4019,6 +4027,7 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
+    sbHide('sbAccounting');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
@@ -12324,6 +12333,7 @@ function renderCpRoles() {
     { label:'Kalendar',       admin:true,  sales:true,  designer:true  },
     { label:'Jana Dokumen',   admin:true,  sales:true,  designer:true  },
     { label:'Dashboard',      admin:true,  sales:false, designer:false },
+    { label:'Accounting',     admin:true,  sales:false, designer:false },
     { label:'Supplier',       admin:true,  sales:false, designer:false },
     { label:'Supplier OS',    admin:true,  sales:false, designer:false },
     { label:'Production',     admin:true,  sales:true,  designer:false },
