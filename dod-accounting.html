@@ -88,6 +88,7 @@
   .flow-opt{padding:8px 18px;font-size:12.5px;font-weight:800;cursor:pointer;background:var(--bg3);color:var(--textm);transition:all .15s;}
   .flow-opt.active.in{background:var(--greenbg);color:var(--green);}
   .flow-opt.active.out{background:var(--redbg);color:var(--red);}
+  .flow-opt.active:not(.in):not(.out){background:var(--bg4);color:var(--text);}
 
   /* ── Tables ─────────────────────────────────────────────── */
   .tbl-wrap{overflow-x:auto;}
@@ -265,7 +266,14 @@
       <div class="card">
         <div class="card-header">
           <span class="card-header-title">📒 Cash Book</span>
-          <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="flow-toggle" style="font-size:0;">
+              <div class="flow-opt active" id="cbFlowAll" onclick="setCbFlowFilter('all')" style="padding:6px 12px;font-size:11px;">SEMUA</div>
+              <div class="flow-opt in" id="cbFlowIn" onclick="setCbFlowFilter('in')" style="padding:6px 12px;font-size:11px;">⬇ IN</div>
+              <div class="flow-opt out" id="cbFlowOut" onclick="setCbFlowFilter('out')" style="padding:6px 12px;font-size:11px;">⬆ OUT</div>
+            </div>
+            <select id="cbCatFilter" style="width:auto;max-width:220px;" onchange="renderCashbook()"></select>
+            <button class="btn sm" id="cbSortBtn" onclick="toggleCbSort()">⬇ Terbaru Dulu</button>
             <input type="text" id="cbSearch" placeholder="🔍 Cari details / kategori..." style="width:220px;" oninput="renderCashbook()">
           </div>
         </div>
@@ -428,6 +436,13 @@
           </div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">🕘 Import History (Tahun <span id="impHistYear"></span>)</span>
+          <button class="btn sm" onclick="renderImportHistory()">🔄 Refresh</button>
+        </div>
+        <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="impHistTable"></table></div></div>
+      </div>
       <div class="card" id="impPreviewCard" style="display:none;">
         <div class="card-header">
           <span class="card-header-title">Preview Import</span>
@@ -565,6 +580,9 @@ let DCS = [];           // debtor & creditor
 let ASSETS = [];        // assets tahun terpilih
 let OPENING = 0;        // baki awal tahun terpilih
 let cbMonth = 'all';    // filter bulan cash book (1-12 atau 'all')
+let cbSort = 'desc';    // 'desc' = terbaru dulu, 'asc' = lama dulu
+let cbCatFilter = 'all';
+let cbFlowFilter = 'all';   // 'all' | 'in' | 'out'
 let editTxnId = null;
 let editCatId = null;
 let chartSE = null, chartEB = null;
@@ -683,6 +701,7 @@ async function loadAll() {
 
 function renderAll() {
   populateCatDropdown();
+  populateCatFilter();
   renderMonthPills();
   renderCashbook();
   renderDashboard();
@@ -709,6 +728,7 @@ function navTo(view) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   if (view === 'dashboard') renderDashboard();
+  if (view === 'import') renderImportHistory();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -735,6 +755,35 @@ function populateCatDropdown() {
   if (cur && CATS.some(c => c.id === cur && c.flow === cbFlow)) sel.value = cur;
 }
 
+function populateCatFilter() {
+  const sel = document.getElementById('cbCatFilter');
+  if (!sel) return;
+  const cur = cbCatFilter;
+  // Hanya kategori yang ada transaksi tahun ini
+  const used = new Set(TXNS.map(t => t.category));
+  let html = '<option value="all">🏷️ Semua Kategori</option>';
+  CATS.filter(c => used.has(c.id)).forEach(c => {
+    html += '<option value="' + c.id + '">' + esc(c.name) + (c.flow === 'in' ? ' (IN)' : ' (OUT)') + '</option>';
+  });
+  sel.innerHTML = html;
+  sel.value = used.has(cur) || cur === 'all' ? cur : 'all';
+  cbCatFilter = sel.value;
+}
+
+function setCbFlowFilter(f) {
+  cbFlowFilter = f;
+  document.getElementById('cbFlowAll').classList.toggle('active', f === 'all');
+  document.getElementById('cbFlowIn').classList.toggle('active', f === 'in');
+  document.getElementById('cbFlowOut').classList.toggle('active', f === 'out');
+  renderCashbook();
+}
+
+function toggleCbSort() {
+  cbSort = cbSort === 'desc' ? 'asc' : 'desc';
+  document.getElementById('cbSortBtn').textContent = cbSort === 'desc' ? '⬇ Terbaru Dulu' : '⬆ Lama Dulu';
+  renderCashbook();
+}
+
 function renderMonthPills() {
   const wrap = document.getElementById('cbMonthPills');
   let html = '<div class="month-pill' + (cbMonth === 'all' ? ' active' : '') + '" onclick="setCbMonth(\'all\')">Semua</div>';
@@ -747,8 +796,11 @@ function setCbMonth(m) { cbMonth = m; renderMonthPills(); renderCashbook(); }
 
 function cbFiltered() {
   const q = (document.getElementById('cbSearch').value || '').toLowerCase().trim();
+  cbCatFilter = (document.getElementById('cbCatFilter') || {}).value || 'all';
   return TXNS.filter(t => {
     if (cbMonth !== 'all' && txnMonth(t) !== cbMonth) return false;
+    if (cbCatFilter !== 'all' && t.category !== cbCatFilter) return false;
+    if (cbFlowFilter !== 'all' && t.flow !== cbFlowFilter) return false;
     if (q) {
       const hay = ((t.details || '') + ' ' + catName(t.category) + ' ' + (t.remark || '')).toLowerCase();
       if (!hay.includes(q)) return false;
@@ -785,8 +837,9 @@ function renderCashbook() {
   }
 
   let html = '<tr><th>Tarikh</th><th>Kategori</th><th>Details</th><th class="num">Cash In</th><th class="num">Cash Out</th><th class="num">Baki</th><th></th></tr>';
-  // Display terbaru dulu
-  [...rows].reverse().forEach(t => {
+  // Susunan ikut cbSort ('desc' = terbaru dulu)
+  const displayRows = cbSort === 'desc' ? [...rows].reverse() : rows;
+  displayRows.forEach(t => {
     const amt = Number(t.amount) || 0;
     html += '<tr>' +
       '<td class="muted" style="white-space:nowrap;">' + esc(t.txn_date) + (t.source === 'import' ? ' <span class="badge gray" title="Import dari CSV">CSV</span>' : '') + '</td>' +
@@ -847,6 +900,7 @@ async function saveTxn() {
       document.getElementById('cb_remark').value = '';
     }
     TXNS.sort((a, b) => (a.txn_date || '').localeCompare(b.txn_date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
+    populateCatFilter();
     renderCashbook(); renderDashboard(); renderPnl(); renderBalanceSheet(); renderTrialBalance(); renderCashFlow(); renderZakat();
   } catch (e) {
     toast('❌ Gagal simpan: ' + e.message);
@@ -886,6 +940,7 @@ async function deleteTxn(id) {
     await supaDelete('accounting_transactions', 'id=eq.' + encodeURIComponent(id));
     TXNS = TXNS.filter(t => t.id !== id);
     if (editTxnId === id) cancelEditTxn();
+    populateCatFilter();
     renderCashbook(); renderDashboard(); renderPnl(); renderBalanceSheet(); renderTrialBalance(); renderCashFlow(); renderZakat();
     toast('🗑 Transaksi dipadam');
   } catch (e) { toast('❌ Gagal padam: ' + e.message); }
@@ -1582,27 +1637,52 @@ async function previewImport() {
 
     importRows.push({
       line: i + 1, isoDate, flow, amount, details: desc, remark: csvCat + (remark ? ' / ' + remark : ''),
-      category: status === 'ok' ? mapCsvCategory(flow, csvCat, remark) : '',
-      status, reason, hash
+      category: (status === 'ok' || status === 'dup') ? mapCsvCategory(flow, csvCat, remark) : '',
+      status, reason, hash, keep: false
     });
   }
 
   renderImportPreview();
 }
 
-function renderImportPreview() {
-  const ok = importRows.filter(r => r.status === 'ok');
+function impWillImport() {
+  return importRows.filter(r => r.status === 'ok' || (r.status === 'dup' && r.keep));
+}
+
+function updateImpStats() {
+  const willImport = impWillImport();
   const dup = importRows.filter(r => r.status === 'dup');
+  const dupKeep = dup.filter(r => r.keep);
   const skip = importRows.filter(r => r.status === 'skip');
-  const tIn = ok.filter(r => r.flow === 'in').reduce((s, r) => s + r.amount, 0);
-  const tOut = ok.filter(r => r.flow === 'out').reduce((s, r) => s + r.amount, 0);
+  const tIn = willImport.filter(r => r.flow === 'in').reduce((s, r) => s + r.amount, 0);
+  const tOut = willImport.filter(r => r.flow === 'out').reduce((s, r) => s + r.amount, 0);
 
   document.getElementById('impStats').innerHTML =
-    '<div class="imp-stat">✅ Akan import: <b>' + ok.length + '</b> row</div>' +
-    '<div class="imp-stat" style="background:var(--amberbg);">⚠️ Duplicate: <b>' + dup.length + '</b></div>' +
+    '<div class="imp-stat">✅ Akan import: <b>' + willImport.length + '</b> row</div>' +
+    '<div class="imp-stat" style="background:var(--amberbg);">⚠️ Duplicate: <b>' + dup.length + '</b>' +
+      (dup.length ? ' (keep: <b>' + dupKeep.length + '</b>, buang: <b>' + (dup.length - dupKeep.length) + '</b>)' : '') + '</div>' +
+    (dup.length ? '<button class="btn sm" onclick="setAllDup(true)">✅ Keep Semua Dup</button>' +
+                  '<button class="btn sm" onclick="setAllDup(false)">🗑 Buang Semua Dup</button>' : '') +
     '<div class="imp-stat">⏭ Skip: <b>' + skip.length + '</b></div>' +
     '<div class="imp-stat" style="color:var(--green);">IN: <b>' + fmtRM(tIn) + '</b></div>' +
     '<div class="imp-stat" style="color:var(--red);">OUT: <b>' + fmtRM(tOut) + '</b></div>';
+  document.getElementById('impConfirmBtn').disabled = !willImport.length;
+}
+
+function setAllDup(keep) {
+  importRows.forEach(r => { if (r.status === 'dup') r.keep = keep; });
+  renderImportPreview();
+}
+
+function toggleDupKeep(i, keep) {
+  importRows[i].keep = keep;
+  const row = document.getElementById('impRow' + i);
+  if (row) row.style.opacity = keep ? '1' : '';
+  updateImpStats();
+}
+
+function renderImportPreview() {
+  updateImpStats();
 
   let catOpts = { in: '', out: '' };
   ['in', 'out'].forEach(f => {
@@ -1613,38 +1693,47 @@ function renderImportPreview() {
   let html = '<tr><th>#</th><th>Tarikh</th><th>Description</th><th class="num">In</th><th class="num">Out</th><th>CSV Cat</th><th>Kategori Sistem</th><th>Status</th></tr>';
   importRows.forEach((r, i) => {
     const cls = r.status === 'skip' ? 'skip-row' : r.status === 'dup' ? 'dup-row' : '';
-    html += '<tr class="' + cls + '"><td class="muted">' + r.line + '</td>' +
+    const showCatSel = r.status === 'ok' || r.status === 'dup';
+    html += '<tr class="' + cls + '" id="impRow' + i + '"' + (r.status === 'dup' && r.keep ? ' style="opacity:1;"' : '') + '><td class="muted">' + r.line + '</td>' +
       '<td style="white-space:nowrap;">' + esc(r.isoDate || '—') + '</td>' +
       '<td>' + esc(r.details) + '</td>' +
       '<td class="num in">' + (r.flow === 'in' && r.amount ? fmt(r.amount) : '') + '</td>' +
       '<td class="num out">' + (r.flow === 'out' && r.amount ? fmt(r.amount) : '') + '</td>' +
       '<td class="muted" style="font-size:11px;">' + esc(r.remark) + '</td>' +
-      '<td>' + (r.status === 'ok'
+      '<td>' + (showCatSel
         ? '<select style="font-size:11px;padding:4px 6px;" onchange="importRows[' + i + '].category=this.value">' +
           catOpts[r.flow].replace('value="' + r.category + '"', 'value="' + r.category + '" selected') + '</select>'
         : '—') + '</td>' +
-      '<td>' + (r.status === 'ok' ? '<span class="badge in">OK</span>'
-        : r.status === 'dup' ? '<span class="badge amber" title="' + esc(r.reason) + '">DUP</span>'
+      '<td style="white-space:nowrap;">' + (r.status === 'ok' ? '<span class="badge in">OK</span>'
+        : r.status === 'dup'
+          ? '<span class="badge amber" title="' + esc(r.reason) + '">DUP</span> ' +
+            '<select style="font-size:11px;padding:3px 6px;" onchange="toggleDupKeep(' + i + ', this.value === \'keep\')">' +
+              '<option value="drop"' + (r.keep ? '' : ' selected') + '>🗑 Buang</option>' +
+              '<option value="keep"' + (r.keep ? ' selected' : '') + '>✅ Keep & Import</option>' +
+            '</select>'
         : '<span class="badge gray" title="' + esc(r.reason) + '">SKIP</span>') + '</td></tr>';
   });
   document.getElementById('impTable').innerHTML = html;
   document.getElementById('impPreviewCard').style.display = 'block';
-  document.getElementById('impConfirmBtn').disabled = !ok.length;
 }
 
 async function confirmImport() {
-  const ok = importRows.filter(r => r.status === 'ok');
+  const ok = impWillImport();
   if (!ok.length) return toast('⚠️ Tiada row untuk import');
-  if (!confirm('Import ' + ok.length + ' transaksi ke sistem?')) return;
+  const dupKeep = ok.filter(r => r.status === 'dup').length;
+  let msg = 'Import ' + ok.length + ' transaksi ke sistem?';
+  if (dupKeep > 0) msg += '\n\n⚠️ PERHATIAN: ' + dupKeep + ' daripadanya adalah DUPLICATE yang anda pilih untuk keep. Transaksi ini akan masuk DUA KALI dalam sistem. Pasti?';
+  if (!confirm(msg)) return;
 
   const btn = document.getElementById('impConfirmBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Importing...';
   try {
+    const batchId = 'batch_' + Date.now() + '_' + currentUser.id;
     const newRows = ok.map(r => ({
       id: uid('txn'), txn_date: r.isoDate, flow: r.flow, category: r.category,
       details: r.details, amount: r.amount, remark: r.remark,
-      source: 'import', import_hash: r.hash, created_by: currentUser.id
+      source: 'import', import_hash: r.hash, import_batch: batchId, created_by: currentUser.id
     }));
     // Batch insert 100 setiap kali
     for (let i = 0; i < newRows.length; i += 100) {
@@ -1657,6 +1746,7 @@ async function confirmImport() {
     document.getElementById('impPreviewCard').style.display = 'none';
     document.getElementById('impFile').value = '';
     renderAll();
+    renderImportHistory();
     toast('✅ ' + newRows.length + ' transaksi berjaya diimport');
     navTo('cashbook');
   } catch (e) {
@@ -1664,6 +1754,66 @@ async function confirmImport() {
   }
   btn.disabled = false;
   btn.textContent = '✅ Import ke Sistem';
+}
+
+// ════════════════════════════════════════════════════════════
+// IMPORT HISTORY & ROLLBACK
+// ════════════════════════════════════════════════════════════
+function renderImportHistory() {
+  const yEl = document.getElementById('impHistYear');
+  if (yEl) yEl.textContent = YEAR;
+  const tbl = document.getElementById('impHistTable');
+  if (!tbl) return;
+
+  // Group TXNS (tahun terpilih) ikut import_batch
+  const batches = {};
+  TXNS.forEach(t => {
+    if (t.source !== 'import') return;
+    const b = t.import_batch || '(import lama — tiada batch ID)';
+    if (!batches[b]) batches[b] = { id: t.import_batch || null, rows: 0, tIn: 0, tOut: 0, minD: t.txn_date, maxD: t.txn_date, created: t.created_at || '' };
+    const g = batches[b];
+    g.rows++;
+    if (t.flow === 'in') g.tIn += Number(t.amount) || 0; else g.tOut += Number(t.amount) || 0;
+    if (t.txn_date < g.minD) g.minD = t.txn_date;
+    if (t.txn_date > g.maxD) g.maxD = t.txn_date;
+    if ((t.created_at || '') > g.created) g.created = t.created_at || '';
+  });
+
+  const keys = Object.keys(batches).sort((a, b) => (batches[b].created || '').localeCompare(batches[a].created || ''));
+  if (!keys.length) {
+    tbl.innerHTML = '<tr><td><div class="empty-note">Belum ada import untuk tahun ' + YEAR + '.</div></td></tr>';
+    return;
+  }
+
+  let html = '<tr><th>Bila Import</th><th>Julat Tarikh Txn</th><th class="num">Rows</th><th class="num">Total IN</th><th class="num">Total OUT</th><th></th></tr>';
+  keys.forEach(k => {
+    const g = batches[k];
+    const when = g.created ? new Date(g.created).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    html += '<tr><td style="white-space:nowrap;"><b>' + esc(when) + '</b>' +
+      (g.id ? '<div class="hint">' + esc(g.id) + '</div>' : '<div class="hint">⚠️ Import sebelum batch tracking</div>') + '</td>' +
+      '<td class="muted" style="white-space:nowrap;">' + esc(g.minD) + ' → ' + esc(g.maxD) + '</td>' +
+      '<td class="num">' + g.rows + '</td>' +
+      '<td class="num in">' + fmt(g.tIn) + '</td>' +
+      '<td class="num out">' + fmt(g.tOut) + '</td>' +
+      '<td>' + (g.id
+        ? '<button class="btn sm danger" onclick="rollbackBatch(\'' + g.id + '\', ' + g.rows + ')">↩️ Rollback</button>'
+        : '<span class="badge gray">N/A</span>') + '</td></tr>';
+  });
+  tbl.innerHTML = html;
+}
+
+async function rollbackBatch(batchId, rowCount) {
+  if (!confirm('ROLLBACK batch ini?\n\n' + rowCount + ' transaksi akan DIPADAM dari sistem.\nBatch: ' + batchId)) return;
+  const pin = prompt('Masukkan PIN untuk sahkan rollback:');
+  if (pin === null) return;
+  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+  try {
+    await supaDelete('accounting_transactions', 'import_batch=eq.' + encodeURIComponent(batchId));
+    TXNS = TXNS.filter(t => t.import_batch !== batchId);
+    renderAll();
+    renderImportHistory();
+    toast('↩️ Rollback selesai — ' + rowCount + ' transaksi dipadam');
+  } catch (e) { toast('❌ Rollback gagal: ' + e.message); }
 }
 
 // ════════════════════════════════════════════════════════════
