@@ -272,9 +272,10 @@
               <div class="flow-opt in" id="cbFlowIn" onclick="setCbFlowFilter('in')" style="padding:6px 12px;font-size:11px;">⬇ IN</div>
               <div class="flow-opt out" id="cbFlowOut" onclick="setCbFlowFilter('out')" style="padding:6px 12px;font-size:11px;">⬆ OUT</div>
             </div>
-            <select id="cbCatFilter" style="width:auto;max-width:220px;" onchange="renderCashbook()"></select>
+            <select id="cbBankFilter" style="width:auto;max-width:200px;" onchange="renderCashbook()"></select>
+            <select id="cbCatFilter" style="width:auto;max-width:200px;" onchange="renderCashbook()"></select>
             <button class="btn sm" id="cbSortBtn" onclick="toggleCbSort()">⬇ Terbaru Dulu</button>
-            <input type="text" id="cbSearch" placeholder="🔍 Cari details / kategori..." style="width:220px;" oninput="renderCashbook()">
+            <input type="text" id="cbSearch" placeholder="🔍 Cari details / kategori..." style="width:200px;" oninput="renderCashbook()">
           </div>
         </div>
         <div class="card-body">
@@ -423,6 +424,10 @@
           </p>
           <div class="form-grid">
             <div class="form-group">
+              <label>Akaun Bank <span style="color:var(--red);">*</span></label>
+              <select id="impBank"></select>
+            </div>
+            <div class="form-group">
               <label>Tahun Statement</label>
               <input type="number" id="impYear" value="2026" min="2020" max="2099">
             </div>
@@ -458,7 +463,16 @@
     <!-- ════════ SETTINGS ════════ -->
     <div class="view" id="view-settings">
       <div class="card">
-        <div class="card-header"><span class="card-header-title">💰 Baki Awal Bank</span></div>
+        <div class="card-header">
+          <span class="card-header-title">🏦 Akaun Bank</span>
+          <button class="btn sm primary" onclick="openBankModal()">＋ Tambah Akaun</button>
+        </div>
+        <div class="card-body" id="bankSection">
+          <div class="empty-note">Belum ada akaun bank. Klik "Tambah Akaun" untuk setup Akaun Utama.</div>
+        </div>
+      </div>
+      <div class="card" id="legacyOpeningCard" style="display:none;">
+        <div class="card-header"><span class="card-header-title">💰 Baki Awal Bank (Legacy — sudah dipindah ke Akaun Utama)</span></div>
         <div class="card-body">
           <p class="hint" style="margin-bottom:12px;">Baki bank pada 1 Januari tahun terpilih. Dipakai untuk kira running balance & baki semasa.</p>
           <div class="form-grid">
@@ -479,6 +493,90 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- TRANSFER ANTARA AKAUN MODAL -->
+<div class="modal-bg" id="transferModalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">💸 Transfer Antara Akaun</span>
+      <button class="modal-close" onclick="closeTransferModal()">✕ Tutup</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint" style="margin-bottom:12px;">Sistem akan create 2 transaksi: CASH OUT dari akaun sumber + CASH IN ke akaun destinasi. Kategori "Transfer Antara Akaun" tidak masuk dalam P&L.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tarikh</label>
+          <input type="date" id="tr_date">
+        </div>
+        <div class="form-group">
+          <label>Amaun (RM)</label>
+          <input type="number" id="tr_amount" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Dari Akaun</label>
+          <select id="tr_from"></select>
+        </div>
+        <div class="form-group">
+          <label>Ke Akaun</label>
+          <select id="tr_to"></select>
+        </div>
+        <div class="form-group wide">
+          <label>Remark (optional)</label>
+          <input type="text" id="tr_remark" placeholder="cth: Top-up akaun simpanan">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeTransferModal()">Batal</button>
+      <button class="btn green" onclick="saveTransfer()">💾 Buat Transfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- BANK ACCOUNT MODAL -->
+<div class="modal-bg" id="bankModalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="bankModalTitle">Tambah Akaun Bank</span>
+      <button class="modal-close" onclick="closeBankModal()">✕ Tutup</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group wide">
+          <label>Nama Akaun <span style="color:var(--red);">*</span></label>
+          <input type="text" id="bk_name" placeholder="cth: Akaun Utama / Akaun Operasi">
+        </div>
+        <div class="form-group">
+          <label>Nama Bank <span style="color:var(--red);">*</span></label>
+          <input type="text" id="bk_bank" placeholder="cth: Maybank / CIMB / RHB">
+        </div>
+        <div class="form-group">
+          <label>No Akaun <span style="color:var(--red);">*</span></label>
+          <input type="text" id="bk_accno" placeholder="cth: 5642 3398 4452">
+        </div>
+        <div class="form-group wide">
+          <label>Pemegang Akaun (optional)</label>
+          <input type="text" id="bk_holder" placeholder="cth: DOD WORLDWIDE SUPPLY SDN BHD">
+        </div>
+        <div class="form-group">
+          <label>Baki Awal (RM) untuk Tahun <span id="bkYearLbl"></span></label>
+          <input type="number" id="bk_opening" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);cursor:pointer;">
+            <input type="checkbox" id="bk_ismain" style="width:auto;"> Tetapkan sebagai <b>Akaun Utama</b>
+          </label>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:10px;">Akaun Utama akan jadi pilihan default masa key-in transaksi & import CSV.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeBankModal()">Batal</button>
+      <button class="btn green" onclick="saveBank()">💾 Simpan Akaun</button>
+    </div>
   </div>
 </div>
 
@@ -556,7 +654,11 @@ async function supaFetch(path, opts = {}) {
     throw new Error('Supabase ' + res.status + ': ' + t);
   }
   if (res.status === 204) return null;
-  return res.json();
+  // Pelbagai kombinasi 'Prefer: return=minimal' boleh balas 2xx dengan badan KOSONG
+  // (bukan 204) — elak crash 'Unexpected end of JSON input'
+  const text = await res.text();
+  if (!text) return null;
+  try { return JSON.parse(text); } catch (e) { return null; }
 }
 function supaGet(table, params = '') {
   return supaFetch('/rest/v1/' + table + (params ? '?' + params : ''));
@@ -596,7 +698,12 @@ let TXNS = [];          // accounting_transactions tahun terpilih
 let CATS = [];          // accounting_categories
 let DCS = [];           // debtor & creditor
 let ASSETS = [];        // assets tahun terpilih
-let OPENING = 0;        // baki awal tahun terpilih
+let BANKS = [];         // accounting_bank_accounts (semua, tak per-tahun)
+let OPENING = {};       // { bank_id: amount } untuk tahun terpilih
+let cbBankSel = null;   // akaun bank dipilih dalam form key-in
+let cbBankFilter = 'all'; // filter akaun bank dalam table
+let impBankSel = null;  // akaun bank dipilih masa import CSV
+let editTxnBankOld = null; // simpan bank_account_id asal masa edit
 let cbMonth = 'all';    // filter bulan cash book (1-12 atau 'all')
 let cbSort = 'desc';    // 'desc' = terbaru dulu, 'asc' = lama dulu
 let cbCatFilter = 'all';
@@ -690,37 +797,75 @@ async function initApp() {
 
 async function loadAll() {
   try {
-    const [cats, txns, dcs, assets, ob] = await Promise.all([
+    const [cats, txns, dcs, assets, banks, balances] = await Promise.all([
       supaGet('accounting_categories', 'select=*&order=sort.asc,name.asc'),
       supaGetPaginated('accounting_transactions', 'select=*&txn_date=gte.' + YEAR + '-01-01&txn_date=lte.' + YEAR + '-12-31&order=txn_date.asc,created_at.asc'),
       supaGetPaginated('accounting_debtors_creditors', 'select=*&order=entry_date.desc'),
       supaGet('accounting_assets', 'select=*&year=eq.' + YEAR + '&order=name.asc'),
-      supaGet('system_settings', 'select=value&key=eq.acc_opening_balance_' + YEAR)
+      supaGet('accounting_bank_accounts', 'select=*&order=is_main.desc,sort.asc,name.asc'),
+      supaGet('accounting_bank_balances', 'select=*&year=eq.' + YEAR)
     ]);
     CATS = cats || [];
     TXNS = txns || [];
     DCS = dcs || [];
     ASSETS = assets || [];
-    OPENING = 0;
-    if (ob && ob[0] && ob[0].value) {
-      try { OPENING = Number(JSON.parse(ob[0].value).amount) || 0; } catch (e) {}
-    } else if (YEAR === 2026) {
-      // fallback: key lama tanpa suffix tahun
+    BANKS = banks || [];
+    OPENING = {};
+    (balances || []).forEach(b => { OPENING[b.bank_account_id] = Number(b.opening_balance) || 0; });
+
+    // Legacy migration: kalau ada Main bank tapi takde balance untuk tahun ini,
+    // ambil dari setting lama (acc_opening_balance_<year>)
+    const main = BANKS.find(b => b.is_main);
+    if (main && OPENING[main.id] == null) {
       try {
-        const legacy = await supaGet('system_settings', 'select=value&key=eq.acc_opening_balance');
-        if (legacy && legacy[0] && legacy[0].value) OPENING = Number(JSON.parse(legacy[0].value).amount) || 0;
+        const legacy = await supaGet('system_settings', 'select=value&key=eq.acc_opening_balance_' + YEAR);
+        if (legacy && legacy[0] && legacy[0].value) {
+          OPENING[main.id] = Number(JSON.parse(legacy[0].value).amount) || 0;
+        } else if (YEAR === 2026) {
+          const older = await supaGet('system_settings', 'select=value&key=eq.acc_opening_balance');
+          if (older && older[0] && older[0].value) OPENING[main.id] = Number(JSON.parse(older[0].value).amount) || 0;
+        }
       } catch (e) {}
     }
+    // Set default bank untuk form key-in
+    if (main && !cbBankSel) cbBankSel = main.id;
+    if (main && !impBankSel) impBankSel = main.id;
   } catch (e) {
     console.error(e);
     toast('⚠️ Gagal load data: ' + e.message);
   }
 }
 
+// Total baki awal semua akaun
+function totalOpening() {
+  return BANKS.reduce((s, b) => s + (Number(OPENING[b.id]) || 0), 0);
+}
+
+// Baki bank per akaun (baki awal + flow)
+function bankBalance(bankId) {
+  let bal = Number(OPENING[bankId] || 0);
+  TXNS.forEach(t => {
+    if (t.bank_account_id !== bankId) return;
+    bal += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+  });
+  return bal;
+}
+
+function bankById(id) { return BANKS.find(b => b.id === id); }
+function bankLabel(b) {
+  if (!b) return '—';
+  return b.name + ' · ' + b.bank_name + (b.account_no ? ' (•••' + String(b.account_no).slice(-4) + ')' : '');
+}
+function bankShort(b) { return b ? b.name : '—'; }
+
 function renderAll() {
   populateCatDropdown();
+  populateBankDropdown();
+  populateBankFilter();
   populateCatFilter();
   renderMonthPills();
+  renderBankSection();
+  renderImportBankDropdown();
   renderCashbook();
   renderDashboard();
   renderDC();
@@ -765,12 +910,43 @@ function populateCatDropdown() {
   const sel = document.getElementById('cb_category');
   const cur = sel.value;
   sel.innerHTML = '';
-  CATS.filter(c => c.flow === cbFlow && c.active !== false).forEach(c => {
+  CATS.filter(c => c.flow === cbFlow && c.active !== false && c.id !== 'co_transfer' && c.id !== 'ci_transfer').forEach(c => {
     const o = document.createElement('option');
     o.value = c.id; o.textContent = c.name;
     sel.appendChild(o);
   });
   if (cur && CATS.some(c => c.id === cur && c.flow === cbFlow)) sel.value = cur;
+}
+
+function populateBankDropdown() {
+  const sel = document.getElementById('cb_bank');
+  if (!sel) return;
+  const cur = sel.value || cbBankSel;
+  sel.innerHTML = '';
+  BANKS.filter(b => b.active !== false).forEach(b => {
+    const o = document.createElement('option');
+    o.value = b.id; o.textContent = bankLabel(b);
+    sel.appendChild(o);
+  });
+  if (cur && BANKS.some(b => b.id === cur)) sel.value = cur;
+  else if (BANKS.length) {
+    const main = BANKS.find(b => b.is_main) || BANKS[0];
+    sel.value = main.id;
+    cbBankSel = main.id;
+  }
+}
+
+function populateBankFilter() {
+  const sel = document.getElementById('cbBankFilter');
+  if (!sel) return;
+  const cur = cbBankFilter;
+  let html = '<option value="all">🏦 Semua Akaun</option>';
+  BANKS.forEach(b => {
+    html += '<option value="' + b.id + '">' + esc(bankLabel(b)) + '</option>';
+  });
+  sel.innerHTML = html;
+  sel.value = BANKS.some(b => b.id === cur) || cur === 'all' ? cur : 'all';
+  cbBankFilter = sel.value;
 }
 
 function populateCatFilter() {
@@ -815,10 +991,12 @@ function setCbMonth(m) { cbMonth = m; renderMonthPills(); renderCashbook(); }
 function cbFiltered() {
   const q = (document.getElementById('cbSearch').value || '').toLowerCase().trim();
   cbCatFilter = (document.getElementById('cbCatFilter') || {}).value || 'all';
+  cbBankFilter = (document.getElementById('cbBankFilter') || {}).value || 'all';
   return TXNS.filter(t => {
     if (cbMonth !== 'all' && txnMonth(t) !== cbMonth) return false;
     if (cbCatFilter !== 'all' && t.category !== cbCatFilter) return false;
     if (cbFlowFilter !== 'all' && t.flow !== cbFlowFilter) return false;
+    if (cbBankFilter !== 'all' && t.bank_account_id !== cbBankFilter) return false;
     if (q) {
       const hay = ((t.details || '') + ' ' + catName(t.category) + ' ' + (t.remark || '')).toLowerCase();
       if (!hay.includes(q)) return false;
@@ -831,36 +1009,51 @@ function renderCashbook() {
   const rows = cbFiltered();
   const tbl = document.getElementById('cbTable');
 
-  // Running balance dikira atas SEMUA txn tahun (sorted), kemudian filter display
-  let bal = OPENING;
+  // Running balance per-akaun (dikira atas SEMUA txn tahun ikut tarikh)
+  const bankBal = {};
+  BANKS.forEach(b => { bankBal[b.id] = Number(OPENING[b.id]) || 0; });
   const balMap = {};
   TXNS.forEach(t => {
-    bal += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
-    balMap[t.id] = bal;
+    const bid = t.bank_account_id || '_none';
+    if (!(bid in bankBal)) bankBal[bid] = 0;
+    bankBal[bid] += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+    balMap[t.id] = bankBal[bid];
   });
 
   let tIn = 0, tOut = 0;
   rows.forEach(t => { if (t.flow === 'in') tIn += Number(t.amount) || 0; else tOut += Number(t.amount) || 0; });
 
-  // Summary cards
+  // KPI baki ikut filter akaun
+  let kpiBalLabel = 'Baki Semua Akaun', kpiBalSub = 'Baki awal total: ' + fmtRM(totalOpening());
+  let kpiBalValue = BANKS.reduce((sum, b) => sum + bankBal[b.id], 0) + (bankBal._none || 0);
+  if (cbBankFilter !== 'all') {
+    const b = bankById(cbBankFilter);
+    if (b) {
+      kpiBalLabel = 'Baki ' + b.name;
+      kpiBalSub = 'Baki awal: ' + fmtRM(OPENING[b.id] || 0);
+      kpiBalValue = bankBal[b.id] || 0;
+    }
+  }
   document.getElementById('cbSummary').innerHTML =
     kpi('Cash In' + (cbMonth === 'all' ? ' (Tahun)' : ''), fmtRM(tIn), 'pos') +
     kpi('Cash Out' + (cbMonth === 'all' ? ' (Tahun)' : ''), fmtRM(tOut), 'neg') +
     kpi('Net', fmtRM(tIn - tOut), tIn - tOut >= 0 ? 'pos' : 'neg') +
-    kpi('Baki Semasa Bank', fmtRM(bal), 'blue', 'Baki awal ' + fmtRM(OPENING));
+    kpi(kpiBalLabel, fmtRM(kpiBalValue), 'blue', kpiBalSub);
 
   if (!rows.length) {
     tbl.innerHTML = '<tr><td><div class="empty-note">Tiada transaksi. Key-in di atas atau import CSV.</div></td></tr>';
     return;
   }
 
-  let html = '<tr><th>Tarikh</th><th>Kategori</th><th>Details</th><th class="num">Cash In</th><th class="num">Cash Out</th><th class="num">Baki</th><th></th></tr>';
-  // Susunan ikut cbSort ('desc' = terbaru dulu)
+  let html = '<tr><th>Tarikh</th><th>Akaun</th><th>Kategori</th><th>Details</th><th class="num">Cash In</th><th class="num">Cash Out</th><th class="num">Baki Akaun</th><th></th></tr>';
   const displayRows = cbSort === 'desc' ? [...rows].reverse() : rows;
   displayRows.forEach(t => {
     const amt = Number(t.amount) || 0;
+    const b = bankById(t.bank_account_id);
+    const bankCell = b ? '<span class="badge blue" title="' + esc(bankLabel(b)) + '">' + esc(b.name) + '</span>' : '<span class="badge gray">—</span>';
     html += '<tr>' +
       '<td class="muted" style="white-space:nowrap;">' + esc(t.txn_date) + (t.source === 'import' ? ' <span class="badge gray" title="Import dari CSV">CSV</span>' : '') + '</td>' +
+      '<td>' + bankCell + '</td>' +
       '<td><span class="badge ' + (t.flow === 'in' ? 'in' : 'out') + '">' + esc(catName(t.category)) + '</span></td>' +
       '<td>' + esc(t.details || '') + (t.remark ? '<div class="hint">' + esc(t.remark) + '</div>' : '') + '</td>' +
       '<td class="num in">' + (t.flow === 'in' ? fmt(amt) : '') + '</td>' +
@@ -871,7 +1064,7 @@ function renderCashbook() {
         '<button class="btn sm danger" onclick="deleteTxn(\'' + t.id + '\')">🗑</button>' +
       '</td></tr>';
   });
-  html += '<tr class="total-row"><td colspan="3">JUMLAH (' + rows.length + ' transaksi)</td>' +
+  html += '<tr class="total-row"><td colspan="4">JUMLAH (' + rows.length + ' transaksi)</td>' +
     '<td class="num in">' + fmt(tIn) + '</td><td class="num out">' + fmt(tOut) + '</td><td class="num">' + fmt(tIn - tOut) + '</td><td></td></tr>';
   tbl.innerHTML = html;
 }
@@ -885,10 +1078,13 @@ function kpi(label, value, cls, sub) {
 async function saveTxn() {
   const date = document.getElementById('cb_date').value;
   const category = document.getElementById('cb_category').value;
+  const bankId = document.getElementById('cb_bank').value;
   const amount = parseFloat(document.getElementById('cb_amount').value);
   const details = document.getElementById('cb_details').value.trim();
   const remark = document.getElementById('cb_remark').value.trim();
 
+  if (!BANKS.length) return toast('⚠️ Setup akaun bank dulu (Settings → Akaun Bank)');
+  if (!bankId) return toast('⚠️ Sila pilih akaun bank');
   if (!date) return toast('⚠️ Sila pilih tarikh');
   if (!category) return toast('⚠️ Sila pilih kategori');
   if (!amount || amount <= 0) return toast('⚠️ Amaun mesti lebih dari 0');
@@ -899,17 +1095,18 @@ async function saveTxn() {
   try {
     if (editTxnId) {
       await supaPatch('accounting_transactions', 'id=eq.' + encodeURIComponent(editTxnId), {
-        txn_date: date, flow: cbFlow, category, details, amount, remark, updated_at: new Date().toISOString()
+        txn_date: date, flow: cbFlow, category, bank_account_id: bankId, details, amount, remark, updated_at: new Date().toISOString()
       });
       const i = TXNS.findIndex(t => t.id === editTxnId);
-      if (i >= 0) TXNS[i] = { ...TXNS[i], txn_date: date, flow: cbFlow, category, details, amount, remark };
+      if (i >= 0) TXNS[i] = { ...TXNS[i], txn_date: date, flow: cbFlow, category, bank_account_id: bankId, details, amount, remark };
       toast('✅ Transaksi dikemaskini');
       cancelEditTxn();
     } else {
       const row = {
-        id: uid('txn'), txn_date: date, flow: cbFlow, category, details, amount, remark,
+        id: uid('txn'), txn_date: date, flow: cbFlow, category, bank_account_id: bankId, details, amount, remark,
         source: 'manual', created_by: currentUser.id
       };
+      cbBankSel = bankId;
       await supaInsert('accounting_transactions', [row]);
       TXNS.push(row);
       toast('✅ Transaksi disimpan');
@@ -932,6 +1129,8 @@ function editTxn(id) {
   editTxnId = id;
   setFlow(t.flow);
   document.getElementById('cb_date').value = t.txn_date;
+  populateBankDropdown();
+  if (t.bank_account_id) document.getElementById('cb_bank').value = t.bank_account_id;
   document.getElementById('cb_category').value = t.category;
   document.getElementById('cb_amount').value = t.amount;
   document.getElementById('cb_details').value = t.details || '';
@@ -1047,13 +1246,10 @@ function renderDashboard() {
   const today = todayISO();
   const thisMonth = (new Date().getFullYear() === YEAR) ? new Date().getMonth() + 1 : 12;
 
-  let bal = OPENING, inToday = 0, outToday = 0, inMonth = 0, outMonth = 0, inYear = 0, outYear = 0;
+  let inToday = 0, outToday = 0;
   TXNS.forEach(t => {
     const amt = Number(t.amount) || 0;
-    bal += (t.flow === 'in' ? amt : -amt);
-    if (t.flow === 'in') inYear += amt; else outYear += amt;
     if (t.txn_date === today) { if (t.flow === 'in') inToday += amt; else outToday += amt; }
-    if (txnMonth(t) === thisMonth) { if (t.flow === 'in') inMonth += amt; else outMonth += amt; }
   });
 
   const yr = pnlData('all');
@@ -1063,8 +1259,47 @@ function renderDashboard() {
   const creditorOS = DCS.filter(d => d.kind === 'creditor' && d.status !== 'settled')
     .reduce((s, d) => s + (Number(d.amount) - Number(d.settled || 0)), 0);
 
-  document.getElementById('dashKpis').innerHTML =
-    kpi('Baki Bank Semasa', fmtRM(bal), 'blue', 'Baki awal ' + YEAR + ': ' + fmtRM(OPENING)) +
+  // Kira transaksi yang belum di-tag (migration belum selesai)
+  let untaggedBal = 0, untaggedCount = 0;
+  TXNS.forEach(t => {
+    if (!t.bank_account_id) {
+      untaggedBal += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+      untaggedCount++;
+    }
+  });
+
+  // Baki bank per-akaun
+  let bankKpis = '';
+  let totalBal = untaggedBal;  // include untagged dalam total
+  BANKS.forEach(b => {
+    const bal = bankBalance(b.id);
+    totalBal += bal;
+    bankKpis += kpi('Baki ' + esc(b.name), fmtRM(bal), 'blue',
+      esc(b.bank_name) + (b.account_no ? ' •••' + esc(String(b.account_no).slice(-4)) : '') + ' · awal ' + fmtRM(OPENING[b.id] || 0));
+  });
+  if (untaggedCount > 0) {
+    bankKpis += kpi('⚠️ Belum Di-Tag', fmtRM(untaggedBal), 'orange',
+      untaggedCount + ' transaksi · pergi Settings → Auto-tag');
+  }
+  const showConsolidated = (BANKS.length > 1) || (BANKS.length >= 1 && untaggedCount > 0);
+  const consolidatedKpi = showConsolidated
+    ? kpi('💰 Total Baki Bank (Consolidated)', fmtRM(totalBal), 'blue',
+        BANKS.length + ' akaun' + (untaggedCount ? ' + ' + untaggedCount + ' untagged' : ''))
+    : '';
+
+  // Banner amaran untuk migration belum selesai
+  let migrationBanner = '';
+  if (untaggedCount > 0 && BANKS.length > 0) {
+    const main = BANKS.find(b => b.is_main);
+    migrationBanner = '<div style="background:var(--amberbg);border:1px solid var(--orangeb);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:13px;">' +
+      '⚠️ <b>Migration belum selesai.</b> Ada <b>' + untaggedCount + ' transaksi</b> belum di-tag ke akaun bank — itulah sebab baki akaun nampak kurang. ' +
+      (main ? '<button class="btn sm primary" onclick="navTo(\'settings\'); setTimeout(autoTagUntagged, 300);" style="margin-left:6px;">🔄 Auto-tag ke ' + esc(main.name) + ' sekarang</button>' : 'Setup Akaun Utama dulu dalam Settings.') +
+      '</div>';
+  }
+  document.getElementById('dashKpis').insertAdjacentHTML; // (no-op placeholder)
+
+  document.getElementById('dashKpis').innerHTML = migrationBanner +
+    consolidatedKpi + bankKpis +
     kpi('Cash In Hari Ini', fmtRM(inToday), 'pos') +
     kpi('Cash Out Hari Ini', fmtRM(outToday), 'neg') +
     kpi('Revenue Bulan ' + MONTH_NAMES[thisMonth - 1], fmtRM(mo.sales), 'pos') +
@@ -1266,8 +1501,14 @@ function assetClosing(a) {
 
 function renderBalanceSheet() {
   const yr = pnlData('all');
-  let cash = OPENING;
-  TXNS.forEach(t => { cash += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+  // Cash & Bank — per akaun
+  const bankCash = {};
+  let cash = 0;
+  BANKS.forEach(b => { bankCash[b.id] = bankBalance(b.id); cash += bankCash[b.id]; });
+  // legacy: txn tanpa bank_account_id (null) — patut takde lepas migration, tapi handle safely
+  let untagged = 0;
+  TXNS.forEach(t => { if (!t.bank_account_id) untagged += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+  cash += untagged;
 
   const fixedAssets = ASSETS.reduce((s, a) => s + assetClosing(a), 0);
   const assetPurchases = groupTotal('asset', 'out'); // beli aset terus dari cash book (jika belum daftar dlm jadual aset)
@@ -1296,7 +1537,16 @@ function renderBalanceSheet() {
   html += rptRow('ASSETS', 0, 'head', { blank: true });
   html += rptRow('Fixed Assets (NBV)' + (ASSETS.length ? '' : ' — dari cash book'), fixedTotal, 'indent');
   html += rptRow('Current Assets:', 0, 'indent', { blank: true });
-  html += rptRow('· Cash & Bank', cash, 'indent');
+  if (BANKS.length > 1) {
+    html += rptRow('· Cash & Bank:', 0, 'indent', { blank: true });
+    BANKS.forEach(b => {
+      html += rptRow('   - ' + b.name + ' (' + b.bank_name + ')', bankCash[b.id], 'indent');
+    });
+    if (untagged) html += rptRow('   - (Untagged)', untagged, 'indent');
+    html += rptRow('   Sub-total Cash & Bank', cash, 'indent');
+  } else {
+    html += rptRow('· Cash & Bank', cash, 'indent');
+  }
   html += rptRow('· Trade Debtors', tradeDebtors, 'indent');
   html += rptRow('Total Current Assets', totalCurrentAssets, 'subtotal');
   html += rptRow('TOTAL ASSETS', totalAssets, 'grand');
@@ -1356,15 +1606,17 @@ function renderTrialBalance() {
         '<td class="num">' + (r.credit ? fmt(r.credit) : '') + '</td></tr>';
     });
   });
-  // Baki bank sebagai akaun Cash & Bank
-  let cash = OPENING;
-  TXNS.forEach(t => { cash += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+  // Baki bank sebagai akaun Cash & Bank — gabungan semua akaun
+  let cash = 0;
+  BANKS.forEach(b => { cash += bankBalance(b.id); });
+  let totOpen = totalOpening();
+  TXNS.forEach(t => { if (!t.bank_account_id) cash += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
   html += '<tr><td><b>Cash in Hand & Cash at Bank</b></td><td><span class="badge blue">Cash & Bank</span></td>' +
     '<td class="num">' + (cash >= 0 ? fmt(cash) : '') + '</td><td class="num">' + (cash < 0 ? fmt(-cash) : '') + '</td></tr>';
   if (cash >= 0) tD += cash; else tC += -cash;
   html += '<tr><td><b>Baki Awal Bank (b/f)</b></td><td><span class="badge gray">Opening</span></td>' +
-    '<td class="num"></td><td class="num">' + fmt(OPENING) + '</td></tr>';
-  tC += OPENING;
+    '<td class="num"></td><td class="num">' + fmt(totOpen) + '</td></tr>';
+  tC += totOpen;
 
   html += '<tr class="total-row"><td colspan="2">TOTAL</td><td class="num">' + fmt(tD) + '</td><td class="num">' + fmt(tC) + '</td></tr>';
   document.getElementById('tbTable').innerHTML = html;
@@ -1448,7 +1700,7 @@ function renderCashFlow() {
   const net = operating + investing + financing;
   const closing = OPENING + net + dep; // dep bukan cash; tolak balik
   // closing cash sebenar = OPENING + total in - total out
-  let actualClosing = OPENING;
+  let actualClosing = totalOpening();
   TXNS.forEach(t => { actualClosing += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
 
   let html = '<div class="rpt-title">DOD WORLDWIDE SUPPLY</div>' +
@@ -1473,7 +1725,7 @@ function renderCashFlow() {
   html += rptRow('(−) Ambilan', -ambilan, 'indent');
   html += rptRow('Net Cash dari Pembiayaan', financing, 'subtotal', { signed: true });
 
-  html += rptRow('Baki Awal Tahun', OPENING, 'head');
+  html += rptRow('Baki Awal Tahun (semua akaun)', totalOpening(), 'head');
   html += rptRow('BAKI TUNAI AKHIR (ikut Cash Book)', actualClosing, 'grand', { signed: true });
 
   document.getElementById('cfReport').innerHTML = html;
@@ -1583,15 +1835,19 @@ function parseCSV(text) {
   return rows;
 }
 
-function importHash(date, flow, amount, details) {
-  return [date, flow, Number(amount).toFixed(2), (details || '').toUpperCase().replace(/\s+/g, ' ').trim()].join('|');
+function importHash(date, flow, amount, details, bankId) {
+  return [bankId || '', date, flow, Number(amount).toFixed(2), (details || '').toUpperCase().replace(/\s+/g, ' ').trim()].join('|');
 }
 
 async function previewImport() {
   const fileInput = document.getElementById('impFile');
   const year = parseInt(document.getElementById('impYear').value, 10);
+  const bankId = document.getElementById('impBank').value;
+  if (!BANKS.length) return toast('⚠️ Setup akaun bank dulu (Settings → Akaun Bank)');
+  if (!bankId) return toast('⚠️ Sila pilih akaun bank');
   if (!fileInput.files || !fileInput.files[0]) return toast('⚠️ Pilih fail CSV dulu');
   if (!year || year < 2020) return toast('⚠️ Tahun tidak sah');
+  impBankSel = bankId;
 
   const text = await fileInput.files[0].text();
   const rows = parseCSV(text.replace(/^\uFEFF/, ''));
@@ -1609,9 +1865,9 @@ async function previewImport() {
   };
   if (idx.date < 0 || idx.inn < 0 || idx.out < 0) return toast('⚠️ Header CSV tak sepadan format bank statement');
 
-  // Hash sedia ada untuk duplicate check (semua txn import tahun ni dalam DB)
+  // Hash sedia ada untuk duplicate check (semua txn dalam akaun yang sama)
   const existingHashes = new Set();
-  TXNS.forEach(t => existingHashes.add(importHash(t.txn_date, t.flow, t.amount, t.details)));
+  TXNS.forEach(t => existingHashes.add(importHash(t.txn_date, t.flow, t.amount, t.details, t.bank_account_id)));
 
   importRows = [];
   const seenInFile = new Set();
@@ -1647,7 +1903,7 @@ async function previewImport() {
 
     let hash = '', dup = false;
     if (status === 'ok') {
-      hash = importHash(isoDate, flow, amount, desc);
+      hash = importHash(isoDate, flow, amount, desc, bankId);
       if (existingHashes.has(hash)) { dup = true; status = 'dup'; reason = 'Sudah wujud dalam sistem'; }
       else if (seenInFile.has(hash)) { dup = true; status = 'dup'; reason = 'Duplicate dalam fail'; }
       else seenInFile.add(hash);
@@ -1750,6 +2006,7 @@ async function confirmImport() {
     const batchId = 'batch_' + Date.now() + '_' + currentUser.id;
     const newRows = ok.map(r => ({
       id: uid('txn'), txn_date: r.isoDate, flow: r.flow, category: r.category,
+      bank_account_id: impBankSel,
       details: r.details, amount: r.amount, remark: r.remark,
       source: 'import', import_hash: r.hash, import_batch: batchId, created_by: currentUser.id
     }));
@@ -1835,11 +2092,274 @@ async function rollbackBatch(batchId, rowCount) {
 }
 
 // ════════════════════════════════════════════════════════════
+// BANK ACCOUNTS — UI & CRUD
+// ════════════════════════════════════════════════════════════
+function renderBankSection() {
+  const wrap = document.getElementById('bankSection');
+  if (!wrap) return;
+  if (!BANKS.length) {
+    wrap.innerHTML = '<div class="empty-note">Belum ada akaun bank. Klik "<b>＋ Tambah Akaun</b>" di atas untuk setup Akaun Utama dulu.</div>';
+    return;
+  }
+  // Check kalau ada txn belum di-tag → tunjuk butang Auto-tag
+  const untaggedCount = TXNS.filter(t => !t.bank_account_id).length;
+  let warn = '';
+  if (untaggedCount > 0) {
+    const main = BANKS.find(b => b.is_main);
+    warn = '<div style="background:var(--amberbg);border:1px solid var(--orangeb);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12.5px;">' +
+      '⚠️ Ada <b>' + untaggedCount + '</b> transaksi sedia ada (data lama) yang belum di-tag ke akaun bank. ' +
+      (main ? 'Klik untuk auto-tag semua ke <b>' + esc(main.name) + '</b>:' : 'Tetapkan satu akaun sebagai Akaun Utama dulu, baru boleh auto-tag.') +
+      (main ? ' <button class="btn sm primary" onclick="autoTagUntagged()" style="margin-left:8px;">🔄 Auto-tag ' + untaggedCount + ' transaksi ke ' + esc(main.name) + '</button>' : '') +
+      '</div>';
+  }
+  let html = warn + '<div class="tbl-wrap"><table class="tbl"><tr>' +
+    '<th>Nama Akaun</th><th>Bank</th><th>No Akaun</th><th>Pemegang</th>' +
+    '<th class="num">Baki Awal ' + YEAR + '</th><th class="num">Baki Semasa</th><th>Status</th><th></th></tr>';
+  BANKS.forEach(b => {
+    const bal = bankBalance(b.id);
+    const open = OPENING[b.id] || 0;
+    html += '<tr>' +
+      '<td><b>' + esc(b.name) + '</b>' + (b.is_main ? ' <span class="badge in">UTAMA</span>' : '') + '</td>' +
+      '<td>' + esc(b.bank_name) + '</td>' +
+      '<td class="muted" style="font-family:Courier New,monospace;">' + esc(b.account_no || '—') + '</td>' +
+      '<td class="muted">' + esc(b.account_holder || '—') + '</td>' +
+      '<td class="num">' + fmt(open) + '</td>' +
+      '<td class="num ' + (bal >= 0 ? 'in' : 'out') + '">' + fmt(bal) + '</td>' +
+      '<td>' + (b.active !== false ? '<span class="badge in">AKTIF</span>' : '<span class="badge gray">OFF</span>') + '</td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button class="btn sm" onclick="openBankModal(\'' + b.id + '\')">✏️</button> ' +
+        (!b.is_main ? '<button class="btn sm" onclick="setMainBank(\'' + b.id + '\')" title="Jadikan akaun utama">⭐</button> ' : '') +
+        '<button class="btn sm danger" onclick="deleteBank(\'' + b.id + '\')">🗑</button>' +
+      '</td></tr>';
+  });
+  html += '</table></div>';
+  wrap.innerHTML = html;
+}
+
+let editBankId = null;
+
+function openBankModal(id) {
+  editBankId = id || null;
+  document.getElementById('bankModalTitle').textContent = id ? 'Edit Akaun Bank' : 'Tambah Akaun Bank';
+  document.getElementById('bkYearLbl').textContent = YEAR;
+  if (id) {
+    const b = bankById(id);
+    if (!b) return;
+    document.getElementById('bk_name').value = b.name;
+    document.getElementById('bk_bank').value = b.bank_name;
+    document.getElementById('bk_accno').value = b.account_no || '';
+    document.getElementById('bk_holder').value = b.account_holder || '';
+    document.getElementById('bk_opening').value = OPENING[b.id] || '';
+    document.getElementById('bk_ismain').checked = !!b.is_main;
+  } else {
+    document.getElementById('bk_name').value = '';
+    document.getElementById('bk_bank').value = '';
+    document.getElementById('bk_accno').value = '';
+    document.getElementById('bk_holder').value = '';
+    document.getElementById('bk_opening').value = '';
+    // Auto-tick "Akaun Utama" kalau ini akaun pertama
+    document.getElementById('bk_ismain').checked = (BANKS.length === 0);
+  }
+  document.getElementById('bankModalBg').classList.add('show');
+}
+
+function closeBankModal() { document.getElementById('bankModalBg').classList.remove('show'); }
+
+async function saveBank() {
+  const name = document.getElementById('bk_name').value.trim();
+  const bank_name = document.getElementById('bk_bank').value.trim();
+  const account_no = document.getElementById('bk_accno').value.trim();
+  const account_holder = document.getElementById('bk_holder').value.trim();
+  const opening = parseFloat(document.getElementById('bk_opening').value) || 0;
+  const isMain = document.getElementById('bk_ismain').checked;
+  if (!name) return toast('⚠️ Nama akaun wajib');
+  if (!bank_name) return toast('⚠️ Nama bank wajib');
+  if (!account_no) return toast('⚠️ No akaun wajib');
+
+  try {
+    if (editBankId) {
+      // Kalau set main, unset semua yang lain dulu
+      if (isMain) {
+        await supaPatch('accounting_bank_accounts', 'is_main=eq.true', { is_main: false });
+        BANKS.forEach(b => { b.is_main = false; });
+      }
+      await supaPatch('accounting_bank_accounts', 'id=eq.' + encodeURIComponent(editBankId),
+        { name, bank_name, account_no, account_holder, is_main: isMain, updated_at: new Date().toISOString() });
+      const b = bankById(editBankId);
+      if (b) Object.assign(b, { name, bank_name, account_no, account_holder, is_main: isMain });
+    } else {
+      if (isMain) {
+        await supaPatch('accounting_bank_accounts', 'is_main=eq.true', { is_main: false });
+        BANKS.forEach(b => { b.is_main = false; });
+      }
+      const id = uid('bank');
+      const row = { id, name, bank_name, account_no, account_holder, is_main: isMain, sort: 100 + BANKS.length, active: true };
+      await supaInsert('accounting_bank_accounts', [row]);
+      BANKS.push(row);
+    }
+    // Upsert opening balance untuk tahun semasa
+    const bId = editBankId || BANKS[BANKS.length - 1].id;
+    await supaFetch('/rest/v1/accounting_bank_balances', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{ bank_account_id: bId, year: YEAR, opening_balance: opening }])
+    });
+    OPENING[bId] = opening;
+
+    // Sort BANKS: main first
+    BANKS.sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0) || (a.sort || 100) - (b.sort || 100));
+    closeBankModal();
+    renderBankSection();
+    populateBankDropdown();
+    populateBankFilter();
+    renderCashbook();
+    renderDashboard();
+    renderBalanceSheet();
+    renderTrialBalance();
+    renderCashFlow();
+    renderImportBankDropdown();
+    toast('✅ Akaun bank disimpan');
+  } catch (e) { toast('❌ Gagal: ' + e.message); }
+}
+
+async function setMainBank(id) {
+  if (!confirm('Tetapkan akaun ini sebagai Akaun Utama? Akaun utama jadi default untuk key-in & import.')) return;
+  try {
+    await supaPatch('accounting_bank_accounts', 'is_main=eq.true', { is_main: false });
+    await supaPatch('accounting_bank_accounts', 'id=eq.' + encodeURIComponent(id), { is_main: true });
+    BANKS.forEach(b => { b.is_main = (b.id === id); });
+    BANKS.sort((a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0) || (a.sort || 100) - (b.sort || 100));
+    renderBankSection();
+    populateBankDropdown();
+    toast('⭐ Akaun utama dikemaskini');
+  } catch (e) { toast('❌ Gagal: ' + e.message); }
+}
+
+async function deleteBank(id) {
+  const b = bankById(id);
+  if (!b) return;
+  const used = TXNS.filter(t => t.bank_account_id === id).length;
+  if (used > 0) return toast('⚠️ Tidak boleh padam — ada ' + used + ' transaksi dalam akaun ini. Pindahkan dulu atau padam transaksi tersebut.');
+  if (b.is_main && BANKS.length > 1) return toast('⚠️ Tidak boleh padam Akaun Utama. Tetapkan akaun lain sebagai utama dulu.');
+  const pin = prompt('Masukkan PIN untuk padam akaun bank "' + b.name + '":');
+  if (pin === null) return;
+  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+  try {
+    await supaDelete('accounting_bank_balances', 'bank_account_id=eq.' + encodeURIComponent(id));
+    await supaDelete('accounting_bank_accounts', 'id=eq.' + encodeURIComponent(id));
+    BANKS = BANKS.filter(x => x.id !== id);
+    delete OPENING[id];
+    renderBankSection();
+    populateBankDropdown();
+    populateBankFilter();
+    renderImportBankDropdown();
+    renderAll();
+    toast('🗑 Akaun dipadam');
+  } catch (e) { toast('❌ Gagal: ' + e.message); }
+}
+
+async function autoTagUntagged() {
+  const main = BANKS.find(b => b.is_main);
+  if (!main) return toast('⚠️ Tetapkan satu akaun sebagai Akaun Utama dulu');
+  const count = TXNS.filter(t => !t.bank_account_id).length;
+  if (!count) return toast('Tiada transaksi yang perlu di-tag');
+  if (!confirm('Auto-tag ' + count + ' transaksi tahun ' + YEAR + ' ke akaun "' + main.name + '"?\n\nNota: Hanya transaksi tahun ' + YEAR + ' yang ditapis. Tahun lain perlu di-tag berasingan (tukar tahun di header).')) return;
+  const pin = prompt('Masukkan PIN untuk sahkan:');
+  if (pin === null) return;
+  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+  try {
+    // Update all txn tahun ini yang bank_account_id IS NULL
+    await supaPatch('accounting_transactions',
+      'bank_account_id=is.null&txn_date=gte.' + YEAR + '-01-01&txn_date=lte.' + YEAR + '-12-31',
+      { bank_account_id: main.id, updated_at: new Date().toISOString() });
+    TXNS.forEach(t => { if (!t.bank_account_id) t.bank_account_id = main.id; });
+    renderAll();
+    toast('✅ ' + count + ' transaksi telah di-tag ke ' + main.name);
+  } catch (e) { toast('❌ Gagal: ' + e.message); }
+}
+
+function renderImportBankDropdown() {
+  const sel = document.getElementById('impBank');
+  if (!sel) return;
+  const cur = sel.value || impBankSel;
+  sel.innerHTML = '';
+  BANKS.filter(b => b.active !== false).forEach(b => {
+    const o = document.createElement('option');
+    o.value = b.id; o.textContent = bankLabel(b);
+    sel.appendChild(o);
+  });
+  if (cur && BANKS.some(b => b.id === cur)) sel.value = cur;
+  else if (BANKS.length) {
+    const main = BANKS.find(b => b.is_main) || BANKS[0];
+    sel.value = main.id;
+    impBankSel = main.id;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// TRANSFER ANTARA AKAUN
+// ════════════════════════════════════════════════════════════
+function openTransferModal() {
+  if (BANKS.length < 2) return toast('⚠️ Perlu sekurang-kurangnya 2 akaun bank untuk transfer');
+  document.getElementById('tr_date').value = todayISO();
+  document.getElementById('tr_amount').value = '';
+  document.getElementById('tr_remark').value = '';
+  const from = document.getElementById('tr_from'), to = document.getElementById('tr_to');
+  from.innerHTML = ''; to.innerHTML = '';
+  BANKS.forEach(b => {
+    from.insertAdjacentHTML('beforeend', '<option value="' + b.id + '">' + esc(bankLabel(b)) + '</option>');
+    to.insertAdjacentHTML('beforeend', '<option value="' + b.id + '">' + esc(bankLabel(b)) + '</option>');
+  });
+  const main = BANKS.find(b => b.is_main) || BANKS[0];
+  from.value = main.id;
+  to.value = (BANKS.find(b => b.id !== main.id) || BANKS[1] || BANKS[0]).id;
+  document.getElementById('transferModalBg').classList.add('show');
+}
+function closeTransferModal() { document.getElementById('transferModalBg').classList.remove('show'); }
+
+async function saveTransfer() {
+  const date = document.getElementById('tr_date').value;
+  const amount = parseFloat(document.getElementById('tr_amount').value);
+  const fromId = document.getElementById('tr_from').value;
+  const toId = document.getElementById('tr_to').value;
+  const remark = document.getElementById('tr_remark').value.trim();
+  if (!date) return toast('⚠️ Tarikh wajib');
+  if (!amount || amount <= 0) return toast('⚠️ Amaun mesti lebih dari 0');
+  if (!fromId || !toId) return toast('⚠️ Sila pilih akaun');
+  if (fromId === toId) return toast('⚠️ Akaun sumber & destinasi mesti berbeza');
+  if (parseInt(date.slice(0, 4), 10) !== YEAR) return toast('⚠️ Tarikh mesti dalam tahun ' + YEAR);
+
+  const fromBank = bankById(fromId), toBank = bankById(toId);
+  const details = 'Transfer dari ' + fromBank.name + ' ke ' + toBank.name;
+  const pairId = 'trf_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  const rows = [
+    { id: uid('txn'), txn_date: date, flow: 'out', category: 'co_transfer', bank_account_id: fromId,
+      details, amount, remark: remark + (remark ? ' · ' : '') + 'pair=' + pairId,
+      source: 'manual', created_by: currentUser.id },
+    { id: uid('txn'), txn_date: date, flow: 'in', category: 'ci_transfer', bank_account_id: toId,
+      details, amount, remark: remark + (remark ? ' · ' : '') + 'pair=' + pairId,
+      source: 'manual', created_by: currentUser.id }
+  ];
+  try {
+    await supaInsert('accounting_transactions', rows);
+    rows.forEach(r => TXNS.push(r));
+    TXNS.sort((a, b) => (a.txn_date || '').localeCompare(b.txn_date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
+    closeTransferModal();
+    renderAll();
+    toast('✅ Transfer ' + fmtRM(amount) + ' dari ' + fromBank.name + ' → ' + toBank.name);
+  } catch (e) { toast('❌ Gagal: ' + e.message); }
+}
+
+// ════════════════════════════════════════════════════════════
 // SETTINGS
 // ════════════════════════════════════════════════════════════
 function renderSettings() {
   document.getElementById('obYearLabel').textContent = YEAR;
-  document.getElementById('ob_amount').value = OPENING || '';
+  // Legacy opening hidden kalau dah ada main bank dengan baki untuk tahun ini
+  const main = BANKS.find(b => b.is_main);
+  const legacy = document.getElementById('legacyOpeningCard');
+  if (legacy) legacy.style.display = (main && OPENING[main.id] != null) ? 'none' : 'block';
+  document.getElementById('ob_amount').value = (main ? (OPENING[main.id] || 0) : 0) || '';
 
   const tbl = document.getElementById('catTable');
   let html = '<tr><th>Kategori</th><th>Aliran</th><th>Kumpulan P&L</th><th>Status</th><th></th></tr>';
@@ -1857,17 +2377,19 @@ function renderSettings() {
 }
 
 async function saveOpeningBalance() {
+  // Legacy form — tulis ke Akaun Utama. Hanya guna kalau takde main bank
+  const main = BANKS.find(b => b.is_main);
+  if (!main) return toast('⚠️ Setup Akaun Bank dulu (di atas)');
   const amt = parseFloat(document.getElementById('ob_amount').value) || 0;
-  const key = 'acc_opening_balance_' + YEAR;
   try {
-    await supaFetch('/rest/v1/system_settings', {
+    await supaFetch('/rest/v1/accounting_bank_balances', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify([{ key, value: JSON.stringify({ year: YEAR, amount: amt }) }])
+      body: JSON.stringify([{ bank_account_id: main.id, year: YEAR, opening_balance: amt }])
     });
-    OPENING = amt;
+    OPENING[main.id] = amt;
     renderAll();
-    toast('✅ Baki awal ' + YEAR + ' disimpan: ' + fmtRM(amt));
+    toast('✅ Baki awal ' + YEAR + ' untuk ' + main.name + ': ' + fmtRM(amt));
   } catch (e) { toast('❌ Gagal: ' + e.message); }
 }
 
