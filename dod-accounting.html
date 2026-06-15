@@ -571,6 +571,24 @@ function supaDelete(table, filter) {
   return supaFetch('/rest/v1/' + table + '?' + filter, { method: 'DELETE', prefer: 'return=minimal' });
 }
 
+// Paginated fetch — handle Supabase default row limit (1000) untuk table besar
+async function supaGetPaginated(table, params, pageSize) {
+  pageSize = pageSize || 1000;
+  const all = [];
+  let offset = 0;
+  while (true) {
+    const sep = params ? '&' : '';
+    const batch = await supaGet(table, params + sep + 'limit=' + pageSize + '&offset=' + offset);
+    if (!batch || !batch.length) break;
+    all.push.apply(all, batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+    // safety: stop kalau dah > 50k row (anomali)
+    if (offset >= 50000) break;
+  }
+  return all;
+}
+
 // ── State ────────────────────────────────────────────────────
 let currentUser = null;
 let YEAR = new Date().getFullYear();
@@ -674,8 +692,8 @@ async function loadAll() {
   try {
     const [cats, txns, dcs, assets, ob] = await Promise.all([
       supaGet('accounting_categories', 'select=*&order=sort.asc,name.asc'),
-      supaGet('accounting_transactions', 'select=*&txn_date=gte.' + YEAR + '-01-01&txn_date=lte.' + YEAR + '-12-31&order=txn_date.asc,created_at.asc'),
-      supaGet('accounting_debtors_creditors', 'select=*&order=entry_date.desc'),
+      supaGetPaginated('accounting_transactions', 'select=*&txn_date=gte.' + YEAR + '-01-01&txn_date=lte.' + YEAR + '-12-31&order=txn_date.asc,created_at.asc'),
+      supaGetPaginated('accounting_debtors_creditors', 'select=*&order=entry_date.desc'),
       supaGet('accounting_assets', 'select=*&year=eq.' + YEAR + '&order=name.asc'),
       supaGet('system_settings', 'select=value&key=eq.acc_opening_balance_' + YEAR)
     ]);
