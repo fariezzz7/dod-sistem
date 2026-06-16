@@ -240,6 +240,10 @@
               <input type="date" id="cb_date">
             </div>
             <div class="form-group">
+              <label>Akaun Bank</label>
+              <select id="cb_bank"></select>
+            </div>
+            <div class="form-group">
               <label>Kategori</label>
               <select id="cb_category"></select>
             </div>
@@ -256,9 +260,10 @@
               <input type="text" id="cb_remark" placeholder="Nota tambahan">
             </div>
           </div>
-          <div style="margin-top:14px;display:flex;gap:8px;">
+          <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn green" id="cbSaveBtn" onclick="saveTxn()">💾 Simpan Transaksi</button>
             <button class="btn" id="cbCancelEditBtn" onclick="cancelEditTxn()" style="display:none;">Batal Edit</button>
+            <button class="btn" style="margin-left:auto;" onclick="openTransferModal()">💸 Transfer Antara Akaun</button>
           </div>
         </div>
       </div>
