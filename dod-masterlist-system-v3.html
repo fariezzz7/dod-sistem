@@ -1405,12 +1405,6 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Dashboard</span>
   </button>
 
-  <button class="sb-item" id="sbAccounting" data-tip="Accounting" onclick="window.open('dod-accounting.html','dod_accounting')" style="display:none;">
-    <span class="sb-item-icon">💼</span>
-    <span class="sb-item-label">Accounting</span>
-    <span class="sb-item-badge" style="background:var(--greenbg);color:var(--green);">↗</span>
-  </button>
-
   <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
     <span class="sb-item-icon">🏭</span>
     <span class="sb-item-label">Supplier</span>
@@ -2184,10 +2178,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">PIC / Sales Admin</label>
-            <select class="fi" id="f_pic">
-              <option>ANIS</option><option>HAKIMAH</option><option>DANIEL</option>
-              <option>FATHI</option><option>FARIZ</option>
-            </select>
+            <select class="fi" id="f_pic"></select>
           </div>
           <div class="form-field">
             <label class="fl">Sumber / Channel</label>
@@ -3969,7 +3960,6 @@ function setupNavForRole() {
   if (role === 'admin') {
     sbShow('sbMasterlist');
     sbShow('sbDashboard');
-    sbShow('sbAccounting');
     sbShow('sbCustomer');
     sbShow('sbSupplierDir');
     sbShow('sbProdTrack');
@@ -4008,7 +3998,6 @@ function setupNavForRole() {
     sbShow('sbPenerimaan');
     sbShow('sbCalendar');
     sbHide('sbDashboard');
-    sbHide('sbAccounting');
     sbHide('sbSupplierDir');
     sbHide('sbSupplierOS');
     sbHide('sbUserMgmt');
@@ -4027,7 +4016,6 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
-    sbHide('sbAccounting');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
@@ -4776,6 +4764,22 @@ function openDeleteFromDetail() { if(currentDetailRow) openDeleteById(currentDet
 // ======================================
 // ADD / EDIT MODAL
 // ======================================
+// Auto-populate PIC dropdown dari user store (sumber sama dgn User Management).
+// Exclude designer + akaun tidak aktif. Staff baru auto masuk tanpa edit code.
+function populatePicSelect(keepValue) {
+  const sel = document.getElementById('f_pic');
+  if (!sel) return;
+  const store = loadUserStore();
+  const order = { admin:0, sales:1, sales_executive:2 };
+  const users = Object.values(store)
+    .filter(u => u.role !== 'designer' && u.active !== false)
+    .sort((a,b) => (order[a.role]??9) - (order[b.role]??9) || a.name.localeCompare(b.name));
+  const names = users.map(u => u.name);
+  // Pastikan nilai sedia ada (cth PIC lama spt NADIA) tetap muncul walau staff dah tiada
+  if (keepValue && keepValue.trim() && !names.includes(keepValue)) names.unshift(keepValue);
+  sel.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
 async function openAddModal() {
   editingId = null;
   clearForm();
@@ -4784,6 +4788,7 @@ async function openAddModal() {
   const today = getMYTDateStr();
   document.getElementById('f_order_date').value = today;
   document.getElementById('f_invdate').value = today;
+  populatePicSelect();
   // Auto-set PIC to current user if sales role
   if (currentUser.role === 'sales' || currentUser.role === 'sales_executive') {
     const sel = document.getElementById('f_pic');
@@ -4836,6 +4841,7 @@ function openEditModalById(id) {
   document.getElementById('modalTitle').textContent = 'Edit Order';
   document.getElementById('modalSubtitle').textContent = r.name_job;
   document.getElementById('f_order_date').value = r.order_date || '';
+  populatePicSelect(r.pic || '');
   document.getElementById('f_pic').value = r.pic || '';
   document.getElementById('f_source').value = r.source || '';
   document.getElementById('f_name').value = r.name_job || '';
@@ -12333,7 +12339,6 @@ function renderCpRoles() {
     { label:'Kalendar',       admin:true,  sales:true,  designer:true  },
     { label:'Jana Dokumen',   admin:true,  sales:true,  designer:true  },
     { label:'Dashboard',      admin:true,  sales:false, designer:false },
-    { label:'Accounting',     admin:true,  sales:false, designer:false },
     { label:'Supplier',       admin:true,  sales:false, designer:false },
     { label:'Supplier OS',    admin:true,  sales:false, designer:false },
     { label:'Production',     admin:true,  sales:true,  designer:false },
