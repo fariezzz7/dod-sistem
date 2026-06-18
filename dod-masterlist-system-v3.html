@@ -1405,6 +1405,12 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Dashboard</span>
   </button>
 
+  <button class="sb-item" id="sbAccounting" data-tip="Accounting" onclick="window.open('dod-accounting.html','dod_accounting')" style="display:none;">
+    <span class="sb-item-icon">💼</span>
+    <span class="sb-item-label">Accounting</span>
+    <span class="sb-item-badge" style="background:var(--greenbg);color:var(--green);">↗</span>
+  </button>
+
   <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
     <span class="sb-item-icon">🏭</span>
     <span class="sb-item-label">Supplier</span>
@@ -3529,6 +3535,38 @@ async function supaGet(table, params='') {
   return supaFetch('/rest/v1/' + table + '?' + params + '&limit=2000');
 }
 
+// Supabase/PostgREST caps results at 1000 rows per request by default,
+// regardless of &limit= in the URL. supaGetAll paginates with Range headers
+// until all rows are fetched, so tables that grow past 1000 rows (e.g.
+// selling_price_tiers, supplier_price_tiers) load completely.
+async function supaGetAll(table, params='') {
+  const PAGE = 1000;
+  let from = 0;
+  let all = [];
+  while (true) {
+    const res = await fetch(SUPA_URL + '/rest/v1/' + table + '?' + params, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Range-Unit': 'items',
+        'Range': from + '-' + (from + PAGE - 1),
+        'Prefer': 'count=exact',
+      },
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('Supabase ' + res.status + ': ' + txt.slice(0,200));
+    }
+    const txt = await res.text();
+    const batch = txt ? JSON.parse(txt) : [];
+    all = all.concat(batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 async function supaUpsert(table, data) {
   // For orders table, clean fields to match schema
   let payload = data;
@@ -3960,6 +3998,7 @@ function setupNavForRole() {
   if (role === 'admin') {
     sbShow('sbMasterlist');
     sbShow('sbDashboard');
+    sbShow('sbAccounting');
     sbShow('sbCustomer');
     sbShow('sbSupplierDir');
     sbShow('sbProdTrack');
@@ -3998,6 +4037,7 @@ function setupNavForRole() {
     sbShow('sbPenerimaan');
     sbShow('sbCalendar');
     sbHide('sbDashboard');
+    sbHide('sbAccounting');
     sbHide('sbSupplierDir');
     sbHide('sbSupplierOS');
     sbHide('sbUserMgmt');
@@ -4016,6 +4056,7 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbHide('sbKpi');
     sbHide('sbDashboard');
+    sbHide('sbAccounting');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
@@ -14985,8 +15026,8 @@ async function khLoadAll() {
   try {
     const [skus, sell, sup] = await Promise.all([
       supaGet('product_sku','select=*&order=category.asc,name.asc'),
-      supaGet('selling_price_tiers','select=*&order=sku_id.asc,type.asc,min_qty.asc'),
-      supaGet('supplier_price_tiers','select=*&order=sku_id.asc,supplier_id.asc,min_qty.asc'),
+      supaGetAll('selling_price_tiers','select=*&order=sku_id.asc,type.asc,min_qty.asc'),
+      supaGetAll('supplier_price_tiers','select=*&order=sku_id.asc,supplier_id.asc,min_qty.asc'),
     ]);
     KH_SKUS = skus || [];
     KH_SELL_TIERS = sell || [];
