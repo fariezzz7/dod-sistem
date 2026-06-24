@@ -9122,9 +9122,10 @@ function renderSupplierDir(filterMonth) {
         // OS: from supplier1 role (supplier_outstanding covers nohad+luar)
         // For supplier2, calculate manually from supplier2_amount vs supplier2_paid
         const totalOS     = supOrders
-          .filter(r => r.supplier_payment_status !== 'PAYMENT DONE')
+          .filter(r => (r.pipeline_status||'confirmed') !== 'quotation' && r.supplier_payment_status !== 'PAYMENT DONE')
           .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0)
-          + asSup2.reduce((sum,r) => sum + Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0)), 0);
+          + asSup2.filter(r => (r.pipeline_status||'confirmed') !== 'quotation')
+                  .reduce((sum,r) => sum + Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0)), 0);
 
         // Last order date
         const datesWithData = supOrders.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
@@ -9213,6 +9214,8 @@ function renderSupplierOS(filterSupplier) {
 
   const allOrders = Object.values(sessionData).flat()
     .filter(r => {
+      // Hanya order confirmed dikira — quotation belum confirmed, jangan masuk
+      if ((r.pipeline_status||'confirmed') === 'quotation') return false;
       if (r.supplier_payment_status === 'PAYMENT DONE') return false;
       const os = r.supplier_outstanding || 0;
       if (os > 0) return true;
