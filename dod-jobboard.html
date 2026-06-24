@@ -2331,7 +2331,15 @@ function getCacheKey(board) {
 async function loadBoardFromSupabase(board) {
   try {
     const cards = await supaGet('jobboard_cards', 'board=eq.' + board + '&select=*&order=created_at.asc');
-    const activity = await supaGet('jobboard_activity', 'select=*&order=created_at.asc&limit=5000');
+    // Supabase caps every response at 1000 rows, so paginate to fetch ALL
+    // activity — otherwise the newest comments/moves get silently dropped.
+    const activity = [];
+    for (let offset = 0; ; offset += 1000) {
+      const page = await supaFetch('/rest/v1/jobboard_activity?select=*&order=created_at.asc&offset=' + offset + '&limit=1000');
+      if (!page || !page.length) break;
+      activity.push(...page);
+      if (page.length < 1000) break;
+    }
 
     // Group activity by card_id
     const actMap = {};
