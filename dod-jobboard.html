@@ -157,6 +157,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .detail-desc-input:focus{border-color:var(--blue);background:#fff;}
 .detail-desc-input::placeholder{color:var(--textm);}
 
+/* KPI scrollable tables — papar ~30 baris, lebih tu scroll */
+.kpi-scroll{max-height:660px;overflow-y:auto;overflow-x:auto;border-radius:8px;border:1px solid var(--line);}
+.kpi-scroll table thead th{position:sticky;top:0;z-index:1;background:var(--bg4);}
+
 /* Activity */
 .activity-list{display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:280px;overflow-y:auto;}
 .act-item{display:flex;gap:9px;align-items:flex-start;}
@@ -1102,7 +1106,7 @@ function renderBoard(board) {
   colsEl.innerHTML = '';
 
   // Alert bar
-  const allStuck = db.cards.filter(c => stuckLevel(c) !== 'ok');
+  const allStuck = db.cards.filter(c => !c.archived && stuckLevel(c) !== 'ok');
   const alertBar = document.getElementById('alertBar');
   if (board === currentBoard) {
     if (allStuck.length) {
@@ -1130,7 +1134,7 @@ function renderBoard(board) {
         const bUrgent = (b.labels||[]).includes('urgent') ? 0 : 1;
         return aUrgent - bUrgent;
       });
-    const allInCol = db.cards.filter(c => c.col === col.id);
+    const allInCol = db.cards.filter(c => c.col === col.id && !c.archived);
     const stuckInCol = allInCol.filter(c => stuckLevel(c) !== 'ok' && col.id !== 'complete').length;
 
     const colEl = document.createElement('div');
@@ -1439,6 +1443,7 @@ function renderDetail(id, board) {
         <strong>Dicipta oleh:</strong> ${card.created_by || card.history?.[0]?.user || '—'}<br>
         <strong>Dikemaskini:</strong> ${fmtTs(card.updated_at)}<br>
         <strong>Dalam kolum:</strong> ${sl!=='ok'?`<span style="color:${sl==='alert'?'var(--red)':'var(--amber)'};">${hrs.toFixed(0)} jam</span>`:fmtHrs(hrs)}<br>
+        ${(() => { const og = cardOngoingTotal(card, board); return `<strong>Total masa siap (ON GOING):</strong> ${fmtDur(og.totalMs)}${og.entries?` <span style="color:var(--textm);">(${og.entries}× masuk${og.stillOngoing?', +ON sekarang':''})</span>`:og.stillOngoing?` <span style="color:var(--blue);">(sedang ON GOING)</span>`:''}<br>`; })()}
         <strong>Board:</strong> ${BOARD_TYPES[board]?.label}
       </div>
     </div>
@@ -2037,8 +2042,47 @@ function renderKpi() {
         </tr>`).join('')
       : `<tr><td colspan="3" style="padding:14px;text-align:center;font-size:11px;color:var(--textm);">Tiada data ON GOING untuk bulan ini.</td></tr>`;
 
+    // ── Total masa setiap job dalam ON GOING (gabung SEMUA kali masuk) ──
+    // Satu job boleh masuk ON GOING beberapa kali (New→ON GOING→Ready→Amend→ON GOING…)
+    // Ni kira jumlah keseluruhan masa job tu duduk dalam ON GOING sepanjang hayatnya.
+    const jobTotals = m.primaryCards.map(card => {
+      const hist = (card.history||[])
+        .filter(h => h.type === 'moved')
+        .sort((a,b) => new Date(a.ts) - new Date(b.ts));
+      let totalMs = 0, entries = 0, lastTs = null, stillOngoing = false;
+      for (let i = 0; i < hist.length; i++) {
+        const h = hist[i];
+        if (h.to !== onId) continue;
+        const exit = hist.slice(i+1).find(x => x.from === onId);
+        if (exit) {
+          const dur = new Date(exit.ts) - new Date(h.ts);
+          if (dur > 0 && dur <= 720*3600000) { totalMs += dur; entries++; lastTs = exit.ts; }
+        } else {
+          stillOngoing = true; // masih dalam ON GOING sekarang
+        }
+      }
+      return { title: card.title, col: card.col, totalMs, entries, stillOngoing };
+    }).filter(j => j.entries > 0 || j.stillOngoing)
+      .sort((a,b) => b.totalMs - a.totalMs);
+
+    const jobTotalsHTML = jobTotals.length
+      ? jobTotals.map((j,i) => {
+          const zebra = i%2===1 ? 'background:var(--bg3);' : '';
+          const dColor = j.totalMs < 3600000*8 ? 'var(--green)'    // < 8h total
+                       : j.totalMs < 3600000*48 ? 'var(--amber)'   // 8-48h
+                       : 'var(--red)';                              // > 48h
+          const statusLabel = bColMap[j.col]?.label || j.col || '—';
+          return `<tr style="border-bottom:1px solid var(--line);${zebra}">
+            <td style="padding:6px 10px;font-size:11px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(j.title)}">${escHtml(j.title)}</td>
+            <td style="padding:6px 10px;font-size:11px;color:var(--textm);text-align:center;">${j.entries}×${j.stillOngoing?' <span style="color:var(--blue);font-weight:600;">+ON</span>':''}</td>
+            <td style="padding:6px 12px;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${dColor};text-align:right;white-space:nowrap;">${fmtDuration(j.totalMs)}</td>
+            <td style="padding:6px 10px;font-size:10px;color:var(--textm);white-space:nowrap;">${escHtml(statusLabel)}</td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="4" style="padding:16px;text-align:center;font-size:11px;color:var(--textm);">Tiada job yang pernah masuk ON GOING.</td></tr>`;
+
     const transHTML = transitions.length
-      ? transitions.slice(0,50).map((t,i) => {
+      ? transitions.map((t,i) => {
           const zebra = i%2===1 ? 'background:var(--bg3);' : '';
           const dColor = t.durationMs < 3600000*4 ? 'var(--green)'   // < 4h
                        : t.durationMs < 3600000*24 ? 'var(--amber)'  // 4-24h
@@ -2075,11 +2119,26 @@ function renderKpi() {
         <tbody>${summaryHTML}</tbody>
       </table>
 
+      <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;">🎯 Total Masa Siap Per Job — ON GOING</div>
+      <div style="font-size:10px;color:var(--textm);margin-bottom:8px;">Jumlah keseluruhan masa setiap job dalam ON GOING (gabung semua kali masuk). 🟢 &lt;8j · 🟡 8–48j · 🔴 &gt;48j</div>
+      <div class="kpi-scroll" style="margin-bottom:6px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="padding:7px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Job</th>
+            <th style="padding:7px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Kali Masuk</th>
+            <th style="padding:7px 12px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:right;">Total Masa</th>
+            <th style="padding:7px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Status Semasa</th>
+          </tr></thead>
+          <tbody>${jobTotalsHTML}</tbody>
+        </table>
+      </div>
+      <div style="font-size:10px;color:var(--textm);margin-bottom:18px;text-align:right;">Jumlah: ${jobTotals.length} job.</div>
+
       <div style="font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;">📋 Log Transition — ${monthName}</div>
       <div style="font-size:10px;color:var(--textm);margin-bottom:8px;">Masa dikira dari designer masuk ON GOING hingga keluar. 🟢 &lt;4j · 🟡 4–24j · 🔴 &gt;24j</div>
-      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--line);">
+      <div class="kpi-scroll">
         <table style="width:100%;border-collapse:collapse;">
-          <thead><tr style="background:var(--bg3);">
+          <thead><tr>
             <th style="padding:7px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Job</th>
             <th style="padding:7px 8px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:center;">Jenis</th>
             <th style="padding:7px 10px;font-size:9px;font-family:'Fira Code',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--textm);text-align:left;">Flow</th>
@@ -2089,7 +2148,7 @@ function renderKpi() {
           <tbody>${transHTML}</tbody>
         </table>
       </div>
-      ${transitions.length > 50 ? `<div style="font-size:10px;color:var(--textm);margin-top:6px;text-align:right;">Papar 50 terkini. Jumlah: ${transitions.length} transition.</div>` : ''}
+      <div style="font-size:10px;color:var(--textm);margin-top:6px;text-align:right;">Jumlah: ${transitions.length} transition.</div>
     </div>`;
   }).join('');
 
@@ -2250,6 +2309,33 @@ function fmtHrs(h) {
 function fmtDateTime(ts) {
   if (!ts) return '—';
   return new Date(ts).toLocaleString('ms-MY',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function fmtDur(ms) {
+  if (!ms) return '0 min';
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins} min`;
+  if (mins < 1440) { const h = Math.floor(mins/60), m = mins%60; return m ? `${h} jam ${m} minit` : `${h} jam`; }
+  const d = Math.floor(mins/1440), h = Math.round((mins%1440)/60);
+  return h ? `${d} hari ${h} jam` : `${d} hari`;
+}
+function ongoingColIdFor(board) {
+  const map = COL_MAP_BY_BOARD[board] || {};
+  const hit = Object.values(map).find(c => (c.label||'').toLowerCase().replace(/[^a-z]/g,'').includes('ongoing'));
+  return hit ? hit.id : 'design-on';
+}
+// Total masa job dalam ON GOING — gabung semua kali masuk sepanjang hayat job
+function cardOngoingTotal(card, board) {
+  const onId = ongoingColIdFor(board);
+  const hist = (card.history||[]).filter(h => h.type === 'moved').sort((a,b) => new Date(a.ts) - new Date(b.ts));
+  let totalMs = 0, entries = 0, stillOngoing = false;
+  for (let i = 0; i < hist.length; i++) {
+    const h = hist[i];
+    if (h.to !== onId) continue;
+    const exit = hist.slice(i+1).find(x => x.from === onId);
+    if (exit) { const dur = new Date(exit.ts) - new Date(h.ts); if (dur > 0 && dur <= 720*3600000) { totalMs += dur; entries++; } }
+    else stillOngoing = true;
+  }
+  return { totalMs, entries, stillOngoing };
 }
 function escHtml(s) {
   return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
