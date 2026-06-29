@@ -9065,6 +9065,7 @@ let _supDirSelected = null;        // supplier id bila drill-down dibuka
 let _supOSFilter   = 'ALL';        // filter supplier (OS tab)
 let _supDirSearch  = '';           // carian nama job (drill-down)
 let _supDirStatus  = 'all';        // filter status: 'all' | 'quotation' | 'confirmed'
+let _supDirPay     = 'all';        // filter bayaran supplier: 'all' | 'paid' | 'os'
 
 // Tukar tab Supplier (Directory / Supplier OS)
 function supDirSetTab(tab) {
@@ -9078,6 +9079,7 @@ function openSupplierDrill(supId) {
   _supDirSelected = supId;
   _supDirSearch = '';
   _supDirStatus = 'all';
+  _supDirPay = 'all';
   renderSupplierDir();
   const v = document.getElementById('supplierDirView');
   if (v) v.scrollTop = 0;
@@ -9094,6 +9096,12 @@ function supDirSetSearch(val) {
 // Filter status job dalam drill-down
 function supDirSetStatus(val) {
   _supDirStatus = val;
+  renderSupplierDir();
+}
+
+// Filter status bayaran supplier dalam drill-down
+function supDirSetPay(val) {
+  _supDirPay = val;
   renderSupplierDir();
 }
 
@@ -9269,13 +9277,18 @@ function buildSupplierDrillHTML(s) {
   const cntAll   = jobs.length;
   const cntQuote = jobs.filter(j => (j.r.pipeline_status||'confirmed') === 'quotation').length;
   const cntConf  = cntAll - cntQuote;
+  // Kiraan ikut status bayaran supplier (hanya order confirmed)
+  const cntOS    = jobs.filter(j => (j.r.pipeline_status||'confirmed') !== 'quotation' && j.supOS > 0).length;
+  const cntPaid  = jobs.filter(j => (j.r.pipeline_status||'confirmed') !== 'quotation' && j.supOS <= 0).length;
 
-  // Terapkan filter status + carian nama job
+  // Terapkan filter status + bayaran + carian nama job
   const q = (_supDirSearch||'').trim().toLowerCase();
   const filteredJobs = jobs.filter(j => {
     const isQuote = (j.r.pipeline_status||'confirmed') === 'quotation';
     if (_supDirStatus === 'quotation' && !isQuote) return false;
     if (_supDirStatus === 'confirmed' && isQuote) return false;
+    if (_supDirPay === 'os'   && !(!isQuote && j.supOS > 0))  return false;
+    if (_supDirPay === 'paid' && !(!isQuote && j.supOS <= 0)) return false;
     if (q && !(j.r.name_job||'').toLowerCase().includes(q)) return false;
     return true;
   });
@@ -9293,6 +9306,8 @@ function buildSupplierDrillHTML(s) {
       : j.supOS > 0
         ? `<span style="color:var(--red);font-weight:700;">${fmt(j.supOS)}</span>`
         : `<span style="color:var(--green);font-weight:700;">✓ Paid</span>`;
+    const ps = PROD_STATUS_MAP[r.production_status||'job-submit'] || PROD_STATUS_MAP['job-submit'];
+    const prodBadge = `<span style="font-size:9px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;background:${ps.color}18;color:${ps.color};border:1px solid ${ps.color}44;">${ps.icon} ${ps.label}</span>`;
     const roleTag = j.role===2 ? `<span style="font-size:8px;padding:1px 5px;background:var(--bg3);color:var(--textm);border-radius:4px;margin-left:5px;">SUP2</span>` : '';
     return `
       <tr style="border-bottom:1px solid var(--line);cursor:pointer;" onclick="showDetail('${r.id}')"
@@ -9301,6 +9316,7 @@ function buildSupplierDrillHTML(s) {
         <td style="padding:10px 12px;font-size:12px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.name_job||'').replace(/"/g,'&quot;')}">${r.name_job||'—'}${roleTag}</td>
         <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.date_submit_kilang||'—'}</td>
         <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.production_date||'—'}</td>
+        <td style="padding:10px 12px;text-align:center;">${prodBadge}</td>
         <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(j.cost)}</td>
         <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;text-align:right;">${balSupOS}</td>
         <td style="padding:10px 12px;text-align:center;" onclick="event.stopPropagation();">
@@ -9387,6 +9403,15 @@ function buildSupplierDrillHTML(s) {
             ${label} <span style="opacity:.7;">${cnt}</span>
           </button>`).join('')}
       </div>
+      <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:3px;">
+        ${[['all','Semua',cntAll,'var(--blue)'],['paid','Full Paid',cntPaid,'var(--green)'],['os','Ada OS',cntOS,'var(--red)']].map(([val,label,cnt,col]) => `
+          <button onclick="supDirSetPay('${val}')"
+            style="padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;white-space:nowrap;
+              background:${_supDirPay===val?col:'transparent'};
+              color:${_supDirPay===val?'#fff':'var(--textd)'};">
+            ${label} <span style="opacity:.7;">${cnt}</span>
+          </button>`).join('')}
+      </div>
     </div>
 
     <!-- Jadual job -->
@@ -9399,7 +9424,7 @@ function buildSupplierDrillHTML(s) {
       <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">
         <thead>
           <tr style="background:var(--bg3);">
-            ${th('PIC')}${th('Nama Job')}${th('Tarikh Submit')}${th('Tarikh Siap')}${th('Total Kos','right')}${th('Balance Supplier OS','right')}${th('Bayar','center')}
+            ${th('PIC')}${th('Nama Job')}${th('Tarikh Submit')}${th('Tarikh Siap')}${th('Status','center')}${th('Total Kos','right')}${th('Balance Supplier OS','right')}${th('Bayar','center')}
           </tr>
         </thead>
         <tbody>${rowHTML}</tbody>
