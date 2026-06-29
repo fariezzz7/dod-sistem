@@ -1411,14 +1411,9 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-badge" style="background:var(--greenbg);color:var(--green);">↗</span>
   </button>
 
-  <button class="sb-item" id="sbSupplierDir" data-tip="Supplier Directory" onclick="sbNav('supplierdir')" style="display:none;">
+  <button class="sb-item" id="sbSupplierDir" data-tip="Supplier" onclick="sbNav('supplierdir')" style="display:none;">
     <span class="sb-item-icon">🏭</span>
     <span class="sb-item-label">Supplier</span>
-  </button>
-
-  <button class="sb-item" id="sbSupplierOS" data-tip="Supplier OS" onclick="sbNav('supplieros')" style="display:none;">
-    <span class="sb-item-icon">💸</span>
-    <span class="sb-item-label">Supplier OS</span>
   </button>
 
   <button class="sb-item" id="sbProdTrack" data-tip="Production Tracker" onclick="sbNav('prodtrack')" style="display:none;">
@@ -4110,6 +4105,8 @@ function sbNav(view) {
       break;
     case 'supplierdir':
       document.getElementById('sbSupplierDir').classList.add('active');
+      _supDirTab = 'directory';
+      _supDirSelected = null;
       showSupplierDirView();
       showSbMonths(false);
       break;
@@ -4119,8 +4116,10 @@ function sbNav(view) {
       showSbMonths(false);
       break;
     case 'supplieros':
-      document.getElementById('sbSupplierOS').classList.add('active');
-      showSupplierOSView();
+      // Supplier OS kini tab dalam Supplier — route ke view Supplier, tab OS
+      document.getElementById('sbSupplierDir').classList.add('active');
+      _supDirTab = 'os';
+      showSupplierDirView();
       showSbMonths(false);
       break;
     case 'usermgmt':
@@ -9059,40 +9058,149 @@ function showSupplierDirView() {
   renderSupplierDir();
 }
 
-// Global month filter for Supplier Directory
-let _supDirMonth = 'ALL';
+// ── State Supplier view ──
+let _supDirMonth   = 'ALL';        // month filter (Directory tab)
+let _supDirTab     = 'directory';  // 'directory' | 'os'
+let _supDirSelected = null;        // supplier id bila drill-down dibuka
+let _supOSFilter   = 'ALL';        // filter supplier (OS tab)
+let _supDirSearch  = '';           // carian nama job (drill-down)
+let _supDirStatus  = 'all';        // filter status: 'all' | 'quotation' | 'confirmed'
+
+// Tukar tab Supplier (Directory / Supplier OS)
+function supDirSetTab(tab) {
+  _supDirTab = tab;
+  if (tab === 'directory') _supDirSelected = null; // reset drill-down bila balik ke Directory
+  renderSupplierDir();
+}
+
+// Buka drill-down satu supplier
+function openSupplierDrill(supId) {
+  _supDirSelected = supId;
+  _supDirSearch = '';
+  _supDirStatus = 'all';
+  renderSupplierDir();
+  const v = document.getElementById('supplierDirView');
+  if (v) v.scrollTop = 0;
+}
+
+// Carian nama job dalam drill-down (kekal fokus + cursor pada input)
+function supDirSetSearch(val) {
+  _supDirSearch = val;
+  renderSupplierDir();
+  const inp = document.getElementById('supDirSearchInput');
+  if (inp) { inp.focus(); const n = inp.value.length; inp.setSelectionRange(n, n); }
+}
+
+// Filter status job dalam drill-down
+function supDirSetStatus(val) {
+  _supDirStatus = val;
+  renderSupplierDir();
+}
+
+// Balik ke senarai semua supplier
+function supDirBack() {
+  _supDirSelected = null;
+  renderSupplierDir();
+}
+
+// Filter supplier untuk tab OS
+function supDirSetOSFilter(val) {
+  _supOSFilter = val;
+  renderSupplierDir();
+}
+
+// Cari bulan (key sessionData) untuk satu order id
+function getOrderMonth(id) {
+  return Object.keys(sessionData).find(m => (sessionData[m]||[]).some(o => o.id === id)) || '';
+}
+
+// ── Helper padanan order ↔ supplier ──
+function _supMatches1(r, s) {
+  const o = (r.supplier_name || 'NOHAD SDN BHD').toUpperCase();
+  return o === s.name.toUpperCase() || o.includes(s.short.toUpperCase());
+}
+function _supMatches2(r, s) {
+  const o = (r.supplier2_name || '').toUpperCase();
+  return o.length > 0 && (o === s.name.toUpperCase() || o.includes(s.short.toUpperCase()));
+}
+function _supOrdersBase(activeMonth) {
+  return activeMonth === 'ALL' ? Object.values(sessionData).flat() : (sessionData[activeMonth] || []);
+}
+// Outstanding supplier untuk peranan supplier1 / supplier2 sesuatu order
+function _sup1OS(r) {
+  if ((r.pipeline_status||'confirmed') === 'quotation') return 0;
+  if (r.supplier_payment_status === 'PAYMENT DONE') return 0;
+  if (r.supplier_outstanding != null) return Math.max(0, r.supplier_outstanding);
+  const n = Math.max(0, (r.nohad_amount||0) - (r.nohad_paid||0));
+  const l = Math.max(0, (r.luar_amount||0)  - (r.luar_paid||0));
+  return n + l;
+}
+function _sup2OS(r) {
+  if ((r.pipeline_status||'confirmed') === 'quotation') return 0;
+  return Math.max(0, (r.supplier2_amount||0) - (r.supplier2_paid||0));
+}
 
 function renderSupplierDir(filterMonth) {
   if (filterMonth !== undefined) _supDirMonth = filterMonth;
-  const activeMonth = _supDirMonth;
-
-  // Build month list from sessionData
-  const allMonths = Object.keys(sessionData);
-
-  // Helper: match order to supplier
-  function matchesSup(r, s) {
-    const oSup = (r.supplier_name || 'NOHAD SDN BHD').toUpperCase();
-    return oSup === s.name.toUpperCase() || oSup.includes(s.short.toUpperCase());
-  }
-
-  // Helper: get orders for this supplier filtered by month
-  function getSupOrders(s) {
-    const base = activeMonth === 'ALL'
-      ? Object.values(sessionData).flat()
-      : (sessionData[activeMonth] || []);
-    return base.filter(r => matchesSup(r, s));
-  }
-
   const el = document.getElementById('supplierDirContent');
-  el.innerHTML = `
-    <!-- Header row -->
+
+  // Tab bar (Directory / Supplier OS)
+  const tabBtn = (id, label, icon) => `
+    <button onclick="supDirSetTab('${id}')"
+      style="display:flex;align-items:center;gap:6px;padding:9px 18px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;
+        background:${_supDirTab===id?'var(--bg2)':'transparent'};
+        color:${_supDirTab===id?'var(--text)':'var(--textm)'};
+        border-bottom:2px solid ${_supDirTab===id?'var(--blue)':'transparent'};">
+      <span>${icon}</span><span>${label}</span>
+    </button>`;
+
+  const tabBar = `
+    <div style="display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;">
+      ${tabBtn('directory','Directory','🏭')}
+      ${tabBtn('os','Supplier OS','💸')}
+    </div>`;
+
+  let body;
+  if (_supDirTab === 'os') {
+    body = buildSupplierOSHTML();
+  } else if (_supDirSelected) {
+    const s = SUPPLIERS.find(x => x.id === _supDirSelected);
+    body = s ? buildSupplierDrillHTML(s) : buildSupplierListHTML();
+  } else {
+    body = buildSupplierListHTML();
+  }
+
+  el.innerHTML = tabBar + body;
+}
+
+// ── Senarai semua supplier (masterlist ringkas) ──
+function buildSupplierListHTML() {
+  const activeMonth = _supDirMonth;
+  const allMonths = Object.keys(sessionData);
+  const base = _supOrdersBase(activeMonth);
+
+  const rows = SUPPLIERS.map(s => {
+    const asSup1 = base.filter(r => _supMatches1(r, s));
+    const asSup2 = base.filter(r => _supMatches2(r, s));
+    const allJobs = asSup1.concat(asSup2.filter(r => !asSup1.includes(r)));
+    const totalOrders = allJobs.length;
+    const totalPCS    = asSup1.reduce((sum,r) => sum + (r.pcs||0), 0);
+    const totalKos    = asSup1.reduce((sum,r) => sum + (r.nohad_amount||r.total_supplier||0), 0)
+                      + asSup2.reduce((sum,r) => sum + (r.supplier2_amount||0), 0);
+    const totalOS     = asSup1.reduce((sum,r) => sum + _sup1OS(r), 0)
+                      + asSup2.reduce((sum,r) => sum + _sup2OS(r), 0);
+    const datesWithData = asSup1.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
+    const lastDate = datesWithData.length ? datesWithData[datesWithData.length-1] : null;
+    return { s, totalOrders, totalPCS, totalKos, totalOS, lastDate };
+  }).sort((a,b) => b.totalOS - a.totalOS || b.totalOrders - a.totalOrders);
+
+  return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-size:20px;font-weight:700;color:var(--text);">🏭 Supplier Directory</div>
-        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Maklumat & produk semua supplier DOD</div>
+        <div style="font-size:12px;color:var(--textm);margin-top:2px;">Tekan supplier untuk lihat senarai job</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <!-- Month filter dropdown -->
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);">Bulan</span>
           <select onchange="renderSupplierDir(this.value)"
@@ -9105,112 +9213,210 @@ function renderSupplierDir(filterMonth) {
       </div>
     </div>
 
-    <!-- Cards grid -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
-      ${SUPPLIERS.map(s => {
-        const supOrders = getSupOrders(s);
-        // Also get orders where this supplier appears as supplier2
-        const baseOrders = activeMonth === 'ALL' ? Object.values(sessionData).flat() : (sessionData[activeMonth] || []);
-        const asSup2 = baseOrders.filter(r => {
-          const s2 = (r.supplier2_name||'').toUpperCase();
-          return s2.length > 0 && (s2 === s.name.toUpperCase() || s2.includes(s.short.toUpperCase()));
-        });
-        const totalOrders = supOrders.length + asSup2.filter(r => !supOrders.includes(r)).length;
-        const totalPCS    = supOrders.reduce((sum,r) => sum + (r.pcs||0), 0);
-        const totalKos    = supOrders.reduce((sum,r) => sum + (r.nohad_amount||0), 0)
-                          + asSup2.reduce((sum,r) => sum + (r.supplier2_amount||0), 0);
-        // OS: from supplier1 role (supplier_outstanding covers nohad+luar)
-        // For supplier2, calculate manually from supplier2_amount vs supplier2_paid
-        const totalOS     = supOrders
-          .filter(r => (r.pipeline_status||'confirmed') !== 'quotation' && r.supplier_payment_status !== 'PAYMENT DONE')
-          .reduce((sum,r) => sum + (r.supplier_outstanding||0), 0)
-          + asSup2.filter(r => (r.pipeline_status||'confirmed') !== 'quotation')
-                  .reduce((sum,r) => sum + Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0)), 0);
-
-        // Last order date
-        const datesWithData = supOrders.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
-        const lastDate = datesWithData.length ? datesWithData[datesWithData.length-1] : null;
-
-        return `
-        <div style="background:var(--bg2);border:1px solid var(--line);border-top:3px solid ${s.color};border-radius:12px;padding:20px;">
-
-          <!-- Name + actions row -->
-          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);">
-            <div style="width:42px;height:42px;flex-shrink:0;border-radius:10px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:18px;">🏭</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
+      ${rows.map(({s, totalOrders, totalPCS, totalKos, totalOS, lastDate}) => `
+        <div onclick="openSupplierDrill('${s.id}')"
+          style="background:var(--bg2);border:1px solid var(--line);border-left:3px solid ${s.color};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .12s;"
+          onmouseover="this.style.borderColor='${s.color}';this.style.transform='translateY(-1px)';"
+          onmouseout="this.style.borderColor='var(--line)';this.style.borderLeftColor='${s.color}';this.style.transform='none';">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:38px;height:38px;flex-shrink:0;border-radius:10px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:16px;">🏭</div>
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;">${s.name}</div>
-              ${s.contact ? `<div style="font-size:11px;color:var(--textm);">${s.contact}</div>` : ''}
+              <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+              ${s.contact ? `<div style="font-size:11px;color:var(--textm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.contact}</div>` : ''}
             </div>
-            <div style="display:flex;gap:4px;flex-shrink:0;">
-              <button onclick="event.stopPropagation();copySupplierPortalLink('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:5px;cursor:pointer;color:var(--blue);font-weight:600;">🔗 Portal Link</button>
-              <button onclick="event.stopPropagation();openSupModal('${s.id}')" style="font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
-              <button onclick="event.stopPropagation();deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:4px 9px;background:var(--redbg);border:1px solid var(--redb);border-radius:5px;cursor:pointer;color:var(--red);">🗑</button>
+            <span style="font-size:18px;color:var(--textm);flex-shrink:0;">›</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+            <div style="background:var(--bg3);border-radius:8px;padding:7px 5px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:13px;font-weight:700;color:var(--text);">${totalOrders}</div>
+              <div style="font-size:8px;color:var(--textm);text-transform:uppercase;letter-spacing:.04em;">Job</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:7px 5px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:13px;font-weight:700;color:var(--text);">${totalPCS.toLocaleString('en-MY')}</div>
+              <div style="font-size:8px;color:var(--textm);text-transform:uppercase;letter-spacing:.04em;">PCS</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:7px 5px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:var(--blue);">RM${totalKos>=1000?(totalKos/1000).toFixed(1)+'K':totalKos.toFixed(0)}</div>
+              <div style="font-size:8px;color:var(--textm);text-transform:uppercase;letter-spacing:.04em;">Kos</div>
+            </div>
+            <div style="background:${totalOS>0?'var(--redbg)':'var(--greenbg)'};border-radius:8px;padding:7px 5px;text-align:center;">
+              <div style="font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?'RM'+(totalOS>=1000?(totalOS/1000).toFixed(1)+'K':totalOS.toFixed(0)):'✓'}</div>
+              <div style="font-size:8px;color:${totalOS>0?'var(--red)':'var(--green)'};text-transform:uppercase;letter-spacing:.04em;">${totalOS>0?'OS':'Clear'}</div>
             </div>
           </div>
-
-          <!-- Stats strip -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;">
-            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
-              <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:var(--text);">${totalOrders}</div>
-              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">Order</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
-              <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:var(--text);">${totalPCS.toLocaleString('en-MY')}</div>
-              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">PCS</div>
-            </div>
-            <div style="background:var(--bg3);border-radius:8px;padding:8px 6px;text-align:center;">
-              <div style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--blue);">RM${totalKos>=1000?(totalKos/1000).toFixed(1)+'K':totalKos.toFixed(0)}</div>
-              <div style="font-size:9px;color:var(--textm);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">Kos</div>
-            </div>
-            <div style="background:${totalOS>0?'var(--redbg)':'var(--greenbg)'};border-radius:8px;padding:8px 6px;text-align:center;">
-              <div style="font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?'RM'+(totalOS>=1000?(totalOS/1000).toFixed(1)+'K':totalOS.toFixed(0)):'✓'}</div>
-              <div style="font-size:9px;color:${totalOS>0?'var(--red)':'var(--green)'};margin-top:1px;text-transform:uppercase;letter-spacing:.04em;">${totalOS>0?'OS':'Clear'}</div>
-            </div>
-          </div>
-
-          ${lastDate ? `<div style="font-size:10px;color:var(--textm);margin-bottom:10px;">📅 Last order: <span style="color:var(--textd);font-weight:500;">${lastDate}</span></div>` : ''}
-
-          ${s.tel || s.email ? `
-          <div style="margin-bottom:10px;font-size:12px;color:var(--textd);">
-            ${s.tel ? `📞 ${s.tel}` : ''} ${s.email ? `&nbsp;·&nbsp; ✉️ ${s.email}` : ''}
-          </div>` : ''}
-
-          <div style="margin-bottom:12px;">
-            <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Akaun Bank</div>
-            ${s.bank.map(b => `
-            <div style="background:var(--bg3);border-radius:6px;padding:8px 10px;font-size:11px;margin-bottom:4px;">
-              <span style="color:var(--textd);">${b.bank}</span>
-              ${b.acc ? `<span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;margin-left:8px;">${b.acc}</span>` : '<span style="color:var(--textm);margin-left:8px;font-style:italic;">— belum dikemaskini</span>'}
-              <br><span style="color:var(--textm);font-size:10px;">${b.holder}</span>
-            </div>`).join('')}
-          </div>
-
-          <div>
-            <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Produk Dibekal</div>
-            <div style="display:flex;flex-wrap:wrap;gap:4px;">
-              ${s.products.map(p => `<span style="font-size:10px;padding:2px 7px;background:${s.color}14;color:${s.color};border:1px solid ${s.color}33;border-radius:4px;">${p}</span>`).join('')}
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
+          ${lastDate ? `<div style="font-size:10px;color:var(--textm);margin-top:10px;">📅 Last order: <span style="color:var(--textd);font-weight:500;">${lastDate}</span></div>` : ''}
+        </div>`).join('')}
     </div>
   `;
 }
 
-function showSupplierOSView() {
-  setAllViewsHidden();
-  document.getElementById('supplierOSView').style.display = 'block';
-  showSbMonths(false);
-  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
-  const el = document.getElementById('sbSupplierOS'); if(el) el.classList.add('active');
-  renderSupplierOS();
+// ── Drill-down: info supplier + senarai job (masterlist) ──
+function buildSupplierDrillHTML(s) {
+  const activeMonth = _supDirMonth;
+  const allMonths = Object.keys(sessionData);
+  const base = _supOrdersBase(activeMonth);
+
+  // Bina senarai job: satu baris per peranan supplier (supplier1 / supplier2)
+  const jobs = [];
+  base.forEach(r => {
+    if (_supMatches1(r, s)) jobs.push({ r, role:1, cost:(r.nohad_amount||r.total_supplier||0), supOS:_sup1OS(r) });
+    if (_supMatches2(r, s)) jobs.push({ r, role:2, cost:(r.supplier2_amount||0),             supOS:_sup2OS(r) });
+  });
+  jobs.sort((a,b) => new Date(b.r.inv_date||b.r.order_date||0) - new Date(a.r.inv_date||a.r.order_date||0));
+
+  // Kiraan ikut status (untuk label butang filter) sebelum filter dikenakan
+  const cntAll   = jobs.length;
+  const cntQuote = jobs.filter(j => (j.r.pipeline_status||'confirmed') === 'quotation').length;
+  const cntConf  = cntAll - cntQuote;
+
+  // Terapkan filter status + carian nama job
+  const q = (_supDirSearch||'').trim().toLowerCase();
+  const filteredJobs = jobs.filter(j => {
+    const isQuote = (j.r.pipeline_status||'confirmed') === 'quotation';
+    if (_supDirStatus === 'quotation' && !isQuote) return false;
+    if (_supDirStatus === 'confirmed' && isQuote) return false;
+    if (q && !(j.r.name_job||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const totalKos = filteredJobs.reduce((sum,j) => sum + j.cost, 0);
+  const totalOS  = filteredJobs.reduce((sum,j) => sum + j.supOS, 0);
+  const totalPCS = filteredJobs.filter(j => j.role===1).reduce((sum,j) => sum + (j.r.pcs||0), 0);
+
+  const rowHTML = filteredJobs.map(j => {
+    const r = j.r;
+    const isQuote = (r.pipeline_status||'confirmed') === 'quotation';
+    const month = getOrderMonth(r.id);
+    const balSupOS = isQuote
+      ? `<span style="font-size:9px;padding:2px 7px;background:#FEF3C7;color:#B8720A;border:1px solid #FDE68A;border-radius:6px;font-weight:600;">QUOTATION</span>`
+      : j.supOS > 0
+        ? `<span style="color:var(--red);font-weight:700;">${fmt(j.supOS)}</span>`
+        : `<span style="color:var(--green);font-weight:700;">✓ Paid</span>`;
+    const roleTag = j.role===2 ? `<span style="font-size:8px;padding:1px 5px;background:var(--bg3);color:var(--textm);border-radius:4px;margin-left:5px;">SUP2</span>` : '';
+    return `
+      <tr style="border-bottom:1px solid var(--line);cursor:pointer;" onclick="showDetail('${r.id}')"
+        onmouseover="this.style.background='var(--bg3)';" onmouseout="this.style.background='';">
+        <td style="padding:10px 12px;font-size:11px;color:var(--textd);">${r.pic||'—'}</td>
+        <td style="padding:10px 12px;font-size:12px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(r.name_job||'').replace(/"/g,'&quot;')}">${r.name_job||'—'}${roleTag}</td>
+        <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.date_submit_kilang||'—'}</td>
+        <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.production_date||'—'}</td>
+        <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(j.cost)}</td>
+        <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;text-align:right;">${balSupOS}</td>
+        <td style="padding:10px 12px;text-align:center;" onclick="event.stopPropagation();">
+          ${!isQuote && j.supOS > 0
+            ? `<button onclick="openPayModal('${r.id}','${month}')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">💳 Bayar</button>`
+            : `<span style="font-size:10px;color:var(--textm);">—</span>`}
+        </td>
+      </tr>`;
+  }).join('');
+
+  const th = (label, align) => `<th style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:9px 12px;text-align:${align||'left'};">${label}</th>`;
+
+  return `
+    <button onclick="supDirBack()" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--line);color:var(--textd);padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;margin-bottom:16px;">‹ Semua Supplier</button>
+
+    <!-- Header supplier + info -->
+    <div style="background:var(--bg2);border:1px solid var(--line);border-top:3px solid ${s.color};border-radius:12px;padding:18px 20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+        <div style="width:46px;height:46px;flex-shrink:0;border-radius:11px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:20px;">🏭</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:17px;font-weight:700;color:var(--text);">${s.name}</div>
+          ${s.contact ? `<div style="font-size:12px;color:var(--textm);">${s.contact}</div>` : ''}
+          ${s.tel || s.email ? `<div style="font-size:11px;color:var(--textd);margin-top:2px;">${s.tel?`📞 ${s.tel}`:''} ${s.email?`&nbsp;·&nbsp; ✉️ ${s.email}`:''}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;">
+          <button onclick="copySupplierPortalLink('${s.id}')" style="font-size:10px;padding:5px 10px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:6px;cursor:pointer;color:var(--blue);font-weight:600;">🔗 Portal Link</button>
+          <button onclick="openSupModal('${s.id}')" style="font-size:10px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
+          <button onclick="deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:5px 10px;background:var(--redbg);border:1px solid var(--redb);border-radius:6px;cursor:pointer;color:var(--red);">🗑</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div>
+          <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Akaun Bank</div>
+          ${s.bank.map(b => `
+          <div style="background:var(--bg3);border-radius:6px;padding:8px 10px;font-size:11px;margin-bottom:4px;">
+            <span style="color:var(--textd);">${b.bank}</span>
+            ${b.acc ? `<span style="font-family:'Fira Code',monospace;color:var(--text);font-weight:600;margin-left:8px;">${b.acc}</span>` : '<span style="color:var(--textm);margin-left:8px;font-style:italic;">— belum dikemaskini</span>'}
+            ${b.holder ? `<br><span style="color:var(--textm);font-size:10px;">${b.holder}</span>` : ''}
+          </div>`).join('')}
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.08em;color:var(--textm);text-transform:uppercase;margin-bottom:6px;">Produk Dibekal</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${(s.products||[]).map(p => `<span style="font-size:10px;padding:2px 7px;background:${s.color}14;color:${s.color};border:1px solid ${s.color}33;border-radius:4px;">${p}</span>`).join('') || '<span style="font-size:11px;color:var(--textm);">—</span>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter bulan + stats -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);">Bulan</span>
+        <select onchange="renderSupplierDir(this.value)"
+          style="padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+          <option value="ALL" ${activeMonth==='ALL'?'selected':''}>Semua Bulan</option>
+          ${allMonths.map(m => `<option value="${m}" ${activeMonth===m?'selected':''}>${MONTH_LABELS[m]||m}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:18px;font-size:12px;">
+        <span style="color:var(--textm);">Job: <strong style="color:var(--text);font-family:'Fira Code',monospace;">${filteredJobs.length}${filteredJobs.length!==cntAll?' / '+cntAll:''}</strong></span>
+        <span style="color:var(--textm);">PCS: <strong style="color:var(--text);font-family:'Fira Code',monospace;">${totalPCS.toLocaleString('en-MY')}</strong></span>
+        <span style="color:var(--textm);">Kos: <strong style="color:var(--blue);font-family:'Fira Code',monospace;">${fmt(totalKos)}</strong></span>
+        <span style="color:var(--textm);">OS: <strong style="color:${totalOS>0?'var(--red)':'var(--green)'};font-family:'Fira Code',monospace;">${totalOS>0?fmt(totalOS):'✓ Clear'}</strong></span>
+      </div>
+    </div>
+
+    <!-- Toolbar: search nama job + filter status -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="position:relative;flex:1;min-width:200px;max-width:340px;">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);pointer-events:none;">🔍</span>
+        <input id="supDirSearchInput" type="text" value="${(_supDirSearch||'').replace(/"/g,'&quot;')}"
+          oninput="supDirSetSearch(this.value)" placeholder="Cari nama job..."
+          style="width:100%;box-sizing:border-box;padding:8px 30px 8px 30px;border:1px solid var(--line);border-radius:8px;background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;">
+        ${_supDirSearch ? `<span onclick="supDirSetSearch('')" style="position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);cursor:pointer;">✕</span>` : ''}
+      </div>
+      <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:3px;">
+        ${[['all','Semua',cntAll],['confirmed','Confirm',cntConf],['quotation','Quotation',cntQuote]].map(([val,label,cnt]) => `
+          <button onclick="supDirSetStatus('${val}')"
+            style="padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;white-space:nowrap;
+              background:${_supDirStatus===val?'var(--blue)':'transparent'};
+              color:${_supDirStatus===val?'#fff':'var(--textd)'};">
+            ${label} <span style="opacity:.7;">${cnt}</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <!-- Jadual job -->
+    ${filteredJobs.length === 0 ? `
+    <div style="text-align:center;padding:50px;color:var(--textm);background:var(--bg2);border:1px solid var(--line);border-radius:12px;">
+      <div style="font-size:28px;margin-bottom:8px;">📭</div>
+      <div style="font-size:13px;">${cntAll===0 ? `Tiada job untuk supplier ini${activeMonth!=='ALL'?' pada bulan dipilih':''}` : 'Tiada job padan dengan carian / filter'}</div>
+    </div>` : `
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">
+        <thead>
+          <tr style="background:var(--bg3);">
+            ${th('PIC')}${th('Nama Job')}${th('Tarikh Submit')}${th('Tarikh Siap')}${th('Total Kos','right')}${th('Balance Supplier OS','right')}${th('Bayar','center')}
+          </tr>
+        </thead>
+        <tbody>${rowHTML}</tbody>
+      </table>
+    </div>`}
+  `;
 }
 
-function renderSupplierOS(filterSupplier) {
-  const el = document.getElementById('supplierOSContent');
-  // Store active filter on element for button re-renders
-  if (filterSupplier !== undefined) el._supFilter = filterSupplier;
-  const activeFilter = el._supFilter || 'ALL';
+// Legacy entry — Supplier OS kini tab dalam Supplier view
+function showSupplierOSView() {
+  _supDirTab = 'os';
+  showSupplierDirView();
+}
+
+// Bina HTML tab Supplier OS (dipanggil dari renderSupplierDir)
+function buildSupplierOSHTML() {
+  const activeFilter = _supOSFilter || 'ALL';
 
   const allOrders = Object.values(sessionData).flat()
     .filter(r => {
@@ -9263,7 +9469,7 @@ function renderSupplierOS(filterSupplier) {
   const filteredTotal = filteredGroups.reduce((s,[,orders]) => s + orders.reduce((ss,r) => ss+(r.supplier_outstanding||0),0), 0);
   const filteredCount = filteredGroups.reduce((s,[,orders]) => s + orders.length, 0);
 
-  el.innerHTML = `
+  return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div>
         <div style="font-size:20px;font-weight:700;color:var(--text);">💸 Supplier Outstanding</div>
@@ -9278,7 +9484,7 @@ function renderSupplierOS(filterSupplier) {
     <!-- Filter by supplier - DROPDOWN -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
       <span style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);white-space:nowrap;">Filter Supplier</span>
-      <select onchange="renderSupplierOS(this.value)" style="flex:1;max-width:320px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
+      <select onchange="supDirSetOSFilter(this.value)" style="flex:1;max-width:320px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;">
         <option value="ALL" ${activeFilter==='ALL'?'selected':''}>Semua (${allOrders.length} invois · RM ${fmt(totalOS)})</option>
         ${supplierNames.map(name => {
           const count = bySupplier[name].length;
@@ -9620,8 +9826,8 @@ async function deleteSupplier(supId, supName) {
 
   // Step 5: Refresh all UI
   refreshSupplierDatalist();
+  if (_supDirSelected === supId) _supDirSelected = null;
   renderSupplierDir();
-  renderSupplierOS();
   showToast(`🗑 Supplier "${supName}" dipadam.`);
 }
 window.deleteSupplier = deleteSupplier;
@@ -9696,7 +9902,7 @@ async function confirmSupPayment() {
   supaUpsert('orders', { ...updated, month }).catch(e => console.warn('Pay sync failed:', e));
 
   closePayModal();
-  renderSupplierOS();
+  renderSupplierDir();
   renderAll();
   showToast(fullPay ? '✓ Full payment selesai!' : fmt(payAmt) + ' direkod ✓');
 }
@@ -12384,7 +12590,6 @@ function renderCpRoles() {
     { label:'Jana Dokumen',   admin:true,  sales:true,  designer:true  },
     { label:'Dashboard',      admin:true,  sales:false, designer:false },
     { label:'Supplier',       admin:true,  sales:false, designer:false },
-    { label:'Supplier OS',    admin:true,  sales:false, designer:false },
     { label:'Production',     admin:true,  sales:true,  designer:false },
     { label:'Penerimaan',     admin:true,  sales:true,  designer:false },
     { label:'Memo',           admin:true,  sales:false, designer:false },
