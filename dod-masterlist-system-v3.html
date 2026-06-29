@@ -9317,6 +9317,7 @@ function buildSupplierDrillHTML(s) {
         <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.date_submit_kilang||'—'}</td>
         <td style="padding:10px 12px;font-size:11px;color:var(--textd);white-space:nowrap;">${r.production_date||'—'}</td>
         <td style="padding:10px 12px;text-align:center;">${prodBadge}</td>
+        <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--blue);white-space:nowrap;">${r.inv_number||'—'}</td>
         <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(j.cost)}</td>
         <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;text-align:right;">${balSupOS}</td>
         <td style="padding:10px 12px;text-align:center;" onclick="event.stopPropagation();">
@@ -9424,7 +9425,7 @@ function buildSupplierDrillHTML(s) {
       <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;">
         <thead>
           <tr style="background:var(--bg3);">
-            ${th('PIC')}${th('Nama Job')}${th('Tarikh Submit')}${th('Tarikh Siap')}${th('Status','center')}${th('Total Kos','right')}${th('Balance Supplier OS','right')}${th('Bayar','center')}
+            ${th('PIC')}${th('Nama Job')}${th('Tarikh Submit')}${th('Tarikh Siap')}${th('Status','center')}${th('No Invois')}${th('Total Kos','right')}${th('Balance Supplier OS','right')}${th('Bayar','center')}
           </tr>
         </thead>
         <tbody>${rowHTML}</tbody>
