@@ -9066,6 +9066,7 @@ let _supOSFilter   = 'ALL';        // filter supplier (OS tab)
 let _supDirSearch  = '';           // carian nama job (drill-down)
 let _supDirStatus  = 'all';        // filter status: 'all' | 'quotation' | 'confirmed'
 let _supDirPay     = 'all';        // filter bayaran supplier: 'all' | 'paid' | 'os'
+let _supDirInv     = 'all';        // filter no invois: 'all' | 'has' | 'none'
 
 // Tukar tab Supplier (Directory / Supplier OS)
 function supDirSetTab(tab) {
@@ -9080,6 +9081,7 @@ function openSupplierDrill(supId) {
   _supDirSearch = '';
   _supDirStatus = 'all';
   _supDirPay = 'all';
+  _supDirInv = 'all';
   renderSupplierDir();
   const v = document.getElementById('supplierDirView');
   if (v) v.scrollTop = 0;
@@ -9102,6 +9104,12 @@ function supDirSetStatus(val) {
 // Filter status bayaran supplier dalam drill-down
 function supDirSetPay(val) {
   _supDirPay = val;
+  renderSupplierDir();
+}
+
+// Filter ada/tiada no invois dalam drill-down
+function supDirSetInv(val) {
+  _supDirInv = val;
   renderSupplierDir();
 }
 
@@ -9280,8 +9288,12 @@ function buildSupplierDrillHTML(s) {
   // Kiraan ikut status bayaran supplier (hanya order confirmed)
   const cntOS    = jobs.filter(j => (j.r.pipeline_status||'confirmed') !== 'quotation' && j.supOS > 0).length;
   const cntPaid  = jobs.filter(j => (j.r.pipeline_status||'confirmed') !== 'quotation' && j.supOS <= 0).length;
+  // Kiraan ikut ada/tiada no invois
+  const hasInv   = j => !!(j.r.inv_number||'').toString().trim();
+  const cntInvY  = jobs.filter(hasInv).length;
+  const cntInvN  = cntAll - cntInvY;
 
-  // Terapkan filter status + bayaran + carian nama job
+  // Terapkan filter status + bayaran + no invois + carian nama job
   const q = (_supDirSearch||'').trim().toLowerCase();
   const filteredJobs = jobs.filter(j => {
     const isQuote = (j.r.pipeline_status||'confirmed') === 'quotation';
@@ -9289,6 +9301,8 @@ function buildSupplierDrillHTML(s) {
     if (_supDirStatus === 'confirmed' && isQuote) return false;
     if (_supDirPay === 'os'   && !(!isQuote && j.supOS > 0))  return false;
     if (_supDirPay === 'paid' && !(!isQuote && j.supOS <= 0)) return false;
+    if (_supDirInv === 'has'  && !hasInv(j)) return false;
+    if (_supDirInv === 'none' &&  hasInv(j)) return false;
     if (q && !(j.r.name_job||'').toLowerCase().includes(q)) return false;
     return true;
   });
@@ -9410,6 +9424,15 @@ function buildSupplierDrillHTML(s) {
             style="padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;white-space:nowrap;
               background:${_supDirPay===val?col:'transparent'};
               color:${_supDirPay===val?'#fff':'var(--textd)'};">
+            ${label} <span style="opacity:.7;">${cnt}</span>
+          </button>`).join('')}
+      </div>
+      <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:3px;">
+        ${[['all','Semua Inv',cntAll,'var(--blue)'],['has','Ada No Invois',cntInvY,'var(--green)'],['none','Tiada No Invois',cntInvN,'var(--amber)']].map(([val,label,cnt,col]) => `
+          <button onclick="supDirSetInv('${val}')"
+            style="padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;white-space:nowrap;
+              background:${_supDirInv===val?col:'transparent'};
+              color:${_supDirInv===val?'#fff':'var(--textd)'};">
             ${label} <span style="opacity:.7;">${cnt}</span>
           </button>`).join('')}
       </div>
