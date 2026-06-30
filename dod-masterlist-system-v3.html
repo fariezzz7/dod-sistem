@@ -1726,6 +1726,7 @@ tr:hover .row-actions{opacity:1;}
           <div class="mr-canvas-wrap mr-canvas-tall"><canvas id="mrPaceChart"></canvas></div>
           <div style="overflow-x:auto;margin-top:16px;"><table class="dash-data-table" id="mrPaceTable"></table></div>
           <div id="mrPaceVerdict" style="margin-top:18px;"></div>
+          <div id="mrStuckBlock" style="margin-top:18px;"></div>
         </div>
       </div>
     </div>
@@ -7603,7 +7604,7 @@ function mrRefresh(){ MR_JOB=null; _mrInited=false; mrInit(); }
 
 // ============ JOBBOARD DATA (designer) ============
 async function mrLoadJobboard(){
-  let cards = await supaGet('jobboard_cards','select=id,assignee,created_at,board,col,archived').catch(()=>[]);
+  let cards = await supaGet('jobboard_cards','select=id,title,assignee,created_at,board,col,archived').catch(()=>[]);
   cards = (cards||[]).filter(c => c.archived !== true); // archived null pun dikira aktif
   const activity = await supaGet('jobboard_activity','select=card_id,to_col,created_at&order=created_at.asc').catch(()=>[]);
   const cols = await supaGet('board_columns','select=id,label,board_type').catch(()=>[]);
@@ -7624,6 +7625,32 @@ function mrJobType(colId){
   if(lbl.includes('amend'))  return 'Amend';
   if(lbl.includes('mockup')) return 'Mockup';
   return 'Baru';
+}
+// Kolum "queue" (menunggu designer angkat ke ON GOING): New / Amend / Mockup.
+// Kolum lain (ON GOING, First Artwork/Send to Cust, Complete) bukan queue → null.
+function mrQueueType(colId){
+  const lbl=String((MR_JOB&&MR_JOB.colLabel[colId])||colId||'').toLowerCase();
+  if(/on.?going|ongoing|sedang|progress/.test(lbl)) return null;
+  if(/complete|siap|selesai|done|posted/.test(lbl)) return null;
+  if(/first|artwork|draft|approval/.test(lbl))      return null; // dah hantar cust / luar kawalan designer
+  if(lbl.includes('amend'))  return 'Amend';
+  if(lbl.includes('mockup')) return 'Mockup';
+  if(/job ?list|senarai|baru|\bnew\b|backlog/.test(lbl)) return 'New';
+  return null;
+}
+// Tempoh antara 2 masa, BUANG Sabtu & Ahad sepenuhnya (ms). Guna waktu tempatan (MYT).
+function mrWorkingMs(start, end){
+  const s=new Date(start), e=new Date(end);
+  if(!(e>s)) return 0;
+  let ms=0, t=new Date(s);
+  while(t<e){
+    const nextMidnight=new Date(t); nextMidnight.setHours(24,0,0,0);
+    const segEnd = nextMidnight<e ? nextMidnight : e;
+    const dow=t.getDay();            // 0=Ahad, 6=Sabtu
+    if(dow!==0 && dow!==6) ms += (segEnd - t);
+    t=nextMidnight;
+  }
+  return ms;
 }
 function mrPopulateDesignerFilter(){
   const sel=document.getElementById('mrDesignerFilter'); if(!sel) return;
@@ -7759,6 +7786,29 @@ function mrDesignerPaceAgg(month, designerFilter){
     avgAll: d.sessions ? (d.totalMs/d.sessions)/60000 : 0
   })).sort((a,b)=>b.sessions-a.sessions);
   return { rows, hasData:true, diag };
+}
+
+// ============ JOB TERSANGKUT (snapshot semasa) ============
+// Kad yang SEKARANG duduk dalam kolum queue (New/Amend/Mockup) & belum diangkat ke ON GOING.
+// Tempoh tersangkut dikira dari kad masuk kolum semasa hingga sekarang, BUANG Sabtu & Ahad.
+// Red flag >24 jam bekerja. (Tidak ikut filter bulan — ini keadaan semasa.)
+function mrStuckJobs(designerFilter){
+  if(!MR_JOB || !MR_JOB.cards.length) return [];
+  // masa kad masuk kolum semasa = aktiviti TERAKHIR ke kolum tersebut (activity sorted asc)
+  const lastInto={};
+  MR_JOB.activity.forEach(a=>{ if(!a.created_at||!a.card_id) return; (lastInto[a.card_id]=lastInto[a.card_id]||{})[a.to_col]=a.created_at; });
+  const now=Date.now();
+  const out=[];
+  MR_JOB.cards.forEach(c=>{
+    const qt=mrQueueType(c.col); if(!qt) return;
+    const dz=String(c.assignee||'').trim();
+    if(designerFilter && dz!==designerFilter) return;
+    const enteredAt=(lastInto[c.id] && lastInto[c.id][c.col]) || c.created_at;
+    if(!enteredAt) return;
+    const workMs=mrWorkingMs(enteredAt, now);
+    out.push({ id:c.id, title:c.title||c.name||c.job_name||'(Tiada tajuk)', type:qt, assignee:dz||'—', enteredAt, workMs, workHrs:workMs/3600000 });
+  });
+  return out.sort((a,b)=>b.workMs-a.workMs);
 }
 
 // ============ DELTA HELPER ============
@@ -7936,6 +7986,36 @@ function mrRenderAdsAdminChart(c){
 // DESIGNER CHARTS -------------------------------------------
 // Warna ikut jam (selari ambang jobboard: 🟢<4j · 🟡4–24j · 🔴>24j). min dalam minit.
 function mrPaceColor(min){ if(!min) return MR_PAL.grey; const h=min/60; return h<4?MR_PAL.green:(h<=24?MR_PAL.amber:MR_PAL.red); }
+// ── Render blok Job Tersangkut (snapshot semasa, buang Sabtu/Ahad) ──
+function mrRenderStuck(dF){
+  const el=document.getElementById('mrStuckBlock'); if(!el) return;
+  const RED=24, AMBER=12; // jam bekerja
+  const jobs=mrStuckJobs(dF);
+  const redN  =jobs.filter(j=>j.workHrs>RED).length;
+  const amberN=jobs.filter(j=>j.workHrs>=AMBER && j.workHrs<=RED).length;
+  const show  =jobs.filter(j=>j.workHrs>=AMBER); // papar yang perlu perhatian sahaja
+  const colOf =h=> h>RED?'var(--red)':(h>=AMBER?'var(--amber)':'var(--green)');
+  const flagOf=h=> h>RED?'🔴':(h>=AMBER?'🟡':'🟢');
+  const typeBadge={ New:'#1A5CC8', Amend:'#C8821A', Mockup:'#6C5CE7' };
+  const head=`<div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">⏳ Job Tersangkut — Menunggu Pickup <span style="text-transform:none;letter-spacing:0;">(snapshot semasa · buang Sabtu &amp; Ahad)</span></div>`;
+  const summary=`<div style="background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--textd);${show.length?'margin-bottom:12px;':''}">`+
+    `<strong style="color:var(--red);">${redN} red flag</strong> (&gt;24j bekerja) · `+
+    `<strong style="color:var(--amber);">${amberN} amaran</strong> (12–24j) · `+
+    `${jobs.length} job dalam queue (New/Amend/Mockup)`+
+  `</div>`;
+  if(!show.length){ el.innerHTML=head+summary; return; }
+  el.innerHTML=head+summary+
+    `<div style="overflow-x:auto;"><table class="dash-data-table">`+
+    `<thead><tr><th style="text-align:center;">Flag</th><th>Job</th><th>Jenis</th><th>Designer</th><th style="text-align:right;">Tersangkut</th></tr></thead><tbody>`+
+    show.map(j=>`<tr>
+      <td style="text-align:center;">${flagOf(j.workHrs)}</td>
+      <td class="month" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(j.title)}">${escHtml(j.title)}</td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${typeBadge[j.type]}18;color:${typeBadge[j.type]};border:1px solid ${typeBadge[j.type]}44;font-weight:600;">${j.type}</span></td>
+      <td>${escHtml(j.assignee)}</td>
+      <td class="mono" style="text-align:right;font-weight:700;color:${colOf(j.workHrs)};">${mrFmtDur(j.workMs/60000)}</td>
+    </tr>`).join('')+
+    `</tbody></table></div>`;
+}
 function mrRenderDesigner(){
   if(typeof Chart === 'undefined') return;
   const month=document.getElementById('mrMonth').value;
@@ -7946,6 +8026,7 @@ function mrRenderDesigner(){
   const tbl=document.getElementById('mrPaceTable');
   const k=document.getElementById('mrDesignerKpi');
   const v0=document.getElementById('mrPaceVerdict');
+  mrRenderStuck(dF); // snapshot semasa — tidak ikut filter bulan
   if(!agg.hasData){ mrEmptyCanvas('mrPaceChart','Tiada data jobboard dimuat. Cuba ↻ Refresh.'); if(k) k.innerHTML=''; if(tbl) tbl.innerHTML=''; if(v0) v0.innerHTML=''; return; }
   if(!agg.rows.length){ mrEmptyCanvas('mrPaceChart', `Tiada sesi ON GOING untuk bulan ini. (${dg.loaded||0} card · ${dg.acts||0} aktiviti dimuat)`); if(k) k.innerHTML=''; if(tbl) tbl.innerHTML=''; if(v0) v0.innerHTML=''; return; }
 
