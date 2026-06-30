@@ -1719,9 +1719,13 @@ tr:hover .row-actions{opacity:1;}
           <div class="mr-canvas-wrap"><canvas id="mrAdsAdminChart"></canvas></div>
         </div>
 
-        <div class="mr-grid2">
-          <div class="dash-chart-card"><div class="dash-chart-title">Designer — Job Terima vs Siap</div><div class="dash-chart-sub">Design + Content (bulan dipilih)</div><div class="mr-canvas-wrap mr-canvas-tall"><canvas id="mrDesignerChart"></canvas></div></div>
-          <div class="dash-chart-card"><div class="dash-chart-title">Designer — Purata Capture Time</div><div class="dash-chart-sub">Lebih rendah lebih baik · sasaran &lt;30m</div><div class="mr-canvas-wrap mr-canvas-tall"><canvas id="mrCaptureChart"></canvas></div><div id="mrDesignerKpi" class="mr-tiles"></div></div>
+        <div class="dash-chart-card mr-block">
+          <div class="dash-chart-title">Designer Performance — Pace (Avg Masa ON GOING)</div>
+          <div class="dash-chart-sub">Masa kerja sebenar dalam kolum ON GOING, ikut jenis job · lebih rendah lebih laju · 🟢 &lt;4j · 🟡 4–24j · 🔴 &gt;24j</div>
+          <div id="mrDesignerKpi" class="mr-tiles"></div>
+          <div class="mr-canvas-wrap mr-canvas-tall"><canvas id="mrPaceChart"></canvas></div>
+          <div style="overflow-x:auto;margin-top:16px;"><table class="dash-data-table" id="mrPaceTable"></table></div>
+          <div id="mrPaceVerdict" style="margin-top:18px;"></div>
         </div>
       </div>
     </div>
@@ -7614,6 +7618,13 @@ function mrColRole(colId){
   if(/complete|siap|selesai|done/.test(lbl)) return 'complete';
   return null;
 }
+// Klasifikasi jenis job dari LABEL kolum asal (sebelum masuk ON GOING) — selari logik jobboard
+function mrJobType(colId){
+  const lbl=String((MR_JOB&&MR_JOB.colLabel[colId])||colId||'').toLowerCase();
+  if(lbl.includes('amend'))  return 'Amend';
+  if(lbl.includes('mockup')) return 'Mockup';
+  return 'Baru';
+}
 function mrPopulateDesignerFilter(){
   const sel=document.getElementById('mrDesignerFilter'); if(!sel) return;
   const names=[...new Set((MR_JOB&&MR_JOB.cards||[]).map(c=>String(c.assignee||'').trim()).filter(Boolean))].sort();
@@ -7702,6 +7713,51 @@ function mrDesignerAgg(month, designerFilter){
     avgFA: d.faN?d.faSum/d.faN:0, avgComp: d.compN?d.compSum/d.compN:0,
     capKPI: mrSafeDiv(d.capOK,d.received)*100, faKPI: mrSafeDiv(d.faOK,d.received)*100, compKPI: mrSafeDiv(d.compOK,d.done)*100
   })).sort((a,b)=>b.done-a.done);
+  return { rows, hasData:true, diag };
+}
+
+// ============ DESIGNER PACE AGGREGATE (Avg Masa ON GOING) ============
+// Bina semula tempoh setiap kad duduk dalam kolum ON GOING dari log jobboard_activity.
+// Satu "sesi" = kad masuk ON GOING (jam mula) hingga ia keluar/pindah seterusnya (jam henti).
+// Jenis job dikelas ikut kolum asal (sebelum ON GOING): Amend / Mockup / Baru.
+// Sesi dibucket ke bulan ikut masa KELUAR ON GOING. Attribution guna assignee kad.
+function mrDesignerPaceAgg(month, designerFilter){
+  const diag={ loaded:(MR_JOB&&MR_JOB.cards.length)||0, acts:(MR_JOB&&MR_JOB.activity.length)||0, sessions:0 };
+  if(!MR_JOB || !MR_JOB.activity.length) return { rows:[], hasData:false, diag };
+  const selKey=mrMonthSortKey(month);
+  const assignee={};
+  MR_JOB.cards.forEach(c=>{ assignee[c.id]=String(c.assignee||'').trim(); });
+  // kumpul aktiviti per kad
+  const byCard={};
+  MR_JOB.activity.forEach(a=>{ if(!a.created_at||!a.card_id) return; (byCard[a.card_id]=byCard[a.card_id]||[]).push(a); });
+  const byDesigner={};
+  Object.keys(byCard).forEach(cid=>{
+    const dz=assignee[cid]; if(!dz) return;
+    if(designerFilter && dz!==designerFilter) return;
+    const evs=byCard[cid].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    for(let i=0;i<evs.length;i++){
+      if(mrColRole(evs[i].to_col)!=='ongoing') continue; // jam mula = masuk ON GOING
+      const next=evs[i+1]; if(!next) continue;           // masih ON GOING — abaikan
+      const ms=new Date(next.created_at).getTime()-new Date(evs[i].created_at).getTime();
+      if(ms<=0) continue;
+      if(ms/3600000>720) continue;                        // buang outlier >30 hari
+      const mk=mrDateSortKey(next.created_at); if(mk===null||mk!==selKey) continue; // bucket ikut masa keluar
+      const jt=mrJobType(evs[i-1]?evs[i-1].to_col:null);  // jenis ikut kolum sebelum ON GOING
+      if(!byDesigner[dz]) byDesigner[dz]={baru:[],amend:[],mockup:[],totalMs:0,sessions:0};
+      const d=byDesigner[dz];
+      if(jt==='Amend') d.amend.push(ms); else if(jt==='Mockup') d.mockup.push(ms); else d.baru.push(ms);
+      d.totalMs+=ms; d.sessions++; diag.sessions++;
+    }
+  });
+  const avgMin=arr=>arr.length ? (arr.reduce((s,v)=>s+v,0)/arr.length)/60000 : 0; // purata dalam minit
+  const rows=Object.entries(byDesigner).map(([name,d])=>({
+    name,
+    avgBaru:avgMin(d.baru),     cntBaru:d.baru.length,
+    avgAmend:avgMin(d.amend),   cntAmend:d.amend.length,
+    avgMockup:avgMin(d.mockup), cntMockup:d.mockup.length,
+    sessions:d.sessions, totalMin:d.totalMs/60000,
+    avgAll: d.sessions ? (d.totalMs/d.sessions)/60000 : 0
+  })).sort((a,b)=>b.sessions-a.sessions);
   return { rows, hasData:true, diag };
 }
 
@@ -7878,30 +7934,116 @@ function mrRenderAdsAdminChart(c){
 }
 
 // DESIGNER CHARTS -------------------------------------------
+// Warna ikut jam (selari ambang jobboard: 🟢<4j · 🟡4–24j · 🔴>24j). min dalam minit.
+function mrPaceColor(min){ if(!min) return MR_PAL.grey; const h=min/60; return h<4?MR_PAL.green:(h<=24?MR_PAL.amber:MR_PAL.red); }
 function mrRenderDesigner(){
   if(typeof Chart === 'undefined') return;
   const month=document.getElementById('mrMonth').value;
   const dF=document.getElementById('mrDesignerFilter').value;
   const t=mrTheme();
-  const agg=mrDesignerAgg(month, dF);
+  const agg=mrDesignerPaceAgg(month, dF);
   const dg=agg.diag||{};
-  if(!agg.hasData){ mrEmptyCanvas('mrDesignerChart','Tiada card jobboard dimuat (0 card). Cuba ↻ Refresh.'); mrEmptyCanvas('mrCaptureChart',''); const k=document.getElementById('mrDesignerKpi'); if(k) k.innerHTML=''; return; }
-  if(!agg.rows.length){ mrEmptyCanvas('mrDesignerChart', `Tiada job untuk bulan ini. (${dg.loaded||0} card dimuat · ${dg.withAssignee||0} ada designer · ${dg.inMonth||0} dlm bulan ini)`); mrEmptyCanvas('mrCaptureChart',''); const k=document.getElementById('mrDesignerKpi'); if(k) k.innerHTML=''; return; }
-  // job terima vs siap
-  const labels=agg.rows.map(r=>r.name);
-  mrNewChart('mrDesignerChart', { type:'bar', data:{ labels, datasets:[ { label:'Job Terima', data:agg.rows.map(r=>r.received), backgroundColor:MR_PAL.blue, borderRadius:5, barPercentage:0.7 }, { label:'Siap', data:agg.rows.map(r=>r.done), backgroundColor:MR_PAL.green, borderRadius:5, barPercentage:0.7 } ] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ labels:{ color:t.text, font:{size:11} } } }, scales:{ x:{ ticks:{ color:t.muted, precision:0 }, grid:{ color:t.line } }, y:{ ticks:{ color:t.text, font:{size:11} }, grid:{ display:false } } } } });
-  // avg capture (minit) lower better
-  const capRows=agg.rows.map(r=>[r.name, Math.round(r.avgCap)]);
-  mrNewChart('mrCaptureChart', { type:'bar', data:{ labels:capRows.map(x=>x[0]), datasets:[{ label:'Avg Capture (minit)', data:capRows.map(x=>x[1]), backgroundColor:capRows.map(x=> x[1]<=MR_KPI.capture?MR_PAL.green:(x[1]<=MR_KPI.firstArt?MR_PAL.amber:MR_PAL.red)), borderRadius:5, barPercentage:0.7 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:ctx=>' '+mrFmtDur(ctx.parsed.x) } } }, scales:{ x:{ ticks:{ color:t.muted, callback:v=>v+'m' }, grid:{ color:t.line } }, y:{ ticks:{ color:t.text, font:{size:11} }, grid:{ display:false } } } } });
-  // overall kpi tiles
-  const tot=agg.rows.reduce((a,r)=>({rec:a.rec+r.received, done:a.done+r.done, capOK:a.capOK+(r.received*r.capKPI/100), capN:a.capN+r.received}),{rec:0,done:0,capOK:0,capN:0});
-  const fastest=agg.rows.filter(r=>r.avgCap>0).sort((a,b)=>a.avgCap-b.avgCap)[0];
+  const tbl=document.getElementById('mrPaceTable');
   const k=document.getElementById('mrDesignerKpi');
+  const v0=document.getElementById('mrPaceVerdict');
+  if(!agg.hasData){ mrEmptyCanvas('mrPaceChart','Tiada data jobboard dimuat. Cuba ↻ Refresh.'); if(k) k.innerHTML=''; if(tbl) tbl.innerHTML=''; if(v0) v0.innerHTML=''; return; }
+  if(!agg.rows.length){ mrEmptyCanvas('mrPaceChart', `Tiada sesi ON GOING untuk bulan ini. (${dg.loaded||0} card · ${dg.acts||0} aktiviti dimuat)`); if(k) k.innerHTML=''; if(tbl) tbl.innerHTML=''; if(v0) v0.innerHTML=''; return; }
+
+  // ── Chart: grouped bar — Avg Masa ON GOING ikut jenis job (jam) ──
+  const labels=agg.rows.map(r=>r.name);
+  const toHrs=min=>min>0?+(min/60).toFixed(2):0;
+  const ds=(lbl,key,col)=>({ label:lbl, data:agg.rows.map(r=>toHrs(r[key])), backgroundColor:col, borderRadius:4, barPercentage:0.8, categoryPercentage:0.7 });
+  mrNewChart('mrPaceChart', {
+    type:'bar',
+    data:{ labels, datasets:[ ds('Baru','avgBaru',MR_PAL.blue), ds('Amend','avgAmend',MR_PAL.amber), ds('Mockup','avgMockup',MR_PAL.purple) ] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:t.text, font:{size:11} } },
+        tooltip:{ callbacks:{ label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.x>0?mrFmtDur(ctx.parsed.x*60):'—'}` } } },
+      scales:{ x:{ ticks:{ color:t.muted, callback:v=>v+'j' }, grid:{ color:t.line }, title:{display:true,text:'Jam',color:t.muted,font:{size:10}} },
+        y:{ ticks:{ color:t.text, font:{size:11} }, grid:{ display:false } } } }
+  });
+
+  // ── KPI tiles ──
+  const totSessions=agg.rows.reduce((s,r)=>s+r.sessions,0);
+  const totHrs=agg.rows.reduce((s,r)=>s+r.totalMin,0)/60;
+  const fastest=agg.rows.filter(r=>r.avgAll>0).sort((a,b)=>a.avgAll-b.avgAll)[0];
+  const busiest=agg.rows.slice().sort((a,b)=>b.sessions-a.sessions)[0];
   if(k) k.innerHTML=
-    `<div class="mr-tile"><div class="mr-tile-label">Jumlah Job Terima</div><div class="mr-tile-val">${tot.rec}</div></div>`+
-    `<div class="mr-tile"><div class="mr-tile-label">Jumlah Siap</div><div class="mr-tile-val">${tot.done}</div></div>`+
-    `<div class="mr-tile"><div class="mr-tile-label">% Capture Dlm Sasaran</div><div class="mr-tile-val">${mrFmtPct(mrSafeDiv(tot.capOK,tot.capN)*100)}</div></div>`+
-    `<div class="mr-tile"><div class="mr-tile-label">Designer Terlaju</div><div class="mr-tile-val" style="font-size:13px;">${fastest?fastest.name+' · '+mrFmtDur(fastest.avgCap):'—'}</div></div>`;
+    `<div class="mr-tile"><div class="mr-tile-label">Total Sesi ON GOING</div><div class="mr-tile-val">${totSessions}</div></div>`+
+    `<div class="mr-tile"><div class="mr-tile-label">Total Jam Aktif</div><div class="mr-tile-val">${totHrs.toFixed(1)}j</div></div>`+
+    `<div class="mr-tile"><div class="mr-tile-label">Pace Terpantas (avg)</div><div class="mr-tile-val" style="font-size:13px;">${fastest?fastest.name+' · '+mrFmtDur(fastest.avgAll):'—'}</div></div>`+
+    `<div class="mr-tile"><div class="mr-tile-label">Paling Banyak Sesi</div><div class="mr-tile-val" style="font-size:13px;">${busiest?busiest.name+' · '+busiest.sessions:'—'}</div></div>`;
+
+  // ── Jadual per-designer ──
+  if(tbl){
+    const cell=(min,cnt)=>cnt? `<span style="color:${mrPaceColor(min)};font-weight:600;">${mrFmtDur(min)}</span> <span style="color:var(--textm);">· ${cnt}×</span>` : '<span style="color:var(--textm);">—</span>';
+    tbl.innerHTML=
+      `<thead><tr>
+        <th>Designer</th>
+        <th>Baru</th>
+        <th>Amend</th>
+        <th>Mockup</th>
+        <th>Avg Keseluruhan</th>
+        <th>Total Sesi</th>
+        <th>Total Jam Aktif</th>
+      </tr></thead><tbody>`+
+      agg.rows.map(r=>`<tr>
+        <td class="month">${r.name}</td>
+        <td>${cell(r.avgBaru,r.cntBaru)}</td>
+        <td>${cell(r.avgAmend,r.cntAmend)}</td>
+        <td>${cell(r.avgMockup,r.cntMockup)}</td>
+        <td><span style="color:${mrPaceColor(r.avgAll)};font-weight:700;">${mrFmtDur(r.avgAll)}</span></td>
+        <td class="mono">${r.sessions}</td>
+        <td class="mono">${(r.totalMin/60).toFixed(1)}j</td>
+      </tr>`).join('')+
+      `</tbody>`;
+  }
+
+  // ── Rumusan Performance (verdict standard) ──
+  const vEl=document.getElementById('mrPaceVerdict');
+  if(vEl){
+    const teamAvgSessions = totSessions/agg.rows.length;
+    // tier pace ikut ambang jobboard: 🟢<4j · 🟡4–24j · 🔴>24j
+    const tierOf=min=>{ if(!min) return 'sederhana'; const h=min/60; return h<4?'pantas':(h<=24?'sederhana':'lambat'); };
+    const verdicts=agg.rows.map(r=>{
+      const tier=tierOf(r.avgAll);
+      const hi=r.sessions>=teamAvgSessions;
+      let label, ayat, icon, col;
+      if(tier==='pantas'){ icon='🟢'; col='var(--green)';
+        if(hi){ label='Cemerlang'; ayat='Pace pantas & produktif — prestasi terbaik.'; }
+        else  { label='Bagus';     ayat='Pace pantas tapi volume rendah — boleh ambil lebih job.'; } }
+      else if(tier==='sederhana'){ icon='🟡'; col='var(--amber)';
+        if(hi){ label='Memuaskan'; ayat='Produktif, pace boleh dipertingkat.'; }
+        else  { label='Sederhana'; ayat='Pantau — pace & output sederhana.'; } }
+      else { icon='🔴'; col='var(--red)'; label='Perlu Perhatian'; ayat='Pace lambat — perlu semakan / latihan.'; }
+      return { r, tier, label, ayat, icon, col };
+    });
+    const fastestV=agg.rows.filter(r=>r.avgAll>0).sort((a,b)=>a.avgAll-b.avgAll)[0];
+    const teamAvg=mrSafeDiv(agg.rows.reduce((s,r)=>s+r.totalMin,0), totSessions); // purata setiap sesi (minit)
+    const needAttn=verdicts.filter(v=>v.tier==='lambat').length;
+    vEl.innerHTML=
+      `<div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:10px;">📋 Rumusan Performance</div>`+
+      `<div style="background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--textd);line-height:1.6;">`+
+        `Pace purata team: <strong style="color:${mrPaceColor(teamAvg)};">${mrFmtDur(teamAvg)}</strong> setiap sesi · `+
+        `Terpantas: <strong style="color:var(--green);">${fastestV?fastestV.name+' ('+mrFmtDur(fastestV.avgAll)+')':'—'}</strong> · `+
+        (needAttn>0?`<strong style="color:var(--red);">${needAttn} designer perlu perhatian</strong>`:`<strong style="color:var(--green);">Semua designer dalam sasaran</strong>`)+
+      `</div>`+
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">`+
+      verdicts.map(v=>`
+        <div style="background:var(--bg2);border:1px solid var(--line);border-left:3px solid ${v.col};border-radius:10px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-weight:700;color:var(--text);font-size:13px;">${v.r.name}</span>
+            <span style="font-size:11px;font-weight:700;color:${v.col};">${v.icon} ${v.label}</span>
+          </div>
+          <div style="font-size:11px;color:var(--textd);line-height:1.5;margin-bottom:8px;">${v.ayat}</div>
+          <div style="display:flex;gap:12px;font-size:10px;color:var(--textm);font-family:'Fira Code',monospace;">
+            <span>Pace: <strong style="color:${v.col};">${mrFmtDur(v.r.avgAll)}</strong></span>
+            <span>Sesi: <strong style="color:var(--textd);">${v.r.sessions}</strong></span>
+            <span>Aktif: <strong style="color:var(--textd);">${(v.r.totalMin/60).toFixed(1)}j</strong></span>
+          </div>
+        </div>`).join('')+
+      `</div>`;
+  }
 }
 
 // ============ ADS INPUT (spend + leads + per-admin spend) ============
@@ -7987,9 +8129,9 @@ function mrExportCSV(){
   rows.push([]);
   rows.push(['Sales Admin','Leads','Order','PCS','Revenue','Spend']);
   Object.entries(c.adminMap).forEach(([n,a])=>rows.push([n,a.leads,a.orders,a.pcs,a.sales,a.spend]));
-  const dAgg=mrDesignerAgg(m, '');
-  if(dAgg.rows.length){ rows.push([]); rows.push(['Designer','Job Terima','Siap','Pending','Avg Capture (min)','Avg Siap (min)']);
-    dAgg.rows.forEach(r=>rows.push([r.name,r.received,r.done,r.pending,r.avgCap.toFixed(1),r.avgComp.toFixed(1)])); }
+  const dAgg=mrDesignerPaceAgg(m, '');
+  if(dAgg.rows.length){ rows.push([]); rows.push(['Designer','Avg Baru (min)','Baru (x)','Avg Amend (min)','Amend (x)','Avg Mockup (min)','Mockup (x)','Avg Keseluruhan (min)','Total Sesi','Total Jam Aktif']);
+    dAgg.rows.forEach(r=>rows.push([r.name,r.avgBaru.toFixed(1),r.cntBaru,r.avgAmend.toFixed(1),r.cntAmend,r.avgMockup.toFixed(1),r.cntMockup,r.avgAll.toFixed(1),r.sessions,(r.totalMin/60).toFixed(1)])); }
   const csv=rows.map(r=>r.map(v=>{ const s=String(v==null?'':v); return /[",\n]/.test(s)?('"'+s.replace(/"/g,'""')+'"'):s; }).join(',')).join('\n');
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='DOD_Monthly_Report_'+m.replace(/\s+/g,'_')+'.csv'; a.click();
