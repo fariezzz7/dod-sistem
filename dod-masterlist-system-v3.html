@@ -9559,7 +9559,7 @@ function buildSupplierDrillHTML(s) {
         <td style="padding:10px 12px;font-family:'Fira Code',monospace;font-size:11px;text-align:right;">${balSupOS}</td>
         <td style="padding:10px 12px;text-align:center;" onclick="event.stopPropagation();">
           ${!isQuote && j.supOS > 0
-            ? `<button onclick="openPayModal('${r.id}','${month}')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">💳 Bayar</button>`
+            ? `<button onclick="openPayModal('${r.id}','${month}',${j.role})" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">💳 Bayar</button>`
             : `<span style="font-size:10px;color:var(--textm);">—</span>`}
         </td>
       </tr>`;
@@ -9816,11 +9816,11 @@ function buildSupplierOSHTML() {
               <td style="padding:9px 12px;font-size:12px;color:var(--text);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name_job||'—'}</td>
               <td style="padding:9px 12px;font-size:11px;color:var(--textd);">${r.pic||'—'}</td>
               <td style="padding:9px 12px;font-size:11px;color:var(--textd);">${r.inv_date||r.order_date||'—'}</td>
-              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(r.nohad_amount||r.total_supplier||0)}</td>
-              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--green);text-align:right;">${fmt(r.nohad_paid||0)}</td>
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--text);text-align:right;">${fmt(r._isSup2 ? (r.supplier2_amount||0) : (r.nohad_amount||r.total_supplier||0))}</td>
+              <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:11px;color:var(--green);text-align:right;">${fmt(r._isSup2 ? (r.supplier2_paid||0) : (r.nohad_paid||0))}</td>
               <td style="padding:9px 12px;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--red);text-align:right;">${fmt(r.supplier_outstanding||0)}</td>
               <td style="padding:9px 12px;text-align:center;">
-                <button onclick="openPayModal('${r.id}','${Object.keys(sessionData).find(m=>(sessionData[m]||[]).find(o=>o.id===r.id))||''}')"
+                <button onclick="openPayModal('${r.id}','${Object.keys(sessionData).find(m=>(sessionData[m]||[]).find(o=>o.id===r.id))||''}',${r._isSup2 ? 2 : 1})"
                   style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;white-space:nowrap;">
                   💳 Bayar
                 </button>
@@ -10105,14 +10105,24 @@ async function deleteSupplier(supId, supName) {
 window.deleteSupplier = deleteSupplier;
 let _payTarget = null; // { orderId, month }
 
-function openPayModal(orderId, month) {
+function openPayModal(orderId, month, role) {
   const r = (sessionData[month]||[]).find(o => o.id === orderId);
   if (!r) return;
-  _payTarget = { orderId, month };
-  const total = r.nohad_amount || r.total_supplier || 0;
-  const paid  = r.nohad_paid || 0;
+  // Slot supplier: 2 = supplier kedua, selain itu supplier utama (nohad)
+  role = (role == 2 || role === 's2') ? 2 : 1;
+  _payTarget = { orderId, month, role };
+
+  let total, paid, supName;
+  if (role === 2) {
+    total   = r.supplier2_amount || 0;
+    paid    = r.supplier2_paid   || 0;
+    supName = r.supplier2_name   || 'Supplier 2';
+  } else {
+    total   = r.nohad_amount || r.total_supplier || 0;
+    paid    = r.nohad_paid   || 0;
+    supName = r.supplier_name || 'NOHAD SDN BHD';
+  }
   const os    = Math.max(0, total - paid);
-  const supName = r.supplier_name || 'NOHAD SDN BHD';
   // Find supplier bank info
   const sup = SUPPLIERS.find(s => s.name === supName || supName.toUpperCase().includes(s.short.toUpperCase()));
 
@@ -10132,25 +10142,29 @@ function closePayModal() {
   _payTarget = null;
 }
 
+function _payTargetOS(r) {
+  return _payTarget && _payTarget.role === 2
+    ? Math.max(0,(r.supplier2_amount||0)-(r.supplier2_paid||0))
+    : Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0));
+}
+
 function setPayFull() {
   if (!_payTarget) return;
   const r = (sessionData[_payTarget.month]||[]).find(o => o.id === _payTarget.orderId);
   if (!r) return;
-  const os = Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0));
-  document.getElementById('pay_amount').value = os.toFixed(2);
+  document.getElementById('pay_amount').value = _payTargetOS(r).toFixed(2);
 }
 
 function setPayHalf() {
   if (!_payTarget) return;
   const r = (sessionData[_payTarget.month]||[]).find(o => o.id === _payTarget.orderId);
   if (!r) return;
-  const os = Math.max(0,(r.nohad_amount||0)-(r.nohad_paid||0));
-  document.getElementById('pay_amount').value = (os/2).toFixed(2);
+  document.getElementById('pay_amount').value = (_payTargetOS(r)/2).toFixed(2);
 }
 
 async function confirmSupPayment() {
   if (!_payTarget) return;
-  const { orderId, month } = _payTarget;
+  const { orderId, month, role } = _payTarget;
   const payAmt = parseFloat(document.getElementById('pay_amount').value) || 0;
   if (payAmt <= 0) { showToast('Sila masukkan amaun bayaran', true); return; }
 
@@ -10158,13 +10172,22 @@ async function confirmSupPayment() {
   if (idx < 0) return;
   const r = sessionData[month][idx];
 
-  const newPaid = (r.nohad_paid || 0) + payAmt;
-  const newOS   = Math.max(0, (r.nohad_amount || 0) - newPaid);
+  // Tambah bayaran pada slot yang betul (supplier utama vs supplier kedua)
+  let nohadPaid = r.nohad_paid || 0;
+  let sup2Paid  = r.supplier2_paid || 0;
+  if (role === 2) sup2Paid += payAmt; else nohadPaid += payAmt;
+
+  // Outstanding gabungan: nohad + luar + supplier2
+  const nohadOS = Math.max(0, (r.nohad_amount||0)     - nohadPaid);
+  const luarOS  = Math.max(0, (r.luar_amount||0)      - (r.luar_paid||0));
+  const sup2OS  = Math.max(0, (r.supplier2_amount||0) - sup2Paid);
+  const newOS   = nohadOS + luarOS + sup2OS;
   const fullPay = newOS <= 0;
 
   sessionData[month][idx] = {
     ...r,
-    nohad_paid: newPaid,
+    nohad_paid: nohadPaid,
+    supplier2_paid: sup2Paid,
     supplier_outstanding: newOS,
     supplier_payment_status: fullPay ? 'PAYMENT DONE' : 'OUTSTANDING',
   };
