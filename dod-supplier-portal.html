@@ -250,6 +250,42 @@ async function loadJobsheets(orderIds) {
   }
 }
 
+// ── QC cache: { orderId: latest qc row } ──────────────────────
+let qcCache = {};
+
+async function loadQcChecks(orderIds) {
+  if (!orderIds.length) return;
+  try {
+    // Ambil semua rekod QC (tanpa foto — foto berat) & simpan yang terkini sahaja per order
+    const rows = await supaFetch(
+      `/rest/v1/qc_checks?order_id=in.(${orderIds.map(id=>encodeURIComponent(id)).join(',')})&select=id,order_id,result,checked_by,remarks,signed_at,created_at&order=created_at.desc`
+    );
+    qcCache = {};
+    (rows || []).forEach(r => {
+      if (!qcCache[r.order_id]) qcCache[r.order_id] = r;
+    });
+  } catch(e) {
+    // Table qc_checks mungkin belum wujud — abaikan
+    console.warn('QC load failed:', e);
+  }
+}
+
+function viewQcFail(qcId) {
+  // Buka laporan QC penuh (dod-qc.html?view=1) — supplier boleh cetak untuk semak
+  const qc = Object.values(qcCache).find(r => r.id === qcId);
+  const o  = qc ? allOrders.find(x => x.id === qc.order_id) : null;
+  sessionStorage.setItem('dod_qc_view', JSON.stringify({
+    qc_check_id: qcId,
+    name_job: o ? (o.name_job || '') : '',
+    cust_name: '',
+    pic: '',
+    kilang: (typeof supplierInfo !== 'undefined' && supplierInfo) ? supplierInfo.name : '',
+    kainType: '',
+  }));
+  window.open('dod-qc.html?view=1', '_blank');
+}
+window.viewQcFail = viewQcFail;
+
 async function openJobsheet(docId) {
   try {
     const rows = await supaFetch(`/rest/v1/documents?id=eq.${encodeURIComponent(docId)}&select=*`);
@@ -417,6 +453,31 @@ function renderJobCard(o) {
     </div>`;
   }
 
+  // Pre-compute QC GAGAL banner (rekod QC terkini = FAIL → urgent, kena betulkan)
+  const qc = qcCache[o.id];
+  let qcHtml = '';
+  if (qc && qc.result === 'FAIL') {
+    const qdt = new Date(qc.signed_at).toLocaleString('ms-MY', {
+      timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+    qcHtml = `
+    <div style="margin:0 14px 14px;padding:10px 12px;background:#fef2f2;border:1.5px solid #dc2626;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;flex-shrink:0;">🚨</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:800;color:#dc2626;">URGENT — QC GAGAL</div>
+          <div style="font-size:10px;color:#991b1b;margin-top:1px;">Disemak: ${(qc.checked_by||'—')} · ${qdt}</div>
+        </div>
+        <button onclick="viewQcFail('${qc.id}')"
+          style="padding:5px 12px;background:#dc2626;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          Fail QC
+        </button>
+      </div>
+      ${qc.remarks ? `<div style="font-size:11px;color:#7f1d1d;margin-top:6px;line-height:1.5;background:#fff;border-radius:6px;padding:6px 9px;">📝 ${String(qc.remarks).replace(/</g,'&lt;')}</div>` : ''}
+    </div>`;
+  }
+
   return `
   <div class="job-card${cardClass}" id="card-${o.id}">
     <div class="job-card-header">
@@ -460,6 +521,7 @@ function renderJobCard(o) {
     `}
 
     ${jobsheetHtml}
+    ${qcHtml}
   </div>`;
 }
 
@@ -620,9 +682,12 @@ async function init() {
     // 2. Load orders for this supplier
     allOrders = await loadOrders(supplierInfo.name);
 
-    // 3. Load jobsheets for all orders
+    // 3. Load jobsheets + QC checks for all orders
     if (allOrders.length) {
-      await loadJobsheets(allOrders.map(o => o.id));
+      await Promise.all([
+        loadJobsheets(allOrders.map(o => o.id)),
+        loadQcChecks(allOrders.map(o => o.id)),
+      ]);
     }
 
     // 4. Render

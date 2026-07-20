@@ -4761,6 +4761,12 @@ function showDetail(id) {
       <button onclick="openJobsheetFromOrder('${r.id}')" style="width:100%;padding:9px 14px;background:var(--orangebg);color:var(--orange);border:1px solid var(--orangeb);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s;">🏭 Jana Jobsheet</button>
     </div>
 
+    <div style="margin-top:14px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;">QC CHECK</div>
+      <div id="qcStatusBox" style="font-size:11px;color:var(--textm);text-align:center;padding:6px;">Memuatkan status QC...</div>
+      <button onclick="openQcFromOrder('${r.id}')" style="width:100%;margin-top:6px;padding:9px 14px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .12s;">🔍 Buka Borang QC</button>
+    </div>
+
     <div style="margin-top:16px;">
       <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
         <span>DOKUMEN TERSIMPAN</span>
@@ -4773,6 +4779,7 @@ function showDetail(id) {
 
   // Load saved docs for this order
   loadSavedDocs(r.id);
+  loadQcStatus(r.id);
 
   document.getElementById('detailActions').innerHTML = `
     ${canEdit?`<button class="btn-edit-detail" onclick="openEditFromDetail()">✏️ Edit Order</button>`:'<div style="flex:1"></div>'}
@@ -10638,7 +10645,7 @@ function prodDrop(e, colId) {
   _dragProdId = null;
 }
 
-function prodMoveCard(orderId, month, targetColId) {
+async function prodMoveCard(orderId, month, targetColId) {
   if (targetColId === 'pending') {
     // Prompt for note
     _prodPendingEdit = { orderId, month };
@@ -10659,6 +10666,8 @@ function prodMoveCard(orderId, month, targetColId) {
 
   const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
   if (idx < 0) return;
+  // QC guard: ready/complete tanpa QC lulus → confirm + rekod akauntabiliti
+  if (!(await qcGuardCheck(orderId, newStatus))) { renderProdTrack(); return; }
   // Clear pending note when moving out of pending
   sessionData[month][idx] = { ...sessionData[month][idx], production_status: newStatus, pending_note: null };
   supaUpsert('orders', { ...sessionData[month][idx], month }).catch(e => console.warn('Move card sync failed:', e));
@@ -10940,6 +10949,8 @@ window.prodAlertPoll           = prodAlertPoll;
 async function updateProdStatus(orderId, month, newStatus) {
   const idx = (sessionData[month]||[]).findIndex(o => o.id === orderId);
   if (idx < 0) return;
+  // QC guard: ready/complete tanpa QC lulus → confirm + rekod akauntabiliti
+  if (!(await qcGuardCheck(orderId, newStatus))) { renderProdTrack(); return; }
   sessionData[month][idx] = { ...sessionData[month][idx], production_status: newStatus };
   // Sync to Supabase
   supaUpsert('orders', { ...sessionData[month][idx], month })
@@ -11646,6 +11657,9 @@ async function openBinDoc(docId, docType) {
     if (docType && docType.startsWith('jobsheet')) {
       sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
       window.open('dod-jobsheet.html?view=1', '_blank');
+    } else if (docType === 'qc_report') {
+      sessionStorage.setItem('dod_qc_view', JSON.stringify(payload));
+      window.open('dod-qc.html?view=1', '_blank');
     } else {
       localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
       window.open('dod-document-generator.html', '_blank');
@@ -14255,6 +14269,7 @@ const DOC_TYPE_LABEL = {
   reminder:          { icon: '📝', label: 'Reminder Letter' },
   jobsheet_general:  { icon: '🏭', label: 'Jobsheet · General' },
   jobsheet_brothers: { icon: '🏭', label: 'Jobsheet · Brothers' },
+  qc_report:         { icon: '🔍', label: 'Laporan QC' },
 };
 
 async function saveDocSnapshot(order, docType, payload) {
@@ -14297,6 +14312,8 @@ async function loadSavedDocs(orderId) {
       const info = DOC_TYPE_LABEL[doc.doc_type] || { icon:'📄', label: doc.doc_type };
       const docLabel = doc.doc_type && doc.doc_type.startsWith('jobsheet') && doc.notes
         ? `JS-${doc.notes}`
+        : doc.doc_type === 'qc_report' && doc.notes
+        ? doc.notes
         : `${info.label}${doc.inv_number ? ' · ' + doc.inv_number : ''}`;
       return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:7px;border:1px solid var(--line);">
         <span style="font-size:14px;">${info.icon}</span>
@@ -14339,6 +14356,9 @@ async function openSavedDoc(docId, docType) {
     if (docType && docType.startsWith('jobsheet')) {
       sessionStorage.setItem('dod_jobsheet_view', JSON.stringify(payload));
       window.open('dod-jobsheet.html?view=1', '_blank');
+    } else if (docType === 'qc_report') {
+      sessionStorage.setItem('dod_qc_view', JSON.stringify(payload));
+      window.open('dod-qc.html?view=1', '_blank');
     } else {
       localStorage.setItem('dod_docgen_payload', JSON.stringify(payload));
       window.open('dod-document-generator.html', '_blank');
@@ -14367,6 +14387,81 @@ function openJobsheetFromOrder(orderId) {
   window.open('dod-jobsheet.html?' + params.toString(), 'dod_jobsheet_' + r.id);
 }
 window.openJobsheetFromOrder = openJobsheetFromOrder;
+
+// ======================================
+// QC CHECK (borang QC wajib sebelum hantar)
+// ======================================
+function openQcFromOrder(orderId) {
+  window.open('dod-qc.html?order_id=' + encodeURIComponent(orderId), 'dod_qc_' + orderId);
+}
+window.openQcFromOrder = openQcFromOrder;
+
+function qcFmtDT(iso) {
+  try {
+    return new Date(iso).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  } catch(e) { return iso; }
+}
+
+async function loadQcStatus(orderId) {
+  const box = document.getElementById('qcStatusBox');
+  if (!box) return;
+  try {
+    const rows = await supaGet('qc_checks', `order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&select=result,checked_by,remarks,signed_at`);
+    if (!document.getElementById('qcStatusBox')) return; // panel dah tukar order lain
+    if (!rows || !rows.length) {
+      box.innerHTML = `<div style="background:var(--bg3);border:1px dashed var(--line);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--textm);font-weight:600;text-align:center;">⬜ BELUM QC — wajib QC sebelum hantar</div>`;
+      return;
+    }
+    const q = rows[0];
+    if (q.result === 'PASS') {
+      box.innerHTML = `<div style="background:var(--greenbg);border:1px solid var(--greenb);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--green);font-weight:700;text-align:left;">✅ QC LULUS<div style="font-weight:600;color:var(--textm);margin-top:2px;">oleh ${q.checked_by||'—'} · ${qcFmtDT(q.signed_at)}</div></div>`;
+    } else if (q.result === 'FAIL') {
+      box.innerHTML = `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--red);font-weight:700;text-align:left;">🔴 QC GAGAL — dihantar balik supplier<div style="font-weight:600;color:var(--textm);margin-top:2px;">oleh ${q.checked_by||'—'} · ${qcFmtDT(q.signed_at)}${q.remarks?`<br>${q.remarks}`:''}</div></div>`;
+    } else {
+      box.innerHTML = `<div style="background:var(--amberbg,#FFFBEB);border:1px solid #FDE68A;border-radius:7px;padding:8px 10px;font-size:11px;color:#B8720A;font-weight:700;text-align:left;">⚠️ DIHANTAR TANPA QC<div style="font-weight:600;margin-top:2px;">${q.checked_by||'—'} bertanggungjawab sepenuhnya · ${qcFmtDT(q.signed_at)}</div></div>`;
+    }
+  } catch(e) {
+    // Table belum wujud / offline — jangan pecahkan side panel
+    box.innerHTML = `<div style="font-size:10px;color:var(--textm);text-align:center;">Status QC tidak tersedia</div>`;
+  }
+}
+window.loadQcStatus = loadQcStatus;
+
+// Guard akauntabiliti: tukar status ke ready/complete tanpa QC LULUS
+// → tidak disekat, tapi admin kena sahkan & rekod SKIPPED disimpan kekal.
+async function qcGuardCheck(orderId, newStatus) {
+  if (!['ready','complete'].includes(newStatus)) return true;
+  let latest = null;
+  try {
+    const rows = await supaGet('qc_checks', `order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&select=result,checked_by&limit=1`);
+    latest = rows && rows[0];
+  } catch(e) {
+    return true; // table belum wujud — jangan block workflow
+  }
+  if (latest && latest.result === 'PASS') return true;
+  if (latest && latest.result === 'SKIPPED') return true; // dah direkod sebelum ini
+
+  const who = (currentUser && currentUser.name) || 'Admin';
+  const msg = latest && latest.result === 'FAIL'
+    ? `🔴 QC GAGAL untuk order ini!\n\nBarang sepatutnya dihantar balik ke supplier untuk dibetulkan.\n\nJika anda teruskan hantar kepada customer, ANDA (${who}) BERTANGGUNGJAWAB SEPENUHNYA jika customer terima barang salah.\n\nRekod ini akan disimpan kekal. Teruskan?`
+    : `⚠️ Order ini BELUM QC.\n\nQC wajib dilakukan sebelum hantar kepada customer.\n\nJika anda teruskan tanpa QC, ANDA (${who}) BERTANGGUNGJAWAB SEPENUHNYA jika customer terima barang salah.\n\nRekod "DIHANTAR TANPA QC — ${who}" akan disimpan kekal. Teruskan?`;
+  if (!confirm(msg)) return false;
+
+  // Rekod akauntabiliti kekal
+  supaFetch('/rest/v1/qc_checks', {
+    method: 'POST',
+    prefer: 'return=minimal',
+    body: JSON.stringify({
+      order_id: orderId,
+      checked_by: who,
+      result: 'SKIPPED',
+      remarks: 'Dihantar tanpa QC lulus — status ditukar ke "' + newStatus + '" secara manual',
+      signed_at: new Date().toISOString(),
+    }),
+  }).catch(e => console.warn('QC skip log failed:', e));
+  return true;
+}
+window.qcGuardCheck = qcGuardCheck;
 
 
 // Komisyen tiered untuk Sales Executive (Danial & role sales_executive)
