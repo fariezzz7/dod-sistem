@@ -16065,6 +16065,9 @@ async function khSellSaveAll() {
 
   try {
     for (const skuId of allSkuIds) {
+      // SKU dengan semua cell kosong: jangan padam data sedia ada dalam DB.
+      // Nak buang harga, guna editor per-SKU (butang edit), bukan kosongkan cell grid.
+      if (!bySkuId[skuId].length) continue;
       await khSaveSellTiers(skuId, type, bySkuId[skuId]);
     }
     await khLoadAll();
@@ -16237,6 +16240,9 @@ async function khSupSaveAll() {
 
   try {
     for (const skuId of allSkuIds) {
+      // SKU dengan semua cell kosong: jangan padam data sedia ada dalam DB.
+      // Nak buang harga supplier, guna editor per-SKU, bukan kosongkan cell grid.
+      if (!bySkuId[skuId].length) continue;
       await khSupSaveSupTiers(skuId, supId, bySkuId[skuId]);
     }
     await khLoadAll();
