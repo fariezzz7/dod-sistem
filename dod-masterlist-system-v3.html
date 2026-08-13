@@ -9293,6 +9293,7 @@ let _supDirMonth   = 'ALL';        // month filter (Directory tab)
 let _supDirTab     = 'directory';  // 'directory' | 'os'
 let _supDirSelected = null;        // supplier id bila drill-down dibuka
 let _supOSFilter   = 'ALL';        // filter supplier (OS tab)
+let _supOSSearch   = '';           // carian nama job / no invois supplier (OS tab)
 let _supDirSearch  = '';           // carian nama job (drill-down)
 let _supDirStatus  = 'all';        // filter status: 'all' | 'quotation' | 'confirmed'
 let _supDirPay     = 'all';        // filter bayaran supplier: 'all' | 'paid' | 'os'
@@ -9353,6 +9354,14 @@ function supDirBack() {
 function supDirSetOSFilter(val) {
   _supOSFilter = val;
   renderSupplierDir();
+}
+
+// Carian nama job / no invois supplier dalam tab Supplier OS (kekal fokus)
+function supOSSetSearch(val) {
+  _supOSSearch = val;
+  renderSupplierDir();
+  const inp = document.getElementById('supOSSearchInput');
+  if (inp) { inp.focus(); const n = inp.value.length; inp.setSelectionRange(n, n); }
 }
 
 // Cari bulan (key sessionData) untuk satu order id
@@ -9533,7 +9542,11 @@ function buildSupplierDrillHTML(s) {
     if (_supDirPay === 'paid' && !(!isQuote && j.supOS <= 0)) return false;
     if (_supDirInv === 'has'  && !hasInv(j)) return false;
     if (_supDirInv === 'none' &&  hasInv(j)) return false;
-    if (q && !(j.r.name_job||'').toLowerCase().includes(q)) return false;
+    if (q) {
+      const nm  = (j.r.name_job||'').toLowerCase();
+      const inv = (j.r.inv_number||'').toString().toLowerCase();
+      if (!nm.includes(q) && !inv.includes(q)) return false;
+    }
     return true;
   });
 
@@ -9635,7 +9648,7 @@ function buildSupplierDrillHTML(s) {
       <div style="position:relative;flex:1;min-width:200px;max-width:340px;">
         <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);pointer-events:none;">🔍</span>
         <input id="supDirSearchInput" type="text" value="${(_supDirSearch||'').replace(/"/g,'&quot;')}"
-          oninput="supDirSetSearch(this.value)" placeholder="Cari nama job..."
+          oninput="supDirSetSearch(this.value)" placeholder="Cari nama job / no invois supplier..."
           style="width:100%;box-sizing:border-box;padding:8px 30px 8px 30px;border:1px solid var(--line);border-radius:8px;background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;">
         ${_supDirSearch ? `<span onclick="supDirSetSearch('')" style="position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);cursor:pointer;">✕</span>` : ''}
       </div>
@@ -9740,10 +9753,16 @@ function buildSupplierOSHTML() {
   // Build filter options from actual suppliers with OS
   const supplierNames = Object.keys(bySupplier);
 
-  // Filter the groups
-  const filteredGroups = activeFilter === 'ALL'
-    ? Object.entries(bySupplier)
-    : Object.entries(bySupplier).filter(([name]) => name === activeFilter);
+  // Filter the groups (supplier + carian nama job / no invois supplier)
+  const qOS = (_supOSSearch||'').trim().toLowerCase();
+  const matchQ = r => !qOS
+    || (r.name_job||'').toLowerCase().includes(qOS)
+    || (r.inv_number||'').toString().toLowerCase().includes(qOS);
+  const filteredGroups = (activeFilter === 'ALL'
+      ? Object.entries(bySupplier)
+      : Object.entries(bySupplier).filter(([name]) => name === activeFilter))
+    .map(([name, orders]) => [name, orders.filter(matchQ)])
+    .filter(([,orders]) => orders.length > 0);
 
   const filteredTotal = filteredGroups.reduce((s,[,orders]) => s + orders.reduce((ss,r) => ss+(r.supplier_outstanding||0),0), 0);
   const filteredCount = filteredGroups.reduce((s,[,orders]) => s + orders.length, 0);
@@ -9772,13 +9791,20 @@ function buildSupplierOSHTML() {
           return `<option value="${name}" ${activeFilter===name?'selected':''}>${shortName} — ${count} invois · RM ${fmt(supOS)}</option>`;
         }).join('')}
       </select>
+      <div style="position:relative;flex:1;min-width:180px;max-width:300px;">
+        <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);pointer-events:none;">🔍</span>
+        <input id="supOSSearchInput" type="text" value="${(_supOSSearch||'').replace(/"/g,'&quot;')}"
+          oninput="supOSSetSearch(this.value)" placeholder="Cari nama job / no invois supplier..."
+          style="width:100%;box-sizing:border-box;padding:6px 28px 6px 28px;border:1px solid var(--line);border-radius:6px;background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;">
+        ${_supOSSearch ? `<span onclick="supOSSetSearch('')" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--textm);cursor:pointer;">✕</span>` : ''}
+      </div>
     </div>
 
     ${filteredGroups.length === 0 ? `
     <div style="text-align:center;padding:60px;color:var(--textm);">
-      <div style="font-size:32px;margin-bottom:12px;">✓</div>
-      <div style="font-size:14px;font-weight:600;color:var(--green);">Tiada supplier outstanding</div>
-      <div style="font-size:12px;margin-top:4px;">Semua invois supplier dah diselesaikan</div>
+      <div style="font-size:32px;margin-bottom:12px;">${qOS ? '🔍' : '✓'}</div>
+      <div style="font-size:14px;font-weight:600;color:${qOS ? 'var(--textm)' : 'var(--green)'};">${qOS ? 'Tiada padanan carian' : 'Tiada supplier outstanding'}</div>
+      <div style="font-size:12px;margin-top:4px;">${qOS ? 'Cuba nama job atau no invois supplier yang lain' : 'Semua invois supplier dah diselesaikan'}</div>
     </div>` : `
 
     ${filteredGroups.map(([supName, orders]) => {
