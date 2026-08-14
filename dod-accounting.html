@@ -157,6 +157,70 @@
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:820px){.grid-2{grid-template-columns:1fr;}}
   .hint{font-size:11px;color:var(--textm);line-height:1.55;}
+  /* ══ PUSAT LAPORAN ══ */
+  .rp-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;}
+  @media(max-width:820px){.rp-grid{grid-template-columns:1fr;}}
+  .rp-fmt{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:560px){.rp-fmt{grid-template-columns:1fr;}}
+  .rp-fmt-opt{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border:1px solid var(--line);
+    border-radius:9px;cursor:pointer;background:var(--bg3);transition:all .15s;}
+  .rp-fmt-opt:has(input:checked){border-color:var(--blue);background:rgba(37,99,235,.07);}
+  .rp-fmt-opt input{margin-top:3px;flex:none;}
+  .rp-fmt-opt b{display:block;font-size:12.5px;color:var(--text);}
+  .rp-fmt-opt small{display:block;font-size:11px;color:var(--textm);margin-top:2px;line-height:1.4;}
+  .rp-docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+  .rp-grp{border:1px solid var(--line);border-radius:9px;padding:11px 13px;background:var(--bg3);}
+  .rp-grp-title{font-family:'Courier New',monospace;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--textm);margin-bottom:8px;}
+  .rp-doc{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;color:var(--textd);cursor:pointer;}
+  .rp-doc input{flex:none;}
+  .rp-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    margin-top:18px;padding-top:15px;border-top:1px solid var(--line);}
+  .rp-preview{background:#fff;border:1px solid var(--line);border-radius:9px;padding:26px;overflow-x:auto;}
+
+  /* ══ FORMAT DOKUMEN CETAK (PDF) ══ */
+  #printArea{display:none;}
+  .print-doc{font-family:Georgia,'Times New Roman',serif;color:#000;background:#fff;max-width:720px;margin:0 auto;}
+  .print-doc.wide{max-width:100%;}
+  .pd-head{text-align:center;border-bottom:2px solid #000;padding-bottom:11px;margin-bottom:20px;}
+  .pd-co{font-size:17px;font-weight:700;letter-spacing:.05em;}
+  .pd-title{font-size:14px;font-weight:700;margin-top:5px;}
+  .pd-period{font-size:12px;margin-top:2px;}
+  .pd-unit{font-size:10.5px;font-style:italic;color:#444;margin-top:4px;}
+  .pd-stmt{width:100%;border-collapse:collapse;font-size:12px;}
+  .pd-stmt td{padding:3.5px 0;vertical-align:top;text-align:left;}
+  .pd-stmt .pd-val{text-align:right;white-space:nowrap;width:130px;font-variant-numeric:tabular-nums;}
+  .pd-stmt tr.pdr-head td{font-weight:700;padding-top:13px;border-bottom:1px solid #000;text-transform:uppercase;font-size:11.5px;letter-spacing:.03em;}
+  .pd-stmt tr.pdr-indent .pd-lbl{padding-left:20px;}
+  .pd-stmt tr.pdr-subtotal td{border-top:1px solid #000;font-weight:700;}
+  .pd-stmt tr.pdr-grand td{border-top:1.5px solid #000;border-bottom:4px double #000;font-weight:700;padding:7px 0;}
+  .pd-stmt tr.pdr-check td{padding-top:14px;font-style:italic;font-size:11px;}
+  .pd-tbl{width:100%;border-collapse:collapse;font-size:10.5px;}
+  .pd-tbl th{border-bottom:1.5px solid #000;border-top:1px solid #000;padding:5px 6px;text-align:left;
+    font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;background:#f2f2f2;}
+  .pd-tbl td{border-bottom:1px solid #ddd;padding:4px 6px;vertical-align:top;}
+  .pd-tbl th.num,.pd-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .pd-tbl tfoot td{border-top:1.5px solid #000;border-bottom:4px double #000;font-weight:700;padding:6px;}
+  .pd-note{font-size:10px;font-style:italic;color:#333;margin-top:14px;line-height:1.5;}
+  .pd-sign{display:flex;gap:60px;margin-top:52px;font-size:11px;}
+  .pd-sign-box{flex:1;}
+  .pd-sign-line{border-bottom:1px solid #000;margin-bottom:6px;height:40px;}
+  .pd-sign-nm{font-weight:700;}
+  .pd-foot{margin-top:22px;padding-top:8px;border-top:1px solid #bbb;font-size:8.5px;color:#555;text-align:center;}
+
+  @media print{
+    @page{size:A4 portrait;margin:16mm 14mm;}
+    @page wide{size:A4 landscape;margin:12mm 10mm;}
+    body.printing #appRoot,body.printing .toast,body.printing .modal-bg{display:none !important;}
+    body.printing #printArea{display:block !important;}
+    body{background:#fff !important;}
+    .print-doc{page-break-after:always;break-after:page;}
+    .print-doc:last-child{page-break-after:auto;break-after:auto;}
+    .print-doc.wide{page:wide;}
+    .pd-tbl thead{display:table-header-group;}
+    .pd-tbl tr{page-break-inside:avoid;break-inside:avoid;}
+    .pd-sign{page-break-inside:avoid;break-inside:avoid;}
+  }
 </style>
 </head>
 <body>
@@ -198,6 +262,7 @@
     <div class="tab-item" data-view="assets" onclick="navTo('assets')">🏢 Assets</div>
     <div class="tab-item" data-view="cashflow" onclick="navTo('cashflow')">🌊 Cash Flow</div>
     <div class="tab-item" data-view="zakat" onclick="navTo('zakat')">🕌 Tax & Zakat</div>
+    <div class="tab-item" data-view="reports" onclick="navTo('reports')">📄 Laporan & Export</div>
     <div class="tab-item" data-view="import" onclick="navTo('import')">📥 Import CSV</div>
     <div class="tab-item" data-view="settings" onclick="navTo('settings')">⚙️ Settings</div>
   </div>
@@ -427,6 +492,49 @@
       </div>
     </div>
 
+    <!-- ════════ LAPORAN & EXPORT ════════ -->
+    <div class="view" id="view-reports">
+      <div class="card">
+        <div class="card-header"><span class="card-header-title">📄 Pusat Laporan — Jana Dokumen</span></div>
+        <div class="card-body">
+          <div class="rp-grid">
+            <div class="form-group">
+              <label>1. Tempoh Laporan</label>
+              <select id="rpPeriod" onchange="updateReportPreview()"></select>
+              <p class="hint" style="margin-top:6px;">Bulanan: P&amp;L / Cash Flow ikut gerakan bulan itu; Balance Sheet &amp; Trial Balance kedudukan terkumpul sehingga hujung bulan.</p>
+            </div>
+            <div class="form-group">
+              <label>2. Format Fail</label>
+              <div class="rp-fmt">
+                <label class="rp-fmt-opt"><input type="radio" name="rpFmt" id="rpFmt_pdf" value="pdf" checked onchange="updateReportPreview()">
+                  <span><b>📕 PDF</b><small>Format penyata rasmi — untuk director / bank / audit</small></span></label>
+                <label class="rp-fmt-opt"><input type="radio" name="rpFmt" id="rpFmt_csv" value="csv" onchange="updateReportPreview()">
+                  <span><b>📗 CSV</b><small>Data mentah — untuk Excel, olah &amp; semak sendiri</small></span></label>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;">
+            <label style="display:block;font-size:11.5px;font-weight:700;color:var(--textm);margin-bottom:8px;">3. Pilih Dokumen
+              <button class="btn sm" style="margin-left:10px;" onclick="rpSetAll(true)">Pilih Semua</button>
+              <button class="btn sm" onclick="rpSetAll(false)">Kosongkan</button>
+            </label>
+            <div id="rpDocs" class="rp-docs"></div>
+          </div>
+
+          <div class="rp-bar">
+            <div id="rpInfo" class="hint"></div>
+            <button class="btn primary" id="rpGenBtn" onclick="generateReports()">⬇️ Jana Dokumen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-header-title">👁 Preview (dokumen pertama dipilih)</span></div>
+        <div class="card-body"><div id="rpPreview" class="rp-preview"></div></div>
+      </div>
+    </div>
+
     <!-- ════════ IMPORT CSV ════════ -->
     <div class="view" id="view-import">
       <div class="card">
@@ -653,6 +761,9 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Kawasan cetakan PDF — hanya ini yang keluar bila window.print() -->
+<div id="printArea"></div>
+
 <script>
 // ════════════════════════════════════════════════════════════
 // DOD ACCOUNTING SYSTEM V1
@@ -661,6 +772,7 @@
 const SUPA_URL = 'https://nsvhdilgrurpbjlsyviv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdmhkaWxncnVycGJqbHN5dml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Nzk4NjYsImV4cCI6MjA5MjE1NTg2Nn0.XKT6hZd2RGB7c-61aq5QDoZaYfIOgfkyTJ0bsiuqPOo';
 const DELETE_PIN = '7747';
+const COMPANY_NAME = 'DOD WORLDWIDE SUPPLY';
 
 async function supaFetch(path, opts = {}) {
   const res = await fetch(SUPA_URL + path, {
@@ -922,27 +1034,8 @@ function exportBanksCSV() {
   });
   downloadCSV(csvName('Akaun_Bank'), rows);
 }
-// Muat turun semua penyata sekali gus (untuk audit manual)
-async function exportAllCSV() {
-  const jobs = [
-    () => exportCashbookCSV(),
-    () => exportDCCSV(),
-    () => exportBanksCSV(),
-    () => exportTableCSV('perfTable', 'Performance_Bulanan'),
-    () => exportRptCSV('pnlReport', 'Profit_Loss'),
-    () => exportRptCSV('bsReport', 'Balance_Sheet'),
-    () => exportTableCSV('tbTable', 'Trial_Balance'),
-    () => exportRptCSV('cfReport', 'Cash_Flow'),
-    () => exportRptCSV('zakatReport', 'Tax_Zakat'),
-    () => exportTableCSV('assetTable', 'Aset_Susut_Nilai'),
-    () => exportTableCSV('catTable', 'Kategori')
-  ];
-  for (const j of jobs) {
-    try { j(); } catch (e) { console.error(e); }
-    await new Promise(r => setTimeout(r, 350)); // elak browser block multiple download
-  }
-  toast('✅ Semua penyata ' + YEAR + ' selesai dimuat turun');
-}
+// Shortcut dari Dashboard → pergi ke Pusat Laporan
+function exportAllCSV() { navTo('reports'); }
 function catById(id) { return CATS.find(c => c.id === id); }
 function catName(id) { const c = catById(id); return c ? c.name : id; }
 function catGroup(id) { const c = catById(id); return c ? c.pnl_group : 'admin'; }
@@ -1074,6 +1167,7 @@ function renderAll() {
   renderCashFlow();
   renderZakat();
   renderSettings();
+  renderReportCentre();
 }
 
 async function onYearChange() {
@@ -1089,6 +1183,7 @@ function navTo(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
   if (view === 'dashboard') renderDashboard();
   if (view === 'import') renderImportHistory();
+  if (view === 'reports') renderReportCentre();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1384,6 +1479,70 @@ function pnlData(month) {
   return { ...sum, gp, opex, op, np, breakdown };
 }
 
+// ════════════════════════════════════════════════════════════
+// PERIOD ENGINE — semua penyata boleh dijana ikut bulan atau setahun
+// p = { mode:'year' } atau { mode:'month', month:1-12 }
+// ════════════════════════════════════════════════════════════
+const MONTH_FULL = ['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+const MONTH_END_DAY = [31,29,31,30,31,30,31,31,30,31,30,31];
+
+function monthEndDay(m) {
+  if (m !== 2) return MONTH_END_DAY[m - 1];
+  return (YEAR % 4 === 0 && (YEAR % 100 !== 0 || YEAR % 400 === 0)) ? 29 : 28;
+}
+// Transaksi DALAM tempoh (untuk penyata aliran: P&L, Cash Flow, Cash Book)
+function pTxns(p) {
+  return (!p || p.mode !== 'month') ? TXNS.slice() : TXNS.filter(t => txnMonth(t) === p.month);
+}
+// Transaksi SEHINGGA akhir tempoh (untuk penyata kedudukan: Balance Sheet, Trial Balance)
+function pTxnsCum(p) {
+  return (!p || p.mode !== 'month') ? TXNS.slice() : TXNS.filter(t => txnMonth(t) <= p.month);
+}
+// Baki tunai pembukaan tempoh (baki awal tahun + gerakan sebelum bulan terpilih)
+function pOpeningCash(p) {
+  let open = totalOpening();
+  if (p && p.mode === 'month') {
+    TXNS.forEach(t => {
+      if (txnMonth(t) < p.month) open += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+    });
+  }
+  return open;
+}
+// Jalankan fn() dengan TXNS ditukar sementara — supaya fungsi kiraan sedia ada
+// (pnlData, groupTotal, bankBalance) terus boleh guna tanpa ditulis semula.
+function withTxns(list, fn) {
+  const save = TXNS;
+  TXNS = list;
+  try { return fn(); } finally { TXNS = save; }
+}
+function periodLabel(p, asAt) {
+  if (p && p.mode === 'month') {
+    return asAt ? ('As at ' + monthEndDay(p.month) + ' ' + MONTH_FULL[p.month - 1] + ' ' + YEAR)
+                : ('For The Month of ' + MONTH_FULL[p.month - 1] + ' ' + YEAR);
+  }
+  return asAt ? ('As at 31 December ' + YEAR) : ('For The Year Ended 31 December ' + YEAR);
+}
+function periodShort(p) {
+  return (p && p.mode === 'month') ? MONTH_NAMES[p.month - 1] + '_' + YEAR : 'Tahun_' + YEAR;
+}
+// Render spec penyata (kind:'statement') jadi HTML .rpt untuk paparan skrin
+function statementHTML(spec) {
+  let html = '<div class="rpt-title">' + esc(COMPANY_NAME) + '</div>' +
+    '<div class="rpt-sub">' + esc(spec.title) + '<br>' + esc(spec.period) + ' · (RM)</div>';
+  spec.rows.forEach(r => {
+    if (r.type === 'check') {
+      const col = r.flag ? 'var(--amber)' : 'var(--green)';
+      html += '<div class="rpt-row" style="margin-top:10px;"><span class="lbl" style="color:' + col + ';">' +
+        esc(r.lbl) + '</span><span class="val" style="color:' + col + ';">' +
+        (r.blank ? '' : fmt(r.val)) + '</span></div>';
+      return;
+    }
+    html += rptRow(esc(r.lbl), r.val, r.type || '', { blank: r.blank, signed: r.signed });
+  });
+  if (spec.note) html += '<p class="hint" style="margin-top:14px;">' + esc(spec.note) + '</p>';
+  return html;
+}
+
 function renderPnlMonthOptions() {
   const sel = document.getElementById('pnlMonth');
   const cur = sel.value || 'all';
@@ -1401,39 +1560,41 @@ function rptRow(lbl, val, cls, opt) {
     '<span class="val ' + vCls + '">' + (opt.blank ? '' : fmt(val)) + '</span></div>';
 }
 
-function renderPnl() {
-  const sel = document.getElementById('pnlMonth');
-  const m = sel.value === 'all' ? 'all' : parseInt(sel.value, 10);
-  const d = pnlData(m);
-  const periodLbl = m === 'all' ? 'For The Year Ended 31 December ' + YEAR : 'Bulan ' + MONTH_NAMES[m - 1] + ' ' + YEAR;
-
-  let html = '<div class="rpt-title">DOD WORLDWIDE SUPPLY</div>' +
-    '<div class="rpt-sub">Statement of Profit & Loss<br>' + periodLbl + ' · (RM)</div>';
-
-  html += rptRow('SALES', d.sales, 'head');
-  html += rptRow('(−) Cost of Goods Sold', 0, 'head', { blank: true });
+function buildPnl(p) {
+  const d = withTxns(pTxns(p), () => pnlData('all'));
+  const rows = [];
+  rows.push({ lbl: 'SALES', val: d.sales, type: 'head' });
+  rows.push({ lbl: '(−) Cost of Goods Sold', type: 'head', blank: true });
   const cogsKeys = Object.keys(d.breakdown.cogs);
-  if (cogsKeys.length) cogsKeys.forEach(k => { html += rptRow(k, d.breakdown.cogs[k], 'indent'); });
-  else html += rptRow('—', 0, 'indent');
-  html += rptRow('Total COGS', d.cogs, 'subtotal');
-  html += rptRow('GROSS PROFIT', d.gp, 'subtotal', { signed: true });
+  if (cogsKeys.length) cogsKeys.sort().forEach(k => rows.push({ lbl: k, val: d.breakdown.cogs[k], type: 'indent' }));
+  else rows.push({ lbl: '—', val: 0, type: 'indent' });
+  rows.push({ lbl: 'Total COGS', val: d.cogs, type: 'subtotal' });
+  rows.push({ lbl: 'GROSS PROFIT', val: d.gp, type: 'subtotal', signed: true });
 
-  html += rptRow('(−) Operating Expenses', 0, 'head', { blank: true });
+  rows.push({ lbl: '(−) Operating Expenses', type: 'head', blank: true });
   const grpLbl = { admin: 'Administrative', selling: 'Selling & Marketing', financial: 'Financial Charges' };
   ['admin', 'selling', 'financial'].forEach(g => {
     const keys = Object.keys(d.breakdown[g]);
     if (keys.length) {
-      html += rptRow(grpLbl[g], 0, 'indent', { blank: true });
-      keys.sort().forEach(k => { html += rptRow('· ' + k, d.breakdown[g][k], 'indent'); });
+      rows.push({ lbl: grpLbl[g], type: 'indent', blank: true });
+      keys.sort().forEach(k => rows.push({ lbl: '· ' + k, val: d.breakdown[g][k], type: 'indent' }));
     }
   });
-  html += rptRow('Total Operating Expenses', d.opex, 'subtotal');
-  html += rptRow('OPERATING PROFIT', d.op, 'subtotal', { signed: true });
-  html += rptRow('(+) Miscellaneous Income', d.misc_income, '');
-  html += rptRow('NET PROFIT / (LOSS)', d.np, 'grand', { signed: true });
-  if (d.zakat > 0) html += rptRow('Zakat Perniagaan dibayar', d.zakat, 'indent');
+  rows.push({ lbl: 'Total Operating Expenses', val: d.opex, type: 'subtotal' });
+  rows.push({ lbl: 'OPERATING PROFIT', val: d.op, type: 'subtotal', signed: true });
+  rows.push({ lbl: '(+) Miscellaneous Income', val: d.misc_income, type: '' });
+  rows.push({ lbl: 'NET PROFIT / (LOSS)', val: d.np, type: 'grand', signed: true });
+  if (d.zakat > 0) rows.push({ lbl: 'Zakat Perniagaan dibayar', val: d.zakat, type: 'indent' });
 
-  document.getElementById('pnlReport').innerHTML = html;
+  return { key: 'pnl', kind: 'statement', name: 'Profit_Loss',
+    title: 'Statement of Profit & Loss', period: periodLabel(p, false), rows };
+}
+
+function renderPnl() {
+  const sel = document.getElementById('pnlMonth');
+  const m = sel.value === 'all' ? 'all' : parseInt(sel.value, 10);
+  const p = m === 'all' ? { mode: 'year' } : { mode: 'month', month: m };
+  document.getElementById('pnlReport').innerHTML = statementHTML(buildPnl(p));
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1696,93 +1857,97 @@ function assetClosing(a) {
   return Number(a.opening_nbv || 0) + Number(a.cost || 0) + Number(a.additions || 0) - assetDep(a);
 }
 
-function renderBalanceSheet() {
-  const yr = pnlData('all');
-  // Cash & Bank — per akaun
-  const bankCash = {};
-  let cash = 0;
-  BANKS.forEach(b => { bankCash[b.id] = bankBalance(b.id); cash += bankCash[b.id]; });
-  // legacy: txn tanpa bank_account_id (null) — patut takde lepas migration, tapi handle safely
-  let untagged = 0;
-  TXNS.forEach(t => { if (!t.bank_account_id) untagged += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
-  cash += untagged;
+function buildBalanceSheet(p) {
+  // Kedudukan = kumulatif sehingga akhir tempoh
+  const cum = pTxnsCum(p);
+  const calc = withTxns(cum, () => {
+    const bankCash = {};
+    let cash = 0;
+    BANKS.forEach(b => { bankCash[b.id] = bankBalance(b.id); cash += bankCash[b.id]; });
+    // legacy: txn tanpa bank_account_id (null) — patut takde lepas migration, tapi handle safely
+    let untagged = 0;
+    TXNS.forEach(t => { if (!t.bank_account_id) untagged += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+    cash += untagged;
+    return {
+      bankCash, cash, untagged,
+      np: pnlData('all').np,
+      assetPurchases: groupTotal('asset', 'out'),
+      modal: groupTotal('equity', 'in'),
+      ambilan: groupTotal('equity', 'out'),
+      loanIn: groupTotal('liability', 'in'),
+      loanRepay: groupTotal('liability', 'out')
+    };
+  });
 
   const fixedAssets = ASSETS.reduce((s, a) => s + assetClosing(a), 0);
-  const assetPurchases = groupTotal('asset', 'out'); // beli aset terus dari cash book (jika belum daftar dlm jadual aset)
   const tradeDebtors = DCS.filter(d => d.kind === 'debtor' && d.status !== 'settled')
     .reduce((s, d) => s + Number(d.amount) - Number(d.settled || 0), 0);
   const tradeCreditors = DCS.filter(d => d.kind === 'creditor' && d.status !== 'settled')
     .reduce((s, d) => s + Number(d.amount) - Number(d.settled || 0), 0);
 
-  const modal = groupTotal('equity', 'in');
-  const ambilan = groupTotal('equity', 'out');
-  const loanIn = groupTotal('liability', 'in');
-  const loanRepay = groupTotal('liability', 'out');
-  const loanNet = loanIn - loanRepay;
-
-  const fixedTotal = ASSETS.length ? fixedAssets : assetPurchases;
-  const totalCurrentAssets = cash + tradeDebtors;
+  const loanNet = calc.loanIn - calc.loanRepay;
+  const fixedTotal = ASSETS.length ? fixedAssets : calc.assetPurchases;
+  const totalCurrentAssets = calc.cash + tradeDebtors;
   const totalAssets = fixedTotal + totalCurrentAssets;
-  const totalEquity = modal - ambilan + yr.np;
+  const totalEquity = calc.modal - calc.ambilan + calc.np;
   const totalLiab = loanNet + tradeCreditors;
   const totalEL = totalEquity + totalLiab;
   const diff = totalAssets - totalEL;
 
-  let html = '<div class="rpt-title">DOD WORLDWIDE SUPPLY</div>' +
-    '<div class="rpt-sub">Statement of Financial Position<br>As at 31 December ' + YEAR + ' · (RM)</div>';
-
-  html += rptRow('ASSETS', 0, 'head', { blank: true });
-  html += rptRow('Fixed Assets (NBV)' + (ASSETS.length ? '' : ' — dari cash book'), fixedTotal, 'indent');
-  html += rptRow('Current Assets:', 0, 'indent', { blank: true });
+  const rows = [];
+  rows.push({ lbl: 'ASSETS', type: 'head', blank: true });
+  rows.push({ lbl: 'Fixed Assets (NBV)' + (ASSETS.length ? '' : ' — dari cash book'), val: fixedTotal, type: 'indent' });
+  rows.push({ lbl: 'Current Assets:', type: 'indent', blank: true });
   if (BANKS.length > 1) {
-    html += rptRow('· Cash & Bank:', 0, 'indent', { blank: true });
-    BANKS.forEach(b => {
-      html += rptRow('   - ' + b.name + ' (' + b.bank_name + ')', bankCash[b.id], 'indent');
-    });
-    if (untagged) html += rptRow('   - (Untagged)', untagged, 'indent');
-    html += rptRow('   Sub-total Cash & Bank', cash, 'indent');
+    rows.push({ lbl: '· Cash & Bank:', type: 'indent', blank: true });
+    BANKS.forEach(b => rows.push({ lbl: '   - ' + b.name + ' (' + b.bank_name + ')', val: calc.bankCash[b.id], type: 'indent' }));
+    if (calc.untagged) rows.push({ lbl: '   - (Untagged)', val: calc.untagged, type: 'indent' });
+    rows.push({ lbl: '   Sub-total Cash & Bank', val: calc.cash, type: 'indent' });
   } else {
-    html += rptRow('· Cash & Bank', cash, 'indent');
+    rows.push({ lbl: '· Cash & Bank', val: calc.cash, type: 'indent' });
   }
-  html += rptRow('· Trade Debtors', tradeDebtors, 'indent');
-  html += rptRow('Total Current Assets', totalCurrentAssets, 'subtotal');
-  html += rptRow('TOTAL ASSETS', totalAssets, 'grand');
+  rows.push({ lbl: '· Trade Debtors', val: tradeDebtors, type: 'indent' });
+  rows.push({ lbl: 'Total Current Assets', val: totalCurrentAssets, type: 'subtotal' });
+  rows.push({ lbl: 'TOTAL ASSETS', val: totalAssets, type: 'grand' });
 
-  html += rptRow('EQUITY', 0, 'head', { blank: true });
-  html += rptRow('Modal Dimasukkan', modal, 'indent');
-  html += rptRow('(−) Ambilan / Withdrawal', -ambilan, 'indent');
-  html += rptRow('(+) Profit / (Loss) Tahun Ini', yr.np, 'indent');
-  html += rptRow('Total Equity', totalEquity, 'subtotal');
+  rows.push({ lbl: 'EQUITY', type: 'head', blank: true });
+  rows.push({ lbl: 'Modal Dimasukkan', val: calc.modal, type: 'indent' });
+  rows.push({ lbl: '(−) Ambilan / Withdrawal', val: -calc.ambilan, type: 'indent' });
+  rows.push({ lbl: '(+) Profit / (Loss) ' + (p && p.mode === 'month' ? 'Sehingga Tarikh Ini' : 'Tahun Ini'), val: calc.np, type: 'indent' });
+  rows.push({ lbl: 'Total Equity', val: totalEquity, type: 'subtotal' });
 
-  html += rptRow('LIABILITIES', 0, 'head', { blank: true });
-  html += rptRow('Loan (Baki)', loanNet, 'indent');
-  html += rptRow('Trade Creditors', tradeCreditors, 'indent');
-  html += rptRow('Total Liabilities', totalLiab, 'subtotal');
-  html += rptRow('TOTAL EQUITY & LIABILITIES', totalEL, 'grand');
+  rows.push({ lbl: 'LIABILITIES', type: 'head', blank: true });
+  rows.push({ lbl: 'Loan (Baki)', val: loanNet, type: 'indent' });
+  rows.push({ lbl: 'Trade Creditors', val: tradeCreditors, type: 'indent' });
+  rows.push({ lbl: 'Total Liabilities', val: totalLiab, type: 'subtotal' });
+  rows.push({ lbl: 'TOTAL EQUITY & LIABILITIES', val: totalEL, type: 'grand' });
+  rows.push({ lbl: Math.abs(diff) > 0.01
+      ? '⚠️ Perbezaan (kemungkinan baki awal / aset / urusniaga luar sistem)'
+      : '✓ Seimbang — Assets = Equity + Liabilities',
+    val: diff, type: 'check', blank: Math.abs(diff) <= 0.01, flag: Math.abs(diff) > 0.01 });
 
-  if (Math.abs(diff) > 0.01) {
-    html += '<div class="rpt-row" style="margin-top:10px;"><span class="lbl" style="color:var(--amber);">⚠️ Perbezaan (kemungkinan baki awal / aset / urusniaga luar sistem)</span><span class="val" style="color:var(--amber);">' + fmt(diff) + '</span></div>';
-  } else {
-    html += '<div class="rpt-row" style="margin-top:10px;"><span class="lbl" style="color:var(--green);">✓ Seimbang — Assets = Equity + Liabilities</span><span class="val"></span></div>';
-  }
+  return { key: 'bs', kind: 'statement', name: 'Balance_Sheet',
+    title: 'Statement of Financial Position', period: periodLabel(p, true), rows,
+    note: (p && p.mode === 'month')
+      ? 'Nota: Trade Debtors/Creditors & aset dipapar pada kedudukan semasa (bukan snapshot akhir bulan).' : '' };
+}
 
-  document.getElementById('bsReport').innerHTML = html;
+function renderBalanceSheet() {
+  document.getElementById('bsReport').innerHTML = statementHTML(buildBalanceSheet({ mode: 'year' }));
 }
 
 // ════════════════════════════════════════════════════════════
 // TRIAL BALANCE
 // ════════════════════════════════════════════════════════════
-function renderTrialBalance() {
-  // Debit: expenses, assets, ambilan, kutipan debtor (cash in tak masuk sini — ini ringkas, ikut kategori)
-  // Pendekatan ringkas: setiap kategori = satu akaun. Cash Out = Debit, Cash In = Credit.
+function buildTrialBalance(p) {
+  const cum = pTxnsCum(p);
   const byCat = {};
-  TXNS.forEach(t => {
+  cum.forEach(t => {
     const key = t.category;
     if (!byCat[key]) byCat[key] = { debit: 0, credit: 0 };
     if (t.flow === 'out') byCat[key].debit += Number(t.amount) || 0;
     else byCat[key].credit += Number(t.amount) || 0;
   });
-
   const order = ['sales','misc_income','debtor','cogs','admin','selling','financial','asset','equity','liability','creditor','zakat','none'];
   const grouped = {};
   Object.keys(byCat).forEach(cid => {
@@ -1791,33 +1956,48 @@ function renderTrialBalance() {
     grouped[g].push(cid);
   });
 
-  let html = '<tr><th>Akaun</th><th>Kumpulan</th><th class="num">Debit</th><th class="num">Credit</th></tr>';
+  const rows = [];
   let tD = 0, tC = 0;
   order.forEach(g => {
     (grouped[g] || []).sort((a, b) => catName(a).localeCompare(catName(b))).forEach(cid => {
       const r = byCat[cid];
       tD += r.debit; tC += r.credit;
-      html += '<tr><td><b>' + esc(catName(cid)) + '</b></td>' +
-        '<td><span class="badge gray">' + esc(PNL_GROUP_LABELS[g] || g) + '</span></td>' +
-        '<td class="num">' + (r.debit ? fmt(r.debit) : '') + '</td>' +
-        '<td class="num">' + (r.credit ? fmt(r.credit) : '') + '</td></tr>';
+      rows.push([catName(cid), PNL_GROUP_LABELS[g] || g, r.debit ? fmt(r.debit) : '', r.credit ? fmt(r.credit) : '']);
     });
   });
-  // Baki bank sebagai akaun Cash & Bank — gabungan semua akaun
-  let cash = 0;
-  BANKS.forEach(b => { cash += bankBalance(b.id); });
-  let totOpen = totalOpening();
-  TXNS.forEach(t => { if (!t.bank_account_id) cash += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
-  html += '<tr><td><b>Cash in Hand & Cash at Bank</b></td><td><span class="badge blue">Cash & Bank</span></td>' +
-    '<td class="num">' + (cash >= 0 ? fmt(cash) : '') + '</td><td class="num">' + (cash < 0 ? fmt(-cash) : '') + '</td></tr>';
+
+  let cash = withTxns(cum, () => {
+    let c = 0;
+    BANKS.forEach(b => { c += bankBalance(b.id); });
+    TXNS.forEach(t => { if (!t.bank_account_id) c += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+    return c;
+  });
+  const totOpen = totalOpening();
+  rows.push(['Cash in Hand & Cash at Bank', 'Cash & Bank', cash >= 0 ? fmt(cash) : '', cash < 0 ? fmt(-cash) : '']);
   if (cash >= 0) tD += cash; else tC += -cash;
-  html += '<tr><td><b>Baki Awal Bank (b/f)</b></td><td><span class="badge gray">Opening</span></td>' +
-    '<td class="num"></td><td class="num">' + fmt(totOpen) + '</td></tr>';
+  rows.push(['Baki Awal Bank (b/f)', 'Opening', '', fmt(totOpen)]);
   tC += totOpen;
 
-  html += '<tr class="total-row"><td colspan="2">TOTAL</td><td class="num">' + fmt(tD) + '</td><td class="num">' + fmt(tC) + '</td></tr>';
+  return { key: 'tb', kind: 'table', name: 'Trial_Balance', title: 'Trial Balance',
+    period: periodLabel(p, true),
+    headers: ['Akaun', 'Kumpulan', 'Debit', 'Credit'],
+    align: ['', '', 'num', 'num'], rows,
+    totals: ['TOTAL', '', fmt(tD), fmt(tC)] };
+}
+
+function renderTrialBalance() {
+  const spec = buildTrialBalance({ mode: 'year' });
+  let html = '<tr><th>Akaun</th><th>Kumpulan</th><th class="num">Debit</th><th class="num">Credit</th></tr>';
+  spec.rows.forEach(r => {
+    html += '<tr><td><b>' + esc(r[0]) + '</b></td>' +
+      '<td><span class="badge ' + (r[1] === 'Cash & Bank' ? 'blue' : 'gray') + '">' + esc(r[1]) + '</span></td>' +
+      '<td class="num">' + esc(r[2]) + '</td><td class="num">' + esc(r[3]) + '</td></tr>';
+  });
+  html += '<tr class="total-row"><td colspan="2">TOTAL</td><td class="num">' + esc(spec.totals[2]) +
+    '</td><td class="num">' + esc(spec.totals[3]) + '</td></tr>';
   document.getElementById('tbTable').innerHTML = html;
 }
+
 
 // ════════════════════════════════════════════════════════════
 // ASSETS
@@ -1880,74 +2060,422 @@ async function deleteAsset(id) {
 // ════════════════════════════════════════════════════════════
 // CASH FLOW
 // ════════════════════════════════════════════════════════════
+function buildCashFlow(p) {
+  const list = pTxns(p);
+  const c = withTxns(list, () => ({
+    np: pnlData('all').np,
+    zakat: pnlData('all').zakat,
+    capex: groupTotal('asset', 'out'),
+    modal: groupTotal('equity', 'in'),
+    ambilan: groupTotal('equity', 'out'),
+    loanIn: groupTotal('liability', 'in'),
+    loanRepay: groupTotal('liability', 'out'),
+    debtorCollect: groupTotal('debtor', 'in'),
+    creditorPay: groupTotal('creditor', 'out')
+  }));
+  // Susut nilai tahunan; kalau tempoh bulanan, agih 1/12
+  const depFull = ASSETS.reduce((s, a) => s + assetDep(a), 0);
+  const dep = (p && p.mode === 'month') ? depFull / 12 : depFull;
+
+  const operating = c.np + dep + c.debtorCollect - c.creditorPay - c.zakat;
+  const investing = -c.capex;
+  const financing = c.modal + c.loanIn - c.loanRepay - c.ambilan;
+
+  const opening = pOpeningCash(p);
+  let closing = opening;
+  list.forEach(t => { closing += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
+
+  const rows = [];
+  rows.push({ lbl: 'CASH FLOW FROM OPERATING ACTIVITIES', type: 'head', blank: true });
+  rows.push({ lbl: 'Net Profit / (Loss)', val: c.np, type: 'indent' });
+  rows.push({ lbl: '(+) Depreciation (bukan tunai)', val: dep, type: 'indent' });
+  rows.push({ lbl: '(+) Kutipan Debtor', val: c.debtorCollect, type: 'indent' });
+  rows.push({ lbl: '(−) Bayaran Creditor', val: -c.creditorPay, type: 'indent' });
+  if (c.zakat > 0) rows.push({ lbl: '(−) Zakat dibayar', val: -c.zakat, type: 'indent' });
+  rows.push({ lbl: 'Net Cash dari Operasi', val: operating, type: 'subtotal', signed: true });
+
+  rows.push({ lbl: 'CASH FLOW FROM INVESTING ACTIVITIES', type: 'head', blank: true });
+  rows.push({ lbl: '(−) Pembelian Aset (Capex)', val: -c.capex, type: 'indent' });
+  rows.push({ lbl: 'Net Cash dari Pelaburan', val: investing, type: 'subtotal', signed: true });
+
+  rows.push({ lbl: 'CASH FLOW FROM FINANCING ACTIVITIES', type: 'head', blank: true });
+  rows.push({ lbl: '(+) Modal', val: c.modal, type: 'indent' });
+  rows.push({ lbl: '(+) Loan Diterima', val: c.loanIn, type: 'indent' });
+  rows.push({ lbl: '(−) Bayaran Balik Loan', val: -c.loanRepay, type: 'indent' });
+  rows.push({ lbl: '(−) Ambilan', val: -c.ambilan, type: 'indent' });
+  rows.push({ lbl: 'Net Cash dari Pembiayaan', val: financing, type: 'subtotal', signed: true });
+
+  rows.push({ lbl: (p && p.mode === 'month' ? 'Baki Awal Bulan' : 'Baki Awal Tahun') + ' (semua akaun)', val: opening, type: 'head' });
+  rows.push({ lbl: 'BAKI TUNAI AKHIR (ikut Cash Book)', val: closing, type: 'grand', signed: true });
+
+  return { key: 'cf', kind: 'statement', name: 'Cash_Flow',
+    title: 'Cash Flow Statement', period: periodLabel(p, false), rows };
+}
+
 function renderCashFlow() {
-  const yr = pnlData('all');
-  const dep = ASSETS.reduce((s, a) => s + assetDep(a), 0);
-  const capex = groupTotal('asset', 'out');
-  const modal = groupTotal('equity', 'in');
-  const ambilan = groupTotal('equity', 'out');
-  const loanIn = groupTotal('liability', 'in');
-  const loanRepay = groupTotal('liability', 'out');
-  const debtorCollect = groupTotal('debtor', 'in');
-  const creditorPay = groupTotal('creditor', 'out');
-
-  const operating = yr.np + dep + debtorCollect - creditorPay - yr.zakat;
-  const investing = -capex;
-  const financing = modal + loanIn - loanRepay - ambilan;
-  const net = operating + investing + financing;
-  const closing = OPENING + net + dep; // dep bukan cash; tolak balik
-  // closing cash sebenar = OPENING + total in - total out
-  let actualClosing = totalOpening();
-  TXNS.forEach(t => { actualClosing += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0); });
-
-  let html = '<div class="rpt-title">DOD WORLDWIDE SUPPLY</div>' +
-    '<div class="rpt-sub">Cash Flow Statement<br>For The Year Ended 31 December ' + YEAR + ' · (RM)</div>';
-
-  html += rptRow('CASH FLOW FROM OPERATING ACTIVITIES', 0, 'head', { blank: true });
-  html += rptRow('Net Profit / (Loss)', yr.np, 'indent');
-  html += rptRow('(+) Depreciation (bukan tunai)', dep, 'indent');
-  html += rptRow('(+) Kutipan Debtor', debtorCollect, 'indent');
-  html += rptRow('(−) Bayaran Creditor', -creditorPay, 'indent');
-  if (yr.zakat > 0) html += rptRow('(−) Zakat dibayar', -yr.zakat, 'indent');
-  html += rptRow('Net Cash dari Operasi', operating, 'subtotal', { signed: true });
-
-  html += rptRow('CASH FLOW FROM INVESTING ACTIVITIES', 0, 'head', { blank: true });
-  html += rptRow('(−) Pembelian Aset (Capex)', -capex, 'indent');
-  html += rptRow('Net Cash dari Pelaburan', investing, 'subtotal', { signed: true });
-
-  html += rptRow('CASH FLOW FROM FINANCING ACTIVITIES', 0, 'head', { blank: true });
-  html += rptRow('(+) Modal', modal, 'indent');
-  html += rptRow('(+) Loan Diterima', loanIn, 'indent');
-  html += rptRow('(−) Bayaran Balik Loan', -loanRepay, 'indent');
-  html += rptRow('(−) Ambilan', -ambilan, 'indent');
-  html += rptRow('Net Cash dari Pembiayaan', financing, 'subtotal', { signed: true });
-
-  html += rptRow('Baki Awal Tahun (semua akaun)', totalOpening(), 'head');
-  html += rptRow('BAKI TUNAI AKHIR (ikut Cash Book)', actualClosing, 'grand', { signed: true });
-
-  document.getElementById('cfReport').innerHTML = html;
+  document.getElementById('cfReport').innerHTML = statementHTML(buildCashFlow({ mode: 'year' }));
 }
 
 // ════════════════════════════════════════════════════════════
 // TAX & ZAKAT
 // ════════════════════════════════════════════════════════════
-function renderZakat() {
-  const yr = pnlData('all');
-  const np = yr.np;
+function buildZakat(p) {
+  const d = withTxns(pTxns(p), () => pnlData('all'));
+  const np = d.np;
   const zakatRate = 2.5;
   const zakatDue = Math.max(0, np * zakatRate / 100);
-  const paid = yr.zakat;
+  const rows = [
+    { lbl: 'Profit / (Loss) sebelum Zakat', val: np, type: 'head', signed: true },
+    { lbl: 'Kadar Zakat Perniagaan', type: 'indent', blank: true },
+    { lbl: '· ' + zakatRate + '% atas untung bersih (anggaran)', val: zakatDue, type: 'indent' },
+    { lbl: 'Zakat sudah dibayar (dari Cash Book)', val: d.zakat, type: 'indent' },
+    { lbl: 'Anggaran Baki Zakat Perlu Dibayar', val: Math.max(0, zakatDue - d.zakat), type: 'grand' },
+    { lbl: 'Profit selepas Zakat (anggaran)', val: np - zakatDue, type: 'subtotal', signed: true }
+  ];
+  return { key: 'zakat', kind: 'statement', name: 'Tax_Zakat',
+    title: 'Tax & Zakat Estimation', period: periodLabel(p, false), rows,
+    note: 'Nota: Ini anggaran ringkas (2.5% atas untung bersih). Pengiraan zakat sebenar ikut kaedah modal kerja / urf — rujuk pusat zakat negeri. Untuk cukai LHDN, rujuk akauntan bertauliah.' };
+}
 
-  let html = '<div class="rpt-title">DOD WORLDWIDE SUPPLY</div>' +
-    '<div class="rpt-sub">Tax & Zakat Estimation<br>For The Year Ended 31 December ' + YEAR + ' · (RM)</div>';
-  html += rptRow('Profit / (Loss) sebelum Zakat', np, 'head', { signed: true });
-  html += rptRow('Kadar Zakat Perniagaan', 0, 'indent', { blank: true });
-  html += rptRow('· ' + zakatRate + '% atas untung bersih (anggaran)', zakatDue, 'indent');
-  html += rptRow('Zakat sudah dibayar (dari Cash Book)', paid, 'indent');
-  html += rptRow('Anggaran Baki Zakat Perlu Dibayar', Math.max(0, zakatDue - paid), 'grand');
-  html += rptRow('Profit selepas Zakat (anggaran)', np - zakatDue, 'subtotal', { signed: true });
-  html += '<p class="hint" style="margin-top:14px;">Nota: Ini anggaran ringkas (2.5% atas untung bersih). Pengiraan zakat sebenar ikut kaedah modal kerja / urf — rujuk pusat zakat negeri. Untuk cukai LHDN, rujuk akauntan bertauliah.</p>';
-  document.getElementById('zakatReport').innerHTML = html;
+function renderZakat() {
+  document.getElementById('zakatReport').innerHTML = statementHTML(buildZakat({ mode: 'year' }));
+}
+
+// ════════════════════════════════════════════════════════════
+// PUSAT LAPORAN — builder jadual (kind:'table') ikut tempoh
+// ════════════════════════════════════════════════════════════
+function buildCashbookSpec(p) {
+  const list = pTxns(p).slice().sort((a, b) =>
+    (a.txn_date + (a.created_at || '')).localeCompare(b.txn_date + (b.created_at || '')));
+  // running balance per akaun dikira atas SEMUA txn tahun (bukan hanya tempoh)
+  const bal = {};
+  BANKS.forEach(b => { bal[b.id] = Number(OPENING[b.id]) || 0; });
+  bal['_none'] = 0;
+  const runAt = {};
+  TXNS.slice().sort((a, b) => (a.txn_date + (a.created_at || '')).localeCompare(b.txn_date + (b.created_at || '')))
+    .forEach(t => {
+      const bid = t.bank_account_id || '_none';
+      if (bal[bid] == null) bal[bid] = 0;
+      bal[bid] += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+      runAt[t.id] = bal[bid];
+    });
+  let tIn = 0, tOut = 0;
+  const rows = list.map(t => {
+    const b = bankById(t.bank_account_id);
+    const amt = Number(t.amount) || 0;
+    if (t.flow === 'in') tIn += amt; else tOut += amt;
+    return [t.txn_date, b ? b.name : 'TIDAK DI-TAG', catName(t.category), t.details || '',
+      t.flow === 'in' ? fmt(amt) : '', t.flow === 'out' ? fmt(amt) : '',
+      runAt[t.id] != null ? fmt(runAt[t.id]) : ''];
+  });
+  return { key: 'cashbook', kind: 'table', name: 'Cash_Book', title: 'Cash Book',
+    period: periodLabel(p, false), wide: true,
+    headers: ['Tarikh', 'Akaun', 'Kategori', 'Details', 'Cash In', 'Cash Out', 'Baki Akaun'],
+    align: ['', '', '', '', 'num', 'num', 'num'], rows,
+    totals: ['TOTAL (' + rows.length + ' transaksi)', '', '', '', fmt(tIn), fmt(tOut), fmt(tIn - tOut)],
+    // CSV dapat versi penuh (lebih banyak kolum) untuk audit
+    csvHeaders: ['Tarikh', 'Akaun', 'Bank', 'Kategori (Kod)', 'Kategori (Nama)', 'P&L Group',
+      'Details', 'Remark', 'Cash In', 'Cash Out', 'Baki Akaun', 'Sumber', 'Import Batch',
+      'Dikey Oleh', 'Dikey Pada', 'Txn ID'],
+    csvRows: list.map(t => {
+      const b = bankById(t.bank_account_id);
+      const amt = Number(t.amount) || 0;
+      return [t.txn_date, b ? b.name : 'TIDAK DI-TAG', b ? b.bank_name : '',
+        t.category || '', catName(t.category), catGroup(t.category),
+        t.details || '', t.remark || '',
+        t.flow === 'in' ? amt.toFixed(2) : '', t.flow === 'out' ? amt.toFixed(2) : '',
+        runAt[t.id] != null ? runAt[t.id].toFixed(2) : '',
+        t.source || 'manual', t.import_batch || '',
+        t.created_by || '', (t.created_at || '').slice(0, 19).replace('T', ' '), t.id];
+    })
+  };
+}
+
+function buildDCSpec(p) {
+  const rows = [], csvRows = [];
+  let tAmt = 0, tOs = 0;
+  DCS.slice().sort((a, b) => (a.entry_date || '').localeCompare(b.entry_date || '')).forEach(d => {
+    const amt = Number(d.amount) || 0, settled = Number(d.settled) || 0;
+    const days = Math.floor((Date.now() - new Date(d.entry_date).getTime()) / 86400000);
+    tAmt += amt; tOs += (amt - settled);
+    rows.push([d.entry_date, (d.kind || '').toUpperCase(), d.party || '', d.details || '',
+      fmt(amt), fmt(settled), fmt(amt - settled), (d.status || '').toUpperCase()]);
+    csvRows.push([d.entry_date, d.kind, d.party || '', d.details || '',
+      amt.toFixed(2), settled.toFixed(2), (amt - settled).toFixed(2),
+      d.status || '', isFinite(days) ? days : '', d.created_by || '', d.id]);
+  });
+  return { key: 'dc', kind: 'table', name: 'Debtor_Creditor', title: 'Senarai Debtor & Creditor',
+    period: 'Kedudukan pada ' + todayISO(), wide: true,
+    headers: ['Tarikh', 'Jenis', 'Pihak', 'Details', 'Amaun', 'Sudah Settle', 'Baki OS', 'Status'],
+    align: ['', '', '', '', 'num', 'num', 'num', ''], rows,
+    totals: ['TOTAL', '', '', '', fmt(tAmt), '', fmt(tOs), ''],
+    csvHeaders: ['Tarikh', 'Jenis', 'Pihak', 'Details', 'Amaun', 'Sudah Settle', 'Baki OS',
+      'Status', 'Umur (Hari)', 'Dikey Oleh', 'ID'],
+    csvRows };
+}
+
+function buildAssetsSpec(p) {
+  let tO = 0, tA = 0, tDp = 0, tCl = 0;
+  const rows = ASSETS.map(a => {
+    const dep = assetDep(a), cl = assetClosing(a), add = Number(a.additions || 0) + Number(a.cost || 0);
+    tO += Number(a.opening_nbv || 0); tA += add; tDp += dep; tCl += cl;
+    return [a.name, fmt(a.opening_nbv), fmt(add), (Number(a.dep_rate) || 0) + '%', fmt(dep), fmt(cl)];
+  });
+  return { key: 'assets', kind: 'table', name: 'Jadual_Aset', title: 'Jadual Aset & Susut Nilai',
+    period: periodLabel(p, true),
+    headers: ['Aset', 'Opening NBV', 'Tambahan', 'Kadar %', 'Susut Nilai', 'Closing NBV'],
+    align: ['', 'num', 'num', 'num', 'num', 'num'], rows,
+    totals: ['TOTAL', fmt(tO), fmt(tA), '', fmt(tDp), fmt(tCl)] };
+}
+
+function buildPerfSpec(p) {
+  const rows = [];
+  let tS = 0, tE = 0;
+  for (let m = 1; m <= 12; m++) {
+    const d = withTxns(TXNS.filter(t => txnMonth(t) === m), () => pnlData('all'));
+    const exp = d.cogs + d.opex;
+    if (!d.sales && !exp) continue;
+    tS += d.sales; tE += exp;
+    rows.push([MONTH_NAMES[m - 1], fmt(d.sales), fmt(exp), fmt(d.np),
+      d.sales ? (d.np / d.sales * 100).toFixed(1) + '%' : '—']);
+  }
+  return { key: 'perf', kind: 'table', name: 'Performance_Bulanan',
+    title: 'Performance Review — Bulanan', period: 'Tahun ' + YEAR,
+    headers: ['Bulan', 'Sales', 'Expenses (COGS+OpEx)', 'Net Profit', 'Margin'],
+    align: ['', 'num', 'num', 'num', 'num'], rows,
+    totals: ['TOTAL', fmt(tS), fmt(tE), fmt(tS - tE), tS ? ((tS - tE) / tS * 100).toFixed(1) + '%' : '—'] };
+}
+
+function buildBanksSpec(p) {
+  const cum = pTxnsCum(p);
+  const rows = [], csvRows = [];
+  let tOpen = 0, tIn = 0, tOut = 0, tBal = 0;
+  BANKS.forEach(b => {
+    let ci = 0, co = 0;
+    cum.forEach(t => {
+      if (t.bank_account_id !== b.id) return;
+      if (t.flow === 'in') ci += Number(t.amount) || 0; else co += Number(t.amount) || 0;
+    });
+    const open = Number(OPENING[b.id]) || 0, bal = open + ci - co;
+    tOpen += open; tIn += ci; tOut += co; tBal += bal;
+    rows.push([b.name + ' · ' + b.bank_name, b.account_no ? '•••' + String(b.account_no).slice(-4) : '',
+      fmt(open), fmt(ci), fmt(co), fmt(bal)]);
+    csvRows.push([b.name, b.bank_name, b.account_no || '', b.account_holder || '',
+      b.is_main ? 'YA' : '', b.active === false ? '' : 'YA',
+      open.toFixed(2), ci.toFixed(2), co.toFixed(2), bal.toFixed(2), b.id]);
+  });
+  return { key: 'banks', kind: 'table', name: 'Akaun_Bank', title: 'Ringkasan Akaun Bank',
+    period: periodLabel(p, true),
+    headers: ['Akaun', 'No.', 'Baki Awal', 'Cash In', 'Cash Out', 'Baki Akhir'],
+    align: ['', '', 'num', 'num', 'num', 'num'], rows,
+    totals: ['TOTAL', '', fmt(tOpen), fmt(tIn), fmt(tOut), fmt(tBal)],
+    csvHeaders: ['Nama Akaun', 'Bank', 'No Akaun', 'Pemegang', 'Akaun Utama', 'Aktif',
+      'Baki Awal', 'Cash In', 'Cash Out', 'Baki Akhir', 'ID'],
+    csvRows };
+}
+
+function buildCategoriesSpec() {
+  const rows = CATS.map(c => [c.name, c.flow === 'in' ? 'CASH IN' : 'CASH OUT',
+    PNL_GROUP_LABELS[c.pnl_group] || c.pnl_group, c.active === false ? 'TIDAK AKTIF' : 'AKTIF']);
+  return { key: 'cats', kind: 'table', name: 'Kategori', title: 'Senarai Kategori Akaun',
+    period: 'Konfigurasi sistem', headers: ['Kategori', 'Aliran', 'Kumpulan P&L', 'Status'],
+    align: ['', '', '', ''], rows };
+}
+
+// Senarai dokumen yang boleh dijana
+const REPORT_DEFS = [
+  { key: 'pnl',      label: 'Statement of Profit & Loss', grp: 'Penyata Kewangan', build: buildPnl, def: true },
+  { key: 'bs',       label: 'Statement of Financial Position', grp: 'Penyata Kewangan', build: buildBalanceSheet, def: true },
+  { key: 'cf',       label: 'Cash Flow Statement', grp: 'Penyata Kewangan', build: buildCashFlow, def: true },
+  { key: 'tb',       label: 'Trial Balance', grp: 'Penyata Kewangan', build: buildTrialBalance, def: true },
+  { key: 'zakat',    label: 'Tax & Zakat Estimation', grp: 'Penyata Kewangan', build: buildZakat, def: false },
+  { key: 'banks',    label: 'Ringkasan Akaun Bank', grp: 'Sokongan', build: buildBanksSpec, def: true },
+  { key: 'assets',   label: 'Jadual Aset & Susut Nilai', grp: 'Sokongan', build: buildAssetsSpec, def: false },
+  { key: 'dc',       label: 'Senarai Debtor & Creditor', grp: 'Sokongan', build: buildDCSpec, def: false },
+  { key: 'perf',     label: 'Performance Review Bulanan', grp: 'Sokongan', build: buildPerfSpec, def: false },
+  { key: 'cashbook', label: 'Cash Book (semua transaksi)', grp: 'Data Mentah', build: buildCashbookSpec, def: false },
+  { key: 'cats',     label: 'Senarai Kategori', grp: 'Data Mentah', build: buildCategoriesSpec, def: false }
+];
+
+// ── Spec → CSV ───────────────────────────────────────────────
+function specToCSV(spec) {
+  const rows = [[COMPANY_NAME], [spec.title], [spec.period], []];
+  if (spec.kind === 'statement') {
+    rows.push(['Butiran', 'Amaun (RM)', 'Jenis']);
+    spec.rows.forEach(r => {
+      let type = 'item';
+      if (r.type === 'head') type = 'header';
+      else if (r.type === 'grand') type = 'grand-total';
+      else if (r.type === 'subtotal') type = 'subtotal';
+      else if (r.type === 'indent') type = 'sub-item';
+      else if (r.type === 'check') type = 'semakan';
+      rows.push([r.lbl, r.blank ? '' : Number(r.val || 0).toFixed(2), type]);
+    });
+  } else {
+    rows.push(spec.csvHeaders || spec.headers);
+    (spec.csvRows || spec.rows).forEach(r => rows.push(spec.csvRows ? r : r.map(csvNum)));
+    if (!spec.csvRows && spec.totals) rows.push(spec.totals.map(csvNum));
+  }
+  if (spec.note) { rows.push([]); rows.push([spec.note]); }
+  return rows;
+}
+
+// ── Spec → HTML cetakan (PDF) ────────────────────────────────
+function specToPrintHTML(spec, meta) {
+  let h = '<section class="print-doc' + (spec.wide ? ' wide' : '') + '">';
+  h += '<div class="pd-head"><div class="pd-co">' + esc(COMPANY_NAME) + '</div>' +
+    '<div class="pd-title">' + esc(spec.title) + '</div>' +
+    '<div class="pd-period">' + esc(spec.period) + '</div>' +
+    '<div class="pd-unit">Semua amaun dalam Ringgit Malaysia (RM)</div></div>';
+
+  if (spec.kind === 'statement') {
+    h += '<table class="pd-stmt">';
+    spec.rows.forEach(r => {
+      const cls = 'pdr-' + (r.type === 'check' ? 'check' : (r.type || 'item'));
+      const val = r.blank ? '' : fmt(r.val);
+      h += '<tr class="' + cls + '"><td class="pd-lbl">' + esc(r.lbl) + '</td>' +
+        '<td class="pd-val">' + esc(val) + '</td></tr>';
+    });
+    h += '</table>';
+  } else {
+    h += '<table class="pd-tbl"><thead><tr>';
+    spec.headers.forEach((hd, i) => {
+      h += '<th class="' + (spec.align[i] === 'num' ? 'num' : '') + '">' + esc(hd) + '</th>';
+    });
+    h += '</tr></thead><tbody>';
+    if (!spec.rows.length) h += '<tr><td colspan="' + spec.headers.length + '" style="text-align:center;">Tiada rekod bagi tempoh ini.</td></tr>';
+    spec.rows.forEach(r => {
+      h += '<tr>';
+      r.forEach((c, i) => { h += '<td class="' + (spec.align[i] === 'num' ? 'num' : '') + '">' + esc(c) + '</td>'; });
+      h += '</tr>';
+    });
+    h += '</tbody>';
+    if (spec.totals) {
+      h += '<tfoot><tr>';
+      spec.totals.forEach((c, i) => { h += '<td class="' + (spec.align[i] === 'num' ? 'num' : '') + '">' + esc(c) + '</td>'; });
+      h += '</tr></tfoot>';
+    }
+    h += '</table>';
+  }
+
+  if (spec.note) h += '<p class="pd-note">' + esc(spec.note) + '</p>';
+  if (meta && meta.sign && spec.kind === 'statement') {
+    h += '<div class="pd-sign"><div class="pd-sign-box"><div class="pd-sign-line"></div>' +
+      'Disediakan oleh<br><span class="pd-sign-nm">' + esc(meta.by) + '</span></div>' +
+      '<div class="pd-sign-box"><div class="pd-sign-line"></div>Disemak & Diluluskan oleh<br>' +
+      '<span class="pd-sign-nm">Director</span></div></div>';
+  }
+  h += '<div class="pd-foot">' + esc(COMPANY_NAME) + ' · ' + esc(spec.title) +
+    ' · Dijana ' + esc(meta ? meta.stamp : todayISO()) + ' oleh ' + esc(meta ? meta.by : '') +
+    ' · Sistem Perakaunan DOD</div>';
+  h += '</section>';
+  return h;
+}
+
+// ── UI Pusat Laporan ─────────────────────────────────────────
+function renderReportCentre() {
+  const sel = document.getElementById('rpPeriod');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = '<option value="all">📅 Setahun Penuh ' + YEAR + '</option>';
+    MONTH_NAMES.forEach((m, i) => {
+      sel.innerHTML += '<option value="' + (i + 1) + '">' + m + ' ' + YEAR + '</option>';
+    });
+  } else if (sel) {
+    sel.options[0].textContent = '📅 Setahun Penuh ' + YEAR;
+    for (let i = 1; i < sel.options.length; i++) sel.options[i].textContent = MONTH_NAMES[i - 1] + ' ' + YEAR;
+  }
+  const box = document.getElementById('rpDocs');
+  if (box && !box.children.length) {
+    const groups = {};
+    REPORT_DEFS.forEach(d => { (groups[d.grp] = groups[d.grp] || []).push(d); });
+    let html = '';
+    Object.keys(groups).forEach(g => {
+      html += '<div class="rp-grp"><div class="rp-grp-title">' + esc(g) + '</div>';
+      groups[g].forEach(d => {
+        html += '<label class="rp-doc"><input type="checkbox" value="' + d.key + '"' +
+          (d.def ? ' checked' : '') + ' onchange="updateReportPreview()"><span>' + esc(d.label) + '</span></label>';
+      });
+      html += '</div>';
+    });
+    box.innerHTML = html;
+  }
+  updateReportPreview();
+}
+function rpSelectedKeys() {
+  return Array.from(document.querySelectorAll('#rpDocs input:checked')).map(i => i.value);
+}
+function rpSetAll(on) {
+  document.querySelectorAll('#rpDocs input[type=checkbox]').forEach(i => { i.checked = on; });
+  updateReportPreview();
+}
+function rpPeriod() {
+  const v = document.getElementById('rpPeriod').value;
+  return v === 'all' ? { mode: 'year' } : { mode: 'month', month: parseInt(v, 10) };
+}
+function rpFormat() {
+  return document.querySelector('input[name=rpFmt]:checked').value;
+}
+function setRpFormat(f) {
+  document.getElementById('rpFmt_' + f).checked = true;
+  updateReportPreview();
+}
+function updateReportPreview() {
+  const keys = rpSelectedKeys();
+  const fmtSel = rpFormat();
+  const p = rpPeriod();
+  const info = document.getElementById('rpInfo');
+  const btn = document.getElementById('rpGenBtn');
+  if (btn) btn.disabled = !keys.length;
+  if (!info) return;
+  if (!keys.length) { info.innerHTML = '<span style="color:var(--amber);">⚠️ Pilih sekurang-kurangnya satu dokumen.</span>'; return; }
+  const txnCount = pTxns(p).length;
+  info.innerHTML = '<b>' + keys.length + ' dokumen</b> · ' + esc(periodLabel(p, false)) + ' · ' +
+    txnCount + ' transaksi dalam tempoh · format <b>' + (fmtSel === 'pdf' ? 'PDF (cetak)' : 'CSV') + '</b>' +
+    (fmtSel === 'csv' ? ' — ' + keys.length + ' fail berasingan' : ' — semua dokumen dalam satu fail PDF');
+  // Preview dokumen pertama yang dipilih
+  const prev = document.getElementById('rpPreview');
+  if (prev) {
+    try {
+      const def = REPORT_DEFS.find(d => d.key === keys[0]);
+      const spec = def.build(p);
+      prev.innerHTML = specToPrintHTML(spec, { stamp: todayISO(), by: (currentUser && currentUser.name) || '', sign: fmtSel === 'pdf' });
+    } catch (e) { prev.innerHTML = '<div class="empty-note">Preview gagal: ' + esc(e.message) + '</div>'; }
+  }
+}
+
+function generateReports() {
+  const keys = rpSelectedKeys();
+  if (!keys.length) return toast('⚠️ Pilih sekurang-kurangnya satu dokumen');
+  const p = rpPeriod();
+  const defs = REPORT_DEFS.filter(d => keys.indexOf(d.key) >= 0);
+  if (rpFormat() === 'csv') return generateCSVBundle(defs, p);
+  return generatePDF(defs, p);
+}
+
+async function generateCSVBundle(defs, p) {
+  for (const d of defs) {
+    try { downloadCSV('DOD_' + d.build(p).name + '_' + periodShort(p), specToCSV(d.build(p))); }
+    catch (e) { console.error(e); toast('❌ Gagal jana ' + d.label); }
+    await new Promise(r => setTimeout(r, 350)); // elak browser sekat multiple download
+  }
+  toast('✅ ' + defs.length + ' fail CSV dimuat turun');
+}
+
+function generatePDF(defs, p) {
+  const stamp = todayISO();
+  const by = (currentUser && currentUser.name) || (currentUser && currentUser.id) || '';
+  let html = '';
+  defs.forEach(d => {
+    try { html += specToPrintHTML(d.build(p), { stamp, by, sign: true }); }
+    catch (e) { console.error(e); }
+  });
+  document.getElementById('printArea').innerHTML = html;
+  document.body.classList.add('printing');
+  toast('🖨 Pilih "Save as PDF" dalam dialog cetak');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => document.body.classList.remove('printing'), 500);
+  }, 150);
 }
 
 // ════════════════════════════════════════════════════════════
