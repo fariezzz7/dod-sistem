@@ -218,7 +218,13 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-header-title">Performance Review — Bulan × Sales / Expenses / Net Profit</span></div>
+        <div class="card-header">
+          <span class="card-header-title">Performance Review — Bulan × Sales / Expenses / Net Profit</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn sm" onclick="exportPerfCSV()">⬇️ CSV</button>
+            <button class="btn sm primary" onclick="exportAllCSV()">📦 Download Semua Penyata</button>
+          </div>
+        </div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="perfTable"></table></div></div>
       </div>
     </div>
@@ -281,6 +287,7 @@
             <select id="cbCatFilter" style="width:auto;max-width:200px;" onchange="renderCashbook()"></select>
             <button class="btn sm" id="cbSortBtn" onclick="toggleCbSort()">⬇ Terbaru Dulu</button>
             <input type="text" id="cbSearch" placeholder="🔍 Cari details / kategori..." style="width:200px;" oninput="renderCashbook()">
+            <button class="btn sm primary" onclick="exportCashbookCSV()" title="Export transaksi ikut filter semasa (data penuh + running balance)">⬇️ CSV</button>
           </div>
         </div>
         <div class="card-body">
@@ -326,7 +333,7 @@
       </div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-header"><span class="card-header-title">👥 Debtor (Belum Kutip)</span><span class="badge in" id="dcDebtorTotal">RM 0</span></div>
+          <div class="card-header"><span class="card-header-title">👥 Debtor (Belum Kutip)</span><span style="display:flex;gap:8px;align-items:center;"><span class="badge in" id="dcDebtorTotal">RM 0</span><button class="btn sm" onclick="exportDCCSV()" title="Export semua debtor & creditor (termasuk settled)">⬇️ CSV</button></span></div>
           <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="debtorTable"></table></div></div>
         </div>
         <div class="card">
@@ -335,7 +342,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-header-title">✅ Sejarah Settled</span></div>
+        <div class="card-header"><span class="card-header-title">✅ Sejarah Settled</span><button class="btn sm" onclick="exportTableCSV('dcSettledTable','Debtor_Creditor_Settled')">⬇️ CSV</button></div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="dcSettledTable"></table></div></div>
       </div>
     </div>
@@ -345,9 +352,12 @@
       <div class="card">
         <div class="card-header">
           <span class="card-header-title">📊 Statement of Profit & Loss</span>
-          <select id="pnlMonth" onchange="renderPnl()" style="width:auto;">
-            <option value="all">Setahun Penuh</option>
-          </select>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="pnlMonth" onchange="renderPnl()" style="width:auto;">
+              <option value="all">Setahun Penuh</option>
+            </select>
+            <button class="btn sm" onclick="exportRptCSV('pnlReport','Profit_Loss')">⬇️ CSV</button>
+          </div>
         </div>
         <div class="card-body"><div class="rpt" id="pnlReport"></div></div>
       </div>
@@ -356,7 +366,7 @@
     <!-- ════════ BALANCE SHEET ════════ -->
     <div class="view" id="view-balancesheet">
       <div class="card">
-        <div class="card-header"><span class="card-header-title">⚖️ Statement of Financial Position</span></div>
+        <div class="card-header"><span class="card-header-title">⚖️ Statement of Financial Position</span><button class="btn sm" onclick="exportRptCSV('bsReport','Balance_Sheet')">⬇️ CSV</button></div>
         <div class="card-body"><div class="rpt" id="bsReport"></div></div>
       </div>
     </div>
@@ -364,7 +374,7 @@
     <!-- ════════ TRIAL BALANCE ════════ -->
     <div class="view" id="view-trialbalance">
       <div class="card">
-        <div class="card-header"><span class="card-header-title">🧮 Trial Balance</span></div>
+        <div class="card-header"><span class="card-header-title">🧮 Trial Balance</span><button class="btn sm" onclick="exportTableCSV('tbTable','Trial_Balance')">⬇️ CSV</button></div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="tbTable"></table></div></div>
       </div>
     </div>
@@ -396,7 +406,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-header-title">🏢 Jadual Aset & Susut Nilai</span></div>
+        <div class="card-header"><span class="card-header-title">🏢 Jadual Aset & Susut Nilai</span><button class="btn sm" onclick="exportTableCSV('assetTable','Aset_Susut_Nilai')">⬇️ CSV</button></div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="assetTable"></table></div></div>
       </div>
     </div>
@@ -404,7 +414,7 @@
     <!-- ════════ CASH FLOW ════════ -->
     <div class="view" id="view-cashflow">
       <div class="card">
-        <div class="card-header"><span class="card-header-title">🌊 Cash Flow Statement</span></div>
+        <div class="card-header"><span class="card-header-title">🌊 Cash Flow Statement</span><button class="btn sm" onclick="exportRptCSV('cfReport','Cash_Flow')">⬇️ CSV</button></div>
         <div class="card-body"><div class="rpt" id="cfReport"></div></div>
       </div>
     </div>
@@ -412,7 +422,7 @@
     <!-- ════════ TAX & ZAKAT ════════ -->
     <div class="view" id="view-zakat">
       <div class="card">
-        <div class="card-header"><span class="card-header-title">🕌 Tax & Zakat Estimation</span></div>
+        <div class="card-header"><span class="card-header-title">🕌 Tax & Zakat Estimation</span><button class="btn sm" onclick="exportRptCSV('zakatReport','Tax_Zakat')">⬇️ CSV</button></div>
         <div class="card-body"><div class="rpt" id="zakatReport"></div></div>
       </div>
     </div>
@@ -449,7 +459,10 @@
       <div class="card">
         <div class="card-header">
           <span class="card-header-title">🕘 Import History (Tahun <span id="impHistYear"></span>)</span>
-          <button class="btn sm" onclick="renderImportHistory()">🔄 Refresh</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn sm" onclick="exportTableCSV('impHistTable','Import_History')">⬇️ CSV</button>
+            <button class="btn sm" onclick="renderImportHistory()">🔄 Refresh</button>
+          </div>
         </div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="impHistTable"></table></div></div>
       </div>
@@ -470,7 +483,10 @@
       <div class="card">
         <div class="card-header">
           <span class="card-header-title">🏦 Akaun Bank</span>
-          <button class="btn sm primary" onclick="openBankModal()">＋ Tambah Akaun</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn sm" onclick="exportBanksCSV()" title="Baki awal, cash in/out & baki semasa setiap akaun">⬇️ CSV</button>
+            <button class="btn sm primary" onclick="openBankModal()">＋ Tambah Akaun</button>
+          </div>
         </div>
         <div class="card-body" id="bankSection">
           <div class="empty-note">Belum ada akaun bank. Klik "Tambah Akaun" untuk setup Akaun Utama.</div>
@@ -492,7 +508,10 @@
       <div class="card">
         <div class="card-header">
           <span class="card-header-title">🏷️ Kategori</span>
-          <button class="btn sm primary" onclick="openCatModal()">＋ Tambah Kategori</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn sm" onclick="exportTableCSV('catTable','Kategori')">⬇️ CSV</button>
+            <button class="btn sm primary" onclick="openCatModal()">＋ Tambah Kategori</button>
+          </div>
         </div>
         <div class="card-body tight"><div class="tbl-wrap"><table class="tbl" id="catTable"></table></div></div>
       </div>
@@ -751,6 +770,179 @@ function todayISO() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 function txnMonth(t) { return parseInt((t.txn_date || '').slice(5, 7), 10) || 0; }
+
+// ── CSV Export ───────────────────────────────────────────────
+// Semua export guna helper ni supaya format konsisten & senang audit dalam Excel.
+function csvCell(v) {
+  const s = (v == null ? '' : String(v)).replace(/\r?\n/g, ' · ').trim();
+  return /[",;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+// Tukar "1,234.00" / "(500.00)" / "RM 1,234.00" jadi nombor mentah untuk Excel
+function csvNum(s) {
+  const t = String(s == null ? '' : s).replace(/RM\s*/i, '').trim();
+  if (!/^\(?-?[\d,]+(\.\d+)?\)?$/.test(t) || t === '') return s;
+  const neg = /^\(.*\)$/.test(t);
+  const n = Number(t.replace(/[(),]/g, ''));
+  if (!isFinite(n)) return s;
+  return (neg ? -n : n).toFixed(2);
+}
+// Ambil teks elemen (kekal newline untuk <br> / blok) — innerText tak boleh harap
+// sebab view yang tak aktif ada display:none.
+function elText(el) {
+  if (!el) return '';
+  const c = el.cloneNode(true);
+  c.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+  c.querySelectorAll('div,p').forEach(d => d.insertAdjacentText('beforebegin', '\n'));
+  return (c.textContent || '').replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
+}
+function downloadCSV(name, rows) {
+  const body = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + body], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name.replace(/[^\w\-. ]+/g, '_') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('⬇️ ' + a.download + ' dimuat turun');
+}
+function csvName(label) {
+  return 'DOD_' + label + '_' + YEAR + '_' + todayISO();
+}
+// Export mana-mana <table class="tbl"> ikut apa yang dipapar (hormat filter semasa)
+function exportTableCSV(tableId, label) {
+  const tbl = document.getElementById(tableId);
+  const trs = tbl ? tbl.querySelectorAll('tr') : [];
+  if (!trs.length) { toast('⚠️ Takde data untuk di-export'); return; }
+  const rows = [];
+  trs.forEach(tr => {
+    const cells = [];
+    tr.querySelectorAll('th,td').forEach(td => {
+      // skip kolum butang aksi (Edit/Padam)
+      if (td.querySelector('button, .btn, a[onclick]')) { cells.push(''); return; }
+      const txt = elText(td);
+      cells.push(td.classList.contains('num') ? csvNum(txt) : txt);
+    });
+    while (cells.length && cells[cells.length - 1] === '') cells.pop();
+    if (cells.length) rows.push(cells);
+  });
+  if (!rows.length) { toast('⚠️ Takde data untuk di-export'); return; }
+  downloadCSV(csvName(label), rows);
+}
+// Export penyata format .rpt (P&L, Balance Sheet, Cash Flow, Zakat)
+function exportRptCSV(divId, label) {
+  const el = document.getElementById(divId);
+  if (!el) { toast('⚠️ Takde data untuk di-export'); return; }
+  const rows = [];
+  el.querySelectorAll('.rpt-title, .rpt-sub').forEach(h => {
+    elText(h).split('\n').forEach(line => { if (line) rows.push([line]); });
+  });
+  if (rows.length) rows.push([]);
+  rows.push(['Butiran', 'Amaun (RM)', 'Jenis']);
+  el.querySelectorAll('.rpt-row').forEach(r => {
+    const lbl = elText(r.querySelector('.lbl'));
+    const val = elText(r.querySelector('.val'));
+    let type = 'item';
+    if (r.classList.contains('head')) type = 'header';
+    else if (r.classList.contains('grand')) type = 'grand-total';
+    else if (r.classList.contains('subtotal')) type = 'subtotal';
+    else if (r.classList.contains('indent')) type = 'sub-item';
+    rows.push([lbl, csvNum(val), type]);
+  });
+  if (rows.length <= 1) { toast('⚠️ Takde data untuk di-export'); return; }
+  downloadCSV(csvName(label), rows);
+}
+// Cash Book — data mentah penuh (ikut filter semasa) termasuk running balance & audit trail
+function exportCashbookCSV() {
+  const list = cbFiltered();
+  if (!list.length) { toast('⚠️ Takde transaksi untuk di-export'); return; }
+  // running balance per akaun dikira atas SEMUA txn tahun (bukan hanya yang ditapis)
+  const bal = {};
+  BANKS.forEach(b => { bal[b.id] = Number(OPENING[b.id]) || 0; });
+  bal['_none'] = 0;
+  const runAt = {};
+  TXNS.slice().sort((a, b) => (a.txn_date + (a.created_at || '')).localeCompare(b.txn_date + (b.created_at || '')))
+    .forEach(t => {
+      const bid = t.bank_account_id || '_none';
+      if (bal[bid] == null) bal[bid] = 0;
+      bal[bid] += (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+      runAt[t.id] = bal[bid];
+    });
+  const rows = [['Tarikh', 'Akaun', 'Bank', 'Kategori (Kod)', 'Kategori (Nama)', 'P&L Group',
+    'Details', 'Remark', 'Cash In', 'Cash Out', 'Baki Akaun', 'Sumber', 'Import Batch',
+    'Dikey Oleh', 'Dikey Pada', 'Txn ID']];
+  list.forEach(t => {
+    const b = bankById(t.bank_account_id);
+    const amt = Number(t.amount) || 0;
+    rows.push([
+      t.txn_date, b ? b.name : 'TIDAK DI-TAG', b ? b.bank_name : '',
+      t.category || '', catName(t.category), catGroup(t.category),
+      t.details || '', t.remark || '',
+      t.flow === 'in' ? amt.toFixed(2) : '', t.flow === 'out' ? amt.toFixed(2) : '',
+      (runAt[t.id] != null ? runAt[t.id].toFixed(2) : ''),
+      t.source || 'manual', t.import_batch || '',
+      t.created_by || '', (t.created_at || '').slice(0, 19).replace('T', ' '), t.id
+    ]);
+  });
+  downloadCSV(csvName('CashBook'), rows);
+}
+// Debtor & Creditor — data mentah penuh (semua status)
+function exportDCCSV() {
+  if (!DCS.length) { toast('⚠️ Takde rekod debtor/creditor'); return; }
+  const rows = [['Tarikh', 'Jenis', 'Pihak', 'Details', 'Amaun', 'Sudah Settle', 'Baki OS',
+    'Status', 'Umur (Hari)', 'Dikey Oleh', 'ID']];
+  DCS.forEach(d => {
+    const amt = Number(d.amount) || 0, settled = Number(d.settled) || 0;
+    const days = Math.floor((Date.now() - new Date(d.entry_date).getTime()) / 86400000);
+    rows.push([
+      d.entry_date, d.kind, d.party || '', d.details || '',
+      amt.toFixed(2), settled.toFixed(2), (amt - settled).toFixed(2),
+      d.status || '', isFinite(days) ? days : '', d.created_by || '', d.id
+    ]);
+  });
+  downloadCSV(csvName('Debtor_Creditor'), rows);
+}
+// Dashboard — jadual performance bulanan
+function exportPerfCSV() { exportTableCSV('perfTable', 'Performance_Bulanan'); }
+// Settings — senarai akaun bank + baki awal + baki semasa
+function exportBanksCSV() {
+  if (!BANKS.length) { toast('⚠️ Takde akaun bank'); return; }
+  const rows = [['Nama Akaun', 'Bank', 'No Akaun', 'Pemegang', 'Akaun Utama', 'Aktif',
+    'Baki Awal ' + YEAR, 'Cash In', 'Cash Out', 'Baki Semasa', 'ID']];
+  BANKS.forEach(b => {
+    let ci = 0, co = 0;
+    TXNS.forEach(t => {
+      if (t.bank_account_id !== b.id) return;
+      if (t.flow === 'in') ci += Number(t.amount) || 0; else co += Number(t.amount) || 0;
+    });
+    rows.push([b.name, b.bank_name, b.account_no || '', b.account_holder || '',
+      b.is_main ? 'YA' : '', b.active === false ? '' : 'YA',
+      (Number(OPENING[b.id]) || 0).toFixed(2), ci.toFixed(2), co.toFixed(2),
+      bankBalance(b.id).toFixed(2), b.id]);
+  });
+  downloadCSV(csvName('Akaun_Bank'), rows);
+}
+// Muat turun semua penyata sekali gus (untuk audit manual)
+async function exportAllCSV() {
+  const jobs = [
+    () => exportCashbookCSV(),
+    () => exportDCCSV(),
+    () => exportBanksCSV(),
+    () => exportTableCSV('perfTable', 'Performance_Bulanan'),
+    () => exportRptCSV('pnlReport', 'Profit_Loss'),
+    () => exportRptCSV('bsReport', 'Balance_Sheet'),
+    () => exportTableCSV('tbTable', 'Trial_Balance'),
+    () => exportRptCSV('cfReport', 'Cash_Flow'),
+    () => exportRptCSV('zakatReport', 'Tax_Zakat'),
+    () => exportTableCSV('assetTable', 'Aset_Susut_Nilai'),
+    () => exportTableCSV('catTable', 'Kategori')
+  ];
+  for (const j of jobs) {
+    try { j(); } catch (e) { console.error(e); }
+    await new Promise(r => setTimeout(r, 350)); // elak browser block multiple download
+  }
+  toast('✅ Semua penyata ' + YEAR + ' selesai dimuat turun');
+}
 function catById(id) { return CATS.find(c => c.id === id); }
 function catName(id) { const c = catById(id); return c ? c.name : id; }
 function catGroup(id) { const c = catById(id); return c ? c.pnl_group : 'admin'; }
