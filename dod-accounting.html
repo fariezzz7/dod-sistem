@@ -157,6 +157,20 @@
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:820px){.grid-2{grid-template-columns:1fr;}}
   .hint{font-size:11px;color:var(--textm);line-height:1.55;}
+  /* ══ SEMAKAN DUPLICATE ══ */
+  .dup-card{border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden;background:var(--bg2);}
+  .dup-card.done{opacity:.72;}
+  .dup-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:12px 15px;background:var(--bg3);border-bottom:1px solid var(--line);}
+  .dup-sum{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .dup-amt{font-family:'Courier New',monospace;font-weight:800;font-size:16px;}
+  .dup-amt.in{color:var(--green);} .dup-amt.out{color:var(--red);}
+  .dup-nm{font-weight:700;font-size:13px;color:var(--text);word-break:break-word;}
+  .dup-tbl th{font-size:9px;} .dup-tbl td{font-size:11.5px;padding:6px 12px;}
+  .dup-act{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;
+    padding:11px 15px;border-top:1px solid var(--line);background:var(--bg3);}
+  .dup-act .hint{margin-right:auto;}
+
   /* ══ PUSAT LAPORAN ══ */
   .rp-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;}
   @media(max-width:820px){.rp-grid{grid-template-columns:1fr;}}
@@ -255,6 +269,7 @@
   <div class="tab-bar" id="tabBar">
     <div class="tab-item active" data-view="dashboard" onclick="navTo('dashboard')">📈 Dashboard</div>
     <div class="tab-item" data-view="cashbook" onclick="navTo('cashbook')">💵 Cash Book</div>
+    <div class="tab-item" data-view="duplicates" onclick="navTo('duplicates')">🔍 Duplicate</div>
     <div class="tab-item" data-view="debtor" onclick="navTo('debtor')">👥 Debtor & Creditor</div>
     <div class="tab-item" data-view="pnl" onclick="navTo('pnl')">📊 Profit & Loss</div>
     <div class="tab-item" data-view="balancesheet" onclick="navTo('balancesheet')">⚖️ Balance Sheet</div>
@@ -364,6 +379,34 @@
           <div class="filter-bar" id="cbMonthPills"></div>
           <div class="kpi-grid" id="cbSummary" style="margin-bottom:12px;"></div>
           <div class="tbl-wrap"><table class="tbl" id="cbTable"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ SEMAKAN DUPLICATE ════════ -->
+    <div class="view" id="view-duplicates">
+      <div class="kpi-grid" id="dupKpis"></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">🔍 Semakan Duplicate Key-in</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="flow-toggle" id="dupFilterBar" style="font-size:0;">
+              <div class="flow-opt active" data-f="pending" onclick="setDupFilter('pending')" style="padding:6px 12px;font-size:11px;">BELUM SEMAK</div>
+              <div class="flow-opt" data-f="ok" onclick="setDupFilter('ok')" style="padding:6px 12px;font-size:11px;">DITANDA SAH</div>
+              <div class="flow-opt" data-f="all" onclick="setDupFilter('all')" style="padding:6px 12px;font-size:11px;">SEMUA</div>
+            </div>
+            <button class="btn sm" onclick="exportDupCSV()">⬇️ CSV</button>
+            <button class="btn sm" onclick="renderDuplicates()">🔄 Imbas Semula</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="hint" style="margin-bottom:14px;">
+            Dikesan bila <b>nama + amaun + tarikh + aliran</b> semuanya sama. Ini <b>syak sahaja</b> —
+            customer memang boleh bayar amaun sama pada hari sama, dan supplier memang boleh dibayar
+            berulang. Semak setiap satu, kemudian tanda <b>Sah</b> atau padam yang berulang.
+            Yang dah ditanda tak akan muncul lagi dalam senarai "Belum Semak".
+          </p>
+          <div id="dupList"></div>
         </div>
       </div>
     </div>
@@ -1123,6 +1166,7 @@ async function loadAll() {
         }
       } catch (e) {}
     }
+    await loadDupReview();
     // Set default bank untuk form key-in
     if (main && !cbBankSel) cbBankSel = main.id;
     if (main && !impBankSel) impBankSel = main.id;
@@ -1174,6 +1218,7 @@ function renderAll() {
   renderZakat();
   renderSettings();
   renderReportCentre();
+  renderDuplicates();
 }
 
 async function onYearChange() {
@@ -1190,6 +1235,7 @@ function navTo(view) {
   if (view === 'dashboard') renderDashboard();
   if (view === 'import') renderImportHistory();
   if (view === 'reports') renderReportCentre();
+  if (view === 'duplicates') renderDuplicates();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1449,6 +1495,27 @@ async function saveTxn() {
   if (!amount || amount <= 0) return toast('⚠️ Amaun mesti lebih dari 0');
   if (parseInt(date.slice(0, 4), 10) !== YEAR) return toast('⚠️ Tarikh mesti dalam tahun ' + YEAR + ' (tukar tahun di atas jika perlu)');
 
+  // Amaran duplicate — nama + amaun + tarikh + aliran sama dengan rekod sedia ada.
+  // Bukan halangan: user boleh teruskan sebab bayaran serupa memang mungkin sah.
+  if (!editTxnId) {
+    const cand = { txn_date: date, flow: cbFlow, amount, details };
+    const clash = TXNS.filter(t => dupKey(t) === dupKey(cand));
+    if (clash.length) {
+      const lines = clash.map(t => {
+        const b = bankById(t.bank_account_id);
+        return '  · ' + (b ? b.name : 'TIDAK DI-TAG') + ' · ' + catName(t.category) +
+          ' · dikey ' + (t.created_at || '').slice(0, 16).replace('T', ' ') +
+          ' oleh ' + (t.created_by || '—');
+      }).join('\n');
+      const ok = confirm('⚠️ KEMUNGKINAN DUPLICATE\n\n' +
+        'Dah ada ' + clash.length + ' rekod dengan nama, amaun & tarikh yang SAMA:\n\n' +
+        date + '  ' + fmtRM(amount) + '  ' + details + '\n' + lines + '\n\n' +
+        'Kalau ini memang bayaran berasingan (customer bayar 2 kali amaun sama hari sama), tekan OK untuk teruskan.\n' +
+        'Kalau tersalah key dua kali, tekan Cancel.');
+      if (!ok) return toast('↩️ Key-in dibatalkan — rekod tidak disimpan');
+    }
+  }
+
   const btn = document.getElementById('cbSaveBtn');
   btn.disabled = true;
   try {
@@ -1476,7 +1543,7 @@ async function saveTxn() {
     }
     TXNS.sort((a, b) => (a.txn_date || '').localeCompare(b.txn_date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
     populateCatFilter();
-    renderCashbook(); renderDashboard(); renderPnl(); renderBalanceSheet(); renderTrialBalance(); renderCashFlow(); renderZakat();
+    renderCashbook(); renderDashboard(); renderPnl(); renderBalanceSheet(); renderTrialBalance(); renderCashFlow(); renderZakat(); renderDuplicates();
   } catch (e) {
     toast('❌ Gagal simpan: ' + e.message);
   }
@@ -2209,6 +2276,273 @@ function buildZakat(p) {
 
 function renderZakat() {
   document.getElementById('zakatReport').innerHTML = statementHTML(buildZakat({ mode: 'year' }));
+}
+
+// ════════════════════════════════════════════════════════════
+// PENGESAN DUPLICATE KEY-IN
+// Syarat duplicate: NAMA sama + AMAUN sama + TARIKH sama (+ aliran sama).
+// Ini SYAK, bukan kesalahan — customer memang boleh bayar amaun sama pada
+// hari sama. Sebab tu setiap kumpulan kena disemak & ditanda oleh manusia.
+// ════════════════════════════════════════════════════════════
+let DUP_REVIEW = {};        // { groupKey: {status:'ok'|'dup', by, at, note} }
+let dupFilter = 'pending';  // 'pending' | 'all' | 'ok'
+
+// Normalisasi nama supaya "LALAMOVE MALAYSIA SDN. BHD" == "lalamove malaysia sdn bhd"
+function dupNorm(s) {
+  return String(s || '').toUpperCase()
+    .replace(/['".,`‘’“”]/g, '')
+    .replace(/\bSDN\b\s*\bBHD\b/g, 'SDNBHD')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function dupKey(t) {
+  return [t.txn_date, t.flow, (Number(t.amount) || 0).toFixed(2), dupNorm(t.details)].join('|');
+}
+// Kumpulan transaksi yang berkongsi tarikh + amaun + nama + aliran
+function findDupGroups() {
+  const map = {};
+  TXNS.forEach(t => {
+    if (!dupNorm(t.details)) return; // nama kosong — tak boleh dibanding
+    (map[dupKey(t)] = map[dupKey(t)] || []).push(t);
+  });
+  const groups = [];
+  Object.keys(map).forEach(k => {
+    const list = map[k];
+    if (list.length < 2) return;
+    list.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    const rev = DUP_REVIEW[k] || null;
+    // Isyarat risiko: jarak masa antara key-in pertama & terakhir
+    let gapMin = null;
+    const t0 = list[0].created_at, t1 = list[list.length - 1].created_at;
+    if (t0 && t1) gapMin = Math.abs(new Date(t1) - new Date(t0)) / 60000;
+    const sameUser = list.every(t => t.created_by === list[0].created_by);
+    const sameBatch = list.every(t => t.import_batch && t.import_batch === list[0].import_batch);
+    let risk = 'sederhana';
+    if (gapMin != null && gapMin <= 10 && sameUser) risk = 'tinggi';   // dikey berturut-turut
+    else if (sameBatch) risk = 'tinggi';                                // import sama masuk 2x
+    else if (gapMin != null && gapMin > 1440) risk = 'rendah';          // beza lebih sehari
+    groups.push({
+      key: k, date: list[0].txn_date, flow: list[0].flow,
+      amount: Number(list[0].amount) || 0, details: list[0].details,
+      txns: list, count: list.length, gapMin, sameUser, risk,
+      review: rev,
+      // nilai yang terjejas kalau memang duplicate (semua kecuali satu)
+      impact: (list.length - 1) * (Number(list[0].amount) || 0) * (list[0].flow === 'in' ? 1 : -1)
+    });
+  });
+  groups.sort((a, b) => {
+    const rank = { tinggi: 0, sederhana: 1, rendah: 2 };
+    return (rank[a.risk] - rank[b.risk]) || b.amount - a.amount || a.date.localeCompare(b.date);
+  });
+  return groups;
+}
+function dupPending(groups) { return groups.filter(g => !g.review); }
+
+// ── Simpan keputusan semakan ke system_settings ──────────────
+async function loadDupReview() {
+  DUP_REVIEW = {};
+  try {
+    const r = await supaGet('system_settings', 'select=value&key=eq.acc_dup_review_' + YEAR);
+    if (r && r[0] && r[0].value) DUP_REVIEW = JSON.parse(r[0].value) || {};
+  } catch (e) { console.error('load dup review', e); }
+}
+async function saveDupReview() {
+  await supaFetch('/rest/v1/system_settings', {
+    method: 'POST',
+    headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify([{ key: 'acc_dup_review_' + YEAR, value: JSON.stringify(DUP_REVIEW) }])
+  });
+}
+// Butang UI hantar indeks (bukan key mentah) — nama boleh ada apostrof/petikan
+// yang akan merosakkan atribut onclick.
+let DUP_SHOWN = [];
+function dupKeyAt(i) {
+  const g = DUP_SHOWN[i];
+  if (!g) { toast('⚠️ Senarai dah berubah — imbas semula'); renderDuplicates(); return null; }
+  return g.key;
+}
+function markDupAt(i, status) { const k = dupKeyAt(i); if (k) markDup(k, status); }
+function unmarkDupAt(i) { const k = dupKeyAt(i); if (k) unmarkDup(k); }
+function deleteDupExtrasAt(i) { const k = dupKeyAt(i); if (k) deleteDupExtras(k); }
+
+async function markDup(key, status) {
+  const prev = DUP_REVIEW[key];
+  DUP_REVIEW[key] = { status, by: currentUser.id, at: new Date().toISOString() };
+  try {
+    await saveDupReview();
+    renderDuplicates();
+    toast(status === 'ok' ? '✅ Ditanda SAH — bukan duplicate' : '⚑ Ditanda sebagai duplicate');
+  } catch (e) {
+    if (prev) DUP_REVIEW[key] = prev; else delete DUP_REVIEW[key];
+    toast('❌ Gagal simpan semakan: ' + e.message);
+  }
+}
+async function unmarkDup(key) {
+  const prev = DUP_REVIEW[key];
+  delete DUP_REVIEW[key];
+  try { await saveDupReview(); renderDuplicates(); toast('↩️ Semakan dibuang — kembali ke senarai belum semak'); }
+  catch (e) { DUP_REVIEW[key] = prev; toast('❌ Gagal: ' + e.message); }
+}
+
+// Padam rekod berulang — kekalkan yang PALING AWAL dikey, padam yang lain
+async function deleteDupExtras(key) {
+  const g = findDupGroups().find(x => x.key === key);
+  if (!g) return;
+  const keep = g.txns[0], drop = g.txns.slice(1);
+  const msg = 'Padam ' + drop.length + ' rekod berulang?\n\n' +
+    'KEKAL:  ' + keep.txn_date + '  ' + fmtRM(keep.amount) + '  ' + (keep.details || '') +
+    '\n        (dikey ' + (keep.created_at || '').slice(0, 16).replace('T', ' ') + ' oleh ' + (keep.created_by || '—') + ')\n\n' +
+    'PADAM:\n' + drop.map(t => '  · dikey ' + (t.created_at || '').slice(0, 16).replace('T', ' ') +
+      ' oleh ' + (t.created_by || '—') + ' · ' + catName(t.category)).join('\n') +
+    '\n\nKesan pada baki: ' + fmtRM(-g.impact);
+  if (!confirm(msg)) return;
+  const pin = prompt('Masukkan PIN untuk padam:');
+  if (pin === null) return;
+  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+  try {
+    for (const t of drop) {
+      await supaDelete('accounting_transactions', 'id=eq.' + encodeURIComponent(t.id));
+      TXNS = TXNS.filter(x => x.id !== t.id);
+    }
+    DUP_REVIEW[key] = { status: 'dup', by: currentUser.id, at: new Date().toISOString(), resolved: true };
+    await saveDupReview();
+    renderAll();
+    navTo('duplicates');
+    toast('🗑 ' + drop.length + ' rekod berulang dipadam');
+  } catch (e) { toast('❌ Gagal padam: ' + e.message); }
+}
+
+// ── Paparan ──────────────────────────────────────────────────
+function riskBadge(r) {
+  const map = { tinggi: ['out', 'RISIKO TINGGI'], sederhana: ['gray', 'SEDERHANA'], rendah: ['gray', 'RENDAH'] };
+  const m = map[r] || map.sederhana;
+  return '<span class="badge ' + m[0] + '">' + m[1] + '</span>';
+}
+function gapLabel(g) {
+  if (g.gapMin == null) return 'masa key-in tak diketahui';
+  if (g.gapMin < 1) return 'dikey dalam masa < 1 minit';
+  if (g.gapMin < 60) return 'dikey berselang ' + Math.round(g.gapMin) + ' minit';
+  if (g.gapMin < 1440) return 'dikey berselang ' + (g.gapMin / 60).toFixed(1) + ' jam';
+  return 'dikey berselang ' + Math.round(g.gapMin / 1440) + ' hari';
+}
+function setDupFilter(f) {
+  dupFilter = f;
+  document.querySelectorAll('#dupFilterBar .flow-opt').forEach(el => el.classList.toggle('active', el.dataset.f === f));
+  renderDuplicates();
+}
+function renderDuplicates() {
+  const all = findDupGroups();
+  const pending = dupPending(all);
+  const reviewed = all.filter(g => g.review);
+  const okCount = all.filter(g => g.review && g.review.status === 'ok').length;
+
+  // Badge pada tab
+  const tab = document.querySelector('.tab-item[data-view="duplicates"]');
+  if (tab) {
+    tab.innerHTML = '🔍 Duplicate' + (pending.length
+      ? ' <span class="badge out" style="margin-left:5px;">' + pending.length + '</span>' : '');
+  }
+
+  const kpis = document.getElementById('dupKpis');
+  if (kpis) {
+    const impact = pending.reduce((s, g) => s + Math.abs(g.impact), 0);
+    const hi = pending.filter(g => g.risk === 'tinggi').length;
+    kpis.innerHTML =
+      kpi('⚠️ Belum Disemak', String(pending.length), pending.length ? 'orange' : 'pos', 'kumpulan syak duplicate') +
+      kpi('🔴 Risiko Tinggi', String(hi), hi ? 'neg' : 'pos', 'dikey berdekatan / import berulang') +
+      kpi('💰 Nilai Terlibat', fmtRM(impact), 'blue', 'jika SEMUA disahkan duplicate') +
+      kpi('✅ Sudah Disemak', String(reviewed.length), 'pos', okCount + ' ditanda sah · ' + (reviewed.length - okCount) + ' duplicate');
+  }
+
+  let list = dupFilter === 'pending' ? pending
+    : dupFilter === 'ok' ? all.filter(g => g.review && g.review.status === 'ok')
+    : all;
+
+  const box = document.getElementById('dupList');
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-note">' + (dupFilter === 'pending'
+      ? (all.length ? '🎉 Semua kumpulan duplicate dah disemak.' : '🎉 Tiada transaksi bertindih dikesan untuk tahun ' + YEAR + '.')
+      : 'Tiada rekod untuk penapis ini.') + '</div>';
+    return;
+  }
+
+  DUP_SHOWN = list;
+  box.innerHTML = list.map((g, gi) => {
+    const rev = g.review;
+    const badge = rev
+      ? (rev.status === 'ok'
+          ? '<span class="badge in">✓ SAH — BUKAN DUPLICATE</span>'
+          : '<span class="badge out">⚑ DUPLICATE' + (rev.resolved ? ' (DIBERSIHKAN)' : '') + '</span>')
+      : riskBadge(g.risk);
+    const rows = g.txns.map((t, i) => {
+      const b = bankById(t.bank_account_id);
+      return '<tr>' +
+        '<td class="muted">' + (i === 0 ? '<b>1️⃣ asal</b>' : (i + 1) + '️⃣ berulang') + '</td>' +
+        '<td>' + esc(b ? b.name : 'TIDAK DI-TAG') + '</td>' +
+        '<td>' + esc(catName(t.category)) + '</td>' +
+        '<td class="muted">' + esc(t.remark || '—') + '</td>' +
+        '<td class="muted">' + esc(t.source || 'manual') + '</td>' +
+        '<td class="muted">' + esc((t.created_at || '').slice(0, 16).replace('T', ' ')) + '<div class="hint">' + esc(t.created_by || '—') + '</div></td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="btn sm" onclick="editTxnFromDup(\'' + t.id + '\')">✏️</button> ' +
+          '<button class="btn sm danger" onclick="deleteTxn(\'' + t.id + '\')">🗑</button>' +
+        '</td></tr>';
+    }).join('');
+
+    return '<div class="dup-card' + (rev ? ' done' : '') + '">' +
+      '<div class="dup-head">' +
+        '<div class="dup-sum">' +
+          '<span class="dup-amt ' + (g.flow === 'in' ? 'in' : 'out') + '">' +
+            (g.flow === 'in' ? '⬇ ' : '⬆ ') + fmtRM(g.amount) + '</span>' +
+          '<span class="dup-nm">' + esc(g.details) + '</span>' +
+          '<span class="hint">' + esc(g.date) + ' · ' + g.count + ' rekod · ' + esc(gapLabel(g)) +
+            (g.sameUser ? ' · pengguna sama' : ' · pengguna berbeza') + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' + badge + '</div>' +
+      '</div>' +
+      '<div class="tbl-wrap"><table class="tbl dup-tbl">' +
+        '<tr><th>Rekod</th><th>Akaun</th><th>Kategori</th><th>Remark</th><th>Sumber</th><th>Dikey</th><th></th></tr>' +
+        rows + '</table></div>' +
+      '<div class="dup-act">' +
+        (rev
+          ? '<span class="hint">Disemak oleh <b>' + esc(rev.by) + '</b> pada ' + esc((rev.at || '').slice(0, 16).replace('T', ' ')) + '</span>' +
+            '<button class="btn sm" onclick="unmarkDupAt(' + gi + ')">↩️ Buang Semakan</button>'
+          : '<span class="hint">Kesan pada baki jika duplicate: <b>' + fmtRM(-g.impact) + '</b></span>' +
+            '<button class="btn sm green" onclick="markDupAt(' + gi + ',\'ok\')">✓ Sah — Bukan Duplicate</button>' +
+            '<button class="btn sm" onclick="markDupAt(' + gi + ',\'dup\')">⚑ Tanda Duplicate (simpan rekod)</button>' +
+            '<button class="btn sm danger" onclick="deleteDupExtrasAt(' + gi + ')">🗑 Padam ' + (g.count - 1) + ' Berulang</button>') +
+      '</div></div>';
+  }).join('');
+}
+
+function editTxnFromDup(id) {
+  navTo('cashbook');
+  editTxn(id);
+}
+
+// Export senarai duplicate untuk semakan luar
+function exportDupCSV() {
+  const groups = findDupGroups();
+  if (!groups.length) return toast('⚠️ Tiada duplicate dikesan');
+  const rows = [['Kumpulan', 'Risiko', 'Status Semakan', 'Disemak Oleh', 'Tarikh', 'Aliran', 'Amaun',
+    'Nama / Details', 'Bil Rekod', 'Jarak Key-in (minit)', 'Kesan Jika Duplicate',
+    'Rekod Ke', 'Akaun', 'Kategori', 'Remark', 'Sumber', 'Dikey Oleh', 'Dikey Pada', 'Txn ID']];
+  groups.forEach((g, gi) => {
+    g.txns.forEach((t, i) => {
+      const b = bankById(t.bank_account_id);
+      rows.push([gi + 1, g.risk,
+        g.review ? (g.review.status === 'ok' ? 'SAH' : 'DUPLICATE') : 'BELUM SEMAK',
+        g.review ? g.review.by : '',
+        g.date, g.flow, g.amount.toFixed(2), g.details, g.count,
+        g.gapMin == null ? '' : Math.round(g.gapMin), g.impact.toFixed(2),
+        i === 0 ? 'asal' : 'berulang-' + i,
+        b ? b.name : 'TIDAK DI-TAG', catName(t.category), t.remark || '',
+        t.source || 'manual', t.created_by || '',
+        (t.created_at || '').slice(0, 19).replace('T', ' '), t.id]);
+    });
+  });
+  downloadCSV(csvName('Semakan_Duplicate'), rows);
 }
 
 // ════════════════════════════════════════════════════════════
