@@ -269,7 +269,6 @@
   <div class="tab-bar" id="tabBar">
     <div class="tab-item active" data-view="dashboard" onclick="navTo('dashboard')">📈 Dashboard</div>
     <div class="tab-item" data-view="cashbook" onclick="navTo('cashbook')">💵 Cash Book</div>
-    <div class="tab-item" data-view="duplicates" onclick="navTo('duplicates')">🔍 Duplicate</div>
     <div class="tab-item" data-view="debtor" onclick="navTo('debtor')">👥 Debtor & Creditor</div>
     <div class="tab-item" data-view="pnl" onclick="navTo('pnl')">📊 Profit & Loss</div>
     <div class="tab-item" data-view="balancesheet" onclick="navTo('balancesheet')">⚖️ Balance Sheet</div>
@@ -383,33 +382,6 @@
       </div>
     </div>
 
-    <!-- ════════ SEMAKAN DUPLICATE ════════ -->
-    <div class="view" id="view-duplicates">
-      <div class="kpi-grid" id="dupKpis"></div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-header-title">🔍 Semakan Duplicate Key-in</span>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <div class="flow-toggle" id="dupFilterBar" style="font-size:0;">
-              <div class="flow-opt active" data-f="pending" onclick="setDupFilter('pending')" style="padding:6px 12px;font-size:11px;">BELUM SEMAK</div>
-              <div class="flow-opt" data-f="ok" onclick="setDupFilter('ok')" style="padding:6px 12px;font-size:11px;">DITANDA SAH</div>
-              <div class="flow-opt" data-f="all" onclick="setDupFilter('all')" style="padding:6px 12px;font-size:11px;">SEMUA</div>
-            </div>
-            <button class="btn sm" onclick="exportDupCSV()">⬇️ CSV</button>
-            <button class="btn sm" onclick="renderDuplicates()">🔄 Imbas Semula</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <p class="hint" style="margin-bottom:14px;">
-            Dikesan bila <b>nama + amaun + tarikh + aliran</b> semuanya sama. Ini <b>syak sahaja</b> —
-            customer memang boleh bayar amaun sama pada hari sama, dan supplier memang boleh dibayar
-            berulang. Semak setiap satu, kemudian tanda <b>Sah</b> atau padam yang berulang.
-            Yang dah ditanda tak akan muncul lagi dalam senarai "Belum Semak".
-          </p>
-          <div id="dupList"></div>
-        </div>
-      </div>
-    </div>
 
     <!-- ════════ DEBTOR & CREDITOR ════════ -->
     <div class="view" id="view-debtor">
@@ -659,6 +631,65 @@
             </div>
           </div>
           <div style="margin-top:14px;"><button class="btn green" onclick="saveOpeningBalance()">💾 Simpan Baki Awal</button></div>
+        </div>
+      </div>
+
+      <!-- ════ SEMAKAN DUPLICATE & ROLLBACK ════ -->
+      <div class="kpi-grid" id="dupKpis"></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-header-title">🔍 Semakan Duplicate Key-in</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div class="flow-toggle" id="dupFilterBar" style="font-size:0;">
+              <div class="flow-opt active" data-f="pending" onclick="setDupFilter('pending')" style="padding:6px 12px;font-size:11px;">BELUM SEMAK</div>
+              <div class="flow-opt" data-f="ok" onclick="setDupFilter('ok')" style="padding:6px 12px;font-size:11px;">DITANDA SAH</div>
+              <div class="flow-opt" data-f="all" onclick="setDupFilter('all')" style="padding:6px 12px;font-size:11px;">SEMUA</div>
+            </div>
+            <button class="btn sm" onclick="exportDupCSV()">⬇️ CSV</button>
+            <button class="btn sm" onclick="renderDuplicates()">🔄 Imbas Semula</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="hint" style="margin-bottom:14px;">
+            Dikesan bila <b>nama + amaun + tarikh + aliran</b> semuanya sama. Ini <b>syak sahaja</b> —
+            customer memang boleh bayar amaun sama pada hari sama, dan supplier memang boleh dibayar
+            berulang. Semak setiap satu, kemudian tanda <b>Sah</b> atau padam yang berulang.
+            Yang dah ditanda tak akan muncul lagi dalam senarai "Belum Semak".
+          </p>
+          <div id="dupList"></div>
+        </div>
+      </div>
+
+      <!-- ROLLBACK KEY-IN -->
+      <div class="card" style="border-color:var(--red);">
+        <div class="card-header">
+          <span class="card-header-title" style="color:var(--red);">🧹 Rollback Key-in — Padam Log Mengikut Tarikh Masuk</span>
+        </div>
+        <div class="card-body">
+          <p class="hint" style="margin-bottom:14px;">
+            Padam transaksi <b>mengikut bila ia dikey masuk</b> (bukan tarikh transaksi) — untuk buang
+            sesi key-in yang tersalah dan mula semula. Backup CSV dimuat turun automatik sebelum apa-apa
+            dipadam. <b style="color:var(--red);">Tindakan ini tidak boleh dibatalkan.</b>
+          </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Tarikh Key-in (MYT)</label>
+              <input type="date" id="rb_date" onchange="previewRollback()">
+            </div>
+            <div class="form-group">
+              <label>Dikey Oleh</label>
+              <select id="rb_user" onchange="previewRollback()"><option value="all">Semua pengguna</option></select>
+            </div>
+            <div class="form-group">
+              <label>Sumber</label>
+              <select id="rb_source" onchange="previewRollback()">
+                <option value="all">Semua sumber</option>
+                <option value="manual">Manual sahaja</option>
+                <option value="import">Import CSV sahaja</option>
+              </select>
+            </div>
+          </div>
+          <div id="rbPreview" style="margin-top:16px;"></div>
         </div>
       </div>
       <div class="card">
@@ -925,10 +956,29 @@ function toast(msg) {
 function uid(prefix) {
   return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 }
-function todayISO() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+// ── Waktu Malaysia (MYT / UTC+8) ─────────────────────────────
+// Supabase simpan created_at dalam UTC. Semua paparan & penapisan
+// kena ditukar ke MYT, kalau tak key-in 12am–8am akan tersalah hari.
+// Dipin ke Asia/Kuala_Lumpur (bukan waktu komputer) supaya jejak audit
+// sama walau siapa buka dan dari mana.
+const TZ_MY = 'Asia/Kuala_Lumpur';
+const MY_FMT = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TZ_MY, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+});
+function myParts(iso) {
+  if (!iso) return null;
+  const d = (iso instanceof Date) ? iso : new Date(iso);
+  if (isNaN(d)) return null;
+  const p = {};
+  MY_FMT.formatToParts(d).forEach(x => { p[x.type] = x.value; });
+  return { date: p.year + '-' + p.month + '-' + p.day, time: p.hour + ':' + p.minute, sec: p.second };
 }
+function myDate(iso)      { const p = myParts(iso); return p ? p.date : ''; }
+function myTime(iso)      { const p = myParts(iso); return p ? p.time : ''; }
+function myDateTime(iso)  { const p = myParts(iso); return p ? p.date + ' ' + p.time : '—'; }
+function myStamp(iso)     { const p = myParts(iso); return p ? p.date + ' ' + p.time + ':' + p.sec : ''; }
+function todayISO() { return myDate(new Date()); }
 function txnMonth(t) { return parseInt((t.txn_date || '').slice(5, 7), 10) || 0; }
 
 // ── CSV Export ───────────────────────────────────────────────
@@ -1030,7 +1080,7 @@ function exportCashbookCSV() {
     });
   const rows = [['Tarikh', 'Akaun', 'Bank', 'Kategori (Kod)', 'Kategori (Nama)', 'P&L Group',
     'Details', 'Remark', 'Cash In', 'Cash Out', 'Baki Akaun', 'Sumber', 'Import Batch',
-    'Dikey Oleh', 'Dikey Pada', 'Txn ID']];
+    'Dikey Oleh', 'Dikey Pada (MYT)', 'Txn ID']];
   list.forEach(t => {
     const b = bankById(t.bank_account_id);
     const amt = Number(t.amount) || 0;
@@ -1041,7 +1091,7 @@ function exportCashbookCSV() {
       t.flow === 'in' ? amt.toFixed(2) : '', t.flow === 'out' ? amt.toFixed(2) : '',
       (runAt[t.id] != null ? runAt[t.id].toFixed(2) : ''),
       t.source || 'manual', t.import_batch || '',
-      t.created_by || '', (t.created_at || '').slice(0, 19).replace('T', ' '), t.id
+      t.created_by || '', myStamp(t.created_at), t.id
     ]);
   });
   downloadCSV(csvName('CashBook'), rows);
@@ -1235,7 +1285,7 @@ function navTo(view) {
   if (view === 'dashboard') renderDashboard();
   if (view === 'import') renderImportHistory();
   if (view === 'reports') renderReportCentre();
-  if (view === 'duplicates') renderDuplicates();
+  if (view === 'settings') renderDuplicates();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1498,17 +1548,22 @@ async function saveTxn() {
   // Amaran duplicate — nama + amaun + tarikh + aliran sama dengan rekod sedia ada.
   // Bukan halangan: user boleh teruskan sebab bayaran serupa memang mungkin sah.
   if (!editTxnId) {
-    const cand = { txn_date: date, flow: cbFlow, amount, details };
-    const clash = TXNS.filter(t => dupKey(t) === dupKey(cand));
+    // Tarikh + amaun + aliran sama, DAN nama merujuk pihak yang sama walaupun
+    // ditaip berbeza ("NUR ATIRAH" vs "NUR ATIRAH BINTI MU").
+    const candTok = dupTokens(details);
+    const clash = TXNS.filter(t =>
+      t.txn_date === date && t.flow === cbFlow &&
+      Math.abs((Number(t.amount) || 0) - amount) < 0.005 &&
+      nameRelated(dupTokens(t.details), candTok));
     if (clash.length) {
       const lines = clash.map(t => {
         const b = bankById(t.bank_account_id);
-        return '  · ' + (b ? b.name : 'TIDAK DI-TAG') + ' · ' + catName(t.category) +
-          ' · dikey ' + (t.created_at || '').slice(0, 16).replace('T', ' ') +
+        return '  · "' + (t.details || '') + '" · ' + (b ? b.name : 'TIDAK DI-TAG') + ' · ' + catName(t.category) +
+          ' · dikey ' + myDateTime(t.created_at) +
           ' oleh ' + (t.created_by || '—');
       }).join('\n');
       const ok = confirm('⚠️ KEMUNGKINAN DUPLICATE\n\n' +
-        'Dah ada ' + clash.length + ' rekod dengan nama, amaun & tarikh yang SAMA:\n\n' +
+        'Dah ada ' + clash.length + ' rekod dengan amaun & tarikh yang sama, dan nama yang serupa:\n\n' +
         date + '  ' + fmtRM(amount) + '  ' + details + '\n' + lines + '\n\n' +
         'Kalau ini memang bayaran berasingan (customer bayar 2 kali amaun sama hari sama), tekan OK untuk teruskan.\n' +
         'Kalau tersalah key dua kali, tekan Cancel.');
@@ -2298,36 +2353,85 @@ function dupNorm(s) {
 function dupKey(t) {
   return [t.txn_date, t.flow, (Number(t.amount) || 0).toFixed(2), dupNorm(t.details)].join('|');
 }
-// Kumpulan transaksi yang berkongsi tarikh + amaun + nama + aliran
+// Nama untuk perbandingan longgar — buang semua kecuali huruf & nombor
+function dupTokens(s) {
+  return dupNorm(s).replace(/[^A-Z0-9 ]/g, '').split(' ').filter(Boolean);
+}
+// Adakah dua nama ini merujuk orang yang sama, walaupun ditaip berbeza?
+// Contoh sebenar: "NUR ATIRAH BINTI MU" vs "NUR ATIRAH" (nama dipendekkan),
+// "MUHAMMAD KHAIRUL" vs "MUHAMMAD KHAIRUL NIZAM" (nama disambung).
+function nameRelated(a, b) {
+  if (!a.length || !b.length) return false;
+  const sa = a.join(' '), sb = b.join(' ');
+  if (sa === sb) return true;
+  if (sa.startsWith(sb + ' ') || sb.startsWith(sa + ' ')) return true;  // satu prefix kepada satu lagi
+  if (a.length >= 2 && b.length >= 2 && a[0] === b[0] && a[1] === b[1]) return true; // 2 patah pertama sama
+  const A = new Set(a), B = new Set(b);
+  let inter = 0;
+  A.forEach(x => { if (B.has(x)) inter++; });
+  return inter >= 2 && inter / Math.min(A.size, B.size) >= 0.6;
+}
+
+// Kumpulan transaksi yang berkongsi tarikh + amaun + aliran, kemudian
+// dikelompokkan ikut nama. Nama sama persis = padanan tepat. Nama berbeza
+// tapi jelas orang yang sama = padanan longgar (keyakinan lebih rendah).
 function findDupGroups() {
-  const map = {};
+  const buckets = {};
   TXNS.forEach(t => {
     if (!dupNorm(t.details)) return; // nama kosong — tak boleh dibanding
-    (map[dupKey(t)] = map[dupKey(t)] || []).push(t);
+    const bk = [t.txn_date, t.flow, (Number(t.amount) || 0).toFixed(2)].join('|');
+    (buckets[bk] = buckets[bk] || []).push(t);
   });
+
   const groups = [];
-  Object.keys(map).forEach(k => {
-    const list = map[k];
-    if (list.length < 2) return;
-    list.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
-    const rev = DUP_REVIEW[k] || null;
-    // Isyarat risiko: jarak masa antara key-in pertama & terakhir
-    let gapMin = null;
-    const t0 = list[0].created_at, t1 = list[list.length - 1].created_at;
-    if (t0 && t1) gapMin = Math.abs(new Date(t1) - new Date(t0)) / 60000;
-    const sameUser = list.every(t => t.created_by === list[0].created_by);
-    const sameBatch = list.every(t => t.import_batch && t.import_batch === list[0].import_batch);
-    let risk = 'sederhana';
-    if (gapMin != null && gapMin <= 10 && sameUser) risk = 'tinggi';   // dikey berturut-turut
-    else if (sameBatch) risk = 'tinggi';                                // import sama masuk 2x
-    else if (gapMin != null && gapMin > 1440) risk = 'rendah';          // beza lebih sehari
-    groups.push({
-      key: k, date: list[0].txn_date, flow: list[0].flow,
-      amount: Number(list[0].amount) || 0, details: list[0].details,
-      txns: list, count: list.length, gapMin, sameUser, risk,
-      review: rev,
-      // nilai yang terjejas kalau memang duplicate (semua kecuali satu)
-      impact: (list.length - 1) * (Number(list[0].amount) || 0) * (list[0].flow === 'in' ? 1 : -1)
+  Object.keys(buckets).forEach(bk => {
+    const bucket = buckets[bk];
+    if (bucket.length < 2) return;
+    // Kelompokkan rekod dalam bucket ikut kaitan nama (union-find ringkas)
+    const parent = bucket.map((_, i) => i);
+    const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+    const toks = bucket.map(t => dupTokens(t.details));
+    for (let i = 0; i < bucket.length; i++) {
+      for (let j = i + 1; j < bucket.length; j++) {
+        if (nameRelated(toks[i], toks[j])) parent[find(i)] = find(j);
+      }
+    }
+    const clusters = {};
+    bucket.forEach((t, i) => { (clusters[find(i)] = clusters[find(i)] || []).push(t); });
+
+    Object.values(clusters).forEach(list => {
+      if (list.length < 2) return;
+      list.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+      const names = [...new Set(list.map(t => dupNorm(t.details)))];
+      const exact = names.length === 1;
+      // Kekalkan format key lama untuk padanan tepat supaya semakan
+      // yang dah disimpan sebelum ini tetap sah.
+      const key = exact ? bk + '|' + names[0]
+                        : bk + '|~|' + names.slice().sort((a, b) => a.length - b.length)[0];
+      const rev = DUP_REVIEW[key] || null;
+      let gapMin = null;
+      const t0 = list[0].created_at, t1 = list[list.length - 1].created_at;
+      if (t0 && t1) gapMin = Math.abs(new Date(t1) - new Date(t0)) / 60000;
+      const sameUser = list.every(t => t.created_by === list[0].created_by);
+      const sameBatch = list.every(t => t.import_batch && t.import_batch === list[0].import_batch);
+      let risk = 'sederhana', pattern = '';
+      if (gapMin != null && gapMin <= 10 && sameUser) { risk = 'tinggi'; pattern = 'simpan-2x'; }
+      else if (sameBatch) { risk = 'tinggi'; pattern = 'import-2x'; }
+      else if (!exact && gapMin != null && gapMin > 1440) {
+        // Nama ditaip semula sikit berbeza, beberapa hari kemudian — corak
+        // "admin ingat rekod hilang, jadi dia key-in semula". Inilah punca
+        // baki tak tally, jadi jangan sesekali gred rendah.
+        risk = 'tinggi'; pattern = 'key-in-semula';
+      }
+      else if (gapMin != null && gapMin > 1440) risk = 'rendah';          // beza lebih sehari
+      groups.push({
+        key, exact, names, pattern, date: list[0].txn_date, flow: list[0].flow,
+        amount: Number(list[0].amount) || 0, details: list[0].details,
+        txns: list, count: list.length, gapMin, sameUser, risk,
+        review: rev,
+        // nilai yang terjejas kalau memang duplicate (semua kecuali satu)
+        impact: (list.length - 1) * (Number(list[0].amount) || 0) * (list[0].flow === 'in' ? 1 : -1)
+      });
     });
   });
   groups.sort((a, b) => {
@@ -2391,8 +2495,8 @@ async function deleteDupExtras(key) {
   const keep = g.txns[0], drop = g.txns.slice(1);
   const msg = 'Padam ' + drop.length + ' rekod berulang?\n\n' +
     'KEKAL:  ' + keep.txn_date + '  ' + fmtRM(keep.amount) + '  ' + (keep.details || '') +
-    '\n        (dikey ' + (keep.created_at || '').slice(0, 16).replace('T', ' ') + ' oleh ' + (keep.created_by || '—') + ')\n\n' +
-    'PADAM:\n' + drop.map(t => '  · dikey ' + (t.created_at || '').slice(0, 16).replace('T', ' ') +
+    '\n        (dikey ' + myDateTime(keep.created_at) + ' oleh ' + (keep.created_by || '—') + ')\n\n' +
+    'PADAM:\n' + drop.map(t => '  · dikey ' + myDateTime(t.created_at) +
       ' oleh ' + (t.created_by || '—') + ' · ' + catName(t.category)).join('\n') +
     '\n\nKesan pada baki: ' + fmtRM(-g.impact);
   if (!confirm(msg)) return;
@@ -2407,7 +2511,7 @@ async function deleteDupExtras(key) {
     DUP_REVIEW[key] = { status: 'dup', by: currentUser.id, at: new Date().toISOString(), resolved: true };
     await saveDupReview();
     renderAll();
-    navTo('duplicates');
+    navTo('settings');
     toast('🗑 ' + drop.length + ' rekod berulang dipadam');
   } catch (e) { toast('❌ Gagal padam: ' + e.message); }
 }
@@ -2431,16 +2535,23 @@ function setDupFilter(f) {
   renderDuplicates();
 }
 function renderDuplicates() {
+  // Panel rollback — set tarikh hari ini pada kali pertama
+  const rbDate = document.getElementById('rb_date');
+  if (rbDate && !rbDate.value) rbDate.value = todayISO();
+  populateRollbackUsers();
+  previewRollback();
+
   const all = findDupGroups();
   const pending = dupPending(all);
   const reviewed = all.filter(g => g.review);
   const okCount = all.filter(g => g.review && g.review.status === 'ok').length;
 
-  // Badge pada tab
-  const tab = document.querySelector('.tab-item[data-view="duplicates"]');
+  // Badge pada tab Settings — supaya duplicate belum semak tetap nampak
+  const tab = document.querySelector('.tab-item[data-view="settings"]');
   if (tab) {
-    tab.innerHTML = '🔍 Duplicate' + (pending.length
-      ? ' <span class="badge out" style="margin-left:5px;">' + pending.length + '</span>' : '');
+    tab.innerHTML = '⚙️ Settings' + (pending.length
+      ? ' <span class="badge out" style="margin-left:5px;" title="' + pending.length +
+        ' kumpulan duplicate belum disemak">' + pending.length + '</span>' : '');
   }
 
   const kpis = document.getElementById('dupKpis');
@@ -2475,15 +2586,25 @@ function renderDuplicates() {
           ? '<span class="badge in">✓ SAH — BUKAN DUPLICATE</span>'
           : '<span class="badge out">⚑ DUPLICATE' + (rev.resolved ? ' (DIBERSIHKAN)' : '') + '</span>')
       : riskBadge(g.risk);
+    const PATTERN_LBL = {
+      'simpan-2x': ['out', '⚡ TERSIMPAN 2×', 'Dikey berturut-turut dalam masa singkat'],
+      'import-2x': ['out', '📥 IMPORT BERULANG', 'Batch import yang sama masuk dua kali'],
+      'key-in-semula': ['out', '🔁 KEY-IN SEMULA', 'Dikey semula beberapa hari kemudian dengan ejaan nama sedikit berbeza']
+    };
+    const pat = PATTERN_LBL[g.pattern];
+    const looseBadge =
+      (pat ? '<span class="badge ' + pat[0] + '" title="' + esc(pat[2]) + '">' + pat[1] + '</span>' : '') +
+      (g.exact ? '' : '<span class="badge amber" title="Nama ditaip berbeza tapi merujuk pihak yang sama">✎ NAMA HAMPIR SAMA</span>');
     const rows = g.txns.map((t, i) => {
       const b = bankById(t.bank_account_id);
       return '<tr>' +
         '<td class="muted">' + (i === 0 ? '<b>1️⃣ asal</b>' : (i + 1) + '️⃣ berulang') + '</td>' +
+        '<td><b>' + esc(t.details || '—') + '</b></td>' +
         '<td>' + esc(b ? b.name : 'TIDAK DI-TAG') + '</td>' +
         '<td>' + esc(catName(t.category)) + '</td>' +
         '<td class="muted">' + esc(t.remark || '—') + '</td>' +
         '<td class="muted">' + esc(t.source || 'manual') + '</td>' +
-        '<td class="muted">' + esc((t.created_at || '').slice(0, 16).replace('T', ' ')) + '<div class="hint">' + esc(t.created_by || '—') + '</div></td>' +
+        '<td class="muted">' + esc(myDateTime(t.created_at)) + '<div class="hint">' + esc(t.created_by || '—') + '</div></td>' +
         '<td style="white-space:nowrap;">' +
           '<button class="btn sm" onclick="editTxnFromDup(\'' + t.id + '\')">✏️</button> ' +
           '<button class="btn sm danger" onclick="deleteTxn(\'' + t.id + '\')">🗑</button>' +
@@ -2495,18 +2616,18 @@ function renderDuplicates() {
         '<div class="dup-sum">' +
           '<span class="dup-amt ' + (g.flow === 'in' ? 'in' : 'out') + '">' +
             (g.flow === 'in' ? '⬇ ' : '⬆ ') + fmtRM(g.amount) + '</span>' +
-          '<span class="dup-nm">' + esc(g.details) + '</span>' +
+          '<span class="dup-nm">' + esc(g.exact ? g.details : g.names.join('  ⇄  ')) + '</span>' +
           '<span class="hint">' + esc(g.date) + ' · ' + g.count + ' rekod · ' + esc(gapLabel(g)) +
             (g.sameUser ? ' · pengguna sama' : ' · pengguna berbeza') + '</span>' +
         '</div>' +
-        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' + badge + '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' + looseBadge + badge + '</div>' +
       '</div>' +
       '<div class="tbl-wrap"><table class="tbl dup-tbl">' +
-        '<tr><th>Rekod</th><th>Akaun</th><th>Kategori</th><th>Remark</th><th>Sumber</th><th>Dikey</th><th></th></tr>' +
+        '<tr><th>Rekod</th><th>Nama Dikey</th><th>Akaun</th><th>Kategori</th><th>Remark</th><th>Sumber</th><th>Dikey (MYT)</th><th></th></tr>' +
         rows + '</table></div>' +
       '<div class="dup-act">' +
         (rev
-          ? '<span class="hint">Disemak oleh <b>' + esc(rev.by) + '</b> pada ' + esc((rev.at || '').slice(0, 16).replace('T', ' ')) + '</span>' +
+          ? '<span class="hint">Disemak oleh <b>' + esc(rev.by) + '</b> pada ' + esc(myDateTime(rev.at)) + '</span>' +
             '<button class="btn sm" onclick="unmarkDupAt(' + gi + ')">↩️ Buang Semakan</button>'
           : '<span class="hint">Kesan pada baki jika duplicate: <b>' + fmtRM(-g.impact) + '</b></span>' +
             '<button class="btn sm green" onclick="markDupAt(' + gi + ',\'ok\')">✓ Sah — Bukan Duplicate</button>' +
@@ -2521,25 +2642,171 @@ function editTxnFromDup(id) {
   editTxn(id);
 }
 
+// ════════════════════════════════════════════════════════════
+// ROLLBACK KEY-IN — padam transaksi ikut TARIKH IA DIKEY MASUK
+// (created_at), bukan tarikh transaksi. Untuk buang sesi key-in
+// yang tersalah. Backup CSV auto sebelum padam.
+// ════════════════════════════════════════════════════════════
+// created_at disimpan UTC — tukar ke tarikh TEMPATAN dulu, kalau tak
+// key-in awal pagi (12am–8am MYT) akan tersalah kira sebagai semalam.
+function keyinLocalDate(t) { return myDate(t.created_at); }
+function rollbackMatches() {
+  const date = document.getElementById('rb_date').value;
+  const user = document.getElementById('rb_user').value;
+  const src = document.getElementById('rb_source').value;
+  if (!date) return [];
+  return TXNS.filter(t => {
+    if (keyinLocalDate(t) !== date) return false;
+    if (user !== 'all' && (t.created_by || '') !== user) return false;
+    if (src !== 'all' && (t.source || 'manual') !== src) return false;
+    return true;
+  }).sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+}
+function populateRollbackUsers() {
+  const sel = document.getElementById('rb_user');
+  if (!sel) return;
+  const cur = sel.value || 'all';
+  const users = [...new Set(TXNS.map(t => t.created_by).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="all">Semua pengguna</option>' +
+    users.map(u => '<option value="' + esc(u) + '">' + esc(u) + '</option>').join('');
+  sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'all';
+}
+function previewRollback() {
+  const box = document.getElementById('rbPreview');
+  if (!box) return;
+  const list = rollbackMatches();
+  const date = document.getElementById('rb_date').value;
+  if (!date) { box.innerHTML = '<div class="empty-note">Pilih tarikh key-in dahulu.</div>'; return; }
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-note">Tiada transaksi dikey masuk pada ' + esc(date) + ' dengan penapis ini.</div>';
+    return;
+  }
+  // Kesan pada baki setiap akaun
+  const perBank = {};
+  let tIn = 0, tOut = 0;
+  list.forEach(t => {
+    const bid = t.bank_account_id || '_none';
+    const amt = (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+    perBank[bid] = (perBank[bid] || 0) + amt;
+    if (t.flow === 'in') tIn += Number(t.amount) || 0; else tOut += Number(t.amount) || 0;
+  });
+  let impactHtml = Object.keys(perBank).map(bid => {
+    const b = bankById(bid);
+    const now = bid === '_none' ? 0 : bankBalance(bid);
+    return '<tr><td><b>' + esc(b ? b.name + ' · ' + b.bank_name : 'TIDAK DI-TAG') + '</b></td>' +
+      '<td class="num">' + fmt(now) + '</td>' +
+      '<td class="num ' + (perBank[bid] > 0 ? 'out' : 'in') + '">' + fmt(-perBank[bid]) + '</td>' +
+      '<td class="num"><b>' + fmt(now - perBank[bid]) + '</b></td></tr>';
+  }).join('');
+
+  const rows = list.map(t => {
+    const b = bankById(t.bank_account_id);
+    return '<tr>' +
+      '<td class="muted">' + esc(myTime(t.created_at)) + '</td>' +
+      '<td class="muted">' + esc(t.txn_date) + '</td>' +
+      '<td>' + esc(b ? b.name : 'TIDAK DI-TAG') + '</td>' +
+      '<td>' + esc(catName(t.category)) + '</td>' +
+      '<td>' + esc(t.details || '—') + '</td>' +
+      '<td class="num ' + (t.flow === 'in' ? 'in' : 'out') + '">' + (t.flow === 'in' ? '⬇ ' : '⬆ ') + fmt(t.amount) + '</td>' +
+      '<td class="muted">' + esc(t.created_by || '—') + '</td>' +
+      '<td class="muted">' + esc(t.source || 'manual') + '</td></tr>';
+  }).join('');
+
+  box.innerHTML =
+    '<div class="kpi-grid" style="margin-bottom:14px;">' +
+      kpi('Rekod Akan Dipadam', String(list.length), 'neg', 'dikey pada ' + esc(date)) +
+      kpi('Cash In Terlibat', fmtRM(tIn), 'pos', 'akan hilang dari akaun') +
+      kpi('Cash Out Terlibat', fmtRM(tOut), 'neg', 'akan dipulangkan ke akaun') +
+      kpi('Perubahan Bersih Baki', fmtRM(-(tIn - tOut)), 'blue', 'kesan pada baki bank') +
+    '</div>' +
+    '<div class="tbl-wrap" style="margin-bottom:14px;"><table class="tbl">' +
+      '<tr><th>Akaun</th><th class="num">Baki Sekarang</th><th class="num">Perubahan</th><th class="num">Baki Selepas Padam</th></tr>' +
+      impactHtml + '</table></div>' +
+    '<div class="tbl-wrap" style="max-height:340px;overflow-y:auto;"><table class="tbl">' +
+      '<tr><th>Jam (MYT)</th><th>Tarikh Txn</th><th>Akaun</th><th>Kategori</th><th>Details</th><th class="num">Amaun</th><th>Oleh</th><th>Sumber</th></tr>' +
+      rows + '</table></div>' +
+    '<div style="display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">' +
+      '<button class="btn" onclick="backupRollbackCSV()">⬇️ Muat Turun Backup CSV</button>' +
+      '<button class="btn danger" onclick="doRollback()">🗑 Padam ' + list.length + ' Rekod</button>' +
+    '</div>';
+}
+function rollbackCSVRows(list) {
+  const rows = [['Tarikh Txn', 'Akaun', 'Bank', 'Kategori (Kod)', 'Kategori (Nama)', 'Aliran', 'Amaun',
+    'Details', 'Remark', 'Sumber', 'Import Batch', 'Dikey Oleh', 'Dikey Pada (MYT)', 'Txn ID']];
+  list.forEach(t => {
+    const b = bankById(t.bank_account_id);
+    rows.push([t.txn_date, b ? b.name : 'TIDAK DI-TAG', b ? b.bank_name : '',
+      t.category || '', catName(t.category), t.flow, (Number(t.amount) || 0).toFixed(2),
+      t.details || '', t.remark || '', t.source || 'manual', t.import_batch || '',
+      t.created_by || '', myStamp(t.created_at), t.id]);
+  });
+  return rows;
+}
+function backupRollbackCSV() {
+  const list = rollbackMatches();
+  if (!list.length) return toast('⚠️ Tiada rekod untuk di-backup');
+  downloadCSV('DOD_BACKUP_Rollback_' + document.getElementById('rb_date').value, rollbackCSVRows(list));
+}
+async function doRollback() {
+  const list = rollbackMatches();
+  if (!list.length) return toast('⚠️ Tiada rekod dipilih');
+  const date = document.getElementById('rb_date').value;
+  let tIn = 0, tOut = 0;
+  list.forEach(t => { if (t.flow === 'in') tIn += Number(t.amount) || 0; else tOut += Number(t.amount) || 0; });
+
+  // 1. Pengesahan berlapis dulu — backup hanya turun kalau betul-betul jadi padam
+  if (!confirm('⚠️ PADAM ' + list.length + ' TRANSAKSI\n\n' +
+    'Semua yang dikey masuk pada ' + date + '\n' +
+    'Cash In: ' + fmtRM(tIn) + '\nCash Out: ' + fmtRM(tOut) + '\n' +
+    'Baki bank akan berubah sebanyak ' + fmtRM(-(tIn - tOut)) + '\n\n' +
+    'Backup CSV akan dimuat turun dahulu. Tindakan ini TIDAK BOLEH dibatalkan.\n\nTeruskan?')) return;
+  const typed = prompt('Taip PADAM (huruf besar) untuk sahkan:');
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== 'PADAM') return toast('↩️ Dibatalkan — perkataan tidak sepadan');
+  const pin = prompt('Masukkan PIN untuk padam:');
+  if (pin === null) return;
+  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+
+  // 2. Backup — selepas semua pengesahan lulus, sebelum apa-apa dipadam
+  downloadCSV('DOD_BACKUP_Rollback_' + date, rollbackCSVRows(list));
+
+  // 3. Padam satu per satu, kira yang berjaya
+  let done = 0, failed = 0;
+  toast('⏳ Memadam ' + list.length + ' rekod...');
+  for (const t of list) {
+    try {
+      await supaDelete('accounting_transactions', 'id=eq.' + encodeURIComponent(t.id));
+      TXNS = TXNS.filter(x => x.id !== t.id);
+      done++;
+    } catch (e) { console.error('gagal padam', t.id, e); failed++; }
+  }
+  populateCatFilter();
+  renderAll();
+  navTo('settings');
+  previewRollback();
+  toast(failed ? ('⚠️ ' + done + ' dipadam, ' + failed + ' gagal — cuba lagi untuk yang tinggal')
+               : ('🗑 ' + done + ' rekod dipadam · backup CSV ada dalam folder Downloads'));
+}
+
 // Export senarai duplicate untuk semakan luar
 function exportDupCSV() {
   const groups = findDupGroups();
   if (!groups.length) return toast('⚠️ Tiada duplicate dikesan');
-  const rows = [['Kumpulan', 'Risiko', 'Status Semakan', 'Disemak Oleh', 'Tarikh', 'Aliran', 'Amaun',
-    'Nama / Details', 'Bil Rekod', 'Jarak Key-in (minit)', 'Kesan Jika Duplicate',
-    'Rekod Ke', 'Akaun', 'Kategori', 'Remark', 'Sumber', 'Dikey Oleh', 'Dikey Pada', 'Txn ID']];
+  const rows = [['Kumpulan', 'Padanan', 'Risiko', 'Status Semakan', 'Disemak Oleh', 'Tarikh', 'Aliran', 'Amaun',
+    'Bil Rekod', 'Jarak Key-in (minit)', 'Kesan Jika Duplicate',
+    'Rekod Ke', 'Nama Dikey', 'Akaun', 'Kategori', 'Remark', 'Sumber', 'Dikey Oleh', 'Dikey Pada (MYT)', 'Txn ID']];
   groups.forEach((g, gi) => {
     g.txns.forEach((t, i) => {
       const b = bankById(t.bank_account_id);
-      rows.push([gi + 1, g.risk,
+      rows.push([gi + 1, g.exact ? 'tepat' : 'nama-hampir-sama', g.risk,
         g.review ? (g.review.status === 'ok' ? 'SAH' : 'DUPLICATE') : 'BELUM SEMAK',
         g.review ? g.review.by : '',
-        g.date, g.flow, g.amount.toFixed(2), g.details, g.count,
+        g.date, g.flow, g.amount.toFixed(2), g.count,
         g.gapMin == null ? '' : Math.round(g.gapMin), g.impact.toFixed(2),
-        i === 0 ? 'asal' : 'berulang-' + i,
+        i === 0 ? 'asal' : 'berulang-' + i, t.details || '',
         b ? b.name : 'TIDAK DI-TAG', catName(t.category), t.remark || '',
         t.source || 'manual', t.created_by || '',
-        (t.created_at || '').slice(0, 19).replace('T', ' '), t.id]);
+        myStamp(t.created_at), t.id]);
     });
   });
   downloadCSV(csvName('Semakan_Duplicate'), rows);
@@ -2580,7 +2847,7 @@ function buildCashbookSpec(p) {
     // CSV dapat versi penuh (lebih banyak kolum) untuk audit
     csvHeaders: ['Tarikh', 'Akaun', 'Bank', 'Kategori (Kod)', 'Kategori (Nama)', 'P&L Group',
       'Details', 'Remark', 'Cash In', 'Cash Out', 'Baki Akaun', 'Sumber', 'Import Batch',
-      'Dikey Oleh', 'Dikey Pada', 'Txn ID'],
+      'Dikey Oleh', 'Dikey Pada (MYT)', 'Txn ID'],
     csvRows: list.map(t => {
       const b = bankById(t.bank_account_id);
       const amt = Number(t.amount) || 0;
@@ -2590,7 +2857,7 @@ function buildCashbookSpec(p) {
         t.flow === 'in' ? amt.toFixed(2) : '', t.flow === 'out' ? amt.toFixed(2) : '',
         runAt[t.id] != null ? runAt[t.id].toFixed(2) : '',
         t.source || 'manual', t.import_batch || '',
-        t.created_by || '', (t.created_at || '').slice(0, 19).replace('T', ' '), t.id];
+        t.created_by || '', myStamp(t.created_at), t.id];
     })
   };
 }
@@ -3189,10 +3456,10 @@ function renderImportHistory() {
     return;
   }
 
-  let html = '<tr><th>Bila Import</th><th>Julat Tarikh Txn</th><th class="num">Rows</th><th class="num">Total IN</th><th class="num">Total OUT</th><th></th></tr>';
+  let html = '<tr><th>Bila Import (MYT)</th><th>Julat Tarikh Txn</th><th class="num">Rows</th><th class="num">Total IN</th><th class="num">Total OUT</th><th></th></tr>';
   keys.forEach(k => {
     const g = batches[k];
-    const when = g.created ? new Date(g.created).toLocaleString('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    const when = myDateTime(g.created);
     html += '<tr><td style="white-space:nowrap;"><b>' + esc(when) + '</b>' +
       (g.id ? '<div class="hint">' + esc(g.id) + '</div>' : '<div class="hint">⚠️ Import sebelum batch tracking</div>') + '</td>' +
       '<td class="muted" style="white-space:nowrap;">' + esc(g.minD) + ' → ' + esc(g.maxD) + '</td>' +
