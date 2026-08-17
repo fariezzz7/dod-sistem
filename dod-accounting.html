@@ -746,6 +746,38 @@
   </div>
 </div>
 
+<!-- ROLLBACK CONFIRM MODAL -->
+<div class="modal-bg" id="rbModalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" style="color:var(--red);">🗑 Sahkan Padam Log Key-in</span>
+      <button class="modal-close" onclick="closeRbModal()">✕ Tutup</button>
+    </div>
+    <div class="modal-body">
+      <div id="rbModalSummary"></div>
+      <div class="form-grid" style="margin-top:16px;">
+        <div class="form-group">
+          <label>1. Taip perkataan <b style="color:var(--red);">PADAM</b></label>
+          <input type="text" id="rb_word" autocomplete="off" autocapitalize="characters"
+            spellcheck="false" placeholder="PADAM" oninput="validateRbModal()">
+          <p class="hint" id="rb_word_hint" style="margin-top:5px;">&nbsp;</p>
+        </div>
+        <div class="form-group">
+          <label>2. Masukkan PIN</label>
+          <input type="password" id="rb_pin" autocomplete="off" inputmode="numeric"
+            placeholder="••••" oninput="validateRbModal()">
+          <p class="hint" id="rb_pin_hint" style="margin-top:5px;">&nbsp;</p>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:6px;">Backup CSV akan dimuat turun automatik sebelum rekod pertama dipadam.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeRbModal()">Batal</button>
+      <button class="btn danger" id="rbConfirmBtn" onclick="executeRollback()" disabled>🗑 Padam Sekarang</button>
+    </div>
+  </div>
+</div>
+
 <!-- BANK ACCOUNT MODAL -->
 <div class="modal-bg" id="bankModalBg">
   <div class="modal">
@@ -2747,30 +2779,75 @@ function backupRollbackCSV() {
   if (!list.length) return toast('⚠️ Tiada rekod untuk di-backup');
   downloadCSV('DOD_BACKUP_Rollback_' + document.getElementById('rb_date').value, rollbackCSVRows(list));
 }
-async function doRollback() {
+// Pengesahan guna modal dalam sistem, bukan prompt() bertindih —
+// browser boleh sekat dialog berturutan, dan prompt kosong senang tersalah hantar.
+function doRollback() {
   const list = rollbackMatches();
   if (!list.length) return toast('⚠️ Tiada rekod dipilih');
   const date = document.getElementById('rb_date').value;
   let tIn = 0, tOut = 0;
   list.forEach(t => { if (t.flow === 'in') tIn += Number(t.amount) || 0; else tOut += Number(t.amount) || 0; });
+  const net = tIn - tOut;
 
-  // 1. Pengesahan berlapis dulu — backup hanya turun kalau betul-betul jadi padam
-  if (!confirm('⚠️ PADAM ' + list.length + ' TRANSAKSI\n\n' +
-    'Semua yang dikey masuk pada ' + date + '\n' +
-    'Cash In: ' + fmtRM(tIn) + '\nCash Out: ' + fmtRM(tOut) + '\n' +
-    'Baki bank akan berubah sebanyak ' + fmtRM(-(tIn - tOut)) + '\n\n' +
-    'Backup CSV akan dimuat turun dahulu. Tindakan ini TIDAK BOLEH dibatalkan.\n\nTeruskan?')) return;
-  const typed = prompt('Taip PADAM (huruf besar) untuk sahkan:');
-  if (typed === null) return;
-  if (typed.trim().toUpperCase() !== 'PADAM') return toast('↩️ Dibatalkan — perkataan tidak sepadan');
-  const pin = prompt('Masukkan PIN untuk padam:');
-  if (pin === null) return;
-  if (pin !== DELETE_PIN) return toast('❌ PIN salah');
+  let bankRows = '';
+  const perBank = {};
+  list.forEach(t => {
+    const bid = t.bank_account_id || '_none';
+    perBank[bid] = (perBank[bid] || 0) + (t.flow === 'in' ? 1 : -1) * (Number(t.amount) || 0);
+  });
+  Object.keys(perBank).forEach(bid => {
+    const b = bankById(bid);
+    const now = bid === '_none' ? 0 : bankBalance(bid);
+    bankRows += '<tr><td>' + esc(b ? b.name : 'TIDAK DI-TAG') + '</td>' +
+      '<td class="num">' + fmt(now) + '</td>' +
+      '<td class="num"><b>' + fmt(now - perBank[bid]) + '</b></td></tr>';
+  });
 
-  // 2. Backup — selepas semua pengesahan lulus, sebelum apa-apa dipadam
+  document.getElementById('rbModalSummary').innerHTML =
+    '<p style="font-size:13px;color:var(--textd);margin-bottom:12px;">Anda akan memadam <b style="color:var(--red);">' +
+      list.length + ' transaksi</b> yang dikey masuk pada <b>' + esc(date) + '</b> (waktu Malaysia). ' +
+      'Tindakan ini <b style="color:var(--red);">tidak boleh dibatalkan</b>.</p>' +
+    '<div class="tbl-wrap"><table class="tbl">' +
+      '<tr><th>Akaun</th><th class="num">Baki Sekarang</th><th class="num">Baki Selepas Padam</th></tr>' +
+      bankRows +
+      '<tr class="total-row"><td>Cash In ' + fmtRM(tIn) + ' · Cash Out ' + fmtRM(tOut) + '</td>' +
+      '<td class="num" colspan="2">Perubahan bersih ' + fmtRM(-net) + '</td></tr>' +
+    '</table></div>';
+
+  document.getElementById('rb_word').value = '';
+  document.getElementById('rb_pin').value = '';
+  validateRbModal();
+  document.getElementById('rbModalBg').classList.add('show');
+  setTimeout(() => document.getElementById('rb_word').focus(), 60);
+}
+function closeRbModal() { document.getElementById('rbModalBg').classList.remove('show'); }
+function validateRbModal() {
+  const raw = document.getElementById('rb_word').value;
+  // Longgar dengan sengaja: abaikan ruang, tanda baca & huruf besar/kecil.
+  const word = raw.replace(/[^a-zA-Z]/g, '').toUpperCase();
+  const pin = document.getElementById('rb_pin').value.trim();
+  const wOk = word === 'PADAM', pOk = pin === DELETE_PIN;
+  const wh = document.getElementById('rb_word_hint'), ph = document.getElementById('rb_pin_hint');
+  wh.innerHTML = !raw.trim() ? '&nbsp;'
+    : wOk ? '<span style="color:var(--green);">✓ sepadan</span>'
+    : '<span style="color:var(--amber);">Belum sepadan — taip: PADAM</span>';
+  ph.innerHTML = !pin ? '&nbsp;'
+    : pOk ? '<span style="color:var(--green);">✓ PIN betul</span>'
+    : '<span style="color:var(--amber);">PIN belum betul</span>';
+  document.getElementById('rbConfirmBtn').disabled = !(wOk && pOk);
+  return wOk && pOk;
+}
+async function executeRollback() {
+  if (!validateRbModal()) return;
+  const list = rollbackMatches();
+  if (!list.length) { closeRbModal(); return toast('⚠️ Tiada rekod dipilih'); }
+  const date = document.getElementById('rb_date').value;
+  closeRbModal();
+
+  // Backup — selepas pengesahan lulus, sebelum apa-apa dipadam
   downloadCSV('DOD_BACKUP_Rollback_' + date, rollbackCSVRows(list));
 
-  // 3. Padam satu per satu, kira yang berjaya
+  // Padam satu per satu, kira yang berjaya
   let done = 0, failed = 0;
   toast('⏳ Memadam ' + list.length + ' rekod...');
   for (const t of list) {
