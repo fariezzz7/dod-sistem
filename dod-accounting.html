@@ -316,7 +316,7 @@
             </div>
             <div class="form-group">
               <label>Kategori</label>
-              <select id="cb_category"></select>
+              <select id="cb_category" onchange="updateSupplierPicker()"></select>
             </div>
             <div class="form-group">
               <label>Amaun (RM)</label>
@@ -324,6 +324,11 @@
             </div>
             <div class="form-group wide">
               <label>Details / Keterangan</label>
+              <div id="cb_supplier_wrap" style="display:none;margin-bottom:6px;">
+                <select id="cb_supplier" onchange="onSupplierPick()">
+                  <option value="">— Pilih Supplier (Masterlist) —</option>
+                </select>
+              </div>
               <input type="text" id="cb_details" placeholder="cth: Bayaran customer SK Taman Jaya / Gaji staff Mei">
             </div>
             <div class="form-group wide">
@@ -1097,6 +1102,7 @@ async function loadAll() {
     ]);
     CATS = cats || [];
     TXNS = txns || [];
+    loadAccSuppliers();   // async, tak block render
     DCS = dcs || [];
     ASSETS = assets || [];
     BANKS = banks || [];
@@ -1198,6 +1204,66 @@ function setFlow(f) {
   populateCatDropdown();
 }
 
+// ── Supplier picker (link masterlist Supplier Directory) ──────
+let SUPPLIERS_ACC = [];
+
+async function loadAccSuppliers() {
+  try {
+    const rows = await supaGet('suppliers', 'select=id,name,short&order=name.asc');
+    if (rows && rows.length) {
+      SUPPLIERS_ACC = rows.map(r => ({ id: r.id, name: r.name, short: r.short || r.name }));
+      localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS_ACC));
+    }
+  } catch (e) {
+    console.warn('Suppliers: guna cache localStorage', e);
+  }
+  if (!SUPPLIERS_ACC.length) {
+    try { SUPPLIERS_ACC = JSON.parse(localStorage.getItem('dod_suppliers_v1') || '[]'); } catch (e) { SUPPLIERS_ACC = []; }
+  }
+  populateSupplierDropdown();
+}
+
+function populateSupplierDropdown() {
+  const sel = document.getElementById('cb_supplier');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Pilih Supplier (Masterlist) —</option>';
+  SUPPLIERS_ACC.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+// Kategori yang tunjuk dropdown supplier (Stok / Bahan Mentah & seumpamanya)
+function isSupplierCat(catId) {
+  if (!catId) return false;
+  if (catId === 'co_stok') return true;
+  const c = catById(catId);
+  const n = (c && c.name || '').toLowerCase();
+  return /stok|bahan mentah|supplier|kilang/.test(n);
+}
+
+function updateSupplierPicker() {
+  const wrap = document.getElementById('cb_supplier_wrap');
+  if (!wrap) return;
+  const catId = document.getElementById('cb_category').value;
+  const show = cbFlow === 'out' && isSupplierCat(catId);
+  wrap.style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('cb_supplier').value = '';
+}
+
+function onSupplierPick() {
+  const name = document.getElementById('cb_supplier').value;
+  if (!name) return;
+  const d = document.getElementById('cb_details');
+  const cur = d.value.trim();
+  if (!cur || SUPPLIERS_ACC.some(s => s.name === cur)) d.value = name;
+  else if (!cur.toUpperCase().includes(name.toUpperCase())) d.value = name + ' — ' + cur;
+  d.focus();
+}
+
 function populateCatDropdown() {
   const sel = document.getElementById('cb_category');
   const cur = sel.value;
@@ -1208,6 +1274,7 @@ function populateCatDropdown() {
     sel.appendChild(o);
   });
   if (cur && CATS.some(c => c.id === cur && c.flow === cbFlow)) sel.value = cur;
+  updateSupplierPicker();
 }
 
 function populateBankDropdown() {
@@ -1405,6 +1472,7 @@ async function saveTxn() {
       document.getElementById('cb_amount').value = '';
       document.getElementById('cb_details').value = '';
       document.getElementById('cb_remark').value = '';
+      document.getElementById('cb_supplier').value = '';
     }
     TXNS.sort((a, b) => (a.txn_date || '').localeCompare(b.txn_date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
     populateCatFilter();
@@ -1424,6 +1492,7 @@ function editTxn(id) {
   populateBankDropdown();
   if (t.bank_account_id) document.getElementById('cb_bank').value = t.bank_account_id;
   document.getElementById('cb_category').value = t.category;
+  updateSupplierPicker();
   document.getElementById('cb_amount').value = t.amount;
   document.getElementById('cb_details').value = t.details || '';
   document.getElementById('cb_remark').value = t.remark || '';
@@ -1439,6 +1508,7 @@ function cancelEditTxn() {
   document.getElementById('cb_amount').value = '';
   document.getElementById('cb_details').value = '';
   document.getElementById('cb_remark').value = '';
+  document.getElementById('cb_supplier').value = '';
 }
 
 async function deleteTxn(id) {
