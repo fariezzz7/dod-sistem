@@ -305,7 +305,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 #appContent.expanded{margin-left:56px;width:calc(100% - 56px);}
 
 /* ── WRAP ── */
-.wrap{max-width:1440px;margin:0 auto;padding:0 24px;position:relative;z-index:1;}
+.wrap{max-width:1760px;margin:0 auto;padding:0 24px;position:relative;z-index:1;min-width:0;}
 
 /* Responsive */
 @media(max-width:768px){
@@ -431,7 +431,23 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .kpi-sub{font-size:10px;color:var(--textm);margin-top:3px;}
 
 /* ── MAIN GRID ── */
-.main{display:grid;grid-template-columns:280px 1fr;gap:12px;margin:0 0 24px;}
+.main{display:grid;grid-template-columns:280px minmax(0,1fr);gap:12px;margin:0 0 24px;align-items:start;}
+.main > *{min-width:0;}
+/* Sidebar collapse */
+.main.mlf-collapsed{grid-template-columns:minmax(0,1fr);}
+.main.mlf-collapsed > .sidebar{display:none;}
+.mlf-toggle{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;font-family:'Fira Code',monospace;font-size:9px;line-height:1.5;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;background:var(--bg2);border:1px solid var(--line);color:var(--textd);cursor:pointer;border-radius:4px;transition:all .12s;white-space:nowrap;}
+.mlf-toggle:hover{border-color:var(--blueb);color:var(--blue);}
+.mlf-toggle.has-filter{background:var(--bluebg);border-color:var(--blueb);color:var(--blue);}
+.mlf-badge{background:var(--blue);color:#fff;border-radius:8px;padding:1px 5px;font-size:8px;line-height:1.4;}
+.table-toolbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;flex:0 0 auto;}
+.table-count{flex:0 0 auto;white-space:nowrap;}
+@media(max-width:900px){
+  /* Sidebar jadi penuh lebar di atas table — table tak lagi tersepit */
+  .main{grid-template-columns:minmax(0,1fr);}
+  .table-toolbar{flex-wrap:wrap;gap:8px;}
+  .sort-btns{flex-wrap:wrap;}
+}
 .sidebar{display:flex;flex-direction:column;gap:10px;}
 .sidebar-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow);}
 .sidebar-label{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--textm);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
@@ -463,12 +479,15 @@ select.fsel:focus{outline:none;border-color:var(--bluehi);box-shadow:0 0 0 3px v
 
 /* ── TABLE ── */
 .table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;}
-.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg3);}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg3);}
 .table-count{font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);}
-.sort-btns{display:flex;gap:4px;}
+.sort-btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
 .sort-btn{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;background:none;border:1px solid var(--line);color:var(--textd);cursor:pointer;border-radius:4px;transition:all .12s;}
 .sort-btn.active{background:var(--bluebg);color:var(--blue);border-color:var(--blueb);}
-.tbl-outer{overflow-x:auto;}
+.tbl-outer{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;}
+.tbl-outer::-webkit-scrollbar{height:9px;}
+.tbl-outer::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+.tbl-outer::-webkit-scrollbar-thumb:hover{background:var(--textm);}
 table.data{width:100%;border-collapse:collapse;font-size:12px;}
 table.data thead tr{background:var(--bg3);border-bottom:1px solid var(--line);}
 table.data thead th{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding:10px 10px;text-align:left;white-space:nowrap;}
@@ -2067,13 +2086,19 @@ tr:hover .row-actions{opacity:1;}
       <div>
         <div class="table-wrap">
           <div class="table-toolbar">
-            <div class="table-count" id="tableCount"></div>
+            <div class="table-toolbar-left">
+              <button class="mlf-toggle" id="mlfToggle" onclick="toggleFilterPanel()" title="Tunjuk / sembunyi panel carian &amp; filter">☰ Filter</button>
+              <div class="table-count" id="tableCount"></div>
+            </div>
             <div class="sort-btns">
               <button class="sort-btn active" onclick="sortBy('date',this)">Tarikh</button>
               <button class="sort-btn" onclick="sortBy('pcs',this)">PCS</button>
               <button class="sort-btn" onclick="sortBy('revenue',this)">Revenue</button>
               <button class="sort-btn" onclick="sortBy('profit',this)">Profit</button>
               <button class="sort-btn" onclick="sortBy('production',this)">⚠ Produksi</button>
+              <span style="width:1px;height:18px;background:var(--line);margin:0 4px;"></span>
+              <button class="sort-btn" style="border-color:var(--greenb);color:var(--green);background:var(--greenbg);" onclick="exportFilteredCSV()" title="Muat turun rekod yang ditapis sebagai CSV">⬇ CSV</button>
+              <button class="sort-btn" style="border-color:var(--redb);color:var(--red);background:var(--redbg);" onclick="exportFilteredPDF()" title="Muat turun rekod yang ditapis sebagai PDF">⬇ PDF</button>
             </div>
           </div>
           <div class="tbl-outer">
@@ -4441,6 +4466,9 @@ function renderAll() {
     return String(b.id||'').localeCompare(String(a.id||''));
   });
 
+  window._exportRows = rows;
+  initFilterPanelState();
+  updateFilterPanelToggle();
   renderKPIs(rows);
   renderTable(rows);
   renderSidebar(rows);
@@ -6904,6 +6932,244 @@ function closeCustDetail() {
 // ======================================
 // EXPORT XLSX (SheetJS)
 // ======================================
+// ======================================
+// PANEL FILTER MASTERLIST — COLLAPSE
+// (nota: jangan guna nama 'sb-*' / toggleSidebar — itu milik nav sidebar app)
+// ======================================
+const MLF_KEY = 'dod_ml_filterpanel';
+
+function mlfIsMobile() { return window.matchMedia('(max-width:900px)').matches; }
+
+function countActiveFilters() {
+  const f = activeFilters;
+  let n = 0;
+  if (f.os !== 'ALL') n++;
+  if (f.pipeline !== 'ALL') n++;
+  if (f.channel !== 'ALL') n++;
+  if (f.source !== 'ALL') n++;
+  if (f.supplier !== 'ALL') n++;
+  if (f.prodStatus !== 'ALL') n++;
+  if (f.pics.length) n++;
+  if (f.search) n++;
+  return n;
+}
+
+function setFilterPanelCollapsed(collapsed, persist = true) {
+  const main = document.querySelector('#masterlistView .main');
+  if (!main) return;
+  main.classList.toggle('mlf-collapsed', collapsed);
+  if (persist) { try { localStorage.setItem(MLF_KEY, collapsed ? 'closed' : 'open'); } catch(e) {} }
+  updateFilterPanelToggle();
+}
+
+function toggleFilterPanel() {
+  const main = document.querySelector('#masterlistView .main');
+  if (!main) return;
+  setFilterPanelCollapsed(!main.classList.contains('mlf-collapsed'));
+}
+
+function updateFilterPanelToggle() {
+  const btn = document.getElementById('mlfToggle');
+  const main = document.querySelector('#masterlistView .main');
+  if (!btn || !main) return;
+  const collapsed = main.classList.contains('mlf-collapsed');
+  const n = countActiveFilters();
+  btn.innerHTML = (collapsed ? '☰ Filter' : '✕ Tutup Filter') +
+    (n ? ' <span class="mlf-badge">' + n + '</span>' : '');
+  btn.classList.toggle('has-filter', n > 0);
+  btn.title = collapsed ? 'Tunjuk panel carian & filter' : 'Sembunyi panel — beri ruang lebih untuk table';
+}
+
+function initFilterPanelState() {
+  const main = document.querySelector('#masterlistView .main');
+  if (!main || main.dataset.mlfInit) return;
+  main.dataset.mlfInit = '1';
+  let saved = null;
+  try { saved = localStorage.getItem(MLF_KEY); } catch(e) {}
+  // Default: tertutup di mobile (table dapat penuh lebar), terbuka di desktop
+  const collapsed = saved ? saved === 'closed' : mlfIsMobile();
+  setFilterPanelCollapsed(collapsed, false);
+}
+
+// ======================================
+// EXPORT REPORT (IKUT FILTER AKTIF) — CSV & PDF
+// ======================================
+function getExportRows() {
+  return (window._exportRows && window._exportRows.length) ? window._exportRows : getFiltered();
+}
+
+// Ringkasan filter yang sedang aktif — dipakai dalam header PDF & nama fail
+function getFilterSummary() {
+  const parts = [];
+  const f = activeFilters;
+  if (f.os === 'CUST') parts.push('Status OS: Customer OS');
+  else if (f.os === 'SUP') parts.push('Status OS: Supplier OS');
+  if (f.pipeline !== 'ALL') parts.push('Pipeline: ' + (f.pipeline === 'QUOTATION' ? 'Quotation' : 'Confirmed'));
+  if (f.channel !== 'ALL') parts.push('Channel: ' + f.channel);
+  if (f.source !== 'ALL') parts.push('Sumber: ' + f.source);
+  if (f.supplier !== 'ALL') parts.push('Kilang: ' + f.supplier);
+  if (f.prodStatus !== 'ALL') parts.push('Status Produksi: ' + f.prodStatus);
+  if (f.pics.length) parts.push('PIC: ' + f.pics.join(', '));
+  if (f.search) parts.push('Carian: "' + f.search + '"');
+  return parts.length ? parts.join('  •  ') : 'Tiada filter — semua rekod bulan ini';
+}
+
+const EXPORT_HEADERS = [
+  'Tarikh Order','Tarikh Invois','Tarikh Due','PIC','Nama Job','Channel','Sumber',
+  'PCS','No Inv Supplier','No Inv DOD','Nama Customer','Tel','Email','Alamat',
+  'Jenis Produk','Saiz','Warna','Nota Design','Kilang / Supplier',
+  'Kos Supplier (RM)','Kos Sup Bayar (RM)','Kos Lain (RM)',
+  'Total Invoice Customer (RM)','1st Payment (RM)','Customer OS (RM)',
+  'Supplier OS (RM)','Profit (RM)','Margin (%)'
+];
+
+function exportRowValues(o) {
+  const margin = o.total_customer > 0 ? ((o.profit||0)/o.total_customer*100).toFixed(1) : '0.0';
+  return [
+    o.order_date||'', o.inv_date||'', o.due_date||'',
+    o.pic||'', o.name_job||'', o.channel||'', o.source||'',
+    o.pcs||0, o.inv_number_supplier||'', o.inv_number||'',
+    o.cust_name||'', o.cust_tel||'', o.cust_email||'', o.cust_addr||'',
+    o.product_type||'', o.sizes||'', o.color_main||'', o.design_notes||'',
+    o.supplier_name||'NOHAD SDN BHD',
+    o.nohad_amount||0, o.nohad_paid||0, o.luar_amount||0,
+    o.total_customer||0, o.first_payment||0, o.balance_customer||0,
+    o.supplier_outstanding||0, o.profit||0, parseFloat(margin)||0
+  ];
+}
+
+function exportFileStamp() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes());
+}
+
+function csvCell(v) {
+  const t = String(v == null ? '' : v);
+  // Escape koma, petikan, newline — dan neutralize formula injection dalam Excel
+  const safe = /^[=+\-@]/.test(t) ? "'" + t : t;
+  return /[",\n\r]/.test(safe) ? '"' + safe.replace(/"/g,'""') + '"' : safe;
+}
+
+function exportFilteredCSV() {
+  const rows = getExportRows();
+  if (!rows.length) { showToast('Tiada rekod untuk di-export', true); return; }
+
+  const lines = [EXPORT_HEADERS.map(csvCell).join(',')];
+  rows.forEach(o => lines.push(exportRowValues(o).map(csvCell).join(',')));
+
+  // Baris jumlah keseluruhan
+  const tot = rows.reduce((a,o) => ({
+    pcs: a.pcs + (o.pcs||0),
+    rev: a.rev + (o.total_customer||0),
+    cus: a.cus + (o.balance_customer||0),
+    sup: a.sup + (o.supplier_outstanding||0),
+    pro: a.pro + (o.profit||0)
+  }), {pcs:0,rev:0,cus:0,sup:0,pro:0});
+  const totLine = new Array(EXPORT_HEADERS.length).fill('');
+  totLine[0] = 'JUMLAH (' + rows.length + ' rekod)';
+  totLine[7] = tot.pcs; totLine[22] = tot.rev.toFixed(2);
+  totLine[24] = tot.cus.toFixed(2); totLine[25] = tot.sup.toFixed(2);
+  totLine[26] = tot.pro.toFixed(2);
+  totLine[27] = tot.rev > 0 ? (tot.pro/tot.rev*100).toFixed(1) : '0.0';
+  lines.push(totLine.map(csvCell).join(','));
+
+  // BOM UTF-8 supaya Excel baca aksen dengan betul
+  const blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'masterlist-' + currentMonth + '-' + exportFileStamp() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('CSV dimuat turun — ' + rows.length + ' rekod');
+}
+
+function exportFilteredPDF() {
+  const rows = getExportRows();
+  if (!rows.length) { showToast('Tiada rekod untuk di-export', true); return; }
+
+  const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const money = n => Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const isAdmin = currentUser.role === 'admin';
+
+  const tot = rows.reduce((a,o) => ({
+    pcs: a.pcs + (o.pcs||0),
+    rev: a.rev + (o.total_customer||0),
+    cus: a.cus + (o.balance_customer||0),
+    sup: a.sup + (o.supplier_outstanding||0),
+    pro: a.pro + (o.profit||0)
+  }), {pcs:0,rev:0,cus:0,sup:0,pro:0});
+
+  const body = rows.map((o,i) => {
+    const margin = o.total_customer > 0 ? ((o.profit||0)/o.total_customer*100).toFixed(1) : '0.0';
+    return '<tr>' +
+      '<td class="c">' + (i+1) + '</td>' +
+      '<td class="m">' + esc(o.order_date||'—') + '</td>' +
+      '<td class="m">' + esc(o.inv_number||'—') + '</td>' +
+      '<td>' + esc(o.name_job||'—') + '</td>' +
+      '<td>' + esc(o.cust_name||'—') + '</td>' +
+      '<td>' + esc(o.pic||'—') + '</td>' +
+      '<td>' + esc(o.source||'—') + '</td>' +
+      '<td class="c m">' + (o.pcs||0) + '</td>' +
+      (isAdmin ? '<td class="r m">' + money(o.nohad_amount) + '</td>' : '') +
+      '<td class="r m">' + money(o.total_customer) + '</td>' +
+      '<td class="r m">' + money(o.balance_customer) + '</td>' +
+      '<td class="r m">' + money(o.supplier_outstanding) + '</td>' +
+      (isAdmin ? '<td class="r m">' + money(o.profit) + '</td>' : '') +
+      (isAdmin ? '<td class="r m">' + margin + '%</td>' : '') +
+    '</tr>';
+  }).join('');
+
+  const head = '<tr><th>#</th><th>Tarikh</th><th>No Inv</th><th>Nama Job</th><th>Customer</th><th>PIC</th><th>Sumber</th><th class="c">PCS</th>' +
+    (isAdmin ? '<th class="r">Kos Sup</th>' : '') +
+    '<th class="r">Revenue</th><th class="r">Cust OS</th><th class="r">Sup OS</th>' +
+    (isAdmin ? '<th class="r">Profit</th><th class="r">Margin</th>' : '') + '</tr>';
+
+  const foot = '<tr class="tot"><td colspan="7">JUMLAH — ' + rows.length + ' rekod</td>' +
+    '<td class="c m">' + tot.pcs + '</td>' +
+    (isAdmin ? '<td class="r m">' + money(rows.reduce((a,o)=>a+(o.nohad_amount||0),0)) + '</td>' : '') +
+    '<td class="r m">' + money(tot.rev) + '</td>' +
+    '<td class="r m">' + money(tot.cus) + '</td>' +
+    '<td class="r m">' + money(tot.sup) + '</td>' +
+    (isAdmin ? '<td class="r m">' + money(tot.pro) + '</td>' : '') +
+    (isAdmin ? '<td class="r m">' + (tot.rev>0 ? (tot.pro/tot.rev*100).toFixed(1) : '0.0') + '%</td>' : '') + '</tr>';
+
+  const title = 'Laporan Masterlist — ' + (MONTH_LABELS[currentMonth] || currentMonth);
+  const html = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>' +
+    '@page{size:A4 landscape;margin:12mm 10mm;}' +
+    '*{box-sizing:border-box;}' +
+    'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:#1A2040;margin:0;font-size:9px;}' +
+    '.hdr{border-bottom:2px solid #2E6BFF;padding-bottom:8px;margin-bottom:10px;}' +
+    '.hdr h1{margin:0 0 3px;font-size:15px;letter-spacing:-.01em;}' +
+    '.hdr .sub{font-size:9px;color:#5A6480;line-height:1.5;}' +
+    '.hdr .flt{margin-top:5px;font-size:8.5px;color:#1A5CC8;background:#EEF4FF;border:1px solid #C8DBFF;border-radius:4px;padding:4px 7px;display:inline-block;}' +
+    'table{width:100%;border-collapse:collapse;}' +
+    'th{background:#F4F6FA;border-bottom:1.5px solid #C9D2E4;padding:5px 4px;text-align:left;font-size:7.5px;letter-spacing:.05em;text-transform:uppercase;color:#5A6480;}' +
+    'td{border-bottom:1px solid #EDF0F6;padding:4px;vertical-align:top;}' +
+    'td.m,th.m{font-variant-numeric:tabular-nums;}' +
+    '.r{text-align:right;} .c{text-align:center;}' +
+    'tr.tot td{border-top:1.5px solid #1A2040;border-bottom:none;font-weight:700;background:#F4F6FA;padding:6px 4px;}' +
+    'thead{display:table-header-group;} tr{page-break-inside:avoid;}' +
+    '.ftr{margin-top:10px;font-size:7.5px;color:#9AA0B8;text-align:right;}' +
+    '</style></head><body>' +
+    '<div class="hdr"><h1>' + esc(title) + '</h1>' +
+    '<div class="sub">' + rows.length + ' rekod  •  Dijana ' + esc(new Date().toLocaleString('en-MY')) + '  •  Oleh ' + esc(currentUser.name || currentUser.email || '—') + '</div>' +
+    '<div class="flt">Filter: ' + esc(getFilterSummary()) + '</div></div>' +
+    '<table><thead>' + head + '</thead><tbody>' + body + '</tbody><tfoot>' + foot + '</tfoot></table>' +
+    '<div class="ftr">DOD Sistem — Masterlist Report</div>' +
+    '</body></html>';
+
+  const w = window.open('', '_blank');
+  if (!w) { showToast('Popup disekat — benarkan popup untuk export PDF', true); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  // Beri masa untuk layout siap sebelum panggil print dialog (pilih "Save as PDF")
+  setTimeout(() => { try { w.print(); } catch(e) {} }, 400);
+  showToast('PDF sedia — pilih "Save as PDF" dalam dialog print');
+}
+
 function exportXLSX() {
   // Load SheetJS dynamically
   if (typeof XLSX !== 'undefined') { doExport(); return; }
