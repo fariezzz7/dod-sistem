@@ -2053,6 +2053,7 @@ tr:hover .row-actions{opacity:1;}
               <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
               <option>ONLINE</option><option>OFFLINE</option>
               <option>SEKOLAH</option><option>AGENT</option>
+              <option>JOB GANTI</option><option>REPRINT</option>
             </select>
           </div>
           <div class="filter-group">
@@ -2217,6 +2218,7 @@ tr:hover .row-actions{opacity:1;}
               <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
               <option>ONLINE</option><option>OFFLINE</option>
               <option>SEKOLAH</option><option>AGENT</option>
+              <option>JOB GANTI</option><option>REPRINT</option>
             </select>
           </div>
           <div class="form-field full">
@@ -4504,6 +4506,15 @@ function isPipelineSales(o) {
   const s = o.pipeline_status || 'confirmed';
   return s === 'confirmed' || s === 'in_production' || s === 'completed';
 }
+// Sumber yang dikecualikan dari KPI Sales Admin (bukan sales baru)
+const KPI_EXCLUDED_SOURCES = ['JOB GANTI','REPRINT'];
+function isKpiExcluded(o) {
+  return KPI_EXCLUDED_SOURCES.includes((o.source||'').toUpperCase().trim());
+}
+// Order yang dikira dalam KPI/komisyen sales admin
+function isKpiSales(o) {
+  return isPipelineSales(o) && !isKpiExcluded(o);
+}
 function renderKPIs(rows) {
   const salesRows = rows.filter(isPipelineSales);
   const quotRows  = rows.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
@@ -5643,7 +5654,7 @@ function renderKpiDashboard() {
 
   // ── Per-staff KPI builder ──────────────────────────────────
   function buildStaffKpi(picName) {
-    const allPicOrders = (sessionData[activeMonth]||[]).filter(r => r.pic === picName);
+    const allPicOrders = (sessionData[activeMonth]||[]).filter(r => r.pic === picName && !isKpiExcluded(r)); // JOB GANTI / REPRINT tak masuk KPI
     const orders       = allPicOrders.filter(isPipelineSales); // Confirmed ke atas sahaja
     const quotOrders   = allPicOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
     const pcs          = orders.reduce((s,r)=>s+(r.pcs||0),0);
@@ -5840,18 +5851,18 @@ function renderKpiDashboard() {
 
   // ── Summary row for admin ──────────────────────────────────
   function buildTeamSummary() {
-  const allSalesOrders = curMonthData.filter(isPipelineSales).filter(r =>
+  const allSalesOrders = curMonthData.filter(isKpiSales).filter(r =>
     r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ'
   );
   const totalRev  = allSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
   const totalPCS  = allSalesOrders.reduce((s,r)=>s+(r.pcs||0),0);
   const totalOrds = allSalesOrders.length;
   const totalOS   = allSalesOrders.filter(isPipelineSales).filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
-  const totalQuot = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation' && r.pic && r.pic!=='FATHI' && r.pic!=='FARIZ');
+  const totalQuot = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation' && !isKpiExcluded(r) && r.pic && r.pic!=='FATHI' && r.pic!=='FARIZ');
   const quotVal   = totalQuot.reduce((s,r)=>s+(r.total_customer||0),0);
 
   // Prev month for trend
-  const prevSalesOrders = prevMonthData.filter(isPipelineSales).filter(r => r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ');
+  const prevSalesOrders = prevMonthData.filter(isKpiSales).filter(r => r.pic && r.pic !== 'FATHI' && r.pic !== 'FARIZ');
   const prevRev = prevSalesOrders.reduce((s,r)=>s+(r.total_customer||0),0);
   const revTrend = prevRev > 0 ? ((totalRev - prevRev)/prevRev*100).toFixed(1) : null;
   const trendHTML = revTrend !== null
@@ -5863,7 +5874,7 @@ function renderKpiDashboard() {
     const ords = allSalesOrders.filter(r=>r.pic===pic);
     const rev  = ords.reduce((s,r)=>s+(r.total_customer||0),0);
     const pcs  = ords.reduce((s,r)=>s+(r.pcs||0),0);
-    const qOrds = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation'&&r.pic===pic);
+    const qOrds = curMonthData.filter(r=>(r.pipeline_status||'confirmed')==='quotation'&&!isKpiExcluded(r)&&r.pic===pic);
     const total = ords.length + qOrds.length;
     const rate  = total > 0 ? Math.round(ords.length/total*100) : 0;
     return { pic, rev, pcs, rate, orders: ords.length };
@@ -11388,7 +11399,7 @@ function renderSalesQuickStats() {
   const myName = currentUser.name;
   const months = Object.keys(sessionData);
   const curMonth = months[months.length-1];
-  const myOrders = (sessionData[curMonth]||[]).filter(r => r.pic === myName);
+  const myOrders = (sessionData[curMonth]||[]).filter(r => r.pic === myName && !isKpiExcluded(r)); // JOB GANTI / REPRINT tak masuk KPI
   const myConfirmed = myOrders.filter(isPipelineSales);
   const myQuotOrders = myOrders.filter(r => (r.pipeline_status||'confirmed') === 'quotation');
   const myQuotCount = myQuotOrders.length;
@@ -11677,7 +11688,7 @@ function renderHomePipeline(role) {
   // Conversion rate this month (confirmed / (confirmed + quotation))
   const curMonth = Object.keys(sessionData).slice(-1)[0];
   const curOrders = (sessionData[curMonth]||[]).filter(o =>
-    role !== 'admin' ? o.pic === myName : true
+    (role !== 'admin' ? o.pic === myName : true) && !isKpiExcluded(o)
   );
   const curConfirmed = curOrders.filter(isPipelineSales).length;
   const curQuot = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation').length;
