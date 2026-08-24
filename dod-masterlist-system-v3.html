@@ -2391,6 +2391,14 @@ tr:hover .row-actions{opacity:1;}
               <option value="SHARE">🤝 Kongsi DOD &amp; Kilang</option>
             </select>
           </div>
+          <div class="form-field" id="reworkFlowWrap" style="display:none;">
+            <label class="fl">Aliran Bayaran</label>
+            <select class="fi" id="f_rework_flow" onchange="onReworkFlowChange()">
+              <option value="NO_INVOICE">🚫 Tiada invois — kilang sama ganti percuma</option>
+              <option value="DOD_PAYS_CLAIM">💳 DOD bayar dulu, tuntut balik — ganti di kilang lain</option>
+            </select>
+            <div id="reworkFlowHint" style="font-size:10px;color:var(--textm);margin-top:3px;"></div>
+          </div>
           <div class="form-field">
             <label class="fl">Punca Ganti</label>
             <select class="fi" id="f_rework_cause" onchange="recalc()">
@@ -3698,7 +3706,7 @@ async function supaUpsert(table, data) {
       'supplier2_name','supplier2_amount','supplier2_paid',
       'pipeline_notes','is_deleted','deleted_at','deleted_by',
       'was_quotation','supplier_cost_mode',
-      'rework_bearer','rework_cause','rework_cost_total','original_order_id',
+      'rework_bearer','rework_payment_flow','rework_cause','rework_cost_total','original_order_id',
       'rework_claim_status','rework_claim_type','rework_claim_amount','rework_claim_ref',
       'rework_claim_date','rework_claim_redeemed','rework_claim_redeemed_date'];
     const clean = arr => arr.map(o => {
@@ -4672,11 +4680,24 @@ function reworkBearer(o){
   const b = (o.rework_bearer||'').toUpperCase();
   return ['KILANG','DOD','SHARE'].includes(b) ? b : 'DOD';
 }
-// Bahagian DOD = kos supplier yang DOD betul-betul bayar
+// Aliran bayaran bila kilang yang tanggung:
+//   NO_INVOICE     = kilang sama ganti percuma, DOD tak keluar duit
+//   DOD_PAYS_CLAIM = ganti di kilang lain, DOD bayar kilang pelaksana dulu & tuntut balik
+function reworkPaymentFlow(o){
+  if (!isReworkOrder(o)) return '';
+  if (reworkBearer(o) !== 'KILANG') return 'DOD_PAYS_CLAIM';  // DOD/SHARE memang DOD bayar
+  const f = (o.rework_payment_flow||'').toUpperCase();
+  return f === 'DOD_PAYS_CLAIM' ? 'DOD_PAYS_CLAIM' : 'NO_INVOICE';
+}
+// Kos yang DOD BETUL-BETUL KELUARKAN (tunai keluar) — inilah yang jadi Supplier OS
 function reworkCostDOD(o){
   if (!isReworkOrder(o)) return 0;
-  if (reworkBearer(o) === 'KILANG') return 0;
+  if (reworkBearer(o) === 'KILANG' && reworkPaymentFlow(o) === 'NO_INVOICE') return 0;
   return o.total_supplier || 0;
+}
+// Nilai yang akhirnya ditanggung kilang — sama ada tak invois langsung, atau dipulangkan via CN
+function reworkBorneByKilang(o){
+  return reworkCostKilang(o) + reworkClaimReceived(o);
 }
 // Kos penuh kerja ganti (termasuk bahagian kilang)
 function reworkCostTotal(o){
@@ -5083,8 +5104,8 @@ function showDetail(id) {
       <div class="dp-field"><div class="dp-key">Ditanggung</div><div class="dp-val">${REWORK_BEARER_LABEL[reworkBearer(r)]||reworkBearer(r)}</div></div>
       <div class="dp-field"><div class="dp-key">Dibuat Oleh</div><div class="dp-val">${r.supplier_name||'—'}</div></div>
       <div class="dp-field"><div class="dp-key">Kos Penuh</div><div class="dp-val">${fmt(reworkCostTotal(r))}</div></div>
-      <div class="dp-field"><div class="dp-key">Kos DOD</div><div class="dp-val" style="color:${reworkCostDOD(r)>0?'var(--red)':'var(--green)'}">${fmt(reworkCostDOD(r))}</div></div>
-      <div class="dp-field"><div class="dp-key">Kos Kilang</div><div class="dp-val" style="color:var(--green)">${fmt(reworkCostKilang(r))}</div></div>
+      <div class="dp-field"><div class="dp-key">DOD Bayar</div><div class="dp-val" style="color:${reworkCostDOD(r)>0?'var(--red)':'var(--green)'}">${fmt(reworkCostDOD(r))}${reworkCostDOD(r)>0?` → ${r.supplier_name||'—'}`:' (tiada invois)'}</div></div>
+      <div class="dp-field"><div class="dp-key">Ditanggung Kilang</div><div class="dp-val" style="color:var(--green)">${fmt(reworkBorneByKilang(r))}</div></div>
       ${(() => { const c = reworkClaim(r); if (c.status === 'NONE' && !c.amount) return '';
         return `<div class="dp-field"><div class="dp-key">Tuntutan</div><div class="dp-val">${REWORK_CLAIM_STATUS_LABEL[c.status]||c.status} · ${REWORK_CLAIM_TYPE_LABEL[c.type]||c.type}</div></div>
         <div class="dp-field"><div class="dp-key">Jumlah Tuntut</div><div class="dp-val" style="color:${c.status==='RECEIVED'?'var(--green)':'var(--amber)'}">${fmt(c.amount)}${c.ref?` · ${c.ref}`:''}</div></div>
@@ -5350,6 +5371,8 @@ function openEditModalById(id) {
   // Job ganti / reprint
   const rwBearerEl = document.getElementById('f_rework_bearer');
   if (rwBearerEl) rwBearerEl.value = reworkBearer(r) || 'KILANG';
+  const rwFlowEl = document.getElementById('f_rework_flow');
+  if (rwFlowEl) { rwFlowEl.value = reworkPaymentFlow(r) || 'NO_INVOICE'; rwFlowEl.dataset.touched = '1'; }
   const rwCauseEl = document.getElementById('f_rework_cause');
   if (rwCauseEl) rwCauseEl.value = reworkCause(r) || 'KILANG';
   const _cl = reworkClaim(r);
@@ -5393,6 +5416,7 @@ function clearForm() {
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   const rwB = document.getElementById('f_rework_bearer'); if (rwB) rwB.value = 'KILANG';
   const rwC = document.getElementById('f_rework_cause'); if (rwC) rwC.value = 'KILANG';
+  const rwF = document.getElementById('f_rework_flow'); if (rwF) { rwF.value = 'NO_INVOICE'; delete rwF.dataset.touched; }
   const clS = document.getElementById('f_claim_status'); if (clS) clS.value = 'NONE';
   const clT = document.getElementById('f_claim_type');   if (clT) clT.value = 'CREDIT_NOTE';
   setReworkCostLock(false);
@@ -5489,10 +5513,56 @@ function onReworkBearerChange(){
   const bearer = document.getElementById('f_rework_bearer')?.value || 'KILANG';
   const helper = document.getElementById('reworkShareHelper');
   if (helper) helper.style.display = bearer === 'SHARE' ? '' : 'none';
-  setReworkCostLock(bearer === 'KILANG');
-  recalc();
+  const flowWrap = document.getElementById('reworkFlowWrap');
+  if (flowWrap) flowWrap.style.display = bearer === 'KILANG' ? '' : 'none';
+  // Kalau ganti dibuat kilang LAIN, default kepada "DOD bayar dulu" — DOD memang kena bayar kilang tu
+  if (bearer === 'KILANG') {
+    const flowEl = document.getElementById('f_rework_flow');
+    if (flowEl && !flowEl.dataset.touched && reworkDoneByOtherKilang()) flowEl.value = 'DOD_PAYS_CLAIM';
+  }
+  onReworkFlowChange(true);
 }
 window.onReworkBearerChange = onReworkBearerChange;
+
+// Adakah kilang yang buat kerja ganti berbeza dari kilang order asal?
+function reworkDoneByOtherKilang(){
+  const doneBy = (document.getElementById('f_supplier_name')?.value||'').trim();
+  const originId = document.getElementById('f_rework_origin_id')?.value || '';
+  if (!originId || !doneBy) return false;
+  const og = findRowById(originId);
+  if (!og) return false;
+  return !_supNameMatch(doneBy, og.row.supplier_name||'');
+}
+
+function onReworkFlowChange(silent){
+  if (silent !== true) {
+    const el = document.getElementById('f_rework_flow');
+    if (el) el.dataset.touched = '1';
+  }
+  const bearer = document.getElementById('f_rework_bearer')?.value || 'KILANG';
+  const flow   = document.getElementById('f_rework_flow')?.value || 'NO_INVOICE';
+  const noInvoice = bearer === 'KILANG' && flow === 'NO_INVOICE';
+  setReworkCostLock(noInvoice);
+
+  const hint = document.getElementById('reworkFlowHint');
+  if (hint) {
+    hint.innerHTML = noInvoice
+      ? 'Kos supplier dikunci RM0 — kilang tak invois DOD langsung.'
+      : 'Isi kos di “Kos Supplier” bawah — ia akan masuk Supplier OS kilang yang buat kerja ganti, dan dituntut balik dari kilang punca.';
+    hint.style.color = 'var(--textm)';
+    if (noInvoice && reworkDoneByOtherKilang()) {
+      hint.innerHTML = '⚠ Kerja ganti ini dibuat oleh kilang lain — biasanya DOD kena bayar mereka. Pilih “DOD bayar dulu, tuntut balik”.';
+      hint.style.color = 'var(--amber)';
+    }
+  }
+  // DOD bayar dulu → tuntutan sepatutnya dibuka
+  if (!noInvoice && bearer === 'KILANG') {
+    const st = document.getElementById('f_claim_status');
+    if (st && st.value === 'NONE') st.value = 'PENDING';
+  }
+  onClaimChange();
+}
+window.onReworkFlowChange = onReworkFlowChange;
 
 function setReworkShare(ratio){
   const total = parseFloat(document.getElementById('f_rework_total')?.value)||0;
@@ -5628,14 +5698,16 @@ function recalc() {
   const rwEl = document.getElementById('reworkSummary');
   if (rwEl && isRework) {
     const bearer   = document.getElementById('f_rework_bearer')?.value || 'KILANG';
+    const flow     = bearer === 'KILANG' ? (document.getElementById('f_rework_flow')?.value || 'NO_INVOICE') : 'DOD_PAYS_CLAIM';
     const rwTotal  = parseFloat(document.getElementById('f_rework_total')?.value)||0;
-    const dodShare = bearer === 'KILANG' ? 0 : totalCost;
+    // Tunai keluar dari DOD — RM0 hanya bila memang tiada invois
+    const dodShare = (bearer === 'KILANG' && flow === 'NO_INVOICE') ? 0 : totalCost;
     const kilShare = Math.max(0, (rwTotal || dodShare) - dodShare);
     const pctDod   = (rwTotal||dodShare) > 0 ? (dodShare/(rwTotal||dodShare)*100).toFixed(0) : 0;
     rwEl.innerHTML =
       '<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Kos penuh ganti</span>' +
         '<strong style="font-family:\'Fira Code\',monospace;">' + fmt(rwTotal || dodShare) + '</strong></div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Ditanggung DOD (' + pctDod + '%)</span>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>DOD bayar' + (dodShare>0 && bearer==='KILANG' ? ' (tuntut balik)' : ' (' + pctDod + '%)') + '</span>' +
         '<strong style="font-family:\'Fira Code\',monospace;color:' + (dodShare>0?'var(--red)':'var(--green)') + ';">' + fmt(dodShare) + '</strong></div>' +
       '<div style="display:flex;justify-content:space-between;"><span>Ditanggung Kilang</span>' +
         '<strong style="font-family:\'Fira Code\',monospace;color:var(--green);">' + fmt(kilShare) + '</strong></div>' +
@@ -5654,8 +5726,10 @@ function recalc() {
       })() +
       '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #F3C9D2;color:var(--textm);">' +
         (dodShare > 0
-          ? 'Impak: profit −' + fmt(dodShare) + ' · dikecualikan dari KPI sales admin'
-          : 'Tiada kos kepada DOD · dikecualikan dari KPI sales admin') +
+          ? (bearer === 'KILANG'
+              ? '💸 DOD bayar ' + fmt(dodShare) + ' kepada kilang pelaksana (masuk Supplier OS) — tuntut balik dari kilang punca'
+              : 'Impak: profit −' + fmt(dodShare) + ' · dikecualikan dari KPI sales admin')
+          : 'Tiada invois — tiada tunai keluar · dikecualikan dari KPI sales admin') +
       '</div>';
   }
 }
@@ -5682,6 +5756,9 @@ function saveOrder() {
   // Job ganti / reprint — kos ditanggung siapa
   const isRework      = KPI_EXCLUDED_SOURCES.includes((src||'').toUpperCase().trim());
   const reworkBearerV = isRework ? (document.getElementById('f_rework_bearer')?.value || 'KILANG') : '';
+  const reworkFlowV   = isRework ? (reworkBearerV === 'KILANG'
+                                     ? (document.getElementById('f_rework_flow')?.value || 'NO_INVOICE')
+                                     : 'DOD_PAYS_CLAIM') : '';
   const reworkCauseV  = isRework ? (document.getElementById('f_rework_cause')?.value || 'KILANG') : '';
   const reworkTotalV  = isRework ? (parseFloat(document.getElementById('f_rework_total')?.value)||0) : 0;
   const reworkOriginV = isRework ? (document.getElementById('f_rework_origin_id')?.value || '') : '';
@@ -5692,8 +5769,9 @@ function saveOrder() {
   const claimDateV    = isRework ? (document.getElementById('f_claim_date')?.value || '') : '';
   const claimRedeemV  = isRework ? (document.getElementById('f_claim_redeemed')?.value === 'true') : false;
   const claimRedDateV = isRework ? (document.getElementById('f_claim_redeemed_date')?.value || '') : '';
-  // Kilang tanggung penuh — tiada invois kepada DOD, kos DOD = 0
-  const zeroCost      = isRework && reworkBearerV === 'KILANG';
+  // Kos DOD = 0 HANYA bila kilang sama ganti percuma tanpa invois.
+  // Kalau ganti di kilang lain, DOD tetap kena bayar kilang tu — kos mesti direkod.
+  const zeroCost      = isRework && reworkBearerV === 'KILANG' && reworkFlowV === 'NO_INVOICE';
 
   const nohadAmt   = zeroCost ? 0 : (parseFloat(document.getElementById('f_nohad_amt').value)||0);
   const nohadPaid  = zeroCost ? 0 : (parseFloat(document.getElementById('f_nohad_paid').value)||0);
@@ -5779,6 +5857,7 @@ function saveOrder() {
       was_quotation: (oldOrder.was_quotation===true) || ((oldOrder.pipeline_status||'')==='quotation') || (pipelineStatus==='quotation'),
       supplier_cost_mode: supCostMode,
       rework_bearer: isRework ? reworkBearerV : null,
+      rework_payment_flow: isRework ? reworkFlowV : null,
       rework_cause: isRework ? reworkCauseV : null,
       rework_claim_status: isRework ? claimStatusV : null,
       rework_claim_type: isRework ? claimTypeV : null,
@@ -5859,6 +5938,7 @@ function saveOrder() {
       was_quotation: pipelineStatus==='quotation',
       supplier_cost_mode: supCostMode,
       rework_bearer: isRework ? reworkBearerV : null,
+      rework_payment_flow: isRework ? reworkFlowV : null,
       rework_cause: isRework ? reworkCauseV : null,
       rework_claim_status: isRework ? claimStatusV : null,
       rework_claim_type: isRework ? claimTypeV : null,
