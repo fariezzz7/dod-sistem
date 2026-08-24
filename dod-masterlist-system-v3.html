@@ -249,6 +249,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.96);backdrop
 .month-tab-pill:hover{background:var(--bluebg);color:var(--blue);border-color:var(--blueb);}
 .month-tab-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;box-shadow:0 2px 8px rgba(26,92,200,0.25);}
 .month-tab-pill .pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.6;flex-shrink:0;}
+.month-tab-pill.year-pill{background:#F4EEFF;color:#6E30C8;border-color:#E2D5FA;font-weight:600;}
+.month-tab-pill.year-pill:hover{background:#EBE0FF;color:#5A22A8;border-color:#D3BFF5;}
+.month-tab-pill.year-pill.active{background:#6E30C8;color:#fff;border-color:#6E30C8;box-shadow:0 2px 8px rgba(110,48,200,0.25);}
 
 /* Bottom actions */
 .sb-bottom{
@@ -2214,7 +2217,7 @@ tr:hover .row-actions{opacity:1;}
           </div>
           <div class="form-field">
             <label class="fl">Sumber / Channel</label>
-            <select class="fi" id="f_source">
+            <select class="fi" id="f_source" onchange="onSourceChange()">
               <option>NEW ONLINE</option><option>REPEAT ONLINE</option>
               <option>ONLINE</option><option>OFFLINE</option>
               <option>SEKOLAH</option><option>AGENT</option>
@@ -2374,6 +2377,90 @@ tr:hover .row-actions{opacity:1;}
           <label class="fl">Nota Design / Arahan Khas</label>
           <input class="fi" type="text" id="f_design_notes" placeholder="cth: Logo sekolah bahagian dada kiri, nama belakang...">
         </div>
+      </div>
+
+      <!-- ── JOB GANTI / REPRINT ── -->
+      <div class="modal-section" id="reworkSection" style="display:none;border:1px solid #F3C9D2;background:#FFF7F8;">
+        <div class="modal-section-title" style="color:#C02840;">🔁 Job Ganti / Reprint — Kos & Punca</div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label class="fl">Kos Ditanggung Oleh</label>
+            <select class="fi" id="f_rework_bearer" onchange="onReworkBearerChange()">
+              <option value="KILANG">🏭 Kilang tanggung penuh (DOD kos RM0)</option>
+              <option value="DOD">🏢 DOD tanggung penuh</option>
+              <option value="SHARE">🤝 Kongsi DOD &amp; Kilang</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="fl">Punca Ganti</label>
+            <select class="fi" id="f_rework_cause" onchange="recalc()">
+              <option value="KILANG">🏭 Salah kilang — kualiti / tak ikut spec</option>
+              <option value="DOD">🏢 Salah DOD — design / admin / salah order</option>
+              <option value="CUSTOMER">🙋 Permintaan customer — tukar fikiran</option>
+              <option value="LAIN">🔀 Sebab lain — tukar kilang, deadline, dll</option>
+            </select>
+            <div style="font-size:10px;color:var(--textm);margin-top:3px;">Hanya “salah kilang” dikira dalam KPI kualiti kilang</div>
+          </div>
+          <div class="form-field">
+            <label class="fl">Kos Penuh Job Ganti (RM)</label>
+            <input class="fi" type="number" id="f_rework_total" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
+            <div style="font-size:10px;color:var(--textm);margin-top:3px;">Nilai penuh kerja ganti — termasuk bahagian kilang</div>
+          </div>
+          <div class="form-field">
+            <label class="fl">Order Asal (rujukan)</label>
+            <input class="fi" type="text" id="f_rework_origin" list="reworkOriginList" placeholder="Cari no. invois / nama job asal" oninput="onReworkOriginInput()">
+            <input type="hidden" id="f_rework_origin_id">
+            <datalist id="reworkOriginList"></datalist>
+            <div id="reworkOriginHint" style="font-size:10px;color:var(--textm);margin-top:3px;">Kos ganti akan dicaj balik ke margin order asal</div>
+          </div>
+        </div>
+        <div id="reworkShareHelper" style="display:none;margin-top:8px;">
+          <button type="button" onclick="setReworkShare(0.5)" style="font-size:11px;font-weight:600;padding:4px 12px;background:var(--bluebg);color:var(--blue);border:1px solid var(--blueb);border-radius:6px;cursor:pointer;">50 / 50</button>
+          <span style="font-size:10px;color:var(--textm);margin-left:8px;">Isi bahagian DOD dalam “Kos Supplier — Jumlah” di bawah. Baki dikira sebagai bahagian kilang.</span>
+        </div>
+        <!-- Tuntutan / Credit Note dari kilang punca -->
+        <div id="reworkClaimBox" style="margin-top:10px;padding:10px 12px;background:#fff;border:1px dashed #F3C9D2;border-radius:8px;">
+          <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#C02840;margin-bottom:8px;">📄 Tuntutan Dari Kilang Punca</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label class="fl">Status Tuntutan</label>
+              <select class="fi" id="f_claim_status" onchange="onClaimChange()">
+                <option value="NONE">— Tidak dituntut</option>
+                <option value="PENDING">⏳ Belum tuntut</option>
+                <option value="CLAIMED">📤 Dah tuntut — tunggu kilang</option>
+                <option value="RECEIVED">✅ Diterima</option>
+                <option value="REJECTED">❌ Ditolak kilang</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="fl">Jenis Pampasan</label>
+              <select class="fi" id="f_claim_type" onchange="onClaimChange()">
+                <option value="CREDIT_NOTE">📄 Credit Note</option>
+                <option value="REFUND">💵 Refund tunai</option>
+                <option value="REPLACEMENT">🔁 Ganti barang</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="fl">Jumlah Tuntutan (RM)</label>
+              <input class="fi" type="number" id="f_claim_amount" placeholder="0.00" min="0" step="0.01" oninput="recalc()">
+            </div>
+            <div class="form-field">
+              <label class="fl">No. Rujukan CN / Resit</label>
+              <input class="fi" type="text" id="f_claim_ref" placeholder="cth: CN-2026-0012">
+            </div>
+            <div class="form-field">
+              <label class="fl">Tarikh Tuntutan</label>
+              <input class="fi" type="date" id="f_claim_date">
+            </div>
+            <div class="form-field" id="claimRedeemWrap" style="display:none;">
+              <label class="fl">Status Kredit</label>
+              <div id="claimRedeemInfo" style="padding:9px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;font-size:11px;color:var(--textm);">—</div>
+              <input type="hidden" id="f_claim_redeemed">
+              <input type="hidden" id="f_claim_redeemed_date">
+            </div>
+          </div>
+        </div>
+        <div id="reworkSummary" style="margin-top:10px;padding:9px 12px;background:#fff;border:1px solid #F3C9D2;border-radius:8px;font-size:11px;color:var(--textd);"></div>
       </div>
 
       <div class="modal-section">
@@ -3610,13 +3697,16 @@ async function supaUpsert(table, data) {
       'payments',
       'supplier2_name','supplier2_amount','supplier2_paid',
       'pipeline_notes','is_deleted','deleted_at','deleted_by',
-      'was_quotation','supplier_cost_mode'];
+      'was_quotation','supplier_cost_mode',
+      'rework_bearer','rework_cause','rework_cost_total','original_order_id',
+      'rework_claim_status','rework_claim_type','rework_claim_amount','rework_claim_ref',
+      'rework_claim_date','rework_claim_redeemed','rework_claim_redeemed_date'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
         let v = o[k];
         // Clean empty dates to null
-        if (['order_date','inv_date','due_date','production_date','date_submit_kilang'].includes(k) && (!v || v === '' || v === 'null')) v = null;
+        if (['order_date','inv_date','due_date','production_date','date_submit_kilang','rework_claim_date','rework_claim_redeemed_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
         if (k === 'production_status' && !v) v = 'job-submit';
         r[k] = v !== undefined ? v : null;
       });
@@ -3751,6 +3841,43 @@ function normalizeMonthKey(m) {
   const canon = _MONTH_CANON[idx] + ' ' + year;
   if (!MONTH_LABELS[canon]) MONTH_LABELS[canon] = _MONTH_BM_CANONICAL[idx] + ' ' + year;
   return canon;
+}
+
+// ======================================
+// PAPARAN TAHUNAN (YTD) — pseudo-bucket "YEAR:2026"
+// ======================================
+const YEAR_PREFIX = 'YEAR:';
+function isYearKey(k){ return typeof k === 'string' && k.startsWith(YEAR_PREFIX); }
+function isYearView(){ return isYearKey(currentMonth); }
+function monthKeyYear(k){
+  const n = normalizeMonthKey(k) || k || '';
+  const parts = String(n).trim().split(/\s+/);
+  return parts[parts.length-1] || '';
+}
+function availableYears(){
+  return [...new Set(Object.keys(sessionData).map(monthKeyYear).filter(y => /^\d{4}$/.test(y)))].sort();
+}
+function monthsOfYear(year){
+  return Object.keys(sessionData).filter(m => monthKeyYear(m) === String(year));
+}
+// Ambil rows untuk mana-mana bucket key (bulan atau tahun)
+function getBucketRows(key){
+  if (isYearKey(key)) {
+    return monthsOfYear(key.slice(YEAR_PREFIX.length)).flatMap(m => sessionData[m] || []);
+  }
+  return sessionData[key] || [];
+}
+function bucketLabel(key){
+  if (isYearKey(key)) return 'Tahun ' + key.slice(YEAR_PREFIX.length) + ' (YTD)';
+  return MONTH_LABELS[key] || key;
+}
+// Bulan sebenar untuk operasi yang perlukan satu bulan (cth: KPI, tambah order)
+function activeMonthKey(){
+  if (!isYearView()) return currentMonth;
+  const ms = monthsOfYear(currentMonth.slice(YEAR_PREFIX.length));
+  if (ms.length) return ms[ms.length-1];
+  const all = Object.keys(sessionData);
+  return all[all.length-1] || '';
 }
 
 function resolveMonthBucket(year, monthIdx) {
@@ -4329,6 +4456,22 @@ function buildMonthTabs() {
     }
   });
 
+  // Pil TAHUNAN (YTD) — satu untuk setiap tahun yang ada data
+  availableYears().forEach(y => {
+    const key = YEAR_PREFIX + y;
+    const btn = document.createElement('button');
+    btn.className = 'month-tab-pill year-pill' + (key === currentMonth ? ' active' : '');
+    const dot = document.createElement('span');
+    dot.className = 'pill-dot';
+    btn.appendChild(dot);
+    const label = document.createElement('span');
+    label.textContent = 'Tahun ' + y;
+    btn.appendChild(label);
+    btn.title = 'Jumlah terkumpul setakat tahun ' + y;
+    btn.onclick = () => selectMonth(key);
+    tabList.appendChild(btn);
+  });
+
   // Show "+ Bulan Baru" button for admin only
   const addBtn = document.getElementById('btnAddMonthInline');
   if (addBtn) {
@@ -4341,7 +4484,7 @@ function selectMonth(m) {
   buildMonthTabs();
   // Make sure month panel stays visible
   showSbMonths(true);
-  document.getElementById('heroMonth').textContent = MONTH_LABELS[m] || m;
+  document.getElementById('heroMonth').textContent = bucketLabel(m);
   activeFilters = { pics:[], channel:'ALL', source:'ALL', os:'ALL', search:'', pipeline:'ALL', supplier:'ALL', prodStatus:'ALL' };
   document.getElementById('searchInput').value = '';
   document.getElementById('sourceFilter').value = 'ALL';
@@ -4353,7 +4496,7 @@ function selectMonth(m) {
 }
 
 function buildPicFilters() {
-  const pics = [...new Set(sessionData[currentMonth].map(r => r.pic))].filter(Boolean);
+  const pics = [...new Set(getBucketRows(currentMonth).map(r => r.pic))].filter(Boolean);
   const wrap = document.getElementById('picFilters');
   wrap.innerHTML = '';
   const allBtn = document.createElement('button');
@@ -4421,7 +4564,7 @@ function toggleProdStatus(st, btn) {
 }
 
 function getFiltered() {
-  return (sessionData[currentMonth] || []).filter(r => {
+  return getBucketRows(currentMonth).filter(r => {
     if (activeFilters.pics.length && !activeFilters.pics.includes(r.pic)) return false;
     if (activeFilters.channel !== 'ALL' && r.channel !== activeFilters.channel) return false;
     if (activeFilters.source !== 'ALL' && r.source !== activeFilters.source) return false;
@@ -4475,7 +4618,7 @@ function renderAll() {
   renderTable(rows);
   renderSidebar(rows);
   buildPicFilters();
-  document.getElementById('heroMonth').textContent = MONTH_LABELS[currentMonth] || currentMonth;
+  document.getElementById('heroMonth').textContent = bucketLabel(currentMonth);
 }
 
 // ======================================
@@ -4492,6 +4635,8 @@ function sourceBadge(src) {
     'SEKOLAH':      ['#FFF8EC','#B8720A'],
     'AGENT':        ['#F4EEFF','#6E30C8'],
     'POSTAGE':      ['#FFF0F3','#C02840'],
+    'JOB GANTI':    ['#FFF0F3','#C02840'],
+    'REPRINT':      ['#FFF0F3','#C02840'],
   };
   const [bg,col] = map[src] || ['#F4F6FA','#9AA0B8'];
   return `<span class="source-badge" style="background:${bg};color:${col}">${src||'—'}</span>`;
@@ -4514,6 +4659,167 @@ function isKpiExcluded(o) {
 // Order yang dikira dalam KPI/komisyen sales admin
 function isKpiSales(o) {
   return isPipelineSales(o) && !isKpiExcluded(o);
+}
+
+// ======================================
+// JOB GANTI / REPRINT — kos & pemulangan
+// ======================================
+// Order rework = sumber JOB GANTI / REPRINT
+function isReworkOrder(o){ return isKpiExcluded(o); }
+// Siapa tanggung kos: KILANG | DOD | SHARE
+function reworkBearer(o){
+  if (!isReworkOrder(o)) return '';
+  const b = (o.rework_bearer||'').toUpperCase();
+  return ['KILANG','DOD','SHARE'].includes(b) ? b : 'DOD';
+}
+// Bahagian DOD = kos supplier yang DOD betul-betul bayar
+function reworkCostDOD(o){
+  if (!isReworkOrder(o)) return 0;
+  if (reworkBearer(o) === 'KILANG') return 0;
+  return o.total_supplier || 0;
+}
+// Kos penuh kerja ganti (termasuk bahagian kilang)
+function reworkCostTotal(o){
+  if (!isReworkOrder(o)) return 0;
+  const t = parseFloat(o.rework_cost_total);
+  return (!isNaN(t) && t > 0) ? t : reworkCostDOD(o);
+}
+function reworkCostKilang(o){ return Math.max(0, reworkCostTotal(o) - reworkCostDOD(o)); }
+
+// ── Tuntutan / Credit Note dari kilang punca ───────────────
+const REWORK_CLAIM_STATUS_LABEL = {
+  NONE:'— Tidak dituntut', PENDING:'⏳ Belum tuntut', CLAIMED:'📤 Dah tuntut',
+  RECEIVED:'✅ Diterima', REJECTED:'❌ Ditolak kilang'
+};
+const REWORK_CLAIM_TYPE_LABEL = {
+  CREDIT_NOTE:'📄 Credit Note', REFUND:'💵 Refund tunai', REPLACEMENT:'🔁 Ganti barang'
+};
+function reworkClaim(o){
+  if (!isReworkOrder(o)) return { status:'NONE', type:'CREDIT_NOTE', amount:0, ref:'', date:'', redeemed:false, redeemedDate:'' };
+  const st = (o.rework_claim_status||'NONE').toUpperCase();
+  return {
+    status: ['NONE','PENDING','CLAIMED','RECEIVED','REJECTED'].includes(st) ? st : 'NONE',
+    type: (o.rework_claim_type||'CREDIT_NOTE').toUpperCase(),
+    amount: parseFloat(o.rework_claim_amount)||0,
+    ref: o.rework_claim_ref||'',
+    date: o.rework_claim_date||'',
+    redeemed: o.rework_claim_redeemed === true || o.rework_claim_redeemed === 'true',
+    redeemedDate: o.rework_claim_redeemed_date||''
+  };
+}
+// Pampasan yang BETUL-BETUL diterima — hanya status RECEIVED yang tolak kos
+function reworkClaimReceived(o){
+  const c = reworkClaim(o);
+  return c.status === 'RECEIVED' ? c.amount : 0;
+}
+// Kos bersih kepada DOD selepas pampasan
+function reworkCostDODNet(o){ return reworkCostDOD(o) - reworkClaimReceived(o); }
+// Kilang yang sepatutnya issue CN = kilang order asal (atau kilang job ganti kalau tiada paut)
+function reworkClaimSupplierName(o){
+  const c = reworkCulpritOrder(o);
+  if (c) return c.supplier_name || '';
+  const og = o.original_order_id ? findRowById(o.original_order_id) : null;
+  return og ? (og.row.supplier_name||'') : '';
+}
+function _supNameMatch(a, b){
+  a = (a||'').toUpperCase().trim(); b = (b||'').toUpperCase().trim();
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+// Credit Note diterima tapi BELUM ditebus — baki kredit kilang
+function creditNotesForSupplierName(name){
+  return Object.values(sessionData).flat().filter(r => {
+    if (!isReworkOrder(r)) return false;
+    const c = reworkClaim(r);
+    if (c.type !== 'CREDIT_NOTE' || c.status !== 'RECEIVED' || c.redeemed) return false;
+    return _supNameMatch(reworkClaimSupplierName(r), name);
+  });
+}
+function supplierCreditBalance(name){
+  return creditNotesForSupplierName(name).reduce((s,r) => s + reworkClaim(r).amount, 0);
+}
+// Tuntutan yang masih tergantung (belum tuntut / tunggu kilang)
+function pendingClaims(maxAgeDays){
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Object.values(sessionData).flat().filter(r => {
+    if (!isReworkOrder(r)) return false;
+    const c = reworkClaim(r);
+    if (!['PENDING','CLAIMED'].includes(c.status)) return false;
+    if (maxAgeDays === undefined) return true;
+    const base = c.date || r.order_date;
+    if (!base) return true;
+    const age = Math.floor((today - new Date(base + 'T00:00:00+08:00')) / 86400000);
+    return age >= maxAgeDays;
+  });
+}
+const REWORK_BEARER_LABEL = { KILANG:'🏭 Kilang tanggung', DOD:'🏢 DOD tanggung', SHARE:'🤝 Kongsi' };
+// Punca ganti — siapa yang sebenarnya menyebabkan kerja ganti
+const REWORK_CAUSE_LABEL = {
+  KILANG:'🏭 Salah kilang', DOD:'🏢 Salah DOD',
+  CUSTOMER:'🙋 Permintaan customer', LAIN:'🔀 Sebab lain'
+};
+function reworkCause(o){
+  if (!isReworkOrder(o)) return '';
+  const c = (o.rework_cause||'').toUpperCase();
+  return ['KILANG','DOD','CUSTOMER','LAIN'].includes(c) ? c : 'KILANG';
+}
+// Order yang mewakili KILANG PUNCA (untuk KPI kualiti).
+// Bukan salah kilang → tiada kilang yang dipersalahkan.
+function reworkCulpritOrder(o){
+  if (!isReworkOrder(o) || reworkCause(o) !== 'KILANG') return null;
+  const og = o.original_order_id ? findRowById(o.original_order_id) : null;
+  return og ? og.row : o;  // tiada order asal dipaut — anggap kilang job ganti itu sendiri
+}
+
+// Margin — tiada makna bila tiada revenue (cth job ganti)
+function marginPct(o){
+  const rev = o.total_customer || 0;
+  if (rev <= 0) return null;
+  return (o.profit||0) / rev * 100;
+}
+function marginText(o, digits){
+  const m = marginPct(o);
+  if (m === null) return '—';
+  return m.toFixed(digits === undefined ? 1 : digits) + '%';
+}
+
+// Kos rework yang dicaj balik ke satu order asal
+function reworkChargesFor(orderId){
+  if (!orderId) return [];
+  return Object.values(sessionData).flat()
+    .filter(r => isReworkOrder(r) && r.original_order_id === orderId);
+}
+// Profit & margin "sebenar" order asal selepas tolak kos ganti
+function effectiveProfit(o){
+  return (o.profit||0) - reworkChargesFor(o.id).reduce((s,r) => s + reworkCostDODNet(r), 0);
+}
+function effectiveMarginPct(o){
+  const rev = o.total_customer || 0;
+  if (rev <= 0) return null;
+  return effectiveProfit(o) / rev * 100;
+}
+// Ringkasan kos rework untuk satu set orders (dashboard)
+function reworkSummary(orders){
+  const rw = orders.filter(isReworkOrder);
+  const dod = rw.reduce((s,o) => s + reworkCostDOD(o), 0);
+  const kilang = rw.reduce((s,o) => s + reworkCostKilang(o), 0);
+  const claimed = rw.reduce((s,o) => s + reworkClaimReceived(o), 0);
+  const byCause = { KILANG:0, DOD:0, CUSTOMER:0, LAIN:0 };
+  rw.forEach(o => { byCause[reworkCause(o)] = (byCause[reworkCause(o)]||0) + 1; });
+  return {
+    count: rw.length,
+    pcs: rw.reduce((s,o) => s + (o.pcs||0), 0),
+    dodCost: dod,
+    claimReceived: claimed,
+    netDodCost: dod - claimed,
+    pendingClaimCount: rw.filter(o => ['PENDING','CLAIMED'].includes(reworkClaim(o).status)).length,
+    kilangCost: kilang,
+    totalCost: dod + kilang,
+    byCause,
+    causeText: Object.keys(byCause).filter(k => byCause[k] > 0)
+      .map(k => byCause[k] + ' ' + (REWORK_CAUSE_LABEL[k]||k).replace(/^\S+\s/,'')).join(' · '),
+    orders: rw
+  };
 }
 function renderKPIs(rows) {
   const salesRows = rows.filter(isPipelineSales);
@@ -4565,25 +4871,41 @@ function renderKPIs(rows) {
     `;
   } else {
     // ── CONFIRMED MODE (default) ─────────────────────
-    const totalRev  = salesRows.reduce((s,r)=>s+(r.total_customer||0),0);
-    const totalProf = salesRows.reduce((s,r)=>s+(r.profit||0),0);
-    const totalPCS  = salesRows.reduce((s,r)=>s+(r.pcs||0),0);
-    const totalCost = salesRows.reduce((s,r)=>s+(r.total_supplier||0),0);
+    // Job ganti / reprint diasingkan — tiada revenue, jadi ia herotkan margin
+    const rework    = reworkSummary(salesRows);
+    const coreRows  = salesRows.filter(r => !isReworkOrder(r));
+    const totalRev  = coreRows.reduce((s,r)=>s+(r.total_customer||0),0);
+    const totalProf = coreRows.reduce((s,r)=>s+(r.profit||0),0);
+    const totalPCS  = coreRows.reduce((s,r)=>s+(r.pcs||0),0);
+    const totalCost = coreRows.reduce((s,r)=>s+(r.total_supplier||0),0);
     const custOS    = salesRows.filter(r=>r.balance_customer>0).reduce((s,r)=>s+(r.balance_customer||0),0);
     const supOS     = salesRows.filter(r=>r.supplier_outstanding>0).reduce((s,r)=>s+(r.supplier_outstanding||0),0);
     const avgPrice  = totalPCS > 0 ? totalRev/totalPCS : 0;
+    const netProf   = totalProf - rework.netDodCost;
     const margin    = totalRev > 0 ? (totalProf/totalRev*100).toFixed(1) : 0;
+    const netMargin = totalRev > 0 ? (netProf/totalRev*100).toFixed(1) : 0;
+    const reworkPct = totalRev > 0 ? (rework.netDodCost/totalRev*100).toFixed(2) : 0;
     const quotVal   = quotRows.reduce((s,r)=>s+(r.total_customer||0),0);
 
     document.getElementById('kpiRow').innerHTML = `
       <div class="kpi"><div class="kpi-l">Revenue</div><div class="kpi-v amber">${fmt(totalRev)}</div><div class="kpi-sub">${salesRows.length} order confirmed</div></div>
       <div class="kpi"><div class="kpi-l">PCS</div><div class="kpi-v blue">${totalPCS.toLocaleString()}</div><div class="kpi-sub">unit</div></div>
-      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%</div></div>` : ''}
+      ${isAdmin ? `<div class="kpi"><div class="kpi-l">Profit</div><div class="kpi-v green">${fmt(totalProf)}</div><div class="kpi-sub">Margin ${margin}%${rework.dodCost>0?` · bersih ${fmt(netProf)}`:''}</div></div>` : ''}
       ${isAdmin ? `<div class="kpi"><div class="kpi-l">Kos Supplier</div><div class="kpi-v red">${fmt(totalCost)}</div><div class="kpi-sub">jumlah kos</div></div>` : ''}
       <div class="kpi"><div class="kpi-l">Customer OS</div><div class="kpi-v ${custOS>0?'red':'green'}">${custOS>0?fmt(custOS):'✓ Clear'}</div><div class="kpi-sub">belum dibayar</div></div>
       ${isAdmin ? `<div class="kpi"><div class="kpi-l">Supplier OS</div><div class="kpi-v ${supOS>0?'orange':'green'}">${supOS>0?fmt(supOS):'✓ Clear'}</div><div class="kpi-sub">perlu bayar</div></div>` : ''}
       <div class="kpi"><div class="kpi-l">Avg/PCS</div><div class="kpi-v">${fmt(avgPrice)}</div><div class="kpi-sub">harga purata</div></div>
       ${isAdmin ? `<div class="kpi"><div class="kpi-l">Margin</div><div class="kpi-v ${margin>=30?'green':margin>=20?'amber':'red'}">${margin}%</div><div class="kpi-sub">keuntungan</div></div>` : ''}
+      ${isAdmin && rework.count>0 ? `<div class="kpi" style="border-top:2px solid var(--red);">
+        <div class="kpi-l" style="color:var(--red);">🔁 Kos Rework</div>
+        <div class="kpi-v ${rework.netDodCost>0?'red':'green'}">${rework.netDodCost>0?fmt(rework.netDodCost):'✓ RM 0'}</div>
+        <div class="kpi-sub">${rework.count} job ganti · ${reworkPct}% dari revenue${rework.claimReceived>0?` · kasar ${fmt(rework.dodCost)} − pampasan ${fmt(rework.claimReceived)}`:''}${rework.kilangCost>0?` · kilang tanggung ${fmt(rework.kilangCost)}`:''}${rework.causeText?` · ${rework.causeText}`:''}${rework.pendingClaimCount>0?` · ⏳ ${rework.pendingClaimCount} tuntutan belum selesai`:''}</div>
+      </div>` : ''}
+      ${isAdmin && rework.netDodCost>0 ? `<div class="kpi" style="border-top:2px solid var(--purple);">
+        <div class="kpi-l" style="color:var(--purple);">Margin Bersih</div>
+        <div class="kpi-v ${netMargin>=30?'green':netMargin>=20?'amber':'red'}">${netMargin}%</div>
+        <div class="kpi-sub">selepas kos rework</div>
+      </div>` : ''}
       ${quotVal>0 ? `<div class="kpi" style="border-top:2px dashed var(--amber);opacity:0.7;">
         <div class="kpi-l" style="color:var(--amber);">📋 Pipeline</div>
         <div class="kpi-v amber">${fmt(quotVal)}</div>
@@ -4618,8 +4940,9 @@ function renderTable(rows) {
     const isCustOS = r.balance_customer > 0;
     const isSupOS  = r.supplier_outstanding > 0;
     const rowClass = isCustOS && isSupOS ? 'cust-os sup-os' : isCustOS ? 'cust-os' : isSupOS ? 'sup-os' : '';
-    const margin   = r.total_customer > 0 ? (r.profit/r.total_customer*100).toFixed(0) : 0;
-    const mColor   = margin >= 30 ? 'var(--green)' : margin >= 20 ? 'var(--amber)' : 'var(--red)';
+    const marginNum = marginPct(r);
+    const margin   = marginNum === null ? '—' : marginNum.toFixed(0);
+    const mColor   = marginNum === null ? 'var(--textm)' : marginNum >= 30 ? 'var(--green)' : marginNum >= 20 ? 'var(--amber)' : 'var(--red)';
     const picColor = PIC_COLORS[r.pic] || '#9AA0B8';
     const plStatus = r.pipeline_status || 'confirmed';
     const plBadge = plStatus === 'quotation'
@@ -4734,7 +5057,8 @@ function showDetail(id) {
   const r = found.row;
   const isAdmin = currentUser.role === 'admin';
   const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
-  const margin = r.total_customer > 0 ? (r.profit/r.total_customer*100).toFixed(1) : 0;
+  const marginN = marginPct(r);
+  const margin = marginN === null ? '—' : marginN.toFixed(1) + '%';
   const isCustOS = r.balance_customer > 0;
   const isSupOS  = r.supplier_outstanding > 0;
 
@@ -4742,7 +5066,7 @@ function showDetail(id) {
     ${isAdmin ? `<div class="dp-profit-row">
       <div class="dp-profit-box" style="background:var(--greenbg);border:1px solid var(--greenb);">
         <div class="dp-profit-num" style="color:var(--green)">${fmt(r.profit)}</div>
-        <div class="dp-profit-label" style="color:var(--textm)">💰 Profit · ${margin}%</div>
+        <div class="dp-profit-label" style="color:var(--textm)">💰 Profit · ${margin}</div>
       </div>
       <div class="dp-profit-box" style="background:${isCustOS?'var(--redbg)':'var(--greenbg)'};border:1px solid ${isCustOS?'var(--redb)':'var(--greenb)'};"> 
         <div class="dp-profit-num" style="color:${isCustOS?'var(--red)':'var(--green)'}">${isCustOS?fmt(r.balance_customer):'✓'}</div>
@@ -4753,6 +5077,37 @@ function showDetail(id) {
     <div class="dp-field"><div class="dp-key">PIC</div><div class="dp-val">${r.pic}</div></div>
     <div class="dp-field"><div class="dp-key">Nama Job</div><div class="dp-val">${r.name_job}</div></div>
     <div class="dp-field"><div class="dp-key">Channel</div><div class="dp-val">${r.source||'—'}</div></div>
+    ${isReworkOrder(r) ? `<div style="margin:10px 0 6px;padding:10px 12px;background:#FFF7F8;border:1px solid #F3C9D2;border-radius:8px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#C02840;margin-bottom:6px;">🔁 Job Ganti / Reprint</div>
+      <div class="dp-field"><div class="dp-key">Punca</div><div class="dp-val">${REWORK_CAUSE_LABEL[reworkCause(r)]||reworkCause(r)}</div></div>
+      <div class="dp-field"><div class="dp-key">Ditanggung</div><div class="dp-val">${REWORK_BEARER_LABEL[reworkBearer(r)]||reworkBearer(r)}</div></div>
+      <div class="dp-field"><div class="dp-key">Dibuat Oleh</div><div class="dp-val">${r.supplier_name||'—'}</div></div>
+      <div class="dp-field"><div class="dp-key">Kos Penuh</div><div class="dp-val">${fmt(reworkCostTotal(r))}</div></div>
+      <div class="dp-field"><div class="dp-key">Kos DOD</div><div class="dp-val" style="color:${reworkCostDOD(r)>0?'var(--red)':'var(--green)'}">${fmt(reworkCostDOD(r))}</div></div>
+      <div class="dp-field"><div class="dp-key">Kos Kilang</div><div class="dp-val" style="color:var(--green)">${fmt(reworkCostKilang(r))}</div></div>
+      ${(() => { const c = reworkClaim(r); if (c.status === 'NONE' && !c.amount) return '';
+        return `<div class="dp-field"><div class="dp-key">Tuntutan</div><div class="dp-val">${REWORK_CLAIM_STATUS_LABEL[c.status]||c.status} · ${REWORK_CLAIM_TYPE_LABEL[c.type]||c.type}</div></div>
+        <div class="dp-field"><div class="dp-key">Jumlah Tuntut</div><div class="dp-val" style="color:${c.status==='RECEIVED'?'var(--green)':'var(--amber)'}">${fmt(c.amount)}${c.ref?` · ${c.ref}`:''}</div></div>
+        <div class="dp-field"><div class="dp-key">Kos Bersih DOD</div><div class="dp-val" style="color:${reworkCostDODNet(r)>0?'var(--red)':'var(--green)'}">${fmt(reworkCostDODNet(r))}</div></div>
+        ${c.type==='CREDIT_NOTE' && c.status==='RECEIVED' ? `<div class="dp-field"><div class="dp-key">Kredit</div><div class="dp-val">${c.redeemed?`✓ Ditebus${c.redeemedDate?' · '+c.redeemedDate:''}`:'⏳ Belum ditebus'}</div></div>` : ''}
+        <div class="dp-field"><div class="dp-key">Tuntut Dari</div><div class="dp-val">${reworkClaimSupplierName(r)||'—'}</div></div>`;
+      })()}
+      ${(() => { const og = r.original_order_id ? findRowById(r.original_order_id) : null;
+        return og ? `<div class="dp-field"><div class="dp-key">Order Asal</div><div class="dp-val"><a href="javascript:void(0)" onclick="showDetail('${og.row.id}')" style="color:var(--blue);text-decoration:underline;">${og.row.name_job||''}</a></div></div>` : ''; })()}
+      <div style="font-size:10px;color:var(--textm);margin-top:6px;">Dikecualikan dari KPI &amp; komisyen sales admin</div>
+    </div>` : ''}
+    ${(() => {
+      const charges = reworkChargesFor(r.id);
+      if (!charges.length) return '';
+      const dodTotal = charges.reduce((s,c) => s + reworkCostDOD(c), 0);
+      const em = effectiveMarginPct(r);
+      return `<div style="margin:10px 0 6px;padding:10px 12px;background:#FFF8EC;border:1px solid #FDE68A;border-radius:8px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#B8720A;margin-bottom:6px;">⚠ Ada ${charges.length} Job Ganti</div>
+        <div class="dp-field"><div class="dp-key">Kos Ganti (DOD)</div><div class="dp-val" style="color:var(--red)">− ${fmt(dodTotal)}</div></div>
+        <div class="dp-field"><div class="dp-key">Profit Sebenar</div><div class="dp-val">${fmt(effectiveProfit(r))}${em===null?'':' · '+em.toFixed(1)+'%'}</div></div>
+        ${charges.map(c => `<div style="font-size:11px;margin-top:4px;"><a href="javascript:void(0)" onclick="showDetail('${c.id}')" style="color:var(--blue);text-decoration:underline;">${c.name_job||c.id}</a> — ${fmt(reworkCostDOD(c))}</div>`).join('')}
+      </div>`;
+    })()}
     <div class="dp-field"><div class="dp-key">PCS</div><div class="dp-val">${r.pcs||'—'}</div></div>
     ${r.cust_name ? `<div style="margin:10px 0 6px;font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--textm);">CUSTOMER</div>
     <div class="dp-field"><div class="dp-key">Nama</div><div class="dp-val">${r.cust_name}</div></div>
@@ -4992,6 +5347,33 @@ function openEditModalById(id) {
   document.getElementById('f_prod_status').value = r.production_status || 'job-submit';
   const ppEditEl = document.getElementById('f_pipeline_status');
   if (ppEditEl) ppEditEl.value = r.pipeline_status || 'confirmed';
+  // Job ganti / reprint
+  const rwBearerEl = document.getElementById('f_rework_bearer');
+  if (rwBearerEl) rwBearerEl.value = reworkBearer(r) || 'KILANG';
+  const rwCauseEl = document.getElementById('f_rework_cause');
+  if (rwCauseEl) rwCauseEl.value = reworkCause(r) || 'KILANG';
+  const _cl = reworkClaim(r);
+  const setV = (id,v) => { const e = document.getElementById(id); if (e) e.value = v; };
+  setV('f_claim_status', _cl.status);
+  setV('f_claim_type', _cl.type);
+  setV('f_claim_amount', _cl.amount || '');
+  setV('f_claim_ref', _cl.ref);
+  setV('f_claim_date', _cl.date);
+  setV('f_claim_redeemed', _cl.redeemed ? 'true' : 'false');
+  setV('f_claim_redeemed_date', _cl.redeemedDate);
+  const rwTotalEl = document.getElementById('f_rework_total');
+  if (rwTotalEl) rwTotalEl.value = r.rework_cost_total || '';
+  const rwOidEl = document.getElementById('f_rework_origin_id');
+  if (rwOidEl) rwOidEl.value = r.original_order_id || '';
+  const rwOEl = document.getElementById('f_rework_origin');
+  if (rwOEl) {
+    const orig = r.original_order_id ? findRowById(r.original_order_id) : null;
+    rwOEl.value = orig
+      ? ((orig.row.inv_number_supplier || orig.row.inv_number || '—') + ' · ' + (orig.row.name_job||'') + ' · ' + (orig.row.pic||''))
+      : '';
+  }
+  onSourceChange();
+  if (rwOidEl && rwOidEl.value) onReworkOriginInput();
   // Capture snapshot before edit for audit log
   window._preEditSnapshot = { ...r };
   document.getElementById('addModalBg').classList.add('open');
@@ -5005,8 +5387,16 @@ function clearForm() {
   ['f_order_date','f_pic','f_source','f_name','f_inv','f_inv_supplier','f_pcs','f_invdate','f_duedate',
    'f_cust_name','f_cust_tel','f_cust_email','f_cust_addr','f_supplier_name','f_color',
    'f_sizes','f_design_notes','f_prod_date','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid',
-   'f_supplier2_name','f_sup2_amt','f_sup2_paid','f_inv_cust','f_pay1'
+   'f_supplier2_name','f_sup2_amt','f_sup2_paid','f_inv_cust','f_pay1',
+   'f_rework_total','f_rework_origin','f_rework_origin_id',
+   'f_claim_amount','f_claim_ref','f_claim_date','f_claim_redeemed','f_claim_redeemed_date'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const rwB = document.getElementById('f_rework_bearer'); if (rwB) rwB.value = 'KILANG';
+  const rwC = document.getElementById('f_rework_cause'); if (rwC) rwC.value = 'KILANG';
+  const clS = document.getElementById('f_claim_status'); if (clS) clS.value = 'NONE';
+  const clT = document.getElementById('f_claim_type');   if (clT) clT.value = 'CREDIT_NOTE';
+  setReworkCostLock(false);
+  const rwSec = document.getElementById('reworkSection'); if (rwSec) rwSec.style.display = 'none';
   // Reset supplier2 section to hidden
   const s2f = document.getElementById('sup2Fields');
   const s2b = document.getElementById('btnToggleSup2');
@@ -5059,6 +5449,147 @@ function toggleSup2() {
 }
 window.toggleSup2 = toggleSup2;
 
+// ── UI JOB GANTI / REPRINT ─────────────────────────────────
+function reworkFormActive(){
+  const src = (document.getElementById('f_source')?.value||'').toUpperCase().trim();
+  return KPI_EXCLUDED_SOURCES.includes(src);
+}
+
+function onSourceChange(){
+  const sec = document.getElementById('reworkSection');
+  if (!sec) return;
+  const on = reworkFormActive();
+  sec.style.display = on ? '' : 'none';
+  if (on) {
+    buildReworkOriginList();
+    onReworkBearerChange();
+    onClaimChange();
+  } else {
+    // Bukan job ganti — buang nilai rework supaya tak tertinggal
+    const t = document.getElementById('f_rework_total'); if (t) t.value = '';
+    const o = document.getElementById('f_rework_origin'); if (o) o.value = '';
+    const oi= document.getElementById('f_rework_origin_id'); if (oi) oi.value = '';
+    setReworkCostLock(false);
+  }
+  recalc();
+}
+window.onSourceChange = onSourceChange;
+
+function setReworkCostLock(locked){
+  ['f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_sup2_amt','f_sup2_paid'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = locked;
+    el.style.background = locked ? 'var(--bg3)' : '';
+    if (locked) el.value = '';
+  });
+}
+
+function onReworkBearerChange(){
+  const bearer = document.getElementById('f_rework_bearer')?.value || 'KILANG';
+  const helper = document.getElementById('reworkShareHelper');
+  if (helper) helper.style.display = bearer === 'SHARE' ? '' : 'none';
+  setReworkCostLock(bearer === 'KILANG');
+  recalc();
+}
+window.onReworkBearerChange = onReworkBearerChange;
+
+function setReworkShare(ratio){
+  const total = parseFloat(document.getElementById('f_rework_total')?.value)||0;
+  if (total <= 0) { showToast('Isi Kos Penuh Job Ganti dahulu', true); return; }
+  const el = document.getElementById('f_nohad_amt');
+  if (el) { el.value = (total*ratio).toFixed(2); markSupCostManual(); }
+  recalc();
+}
+window.setReworkShare = setReworkShare;
+
+// Senarai order asal untuk datalist (semua bulan, bukan job ganti)
+function buildReworkOriginList(){
+  const dl = document.getElementById('reworkOriginList');
+  if (!dl) return;
+  const rows = Object.values(sessionData).flat()
+    .filter(r => !isReworkOrder(r) && r.id !== editingId)
+    .sort((a,b) => (b.order_date||'').localeCompare(a.order_date||''))
+    .slice(0, 400);
+  window._reworkOriginIndex = {};
+  dl.innerHTML = rows.map(r => {
+    const label = (r.inv_number_supplier || r.inv_number || '—') + ' · ' + (r.name_job||'') + ' · ' + (r.pic||'');
+    window._reworkOriginIndex[label] = r.id;
+    return '<option value="' + label.replace(/"/g,'&quot;') + '"></option>';
+  }).join('');
+}
+
+function onClaimChange(){
+  const st = document.getElementById('f_claim_status')?.value || 'NONE';
+  const box = document.getElementById('reworkClaimBox');
+  const wrap = document.getElementById('claimRedeemWrap');
+  const type = document.getElementById('f_claim_type')?.value || 'CREDIT_NOTE';
+  if (wrap) wrap.style.display = (st === 'RECEIVED' && type === 'CREDIT_NOTE') ? '' : 'none';
+  const info = document.getElementById('claimRedeemInfo');
+  if (info) {
+    const redeemed = document.getElementById('f_claim_redeemed')?.value === 'true';
+    const rdate = document.getElementById('f_claim_redeemed_date')?.value || '';
+    info.innerHTML = redeemed
+      ? '<span style="color:var(--green);font-weight:600;">✓ Sudah ditebus</span>' + (rdate ? ' · ' + rdate : '')
+      : '<span style="color:var(--amber);font-weight:600;">Belum ditebus</span> — <a href="javascript:void(0)" onclick="closeModal();sbNav(\'supplieros\');" style="color:var(--blue);text-decoration:underline;">tebus di Supplier OS</a> masa bayar batch';
+  }
+  if (box) box.style.opacity = st === 'NONE' ? '0.6' : '1';
+  // Auto-isi jumlah tuntutan = kos DOD kalau kosong
+  const amtEl = document.getElementById('f_claim_amount');
+  if (amtEl && st !== 'NONE' && !amtEl.value) {
+    const cost = (parseFloat(document.getElementById('f_nohad_amt')?.value)||0)
+               + (parseFloat(document.getElementById('f_luar_amt')?.value)||0)
+               + (parseFloat(document.getElementById('f_sup2_amt')?.value)||0);
+    if (cost > 0) amtEl.value = cost.toFixed(2);
+  }
+  const dEl = document.getElementById('f_claim_date');
+  if (dEl && st !== 'NONE' && !dEl.value) dEl.value = getMYTDateStr();
+  recalc();
+}
+window.onClaimChange = onClaimChange;
+
+// Tebus credit note masa bayar batch — dipanggil dari Supplier OS
+function redeemCreditNote(orderId){
+  const found = findRowById(orderId);
+  if (!found) return;
+  const r = found.row;
+  const c = reworkClaim(r);
+  const undo = c.redeemed;
+  if (!confirm(undo
+    ? 'Batalkan penebusan credit note ' + (c.ref||'') + ' (' + fmt(c.amount) + ')?\nKredit akan kembali ke baki kilang.'
+    : 'Tebus credit note ' + (c.ref||'') + ' — ' + fmt(c.amount) + '?\nKredit ini akan ditolak dari baki kilang.')) return;
+  r.rework_claim_redeemed = !undo;
+  r.rework_claim_redeemed_date = undo ? '' : getMYTDateStr();
+  const m = getOrderMonth(r.id);
+  supaUpsert('orders', { ...r, month: m })
+    .then(() => showToast(undo ? 'Penebusan dibatalkan ✓' : 'Credit note ditebus ✓'))
+    .catch(e => { console.warn('Sync failed:', e); showToast('⚠ Disimpan lokal sahaja', true); });
+  renderSupplierDir();
+}
+window.redeemCreditNote = redeemCreditNote;
+
+function onReworkOriginInput(){
+  const val = document.getElementById('f_rework_origin')?.value || '';
+  const idEl = document.getElementById('f_rework_origin_id');
+  const hint = document.getElementById('reworkOriginHint');
+  const id = (window._reworkOriginIndex||{})[val] || '';
+  if (idEl) idEl.value = id;
+  if (hint) {
+    if (id) {
+      const row = findRowById(id);
+      const r = row ? row.row : null;
+      hint.innerHTML = r
+        ? '✓ Terpaut ke <strong>' + (r.name_job||'') + '</strong> — revenue ' + fmt(r.total_customer||0) + ', profit asal ' + fmt(r.profit||0)
+        : '✓ Terpaut';
+      hint.style.color = 'var(--green)';
+    } else {
+      hint.textContent = val ? '⚠ Pilih dari senarai supaya boleh dipaut ke order asal' : 'Kos ganti akan dicaj balik ke margin order asal';
+      hint.style.color = val ? 'var(--amber)' : 'var(--textm)';
+    }
+  }
+}
+window.onReworkOriginInput = onReworkOriginInput;
+
 function recalc() {
   const nohadAmt  = parseFloat(document.getElementById('f_nohad_amt').value)||0;
   const nohadPaid = parseFloat(document.getElementById('f_nohad_paid').value)||0;
@@ -5077,19 +5608,56 @@ function recalc() {
   const effectivePaid = totalPayRec > 0 ? totalPayRec : pay1;
   const custOS    = Math.max(0, rev - effectivePaid);
   const profit    = rev - totalCost;
-  const margin    = rev > 0 ? (profit/rev*100).toFixed(1) : 0;
+  const isRework  = reworkFormActive();
+  // Margin tiada makna bila tiada revenue (cth job ganti) — papar '—'
+  const margin    = rev > 0 ? (profit/rev*100).toFixed(1) + '%' : '—';
   const perPcs    = pcs > 0 && rev > 0 ? (rev/pcs).toFixed(2) : '—';
 
   document.getElementById('c_cost').textContent    = fmt(totalCost);
   document.getElementById('c_sup_os').textContent  = fmt(supOS);
   document.getElementById('c_cust_os').textContent = fmt(custOS);
   document.getElementById('c_profit').textContent  = fmt(profit);
-  document.getElementById('c_margin').textContent  = margin + '%';
+  document.getElementById('c_margin').textContent  = margin;
   document.getElementById('c_per_pcs').textContent = perPcs !== '—' ? 'RM '+perPcs : '—';
 
   // Update OS display field
   const osEl = document.getElementById('f_cust_os_display');
   if (osEl) osEl.value = custOS > 0 ? 'RM ' + custOS.toFixed(2) : '— Selesai ✓';
+
+  // Ringkasan job ganti
+  const rwEl = document.getElementById('reworkSummary');
+  if (rwEl && isRework) {
+    const bearer   = document.getElementById('f_rework_bearer')?.value || 'KILANG';
+    const rwTotal  = parseFloat(document.getElementById('f_rework_total')?.value)||0;
+    const dodShare = bearer === 'KILANG' ? 0 : totalCost;
+    const kilShare = Math.max(0, (rwTotal || dodShare) - dodShare);
+    const pctDod   = (rwTotal||dodShare) > 0 ? (dodShare/(rwTotal||dodShare)*100).toFixed(0) : 0;
+    rwEl.innerHTML =
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Kos penuh ganti</span>' +
+        '<strong style="font-family:\'Fira Code\',monospace;">' + fmt(rwTotal || dodShare) + '</strong></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span>Ditanggung DOD (' + pctDod + '%)</span>' +
+        '<strong style="font-family:\'Fira Code\',monospace;color:' + (dodShare>0?'var(--red)':'var(--green)') + ';">' + fmt(dodShare) + '</strong></div>' +
+      '<div style="display:flex;justify-content:space-between;"><span>Ditanggung Kilang</span>' +
+        '<strong style="font-family:\'Fira Code\',monospace;color:var(--green);">' + fmt(kilShare) + '</strong></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-top:4px;"><span>Punca</span>' +
+        '<strong>' + (REWORK_CAUSE_LABEL[document.getElementById('f_rework_cause')?.value||'KILANG']||'') + '</strong></div>' +
+      (() => {
+        const cSt  = document.getElementById('f_claim_status')?.value || 'NONE';
+        const cAmt = parseFloat(document.getElementById('f_claim_amount')?.value)||0;
+        const got  = cSt === 'RECEIVED' ? cAmt : 0;
+        const net  = dodShare - got;
+        if (cSt === 'NONE' || cAmt <= 0) return '';
+        return '<div style="display:flex;justify-content:space-between;margin-top:4px;"><span>Pampasan (' + (REWORK_CLAIM_STATUS_LABEL[cSt]||cSt) + ')</span>' +
+          '<strong style="font-family:\'Fira Code\',monospace;color:' + (got>0?'var(--green)':'var(--amber)') + ';">' + (got>0?'− ':'') + fmt(cAmt) + '</strong></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid #F3C9D2;"><span><strong>Kos bersih DOD</strong></span>' +
+          '<strong style="font-family:\'Fira Code\',monospace;color:' + (net>0?'var(--red)':'var(--green)') + ';">' + fmt(net) + '</strong></div>';
+      })() +
+      '<div style="margin-top:6px;padding-top:6px;border-top:1px dashed #F3C9D2;color:var(--textm);">' +
+        (dodShare > 0
+          ? 'Impak: profit −' + fmt(dodShare) + ' · dikecualikan dari KPI sales admin'
+          : 'Tiada kos kepada DOD · dikecualikan dari KPI sales admin') +
+      '</div>';
+  }
 }
 
 function saveOrder() {
@@ -5111,19 +5679,37 @@ function saveOrder() {
   const colorMain  = document.getElementById('f_color').value.trim();
   const sizes      = document.getElementById('f_sizes').value.trim();
   const designNotes= document.getElementById('f_design_notes').value.trim();
-  const nohadAmt   = parseFloat(document.getElementById('f_nohad_amt').value)||0;
-  const nohadPaid  = parseFloat(document.getElementById('f_nohad_paid').value)||0;
-  const luarAmt    = parseFloat(document.getElementById('f_luar_amt').value)||0;
-  const luarPaid   = parseFloat(document.getElementById('f_luar_paid').value)||0;
+  // Job ganti / reprint — kos ditanggung siapa
+  const isRework      = KPI_EXCLUDED_SOURCES.includes((src||'').toUpperCase().trim());
+  const reworkBearerV = isRework ? (document.getElementById('f_rework_bearer')?.value || 'KILANG') : '';
+  const reworkCauseV  = isRework ? (document.getElementById('f_rework_cause')?.value || 'KILANG') : '';
+  const reworkTotalV  = isRework ? (parseFloat(document.getElementById('f_rework_total')?.value)||0) : 0;
+  const reworkOriginV = isRework ? (document.getElementById('f_rework_origin_id')?.value || '') : '';
+  const claimStatusV  = isRework ? (document.getElementById('f_claim_status')?.value || 'NONE') : '';
+  const claimTypeV    = isRework ? (document.getElementById('f_claim_type')?.value || 'CREDIT_NOTE') : '';
+  const claimAmountV  = isRework ? (parseFloat(document.getElementById('f_claim_amount')?.value)||0) : 0;
+  const claimRefV     = isRework ? (document.getElementById('f_claim_ref')?.value.trim() || '') : '';
+  const claimDateV    = isRework ? (document.getElementById('f_claim_date')?.value || '') : '';
+  const claimRedeemV  = isRework ? (document.getElementById('f_claim_redeemed')?.value === 'true') : false;
+  const claimRedDateV = isRework ? (document.getElementById('f_claim_redeemed_date')?.value || '') : '';
+  // Kilang tanggung penuh — tiada invois kepada DOD, kos DOD = 0
+  const zeroCost      = isRework && reworkBearerV === 'KILANG';
+
+  const nohadAmt   = zeroCost ? 0 : (parseFloat(document.getElementById('f_nohad_amt').value)||0);
+  const nohadPaid  = zeroCost ? 0 : (parseFloat(document.getElementById('f_nohad_paid').value)||0);
+  const luarAmt    = zeroCost ? 0 : (parseFloat(document.getElementById('f_luar_amt').value)||0);
+  const luarPaid   = zeroCost ? 0 : (parseFloat(document.getElementById('f_luar_paid').value)||0);
   const sup2Name   = document.getElementById('f_supplier2_name')?.value.trim() || '';
-  const sup2Amt    = parseFloat(document.getElementById('f_sup2_amt')?.value)||0;
-  const sup2Paid   = parseFloat(document.getElementById('f_sup2_paid')?.value)||0;
+  const sup2Amt    = zeroCost ? 0 : (parseFloat(document.getElementById('f_sup2_amt')?.value)||0);
+  const sup2Paid   = zeroCost ? 0 : (parseFloat(document.getElementById('f_sup2_paid')?.value)||0);
   const rev        = parseFloat(document.getElementById('f_inv_cust').value)||0;
   const pay1       = parseFloat(document.getElementById('f_pay1').value)||0;
   // Auto-calculate status: only PAYMENT DONE if amounts match AND total > 0
-  const supStatus = (nohadAmt + luarAmt + sup2Amt) > 0 && (nohadPaid + luarPaid + sup2Paid) >= (nohadAmt + luarAmt + sup2Amt)
-    ? 'PAYMENT DONE'
-    : 'OUTSTANDING';
+  const supStatus = zeroCost
+    ? 'PAYMENT DONE'  // kilang tanggung — tiada invois kepada DOD
+    : ((nohadAmt + luarAmt + sup2Amt) > 0 && (nohadPaid + luarPaid + sup2Paid) >= (nohadAmt + luarAmt + sup2Amt)
+        ? 'PAYMENT DONE'
+        : 'OUTSTANDING');
   const supName    = document.getElementById('f_supplier_name')?.value.trim() || 'NOHAD SDN BHD';
   const prodDate      = document.getElementById('f_prod_date')?.value || '';
   const prodStatus    = document.getElementById('f_prod_status')?.value || 'job-submit';
@@ -5192,6 +5778,17 @@ function saveOrder() {
       pipeline_status:pipelineStatus,
       was_quotation: (oldOrder.was_quotation===true) || ((oldOrder.pipeline_status||'')==='quotation') || (pipelineStatus==='quotation'),
       supplier_cost_mode: supCostMode,
+      rework_bearer: isRework ? reworkBearerV : null,
+      rework_cause: isRework ? reworkCauseV : null,
+      rework_claim_status: isRework ? claimStatusV : null,
+      rework_claim_type: isRework ? claimTypeV : null,
+      rework_claim_amount: isRework ? claimAmountV : null,
+      rework_claim_ref: isRework ? claimRefV : null,
+      rework_claim_date: isRework ? (claimDateV || null) : null,
+      rework_claim_redeemed: isRework ? claimRedeemV : null,
+      rework_claim_redeemed_date: isRework ? (claimRedDateV || null) : null,
+      rework_cost_total: isRework ? reworkTotalV : null,
+      original_order_id: isRework ? (reworkOriginV || null) : null,
       payments: getPaymentRecordsData()
     };
     
@@ -5232,7 +5829,7 @@ function saveOrder() {
     })();
   } else {
     // Auto-detect target month from order_date
-    let targetMonth = currentMonth || (Object.keys(sessionData).length > 0 ? Object.keys(sessionData)[Object.keys(sessionData).length-1] : 'JAN 2026');
+    let targetMonth = activeMonthKey() || (Object.keys(sessionData).length > 0 ? Object.keys(sessionData)[Object.keys(sessionData).length-1] : 'JAN 2026');
     
     if (orderDate && orderDate.length >= 10) {
       try {
@@ -5261,6 +5858,17 @@ function saveOrder() {
       pipeline_status:pipelineStatus,
       was_quotation: pipelineStatus==='quotation',
       supplier_cost_mode: supCostMode,
+      rework_bearer: isRework ? reworkBearerV : null,
+      rework_cause: isRework ? reworkCauseV : null,
+      rework_claim_status: isRework ? claimStatusV : null,
+      rework_claim_type: isRework ? claimTypeV : null,
+      rework_claim_amount: isRework ? claimAmountV : null,
+      rework_claim_ref: isRework ? claimRefV : null,
+      rework_claim_date: isRework ? (claimDateV || null) : null,
+      rework_claim_redeemed: isRework ? claimRedeemV : null,
+      rework_claim_redeemed_date: isRework ? (claimRedDateV || null) : null,
+      rework_cost_total: isRework ? reworkTotalV : null,
+      original_order_id: isRework ? (reworkOriginV || null) : null,
       payments: getPaymentRecordsData()
     });
     showToast('Order baru ditambah ✓');
@@ -5635,7 +6243,7 @@ window.showKpiDashboard = showKpiDashboard;
 function renderKpiDashboard() {
   const isAdmin  = currentUser.role === 'admin';
   const myName     = currentUser.name;
-  const activeMonth = kpiFilterMonth || currentMonth;
+  const activeMonth = kpiFilterMonth || activeMonthKey();
   const curMonthData = sessionData[activeMonth] || [];
   const prevMonthKey = Object.keys(sessionData).sort()[Object.keys(sessionData).sort().indexOf(activeMonth) - 1] || null;
   const prevMonthData = prevMonthKey ? (sessionData[prevMonthKey] || []) : [];
@@ -5684,7 +6292,7 @@ function renderKpiDashboard() {
         <div style="width:40px;height:40px;border-radius:50%;background:${avatarColor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;">${picName.slice(0,2)}</div>
         <div style="flex:1;">
           <div style="font-size:15px;font-weight:700;color:var(--text);">${picName}</div>
-          <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[currentMonth]||currentMonth}</div>
+          <div style="font-size:11px;color:var(--textm);">Sales Admin · ${MONTH_LABELS[activeMonth]||activeMonth}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:var(--textm);margin-bottom:2px;">${isSalesExec?'Sales Executive ⭐':'Sales Admin'}</div>
@@ -6205,11 +6813,13 @@ function renderHomeKpi() {
   const curOrders = sessionData[curMonth] || [];
   const prevOrders= sessionData[prevMonth] || [];
 
-  const allSales    = all.filter(isPipelineSales);
+  const allSalesRaw = all.filter(isPipelineSales);
+  // Job ganti / reprint diasingkan dari revenue & profit — dilaporkan sebagai kos rework
+  const allSales    = allSalesRaw.filter(o => !isReworkOrder(o));
   const totalRev    = allSales.reduce((s,o) => s+(o.total_customer||0), 0);
   const totalPCS    = allSales.reduce((s,o) => s+(o.pcs||0), 0);
   const totalProfit = allSales.reduce((s,o) => s+(o.profit||0), 0);
-  const totalOS     = allSales.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
+  const totalOS     = allSalesRaw.filter(o=>o.balance_customer>0).reduce((s,o)=>s+(o.balance_customer||0),0);
 
   // Yearly breakdown
   const curYear  = now.getFullYear();
@@ -6232,12 +6842,17 @@ function renderHomeKpi() {
   const lastYearLabel  = lastYearMonths.length > 0
     ? lastYearMonths.map(m => m.split(' ')[0]).join(', ')
     : 'Tiada data';
+  const thisYearRework = reworkSummary(allSalesRaw.filter(o => {
+    const yr = o.month ? parseInt(o.month.split(' ').pop()) : null;
+    return yr === curYear;
+  }));
   const yoyChange = lastYearRev > 0 ? ((thisYearRev - lastYearRev)/lastYearRev*100).toFixed(1) : null;
   const yoyTrend  = yoyChange !== null ? (parseFloat(yoyChange) >= 0
     ? `<span style="color:var(--green);font-size:10px;">▲ ${yoyChange}% vs ${lastYear}</span>`
     : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(yoyChange)}% vs ${lastYear}</span>`) : '';
 
-  const curSales  = curOrders.filter(isPipelineSales);
+  const curSales  = curOrders.filter(o => isPipelineSales(o) && !isReworkOrder(o));
+  const curRework = reworkSummary(curOrders.filter(isPipelineSales));
   const curQuots  = curOrders.filter(o => (o.pipeline_status||'confirmed') === 'quotation');
   const curRev    = curSales.reduce((s,o) => s+(o.total_customer||0), 0);
   const curPCS    = curSales.reduce((s,o) => s+(o.pcs||0), 0);
@@ -6247,7 +6862,7 @@ function renderHomeKpi() {
   const curOrdsN  = curSales.length;
   const curQuotN  = curQuots.length;
 
-  const prevRev   = prevOrders.filter(isPipelineSales).reduce((s,o) => s+(o.total_customer||0), 0);
+  const prevRev   = prevOrders.filter(o => isPipelineSales(o) && !isReworkOrder(o)).reduce((s,o) => s+(o.total_customer||0), 0);
   const revChange = prevRev > 0 ? ((curRev - prevRev)/prevRev*100).toFixed(1) : null;
   const revTrend  = revChange !== null ? (revChange >= 0 ? `<span style="color:var(--green);font-size:10px;">▲ ${revChange}%</span>` : `<span style="color:var(--red);font-size:10px;">▼ ${Math.abs(revChange)}%</span>`) : '';
 
@@ -6279,8 +6894,13 @@ function renderHomeKpi() {
     <div class="home-kpi-card accent-green" style="border-left:3px solid var(--green);">
       <div class="home-kpi-label">Profit Bulan Ini</div>
       <div class="home-kpi-val">${fmt(curProfit)}</div>
-      <div class="home-kpi-sub">Margin ${curMargin}%</div>
+      <div class="home-kpi-sub">Margin ${curMargin}%${curRework.netDodCost>0?` · bersih ${fmt(curProfit-curRework.netDodCost)}`:''}</div>
     </div>
+    ${curRework.count>0 ? `<div class="home-kpi-card" style="border-left:3px solid var(--red);">
+      <div class="home-kpi-label">🔁 Kos Rework Bulan Ini</div>
+      <div class="home-kpi-val" style="color:${curRework.netDodCost>0?'var(--red)':'var(--green)'};">${curRework.netDodCost>0?fmt(curRework.netDodCost):'✓ RM 0'}</div>
+      <div class="home-kpi-sub">${curRework.count} job ganti${curRev>0?` · ${(curRework.netDodCost/curRev*100).toFixed(2)}% dari revenue`:''}${curRework.claimReceived>0?` · pampasan ${fmt(curRework.claimReceived)}`:''}${curRework.kilangCost>0?` · kilang ${fmt(curRework.kilangCost)}`:''}</div>
+    </div>` : ''}
     <div class="home-kpi-card ${totalOS>0?'accent-red':'accent-green'}" style="border-left:3px solid ${totalOS>0?'var(--red)':'var(--green)'};">
       <div class="home-kpi-label">Customer OS (Semua Bulan)</div>
       <div class="home-kpi-val" style="color:${totalOS>0?'var(--red)':'var(--green)'};">${totalOS>0?fmt(totalOS):'✓ Clear'}</div>
@@ -6326,6 +6946,11 @@ function renderHomeKpi() {
       <div class="home-kpi-val" style="font-size:18px;">${fmt(thisYearProfit)}</div>
       <div class="home-kpi-sub">margin ${thisYearRev>0?(thisYearProfit/thisYearRev*100).toFixed(1):0}%</div>
     </div>
+    ${thisYearRework.count>0 ? `<div class="home-kpi-card" style="border-left:3px solid var(--red);">
+      <div class="home-kpi-label">🔁 Kos Rework ${curYear}</div>
+      <div class="home-kpi-val" style="font-size:18px;color:${thisYearRework.netDodCost>0?'var(--red)':'var(--green)'};">${thisYearRework.netDodCost>0?fmt(thisYearRework.netDodCost):'✓ RM 0'}</div>
+      <div class="home-kpi-sub">${thisYearRework.count} job ganti${thisYearRev>0?` · ${(thisYearRework.netDodCost/thisYearRev*100).toFixed(2)}% dari revenue`:''}${thisYearRework.claimReceived>0?` · pampasan ${fmt(thisYearRework.claimReceived)}`:''}${thisYearRework.kilangCost>0?` · kilang tanggung ${fmt(thisYearRework.kilangCost)}`:''}</div>
+    </div>` : ''}
 
     <!-- Section label: Tahun Lepas -->
     <div style="grid-column:1/-1;font-size:10px;font-family:'Fira Code',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);padding-bottom:4px;border-bottom:1px solid var(--line);margin-top:8px;margin-bottom:2px;">
@@ -7031,7 +7656,9 @@ const EXPORT_HEADERS = [
   'Jenis Produk','Saiz','Warna','Nota Design','Kilang / Supplier',
   'Kos Supplier (RM)','Kos Sup Bayar (RM)','Kos Lain (RM)',
   'Total Invoice Customer (RM)','1st Payment (RM)','Customer OS (RM)',
-  'Supplier OS (RM)','Profit (RM)','Margin (%)'
+  'Supplier OS (RM)','Profit (RM)','Margin (%)',
+  'Job Ganti?','Punca Ganti','Kos Ganti Ditanggung','Kos Ganti DOD (RM)','Kos Ganti Kilang (RM)','Order Asal','Kilang Punca',
+  'Status Tuntutan','Jenis Pampasan','Jumlah Tuntutan (RM)','No. CN','Kredit Ditebus','Kos Ganti Bersih (RM)'
 ];
 
 function exportRowValues(o) {
@@ -7045,7 +7672,19 @@ function exportRowValues(o) {
     o.supplier_name||'NOHAD SDN BHD',
     o.nohad_amount||0, o.nohad_paid||0, o.luar_amount||0,
     o.total_customer||0, o.first_payment||0, o.balance_customer||0,
-    o.supplier_outstanding||0, o.profit||0, parseFloat(margin)||0
+    o.supplier_outstanding||0, o.profit||0, parseFloat(margin)||0,
+    isReworkOrder(o) ? 'YA' : '',
+    isReworkOrder(o) ? (REWORK_CAUSE_LABEL[reworkCause(o)]||reworkCause(o)) : '',
+    isReworkOrder(o) ? (REWORK_BEARER_LABEL[reworkBearer(o)]||reworkBearer(o)) : '',
+    reworkCostDOD(o), reworkCostKilang(o),
+    (() => { const og = o.original_order_id ? findRowById(o.original_order_id) : null; return og ? (og.row.name_job||'') : ''; })(),
+    (() => { const c = reworkCulpritOrder(o); return c ? (c.supplier_name||'') : ''; })(),
+    isReworkOrder(o) ? (REWORK_CLAIM_STATUS_LABEL[reworkClaim(o).status]||'') : '',
+    isReworkOrder(o) ? (REWORK_CLAIM_TYPE_LABEL[reworkClaim(o).type]||'') : '',
+    isReworkOrder(o) ? reworkClaim(o).amount : 0,
+    isReworkOrder(o) ? reworkClaim(o).ref : '',
+    isReworkOrder(o) ? (reworkClaim(o).redeemed ? 'YA' : '') : '',
+    reworkCostDODNet(o)
   ];
 }
 
@@ -7090,7 +7729,7 @@ function exportFilteredCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'masterlist-' + currentMonth + '-' + exportFileStamp() + '.csv';
+  a.download = 'masterlist-' + String(currentMonth).replace(':','-') + '-' + exportFileStamp() + '.csv';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast('CSV dimuat turun — ' + rows.length + ' rekod');
@@ -7113,7 +7752,7 @@ function exportFilteredPDF() {
   }), {pcs:0,rev:0,cus:0,sup:0,pro:0});
 
   const body = rows.map((o,i) => {
-    const margin = o.total_customer > 0 ? ((o.profit||0)/o.total_customer*100).toFixed(1) : '0.0';
+    const margin = marginText(o);
     return '<tr>' +
       '<td class="c">' + (i+1) + '</td>' +
       '<td class="m">' + esc(o.order_date||'—') + '</td>' +
@@ -7128,7 +7767,7 @@ function exportFilteredPDF() {
       '<td class="r m">' + money(o.balance_customer) + '</td>' +
       '<td class="r m">' + money(o.supplier_outstanding) + '</td>' +
       (isAdmin ? '<td class="r m">' + money(o.profit) + '</td>' : '') +
-      (isAdmin ? '<td class="r m">' + margin + '%</td>' : '') +
+      (isAdmin ? '<td class="r m">' + margin + '</td>' : '') +
     '</tr>';
   }).join('');
 
@@ -7146,7 +7785,7 @@ function exportFilteredPDF() {
     (isAdmin ? '<td class="r m">' + money(tot.pro) + '</td>' : '') +
     (isAdmin ? '<td class="r m">' + (tot.rev>0 ? (tot.pro/tot.rev*100).toFixed(1) : '0.0') + '%</td>' : '') + '</tr>';
 
-  const title = 'Laporan Masterlist — ' + (MONTH_LABELS[currentMonth] || currentMonth);
+  const title = 'Laporan Masterlist — ' + bucketLabel(currentMonth);
   const html = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>' +
     '@page{size:A4 landscape;margin:12mm 10mm;}' +
     '*{box-sizing:border-box;}' +
@@ -9705,6 +10344,44 @@ function renderSupplierDir(filterMonth) {
   el.innerHTML = tabBar + body;
 }
 
+// ── KPI Kualiti Kilang ──
+// PUNCA    = kilang yang menyebabkan kerja ganti (ikut medan Punca Ganti + order asal)
+// PELAKSANA = kilang yang membuat kerja ganti itu (boleh kilang lain)
+// Hanya PUNCA yang jadi KPI kualiti; pelaksana angka maklumat sahaja.
+function reworkCausedBySupplier(base, s) {
+  return base.filter(r => {
+    if (!isReworkOrder(r)) return false;
+    const culprit = reworkCulpritOrder(r);
+    return culprit ? (_supMatches1(culprit, s) || _supMatches2(culprit, s)) : false;
+  });
+}
+function reworkPerformedBySupplier(base, s) {
+  return base.filter(r => isReworkOrder(r) && (_supMatches1(r, s) || _supMatches2(r, s)));
+}
+function supplierReworkStats(base, s) {
+  const caused    = reworkCausedBySupplier(base, s);
+  const performed = reworkPerformedBySupplier(base, s);
+  const jobsAll   = base.filter(r => _supMatches1(r, s) || _supMatches2(r, s));
+  const normal    = jobsAll.filter(r => !isReworkOrder(r)).length;
+  // Kerja ganti yang kilang ini buat tapi BUKAN dia yang punca
+  const performedNotCaused = performed.filter(r => !caused.includes(r));
+  return {
+    count: caused.length,
+    pcs: caused.reduce((a,r) => a + (r.pcs||0), 0),
+    dodCost: caused.reduce((a,r) => a + reworkCostDOD(r), 0),
+    claimReceived: caused.reduce((a,r) => a + reworkClaimReceived(r), 0),
+    netDodCost: caused.reduce((a,r) => a + reworkCostDODNet(r), 0),
+    creditBalance: supplierCreditBalance(s.name),
+    pendingClaims: caused.filter(r => ['PENDING','CLAIMED'].includes(reworkClaim(r).status)),
+    kilangCost: caused.reduce((a,r) => a + reworkCostKilang(r), 0),
+    rate: normal > 0 ? (caused.length / normal * 100) : 0,
+    jobs: caused,
+    performedCount: performed.length,
+    performedOnly: performedNotCaused,
+    normalJobs: normal
+  };
+}
+
 // ── Senarai semua supplier (masterlist ringkas) ──
 function buildSupplierListHTML() {
   const activeMonth = _supDirMonth;
@@ -9723,7 +10400,8 @@ function buildSupplierListHTML() {
                       + asSup2.reduce((sum,r) => sum + _sup2OS(r), 0);
     const datesWithData = asSup1.map(r => r.inv_date||r.order_date||'').filter(Boolean).sort();
     const lastDate = datesWithData.length ? datesWithData[datesWithData.length-1] : null;
-    return { s, totalOrders, totalPCS, totalKos, totalOS, lastDate };
+    const rework = supplierReworkStats(base, s);
+    return { s, totalOrders, totalPCS, totalKos, totalOS, lastDate, rework };
   }).sort((a,b) => b.totalOS - a.totalOS || b.totalOrders - a.totalOrders);
 
   return `
@@ -9746,7 +10424,7 @@ function buildSupplierListHTML() {
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
-      ${rows.map(({s, totalOrders, totalPCS, totalKos, totalOS, lastDate}) => `
+      ${rows.map(({s, totalOrders, totalPCS, totalKos, totalOS, lastDate, rework}) => `
         <div onclick="openSupplierDrill('${s.id}')"
           style="background:var(--bg2);border:1px solid var(--line);border-left:3px solid ${s.color};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .12s;"
           onmouseover="this.style.borderColor='${s.color}';this.style.transform='translateY(-1px)';"
@@ -9777,6 +10455,17 @@ function buildSupplierListHTML() {
               <div style="font-size:8px;color:${totalOS>0?'var(--red)':'var(--green)'};text-transform:uppercase;letter-spacing:.04em;">${totalOS>0?'OS':'Clear'}</div>
             </div>
           </div>
+          <div style="margin-top:8px;padding:7px 10px;border-radius:8px;background:${rework.count>0?'#FFF7F8':'var(--bg3)'};border:1px solid ${rework.count>0?'#F3C9D2':'var(--line)'};display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:10px;color:${rework.count>0?'#C02840':'var(--textm)'};font-weight:600;">🔁 Punca Ganti</span>
+            <span style="font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:${rework.count>0?'#C02840':'var(--green)'};">
+              ${rework.count>0 ? `${rework.count} job · ${rework.rate.toFixed(1)}%${rework.dodCost>0?` · DOD ${fmt(rework.dodCost)}`:' · kilang tanggung'}` : '✓ Tiada'}
+            </span>
+          </div>
+          ${supplierCreditBalance(s.name) > 0 ? `<div style="margin-top:6px;padding:6px 10px;border-radius:8px;background:var(--greenbg);border:1px solid var(--greenb);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:10px;color:var(--green);font-weight:600;">📄 Kredit Belum Tebus</span>
+            <span style="font-family:'Fira Code',monospace;font-size:11px;font-weight:700;color:var(--green);">${fmt(supplierCreditBalance(s.name))}</span>
+          </div>` : ''}
+          ${rework.performedOnly.length>0 ? `<div style="font-size:10px;color:var(--textm);margin-top:5px;text-align:right;">+ ${rework.performedOnly.length} kerja ganti dibuat untuk kilang lain (tak dikira KPI)</div>` : ''}
           ${lastDate ? `<div style="font-size:10px;color:var(--textm);margin-top:10px;">📅 Last order: <span style="color:var(--textd);font-weight:500;">${lastDate}</span></div>` : ''}
         </div>`).join('')}
     </div>
@@ -9827,6 +10516,7 @@ function buildSupplierDrillHTML(s) {
     return true;
   });
 
+  const supRework = supplierReworkStats(base, s);
   const totalKos = filteredJobs.reduce((sum,j) => sum + j.cost, 0);
   const totalOS  = filteredJobs.reduce((sum,j) => sum + j.supOS, 0);
   const totalPCS = filteredJobs.filter(j => j.role===1).reduce((sum,j) => sum + (j.r.pcs||0), 0);
@@ -9918,6 +10608,36 @@ function buildSupplierDrillHTML(s) {
         <span style="color:var(--textm);">Kos: <strong style="color:var(--blue);font-family:'Fira Code',monospace;">${fmt(totalKos)}</strong></span>
         <span style="color:var(--textm);">OS: <strong style="color:${totalOS>0?'var(--red)':'var(--green)'};font-family:'Fira Code',monospace;">${totalOS>0?fmt(totalOS):'✓ Clear'}</strong></span>
       </div>
+    </div>
+
+    <!-- KPI Kualiti: job ganti / reprint -->
+    <div style="margin-bottom:14px;padding:14px 16px;border-radius:12px;background:${supRework.count>0?'#FFF7F8':'var(--bg2)'};border:1px solid ${supRework.count>0?'#F3C9D2':'var(--line)'};">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:${supRework.count>0?'#C02840':'var(--textm)'};margin-bottom:4px;">🔁 KPI Kualiti — Ganti Berpunca Dari Kilang Ini</div>
+          <div style="font-size:12px;color:var(--textm);">${supRework.count>0 ? `${supRework.count} job ganti · ${supRework.pcs.toLocaleString('en-MY')} pcs · kadar ${supRework.rate.toFixed(1)}% dari ${supRework.normalJobs} job normal` : 'Tiada ganti berpunca dari kilang ini ✓'}</div>
+        </div>
+        <div style="display:flex;gap:18px;font-size:12px;">
+          <span style="color:var(--textm);">Kos DOD: <strong style="color:${supRework.dodCost>0?'var(--red)':'var(--green)'};font-family:'Fira Code',monospace;">${fmt(supRework.dodCost)}</strong></span>
+          ${supRework.claimReceived>0 ? `<span style="color:var(--textm);">Pampasan: <strong style="color:var(--green);font-family:'Fira Code',monospace;">− ${fmt(supRework.claimReceived)}</strong></span>
+          <span style="color:var(--textm);">Kos bersih: <strong style="color:${supRework.netDodCost>0?'var(--red)':'var(--green)'};font-family:'Fira Code',monospace;">${fmt(supRework.netDodCost)}</strong></span>` : ''}
+          <span style="color:var(--textm);">Kilang tanggung: <strong style="color:var(--green);font-family:'Fira Code',monospace;">${fmt(supRework.kilangCost)}</strong></span>
+        </div>
+      </div>
+      ${supRework.count>0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #F3C9D2;display:flex;flex-direction:column;gap:4px;">
+        ${supRework.jobs.slice(0,8).map(r => {
+          const doneBy = (r.supplier_name||'').trim();
+          const elsewhere = doneBy && !_supMatches1(r, s);
+          return `<div style="font-size:11px;display:flex;justify-content:space-between;gap:10px;">
+          <a href="javascript:void(0)" onclick="showDetail('${r.id}')" style="color:var(--blue);text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.order_date||'—'} · ${r.name_job||r.id}${elsewhere?` <span style="color:var(--textm);text-decoration:none;">→ dibuat oleh ${doneBy}</span>`:''}</a>
+          <span style="font-family:'Fira Code',monospace;white-space:nowrap;color:var(--textd);">${REWORK_BEARER_LABEL[reworkBearer(r)]||''} · ${fmt(reworkCostTotal(r))}</span>
+        </div>`; }).join('')}
+        ${supRework.jobs.length>8 ? `<div style="font-size:10px;color:var(--textm);">+ ${supRework.jobs.length-8} lagi</div>` : ''}
+      </div>` : ''}
+      ${supRework.performedOnly.length>0 ? `<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);">
+        <div style="font-size:11px;color:var(--textm);margin-bottom:4px;">🛠 ${supRework.performedOnly.length} kerja ganti dibuat oleh kilang ini untuk punca kilang/pihak lain — <strong>tidak dikira dalam KPI kualiti</strong></div>
+        ${supRework.performedOnly.slice(0,5).map(r => `<div style="font-size:11px;"><a href="javascript:void(0)" onclick="showDetail('${r.id}')" style="color:var(--blue);text-decoration:underline;">${r.order_date||'—'} · ${r.name_job||r.id}</a> <span style="color:var(--textm);">— punca: ${REWORK_CAUSE_LABEL[reworkCause(r)]||'—'}</span></div>`).join('')}
+      </div>` : ''}
     </div>
 
     <!-- Toolbar: search nama job + filter status -->
@@ -10041,6 +10761,18 @@ function buildSupplierOSHTML() {
     .map(([name, orders]) => [name, orders.filter(matchQ)])
     .filter(([,orders]) => orders.length > 0);
 
+  // Credit note & tuntutan tergantung
+  const _osPendingClaims = pendingClaims();
+  // Semua credit note belum ditebus, dikumpul ikut kilang (termasuk kilang yang tiada OS)
+  const _osCreditByName = {};
+  Object.values(sessionData).flat().forEach(r => {
+    if (!isReworkOrder(r)) return;
+    const c = reworkClaim(r);
+    if (c.type !== 'CREDIT_NOTE' || c.status !== 'RECEIVED' || c.redeemed) return;
+    const nm = reworkClaimSupplierName(r) || '(kilang tidak dinyatakan)';
+    _osCreditByName[nm] = (_osCreditByName[nm]||0) + c.amount;
+  });
+  const _osCreditTotal = Object.values(_osCreditByName).reduce((a,b) => a+b, 0);
   const filteredTotal = filteredGroups.reduce((s,[,orders]) => s + orders.reduce((ss,r) => ss+(r.supplier_outstanding||0),0), 0);
   const filteredCount = filteredGroups.reduce((s,[,orders]) => s + orders.length, 0);
 
@@ -10053,8 +10785,50 @@ function buildSupplierOSHTML() {
       <div style="text-align:right;">
         <div style="font-size:11px;color:var(--textm);">Jumlah OS</div>
         <div style="font-size:22px;font-weight:700;font-family:'Fira Code',monospace;color:var(--red);">${fmt(filteredTotal)}</div>
+        ${_osCreditTotal > 0 ? `<div style="font-size:11px;color:var(--green);margin-top:2px;">− kredit ${fmt(_osCreditTotal)} · bersih <strong style="font-family:'Fira Code',monospace;">${fmt(Math.max(0, filteredTotal - _osCreditTotal))}</strong></div>` : ''}
       </div>
     </div>
+
+    ${_osPendingClaims.length > 0 ? `
+    <div style="margin-bottom:18px;padding:12px 16px;background:#FFF8EC;border:1px solid #FDE68A;border-radius:10px;">
+      <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#B8720A;margin-bottom:8px;">📄 Tuntutan Belum Selesai — ${_osPendingClaims.length}</div>
+      ${_osPendingClaims.slice(0,10).map(r => {
+        const c = reworkClaim(r);
+        const supp = reworkClaimSupplierName(r) || '—';
+        return `<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px dashed #FDE68A;">
+          <a href="javascript:void(0)" onclick="showDetail('${r.id}')" style="color:var(--blue);text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.name_job||r.id}</a>
+          <span style="white-space:nowrap;color:var(--textd);">${supp} · ${REWORK_CLAIM_STATUS_LABEL[c.status]||c.status} · <strong style="font-family:'Fira Code',monospace;">${fmt(c.amount)}</strong></span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:10px;color:var(--textm);margin-top:6px;">Kredit hanya ditolak dari OS selepas status jadi “Diterima”.</div>
+    </div>` : ''}
+
+    ${_osCreditTotal > 0 ? `
+    <div style="margin-bottom:18px;padding:12px 16px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);">📄 Baki Kredit Kilang — Belum Ditebus</div>
+        <div style="font-family:'Fira Code',monospace;font-size:14px;font-weight:700;color:var(--green);">${fmt(_osCreditTotal)}</div>
+      </div>
+      ${Object.entries(_osCreditByName).sort((a,b) => b[1]-a[1]).map(([nm,amt]) => `
+        <div style="padding:6px 0;border-bottom:1px dashed var(--greenb);">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="color:var(--textd);font-weight:600;">🏭 ${nm}</span>
+            <strong style="font-family:'Fira Code',monospace;color:var(--green);">${fmt(amt)}</strong>
+          </div>
+          ${creditNotesForSupplierName(nm).map(r => { const c = reworkClaim(r); return `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0 2px 14px;">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                <a href="javascript:void(0)" onclick="showDetail('${r.id}')" style="color:var(--blue);text-decoration:underline;">${c.ref || r.name_job || r.id}</a>
+                ${c.date ? `<span style="color:var(--textm);"> · ${c.date}</span>` : ''}
+              </span>
+              <span style="white-space:nowrap;display:flex;align-items:center;gap:8px;">
+                <strong style="font-family:'Fira Code',monospace;color:var(--green);">${fmt(c.amount)}</strong>
+                <button onclick="redeemCreditNote('${r.id}')" style="font-size:10px;font-weight:600;padding:3px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;">Tebus</button>
+              </span>
+            </div>`; }).join('')}
+        </div>`).join('')}
+      <div style="font-size:10px;color:var(--textm);margin-top:6px;">Tekan “Tebus” bila kredit dipotong dari bayaran batch. Kilang tanpa outstanding pun boleh ditebus di sini.</div>
+    </div>` : ''}
 
     <!-- Filter by supplier - DROPDOWN -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:10px 14px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
@@ -10093,8 +10867,30 @@ function buildSupplierOSHTML() {
         <div style="padding:14px 16px;background:${color}14;border:1px solid ${color}33;border-radius:10px 10px 0 0;margin-bottom:0;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
             <div style="font-size:14px;font-weight:700;color:var(--text);">🏭 ${supName}</div>
-            <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--red);">${fmt(supOS)}</div>
+            <div style="text-align:right;">
+              <div style="font-family:'Fira Code',monospace;font-size:15px;font-weight:700;color:var(--red);">${fmt(supOS)}</div>
+              ${supplierCreditBalance(supName) > 0 ? `<div style="font-size:11px;color:var(--green);">− kredit ${fmt(supplierCreditBalance(supName))} · bersih <strong style="font-family:'Fira Code',monospace;">${fmt(Math.max(0, supOS - supplierCreditBalance(supName)))}</strong></div>` : ''}
+            </div>
           </div>
+          ${(() => {
+            const cns = creditNotesForSupplierName(supName);
+            if (!cns.length) return '';
+            return `<div style="margin-bottom:8px;padding:9px 12px;background:var(--greenbg);border:1px solid var(--greenb);border-radius:8px;">
+              <div style="font-family:'Fira Code',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:6px;">📄 Credit Note Belum Ditebus — ${cns.length}</div>
+              ${cns.map(r => { const c = reworkClaim(r); return `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;padding:3px 0;">
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <a href="javascript:void(0)" onclick="showDetail('${r.id}')" style="color:var(--blue);text-decoration:underline;">${c.ref || r.name_job || r.id}</a>
+                    ${c.date ? `<span style="color:var(--textm);"> · ${c.date}</span>` : ''}
+                  </span>
+                  <span style="white-space:nowrap;display:flex;align-items:center;gap:8px;">
+                    <strong style="font-family:'Fira Code',monospace;color:var(--green);">${fmt(c.amount)}</strong>
+                    <button onclick="redeemCreditNote('${r.id}')" style="font-size:10px;font-weight:600;padding:3px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;">Tebus</button>
+                  </span>
+                </div>`; }).join('')}
+              <div style="font-size:10px;color:var(--textm);margin-top:5px;">Tekan “Tebus” bila kredit ini dipotong dari bayaran batch.</div>
+            </div>`;
+          })()}
           ${(() => {
             const si = SUPPLIERS.find(s => s.name === supName || supName.toUpperCase().includes(s.short.toUpperCase()));
             if (!si || !si.bank[0]) return '';
@@ -11341,12 +12137,26 @@ function renderHomeAlerts(role) {
   if (alertProdDueSoon  && dueSoon.length)   alerts.push({ color:'var(--amber)', bg:'var(--amberbg)', border:'var(--amberb)', icon:'🟡', text:`<strong>${dueSoon.length} job due dalam 3 hari</strong>`, fn:`showProdTrackView('duesoon')` });
   if (readyJobs.length) alerts.push({ color:'#0E7A7A', bg:'#f0fafa', border:'#b2e0e0', icon:'📦', text:`<strong>${readyJobs.length} job ready</strong> untuk pickup/delivery`, fn:`showProdTrackView('ready')` });
 
+  // Alert tuntutan credit note tertunggak
+  if (role === 'admin') {
+    const stale = pendingClaims(14);
+    if (stale.length) {
+      const amt = stale.reduce((a,r) => a + reworkClaim(r).amount, 0);
+      alerts.push({
+        color:'#B8720A', bg:'#FFF8EC', border:'#FDE68A', icon:'📄',
+        text:`<strong>${stale.length} tuntutan credit note tertunggak</strong> — ${fmt(amt)} belum diterima lebih 14 hari`,
+        fn:`sbNav('supplieros')`
+      });
+    }
+  }
+
   // Alert margin rendah
   if (alertMarginOn && role === 'admin') {
     const curMonth = Object.keys(sessionData).at(-1);
     const curOrders = sessionData[curMonth] || [];
     const lowMargin = curOrders.filter(o => {
       if ((o.pipeline_status||'quotation') === 'quotation') return false;
+      if (isReworkOrder(o)) return false; // job ganti tiada revenue — margin tak relevan
       const margin = o.total_customer > 0 ? (o.profit||0)/o.total_customer*100 : 0;
       return margin < marginThreshold && o.total_customer > 0;
     });
