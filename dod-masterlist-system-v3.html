@@ -9336,7 +9336,7 @@ let _userStoreCache = null;
 
 async function loadUserStoreAsync() {
   try {
-    const users = await supaGet('users', 'select=*');
+    const users = await supaGet('users', 'select=id,name,role,color,bg,active,created,last_login');
     const store = {};
     users.forEach(u => { store[u.id] = u; });
     _userStoreCache = store;
@@ -9360,7 +9360,7 @@ function loadUserStore() {
 // Load users from Supabase and merge with local store
 async function syncUsersFromSupabase() {
   try {
-    const rows = await supaGet('users', 'select=*');
+    const rows = await supaGet('users', 'select=id,name,role,color,bg,active,created,last_login');
     if (!rows || !rows.length) return;
     const store = {};
     rows.forEach(u => {
@@ -9368,7 +9368,6 @@ async function syncUsersFromSupabase() {
         id: u.id, name: u.name, role: u.role,
         color: u.color || '#1A5CC8',
         bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
         active: u.active !== false,
         created: u.created || new Date().toISOString(),
         lastLogin: u.last_login || null,
@@ -9402,7 +9401,6 @@ function seedUserStore() {
     seed[id] = {
       id, name: u.name, role: u.role,
       color, bg: u.bg || '#EEF4FF',
-      password: 'DOD2026',
       active: true,
       created: new Date().toISOString(),
       lastLogin: null,
@@ -9431,7 +9429,7 @@ async function saveUserToSupabase(u) {
         id: u.id, name: u.name, role: u.role,
         color: u.color || '#1A5CC8',
         bg: u.bg || '#EEF4FF',
-        password: u.password || 'DOD2026',
+        ...(u.password ? { password: u.password } : {}),
         active: u.active !== false,
         created: u.created || new Date().toISOString(),
         last_login: u.lastLogin || null,
@@ -9590,7 +9588,7 @@ function openAddUserForm() {
       <div class="um-form-section-title">Password</div>
       <div class="um-field">
         <label>Password Awal *</label>
-        <input type="password" id="nuf_pw" placeholder="Minimum 6 aksara" value="DOD2026">
+        <input type="password" id="nuf_pw" placeholder="Minimum 6 aksara">
       </div>
       <div class="um-info-box">Password boleh ditukar oleh pengguna selepas log masuk pertama.</div>
     </div>
@@ -9762,7 +9760,7 @@ function closeChpwModal() {
   document.getElementById('chpwModalBg').classList.remove('open');
 }
 
-function submitChpw() {
+async function submitChpw() {
   const oldPw  = document.getElementById('chpwOld').value;
   const newPw  = document.getElementById('chpwNew').value;
   const confPw = document.getElementById('chpwConfirm').value;
@@ -9778,8 +9776,18 @@ function submitChpw() {
   if (!u) { showErr('Pengguna tidak ditemui.'); return; }
 
   if (!chpwIsAdmin) {
-    const currentPw = u.password || 'DOD2026';
-    if (oldPw !== currentPw) { showErr('Password lama tidak betul.'); return; }
+    // Semak password lama melalui server — password sebenar tak pernah dibaca di browser
+    let rows;
+    try {
+      rows = await supaFetch('/rest/v1/rpc/check_login', {
+        method: 'POST',
+        body: JSON.stringify({ p_id: chpwTargetId, p_password: oldPw }),
+      });
+    } catch(e) {
+      showErr('Gagal sambung ke pelayan. Cuba semula.');
+      return;
+    }
+    if (!rows || !rows.length) { showErr('Password lama tidak betul.'); return; }
   }
 
   store[chpwTargetId].password = newPw;
