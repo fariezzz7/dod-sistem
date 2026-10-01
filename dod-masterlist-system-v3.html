@@ -724,6 +724,20 @@ tr:hover .row-actions{opacity:1;}
 .cust-card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
 .cust-card:hover{transform:translateY(-1px);box-shadow:var(--shadow2);border-color:var(--blueb);}
 .cust-card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+/* ── Customer LIST view ── */
+.cust-grid.list-mode{display:flex;flex-direction:column;gap:6px;}
+.cust-row{display:grid;grid-template-columns:34px minmax(150px,2fr) 58px 66px 92px 108px 100px 78px;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer;transition:all .12s;box-shadow:var(--shadow);}
+.cust-row:hover{border-color:var(--blueb);box-shadow:var(--shadow2);}
+.cust-row-head{background:var(--bg3);box-shadow:none;cursor:default;padding:6px 12px;position:sticky;top:0;z-index:2;}
+.cust-row-head:hover{border-color:var(--line);box-shadow:none;}
+.cust-row-h{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--textm);}
+.cust-rc{min-width:0;}
+.cust-rc-num{font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;}
+.cust-rc-sub{font-size:10px;color:var(--textm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(max-width:1100px){
+  .cust-row{grid-template-columns:34px minmax(120px,2fr) 58px 92px 100px;}
+  .cust-row .cust-hide-sm{display:none;}
+}
 .cust-avatar{width:38px;height:38px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
 .cust-name{font-size:13px;font-weight:700;color:var(--text);}
 .cust-tel{font-family:'Fira Code',monospace;font-size:10px;color:var(--textm);}
@@ -3921,41 +3935,22 @@ async function doLogin() {
   const pass   = document.getElementById('ls-pass').value;
   const err    = document.getElementById('ls-err');
 
-  // Fetch fresh user data from Supabase first, then validate
+  // Semak login melalui function khas di server — password tak pernah balik ke browser
   showLoading('Log masuk...');
+  let userData = null;
   try {
-    const rows = await supaGet('users', 'select=*');
-    if (rows && rows.length) {
-      const store = {};
-      rows.forEach(u => {
-        store[u.id] = {
-          id: u.id, name: u.name, role: u.role,
-          color: u.color || '#1A5CC8', bg: u.bg || '#EEF4FF',
-          password: u.password || 'DOD2026',
-          active: u.active !== false,
-        };
-      });
-      _userStoreCache = store;
-      localStorage.setItem(USER_STORE_KEY, JSON.stringify(store));
-    }
+    const rows = await supaFetch('/rest/v1/rpc/check_login', {
+      method: 'POST',
+      body: JSON.stringify({ p_id: userId, p_password: pass }),
+    });
+    if (rows && rows.length) userData = rows[0];
   } catch(e) {
-    console.warn('Pre-login sync failed, using cache:', e);
+    console.warn('Login check failed:', e);
   }
   hideLoading();
 
-  const userStore = loadUserStore();
-  const userData  = userStore[userId];
-
   if (!userData) { err.classList.add('show'); document.getElementById('ls-pass').value=''; return; }
   if (!userData.active) { err.classList.add('show'); document.getElementById('ls-pass').value=''; return; }
-
-  const savedPw = userData.password || 'DOD2026';
-  if (pass !== savedPw) {
-    err.classList.add('show');
-    document.getElementById('ls-pass').value = '';
-    document.getElementById('ls-pass').focus();
-    return;
-  }
 
   err.classList.remove('show');
   const baseUser = USERS[userId] || { name: userData.name, role: userData.role, color: userData.color || '#1A5CC8', bg: '#EEF4FF' };
@@ -7248,6 +7243,16 @@ function buildCustomerMap() {
   return Object.values(map).sort((a,b) => b.totalRev - a.totalRev);
 }
 
+function custViewMode() {
+  if (!window._custView) {
+    var saved = null;
+    try { saved = localStorage.getItem('custViewMode'); } catch(e){}
+    window._custView = (saved === 'list' || saved === 'grid') ? saved : 'grid';
+  }
+  return window._custView;
+}
+window.custViewMode = custViewMode;
+
 function renderCustomers() {
   const q = (document.getElementById('custSearch')?.value || '').toLowerCase();
   const tab = window._custTab || 'all';
@@ -7296,6 +7301,22 @@ function renderCustomers() {
       renderCustomers();
     });
 
+    // View mode toggle (grid / list)
+    const vmWrap = document.createElement('div');
+    vmWrap.style.cssText = 'display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;';
+    [['grid','▦ Grid'],['list','☰ List']].forEach(function(v){
+      const b = document.createElement('button');
+      b.type='button'; b.textContent=v[1];
+      var on = (custViewMode() === v[0]);
+      b.style.cssText = 'padding:6px 12px;font-size:11px;font-weight:600;border:none;cursor:pointer;background:'+(on?'var(--blue)':'transparent')+';color:'+(on?'#fff':'var(--textd)')+';';
+      b.addEventListener('click', function(){
+        window._custView = v[0];
+        try { localStorage.setItem('custViewMode', v[0]); } catch(e){}
+        renderCustomers();
+      });
+      vmWrap.appendChild(b);
+    });
+
     const bulkBtn = document.createElement('button');
     bulkBtn.type = 'button';
     bulkBtn.textContent = '📄 Bulk OS Reminder';
@@ -7305,6 +7326,7 @@ function renderCustomers() {
     fb.innerHTML = '';
     fb.appendChild(tabWrap);
     fb.appendChild(sel);
+    fb.appendChild(vmWrap);
     fb.appendChild(bulkBtn);
   }
 
@@ -7345,6 +7367,7 @@ function renderCustomers() {
     (totalOS > 0 ? ` · <span style="color:var(--red);font-weight:600;">OS: ${fmt(totalOS)} (${countOS} customer)</span>` : '');
 
   if (!filtered.length) {
+    document.getElementById('custGrid').classList.remove('list-mode');
     document.getElementById('custGrid').innerHTML =
       '<div style="grid-column:1/-1;text-align:center;padding:40px;font-size:13px;color:var(--textm);">📭 Tiada customer dijumpai.</div>';
     return;
@@ -7355,6 +7378,49 @@ function renderCustomers() {
     let h = 0; for (let i=0;i<name.length;i++) h = name.charCodeAt(i)+((h<<5)-h);
     return colors[Math.abs(h)%colors.length];
   };
+
+  const grid = document.getElementById('custGrid');
+  const viewMode = custViewMode();
+  grid.classList.toggle('list-mode', viewMode === 'list');
+
+  if (viewMode === 'list') {
+    const head = `<div class="cust-row cust-row-head">
+      <div></div>
+      <div class="cust-row-h">Customer</div>
+      <div class="cust-row-h" style="text-align:right;">Order</div>
+      <div class="cust-row-h cust-hide-sm" style="text-align:right;">PCS</div>
+      <div class="cust-row-h" style="text-align:right;">Jumlah</div>
+      <div class="cust-row-h" style="text-align:right;">Outstanding</div>
+      <div class="cust-row-h cust-hide-sm" style="text-align:right;">Quotation</div>
+      <div class="cust-row-h cust-hide-sm" style="text-align:right;">Terakhir</div>
+    </div>`;
+    grid.innerHTML = head + filtered.map((c,i) => {
+      const col = avatarColor(c.name);
+      const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const lastDate = c.lastOrder ? c.lastOrder.slice(5).replace('-','/') : '—';
+      const hasOS = c.totalOS > 0;
+      const telUrl = 'https://wa.me/60' + c.tel.replace(/^0/,'');
+      return `<div class="cust-row" onclick="openCustDetail(${i})" style="${hasOS?'border-color:rgba(184,56,56,0.3);':''}">
+        <div style="width:30px;height:30px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">${initials}</div>
+        <div class="cust-rc">
+          <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+            <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</span>
+            ${c.isNew?'<span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;background:#f0fdf4;color:#0F7A48;border:1px solid #86efac;flex-shrink:0;">NEW</span>':''}
+            <span style="font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;background:${c.tier.bg};color:${c.tier.color};border:1px solid ${c.tier.color}44;flex-shrink:0;">${c.tier.label}</span>
+            ${c.notes?`<span title="${c.notes}" style="color:var(--amber);font-size:10px;flex-shrink:0;">📝</span>`:''}
+          </div>
+          <div class="cust-rc-sub" style="color:var(--blue);" onclick="event.stopPropagation();window.open('${telUrl}','_blank')">${c.tel} 📱</div>
+        </div>
+        <div class="cust-rc-num" style="text-align:right;color:var(--blue);">${c.totalOrders}</div>
+        <div class="cust-rc-num cust-hide-sm" style="text-align:right;">${c.totalPCS.toLocaleString()}</div>
+        <div class="cust-rc-num" style="text-align:right;color:var(--amber);">${fmt(c.totalRev)}</div>
+        <div class="cust-rc-num" style="text-align:right;color:${hasOS?'var(--red)':'var(--textm)'};">${hasOS?fmt(c.totalOS):'—'}</div>
+        <div class="cust-rc-num cust-hide-sm" style="text-align:right;color:${c.quotCount>0?'#B8720A':'var(--textm)'};font-size:10px;">${c.quotCount>0?('📋 '+c.quotCount+' · '+fmt(c.quotVal)):'—'}</div>
+        <div class="cust-rc-sub cust-hide-sm" style="text-align:right;">${lastDate}</div>
+      </div>`;
+    }).join('');
+    return;
+  }
 
   document.getElementById('custGrid').innerHTML = filtered.map((c,i) => {
     const col = avatarColor(c.name);

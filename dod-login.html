@@ -415,21 +415,26 @@ async function doLogin() {
   err.classList.remove('show');
 
   try {
-    // Fetch user dari Supabase
-    const rows = await supaGet('users', 'select=id,name,role,color,bg,password,active&id=eq.' + encodeURIComponent(userId));
+    // Semak login melalui function khas di server — password tak pernah balik ke browser
+    const loginRes = await fetch(SUPA_URL + '/rest/v1/rpc/check_login', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_id: userId, p_password: pass }),
+    });
+    if (!loginRes.ok) throw new Error('rpc_failed');
+    const rows = await loginRes.json();
 
     if (!rows || !rows.length) {
-      throw new Error('not_found');
+      throw new Error('wrong_pw');
     }
     const userData = rows[0];
 
     if (!userData.active) {
       throw new Error('inactive');
-    }
-
-    const savedPw = userData.password || 'DOD2026';
-    if (pass !== savedPw) {
-      throw new Error('wrong_pw');
     }
 
     // ✅ Berjaya — set session sama format dengan masterlist
