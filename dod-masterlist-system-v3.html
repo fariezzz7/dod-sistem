@@ -1462,6 +1462,11 @@ tr:hover .row-actions{opacity:1;}
     <span class="sb-item-label">Penerimaan</span>
   </button>
 
+  <button class="sb-item" id="sbLogistics" data-tip="Kos Delivery" onclick="sbNav('logistics')" style="display:none;">
+    <span class="sb-item-icon">🚚</span>
+    <span class="sb-item-label">Kos Delivery</span>
+  </button>
+
   <button class="sb-item" id="sbMemo" data-tip="Memo & Announcement" onclick="sbNav('memo')" style="display:none;">
     <span class="sb-item-icon">📢</span>
     <span class="sb-item-label">Memo</span>
@@ -1890,6 +1895,11 @@ tr:hover .row-actions{opacity:1;}
   <!-- PENERIMAAN (Wang Masuk) -->
   <div id="penerimaanView" style="display:none;padding:24px 28px;">
     <div id="penerimaanContent"></div>
+  </div>
+
+  <!-- KOS DELIVERY (Postage & Lalamove) -->
+  <div id="logisticsView" style="display:none;padding:24px 28px;">
+    <div id="logisticsContent"></div>
   </div>
 
   <!-- BIN VIEW -->
@@ -2349,6 +2359,42 @@ tr:hover .row-actions{opacity:1;}
             <label class="fl">Alamat Penghantaran</label>
             <input class="fi" type="text" id="f_cust_addr" placeholder="No, Jalan, Taman, Poskod, Negeri">
           </div>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-title">🚚 Penghantaran &amp; Kos Delivery</div>
+        <div class="form-grid g3">
+          <div class="form-field">
+            <label class="fl">Kaedah Penghantaran</label>
+            <select class="fi" id="f_delivery_method" onchange="onDeliveryMethodChange()">
+              <option value="">— Pilih —</option>
+              <option value="collect">🏠 Self Collect</option>
+              <option value="pos_sm">📦 Pos — Semenanjung</option>
+              <option value="pos_ss">✈️ Pos — Sabah/Sarawak</option>
+              <option value="lalamove">🛵 Lalamove</option>
+            </select>
+          </div>
+        </div>
+        <div id="postageFields" style="display:none;margin-top:10px;">
+          <div class="form-grid g3">
+            <div class="form-field">
+              <label class="fl">Berat Dihantar (KG)</label>
+              <input class="fi" type="number" step="0.01" min="0" id="f_postage_weight" placeholder="cth: 2.5">
+            </div>
+            <div class="form-field">
+              <label class="fl">Tarikh Hantar Pos</label>
+              <input class="fi" type="date" id="f_postage_date_sent">
+            </div>
+            <div class="form-field">
+              <label class="fl">No. Resit / Tracking (jika ada)</label>
+              <input class="fi" type="text" id="f_postage_tracking" placeholder="cth: EL123456789MY">
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--textm);margin-top:4px;">Berat ni akan digunakan untuk agihkan kos sebenar bila bil Pos Malaysia bulanan sampai — rujuk tab <strong>Kos Delivery</strong>.</div>
+        </div>
+        <div id="lalamoveHint" style="display:none;margin-top:10px;font-size:11px;color:var(--textm);background:var(--bg3);border-radius:8px;padding:10px 12px;">
+          🛵 Kos Lalamove untuk order ni direkod di tab <strong>Kos Delivery → Log Lalamove</strong> (bukan di sini), sebab satu round Lalamove selalunya kongsi beberapa order sekali jalan.
         </div>
       </div>
 
@@ -3722,13 +3768,14 @@ async function supaUpsert(table, data) {
       'was_quotation','supplier_cost_mode',
       'rework_bearer','rework_payment_flow','rework_cause','rework_cost_total','original_order_id',
       'rework_claim_status','rework_claim_type','rework_claim_amount','rework_claim_ref',
-      'rework_claim_date','rework_claim_redeemed','rework_claim_redeemed_date'];
+      'rework_claim_date','rework_claim_redeemed','rework_claim_redeemed_date',
+      'delivery_method','postage_weight_kg','postage_date_sent','postage_tracking_no'];
     const clean = arr => arr.map(o => {
       const r = {};
       ALLOWED.forEach(k => {
         let v = o[k];
         // Clean empty dates to null
-        if (['order_date','inv_date','due_date','production_date','date_submit_kilang','rework_claim_date','rework_claim_redeemed_date'].includes(k) && (!v || v === '' || v === 'null')) v = null;
+        if (['order_date','inv_date','due_date','production_date','date_submit_kilang','rework_claim_date','rework_claim_redeemed_date','postage_date_sent'].includes(k) && (!v || v === '' || v === 'null')) v = null;
         if (k === 'production_status' && !v) v = 'job-submit';
         r[k] = v !== undefined ? v : null;
       });
@@ -4069,7 +4116,7 @@ async function loadOrdersFromSupabase() {
 
 // ── VIEW CONTROLLER ──────────────────────────────────────────
 function setAllViewsHidden() {
-  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','katalogHargaView','salesKitView','chatView'].forEach(id => {
+  ['homeView','masterlistView','kpiView','designerView','customerView','dashboardView','userMgmtView','supplierDirView','supplierOSView','prodTrackView','securityView','penerimaanView','calendarView','memoView','binView','controlPanelView','katalogHargaView','salesKitView','chatView','logisticsView'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -4134,6 +4181,8 @@ function showCustomerView() {
 
 // Load saved supplier edits on startup (async)
 loadSuppliers().catch(() => {});
+// Load logistics cost batches (Postage/Lalamove allocation) on startup (async)
+loadLogisticsBatches().catch(() => {});
 
 function setupNavForRole() {
   const role = currentUser.role;
@@ -4169,6 +4218,7 @@ function setupNavForRole() {
     sbShow('sbChgPw');
     sbShow('sbBtnAddOrder');
     sbShow('sbPenerimaan');
+    sbShow('sbLogistics');
     sbShow('sbKpi');
     sbShow('sbCalendar');
     sbShow('sbMemo');
@@ -4202,6 +4252,7 @@ function setupNavForRole() {
     sbHide('sbMemo');
     sbHide('sbControlPanel');
     sbHide('sbBin');
+    sbHide('sbLogistics');
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
@@ -4228,6 +4279,7 @@ function setupNavForRole() {
     sbHide('sbControlPanel');
     sbHide('sbBin');
     sbHide('sbPenerimaan');
+    sbHide('sbLogistics');
     sbShow('sbCalendar');
   }
 }
@@ -4298,6 +4350,13 @@ function sbNav(view) {
       const sbPen = document.getElementById('sbPenerimaan');
       if (sbPen) sbPen.classList.add('active');
       showPenerimaanView();
+      showSbMonths(false);
+      break;
+    }
+    case 'logistics': {
+      const sbLog = document.getElementById('sbLogistics');
+      if (sbLog) sbLog.classList.add('active');
+      showLogisticsView();
       showSbMonths(false);
       break;
     }
@@ -4805,9 +4864,9 @@ function reworkChargesFor(orderId){
   return Object.values(sessionData).flat()
     .filter(r => isReworkOrder(r) && r.original_order_id === orderId);
 }
-// Profit & margin "sebenar" order asal selepas tolak kos ganti
+// Profit & margin "sebenar" order asal selepas tolak kos ganti + kos delivery (Postage/Lalamove) teragih
 function effectiveProfit(o){
-  return (o.profit||0) - reworkChargesFor(o.id).reduce((s,r) => s + reworkCostDODNet(r), 0);
+  return (o.profit||0) - reworkChargesFor(o.id).reduce((s,r) => s + reworkCostDODNet(r), 0) - logisticsCostFor(o.id);
 }
 function effectiveMarginPct(o){
   const rev = o.total_customer || 0;
@@ -5319,6 +5378,11 @@ function openEditModalById(id) {
   document.getElementById('f_color').value = r.color_main || '';
   document.getElementById('f_sizes').value = r.sizes || '';
   document.getElementById('f_design_notes').value = r.design_notes || '';
+  document.getElementById('f_delivery_method').value = r.delivery_method || '';
+  document.getElementById('f_postage_weight').value = r.postage_weight_kg || '';
+  document.getElementById('f_postage_date_sent').value = r.postage_date_sent || '';
+  document.getElementById('f_postage_tracking').value = r.postage_tracking_no || '';
+  onDeliveryMethodChange();
   document.getElementById('f_nohad_amt').value = r.nohad_amount || '';
   // CR02: restore supplier cost mode SEBELUM loadItemsData supaya auto-recalc tak overwrite nilai manual
   setSupCostMode(r.supplier_cost_mode === 'manual' ? 'manual' : 'auto');
@@ -5407,8 +5471,10 @@ function clearForm() {
    'f_sizes','f_design_notes','f_prod_date','f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid',
    'f_supplier2_name','f_sup2_amt','f_sup2_paid','f_inv_cust','f_pay1',
    'f_rework_total','f_rework_origin','f_rework_origin_id',
-   'f_claim_amount','f_claim_ref','f_claim_date','f_claim_redeemed','f_claim_redeemed_date'
+   'f_claim_amount','f_claim_ref','f_claim_date','f_claim_redeemed','f_claim_redeemed_date',
+   'f_delivery_method','f_postage_weight','f_postage_date_sent','f_postage_tracking'
   ].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  onDeliveryMethodChange();
   const rwB = document.getElementById('f_rework_bearer'); if (rwB) rwB.value = 'KILANG';
   const rwC = document.getElementById('f_rework_cause'); if (rwC) rwC.value = 'KILANG';
   const rwF = document.getElementById('f_rework_flow'); if (rwF) { rwF.value = 'NO_INVOICE'; delete rwF.dataset.touched; }
@@ -5493,6 +5559,15 @@ function onSourceChange(){
   recalc();
 }
 window.onSourceChange = onSourceChange;
+
+function onDeliveryMethodChange(){
+  const v = document.getElementById('f_delivery_method')?.value || '';
+  const postageEl  = document.getElementById('postageFields');
+  const lalamoveEl = document.getElementById('lalamoveHint');
+  if (postageEl)  postageEl.style.display  = (v === 'pos_sm' || v === 'pos_ss') ? '' : 'none';
+  if (lalamoveEl) lalamoveEl.style.display = (v === 'lalamove') ? '' : 'none';
+}
+window.onDeliveryMethodChange = onDeliveryMethodChange;
 
 function setReworkCostLock(locked){
   ['f_nohad_amt','f_nohad_paid','f_luar_amt','f_luar_paid','f_sup2_amt','f_sup2_paid'].forEach(id => {
@@ -5748,6 +5823,11 @@ function saveOrder() {
   const colorMain  = document.getElementById('f_color').value.trim();
   const sizes      = document.getElementById('f_sizes').value.trim();
   const designNotes= document.getElementById('f_design_notes').value.trim();
+  // Penghantaran & kos delivery
+  const deliveryMethod  = document.getElementById('f_delivery_method')?.value || '';
+  const postageWeightV  = parseFloat(document.getElementById('f_postage_weight')?.value) || null;
+  const postageDateV    = document.getElementById('f_postage_date_sent')?.value || '';
+  const postageTrackV   = document.getElementById('f_postage_tracking')?.value.trim() || '';
   // Job ganti / reprint — kos ditanggung siapa
   const isRework      = KPI_EXCLUDED_SOURCES.includes((src||'').toUpperCase().trim());
   const reworkBearerV = isRework ? (document.getElementById('f_rework_bearer')?.value || 'KILANG') : '';
@@ -5863,6 +5943,10 @@ function saveOrder() {
       rework_claim_redeemed_date: isRework ? (claimRedDateV || null) : null,
       rework_cost_total: isRework ? reworkTotalV : null,
       original_order_id: isRework ? (reworkOriginV || null) : null,
+      delivery_method: deliveryMethod || null,
+      postage_weight_kg: postageWeightV,
+      postage_date_sent: postageDateV || null,
+      postage_tracking_no: postageTrackV || null,
       payments: getPaymentRecordsData()
     };
     
@@ -5944,6 +6028,10 @@ function saveOrder() {
       rework_claim_redeemed_date: isRework ? (claimRedDateV || null) : null,
       rework_cost_total: isRework ? reworkTotalV : null,
       original_order_id: isRework ? (reworkOriginV || null) : null,
+      delivery_method: deliveryMethod || null,
+      postage_weight_kg: postageWeightV,
+      postage_date_sent: postageDateV || null,
+      postage_tracking_no: postageTrackV || null,
       payments: getPaymentRecordsData()
     });
     showToast('Order baru ditambah ✓');
@@ -10289,6 +10377,8 @@ function setSupplier(name) {
 }
 
 
+let logisticsBatches = [];
+
 let SUPPLIERS = [
   {
     id: 'nohad',
@@ -13323,6 +13413,448 @@ function renderPenerimaanView() {
     `}
   `;
 }
+
+// ══════════════════════════════════════════════════════════
+// KOS DELIVERY — Postage (Pos Malaysia) & Lalamove allocation
+// ══════════════════════════════════════════════════════════
+const LOGISTICS_ROUTE_LABEL = {
+  kilang_sulam: '🧵 Kilang → Sulam',
+  sulam_dod:    '🏢 Sulam → DOD',
+  kilang_dod:   '🏭 Kilang → DOD',
+  ke_customer:  '🏠 Terus Ke Customer',
+  lain:         '🔀 Lain-lain',
+};
+
+async function loadLogisticsBatches() {
+  try {
+    const batches = await supaGetAll('logistics_batch', 'select=*');
+    const items   = await supaGetAll('logistics_batch_items', 'select=*');
+    logisticsBatches = (batches || []).map(b => ({
+      ...b,
+      items: (items || []).filter(it => it.batch_id === b.id),
+    }));
+    window._logisticsLoadError = false;
+  } catch (e) {
+    console.warn('Logistics batch: gagal load (migration-logistics-cost.sql mungkin belum dijalankan)', e);
+    logisticsBatches = [];
+    window._logisticsLoadError = true;
+  }
+}
+
+function logisticsItemsForOrder(orderId, type) {
+  const out = [];
+  logisticsBatches.forEach(b => {
+    if (type && b.type !== type) return;
+    (b.items || []).forEach(it => { if (it.order_id === orderId) out.push({ ...it, batch: b }); });
+  });
+  return out;
+}
+function postageAllocatedFor(orderId) {
+  return logisticsItemsForOrder(orderId, 'postage').reduce((s, it) => s + (parseFloat(it.allocated_cost) || 0), 0);
+}
+function lalamoveAllocatedFor(orderId) {
+  return logisticsItemsForOrder(orderId, 'lalamove').reduce((s, it) => s + (parseFloat(it.allocated_cost) || 0), 0);
+}
+function logisticsCostFor(orderId) {
+  if (!orderId) return 0;
+  return postageAllocatedFor(orderId) + lalamoveAllocatedFor(orderId);
+}
+
+async function saveLogisticsBatch(batch, items) {
+  const id = batch.id || ('LGB_' + Date.now());
+  const row = { ...batch, id, created_by: (currentUser && currentUser.id) || '' };
+  await supaUpsert('logistics_batch', row);
+  const itemRows = (items || []).map((it, idx) => ({
+    id: 'LGI_' + Date.now() + '_' + idx,
+    batch_id: id,
+    order_id: it.order_id,
+    basis_value: it.basis_value,
+    allocated_cost: it.allocated_cost,
+  }));
+  if (itemRows.length) await supaUpsert('logistics_batch_items', itemRows);
+  logisticsBatches.unshift({ ...row, items: itemRows });
+  return id;
+}
+
+async function deleteLogisticsBatch(id) {
+  await supaDelete('logistics_batch_items', 'batch_id=eq.' + encodeURIComponent(id));
+  await supaDelete('logistics_batch', 'id=eq.' + encodeURIComponent(id));
+  logisticsBatches = logisticsBatches.filter(b => b.id !== id);
+}
+window.removeLogisticsBatch = async function removeLogisticsBatch(id) {
+  if (!confirm('Padam rekod ini? Kos yang sudah diagihkan ke order akan dibuang.')) return;
+  try {
+    await deleteLogisticsBatch(id);
+    showToast('✓ Rekod dipadam');
+    renderLogisticsView();
+  } catch (e) {
+    showToast('⚠ Gagal padam: ' + (e.message || '').slice(0, 80), true);
+  }
+};
+
+function showLogisticsView() {
+  setAllViewsHidden();
+  document.getElementById('logisticsView').style.display = 'block';
+  showSbMonths(false);
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById('sbLogistics'); if (el) el.classList.add('active');
+  if (!window._logTab) window._logTab = 'summary';
+  renderLogisticsView();
+}
+
+window.logTabSwitch = function logTabSwitch(tab) {
+  window._logTab = tab;
+  renderLogisticsView();
+};
+
+function renderLogisticsView() {
+  const el = document.getElementById('logisticsContent');
+  if (!el) return;
+  const tab = window._logTab || 'summary';
+  const tabBtn = (id, label) => `<button onclick="logTabSwitch('${id}')" style="font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;border:1px solid ${tab===id?'var(--blueb)':'var(--line)'};background:${tab===id?'var(--bluebg)':'var(--bg2)'};color:${tab===id?'var(--blue)':'var(--textd)'};cursor:pointer;">${label}</button>`;
+
+  el.innerHTML = `
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">🚚 Kos Delivery</div>
+    <div style="font-size:12px;color:var(--textm);margin-bottom:16px;">Track kos Postage &amp; Lalamove sebenar, agihkan ke order, dan cross-check bil bulanan.</div>
+    ${window._logisticsLoadError ? `<div style="background:var(--redbg);border:1px solid var(--redb);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--red);">⚠ Gagal load data Kos Delivery dari server. Kemungkinan <code>migration-logistics-cost.sql</code> belum dijalankan dalam Supabase SQL Editor.</div>` : ''}
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      ${tabBtn('summary','📊 Ringkasan')}
+      ${tabBtn('lalamove','🛵 Log Lalamove')}
+      ${tabBtn('postage','📦 Reconciliation Postage')}
+    </div>
+    <div id="logTabBody"></div>
+  `;
+  const body = document.getElementById('logTabBody');
+  if (tab === 'lalamove') body.innerHTML = renderLogLalamoveTab();
+  else if (tab === 'postage') body.innerHTML = renderLogPostageTab();
+  else body.innerHTML = renderLogSummaryTab();
+}
+
+function renderLogSummaryTab() {
+  const byMonth = {};
+  logisticsBatches.forEach(b => {
+    const m = b.type === 'postage' ? (b.period_label || (b.batch_date || '').slice(0, 7)) : (b.batch_date || '').slice(0, 7);
+    if (!m) return;
+    if (!byMonth[m]) byMonth[m] = { postage: 0, lalamove: 0 };
+    byMonth[m][b.type] = (byMonth[m][b.type] || 0) + (parseFloat(b.total_cost_actual) || 0);
+  });
+  const months = Object.keys(byMonth).sort().reverse();
+
+  const varianceRows = logisticsBatches.filter(b => b.type === 'postage' && b.total_weight_billed != null).map(b => {
+    const recorded = (b.items || []).reduce((s, it) => s + (parseFloat(it.basis_value) || 0), 0);
+    const billed = parseFloat(b.total_weight_billed) || 0;
+    const diff = billed - recorded;
+    const diffPct = recorded > 0 ? (diff / recorded * 100) : 0;
+    return { ...b, recorded, billed, diff, diffPct };
+  });
+
+  if (!months.length) {
+    return `<div style="text-align:center;padding:60px;color:var(--textm);">
+      <div style="font-size:32px;margin-bottom:12px;">📭</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text);">Tiada rekod kos delivery lagi</div>
+      <div style="font-size:12px;margin-top:4px;">Mula dari tab Log Lalamove atau Reconciliation Postage</div>
+    </div>`;
+  }
+
+  return `
+    <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:20px;">
+      <thead><tr style="background:var(--bg3);">
+        <th style="padding:8px 12px;text-align:left;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Bulan</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Postage (RM)</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Lalamove (RM)</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Jumlah (RM)</th>
+      </tr></thead>
+      <tbody>
+        ${months.map(m => {
+          const d = byMonth[m];
+          const total = (d.postage || 0) + (d.lalamove || 0);
+          return `<tr style="border-bottom:1px solid rgba(0,0,0,0.04);">
+            <td style="padding:8px 12px;font-size:12px;font-weight:600;color:var(--text);">${m}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;">${fmt(d.postage || 0)}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;">${fmt(d.lalamove || 0)}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:var(--text);">${fmt(total)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${varianceRows.length ? `
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">⚠ Variance Berat Postage (Bil Pos Malaysia vs Direkod Admin)</div>
+    <table style="width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden;">
+      <thead><tr style="background:var(--bg3);">
+        <th style="padding:8px 12px;text-align:left;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Bulan</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Berat Direkod (KG)</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Berat Dalam Bil (KG)</th>
+        <th style="padding:8px 12px;text-align:right;font-size:9px;font-family:'Fira Code',monospace;text-transform:uppercase;color:var(--textm);">Beza</th>
+      </tr></thead>
+      <tbody>
+        ${varianceRows.map(v => {
+          const flag = Math.abs(v.diffPct) > 5;
+          return `<tr style="border-bottom:1px solid rgba(0,0,0,0.04);">
+            <td style="padding:8px 12px;font-size:12px;">${v.period_label || v.batch_date || '—'}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;">${v.recorded.toFixed(2)}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;">${v.billed.toFixed(2)}</td>
+            <td style="padding:8px 12px;text-align:right;font-family:'Fira Code',monospace;font-size:12px;font-weight:700;color:${flag ? 'var(--red)' : 'var(--green)'};">${v.diff >= 0 ? '+' : ''}${v.diff.toFixed(2)} (${v.diffPct.toFixed(1)}%) ${flag ? '⚠' : '✓'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : ''}
+  `;
+}
+
+function renderLogLalamoveTab() {
+  const pastBatches = logisticsBatches.filter(b => b.type === 'lalamove').sort((a, b) => (b.batch_date || '').localeCompare(a.batch_date || ''));
+
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">➕ Rekod Round Lalamove Baru</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-field">
+          <label class="fl">Tarikh</label>
+          <input class="fi" type="date" id="lg_lala_date">
+        </div>
+        <div class="form-field">
+          <label class="fl">Route</label>
+          <select class="fi" id="lg_lala_route">
+            ${Object.entries(LOGISTICS_ROUTE_LABEL).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-field">
+          <label class="fl">Kos Sebenar (RM)</label>
+          <input class="fi" type="number" step="0.01" min="0" id="lg_lala_cost" oninput="updateLalamovePreview()" placeholder="cth: 20.00">
+        </div>
+      </div>
+      <div class="form-field" style="margin-bottom:10px;">
+        <label class="fl">Nota (opsyenal)</label>
+        <input class="fi" type="text" id="lg_lala_note" placeholder="cth: pickup pagi dari Kilang Nohad">
+      </div>
+      <div class="form-field" style="margin-bottom:8px;">
+        <label class="fl">Cari &amp; Pilih Order Yang Terlibat (split ikut pcs)</label>
+        <input class="fi" type="text" id="lg_lala_search" value="${escHtmlForm(window._lgLalaFilter || '')}" oninput="updateLalamoveOrderList()" placeholder="Cari nama job / customer / order ID">
+      </div>
+      <div id="lgLalaOrderList" style="max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px;">
+        ${buildLalamoveOrderListHtml()}
+      </div>
+      <div id="lgLalaPreview">
+        ${buildLalamovePreviewHtml()}
+      </div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">📜 Sejarah Log Lalamove</div>
+    ${pastBatches.length === 0 ? `<div style="font-size:12px;color:var(--textm);">Tiada rekod lagi</div>` : pastBatches.map(b => `
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">${LOGISTICS_ROUTE_LABEL[b.route] || b.route || '—'} · ${b.batch_date || '—'}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:'Fira Code',monospace;font-size:13px;font-weight:700;color:var(--text);">RM ${(parseFloat(b.total_cost_actual) || 0).toFixed(2)}</div>
+            <button onclick="removeLogisticsBatch('${b.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:6px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+        ${b.note ? `<div style="font-size:11px;color:var(--textm);margin-top:2px;">${b.note}</div>` : ''}
+        <div style="font-size:11px;color:var(--textm);margin-top:6px;">${(b.items || []).map(it => {
+          const f = findRowById(it.order_id);
+          return `${f ? (f.row.name_job || it.order_id) : it.order_id} (RM ${(parseFloat(it.allocated_cost) || 0).toFixed(2)})`;
+        }).join(' · ')}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function buildLalamoveOrderListHtml() {
+  const filter = (window._lgLalaFilter || '').toLowerCase();
+  const selected = window._lgLalaSelected || (window._lgLalaSelected = {});
+  const allOrders = Object.values(sessionData).flat().filter(o => !o.is_deleted);
+  const candidates = allOrders.filter(o => {
+    if (!filter) return true;
+    return (o.name_job || '').toLowerCase().includes(filter) || (o.cust_name || '').toLowerCase().includes(filter) || (o.id || '').toLowerCase().includes(filter);
+  }).slice(0, 30);
+  return candidates.length === 0 ? `<div style="padding:12px;font-size:12px;color:var(--textm);">Tiada order dijumpai</div>` : candidates.map(o => `
+    <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,0.04);cursor:pointer;font-size:12px;">
+      <input type="checkbox" onchange="window._lgLalaSelected['${o.id}']=this.checked;updateLalamovePreview()" ${selected[o.id] ? 'checked' : ''}>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.name_job || '—'} <span style="color:var(--textm);">· ${o.cust_name || ''}</span></span>
+      <span style="font-family:'Fira Code',monospace;color:var(--textm);">${o.pcs || 0} pcs</span>
+    </label>
+  `).join('');
+}
+
+function buildLalamovePreviewHtml() {
+  const selected = window._lgLalaSelected || {};
+  const selectedIds = Object.keys(selected).filter(k => selected[k]);
+  const selectedOrders = selectedIds.map(id => { const f = findRowById(id); return f ? f.row : null; }).filter(Boolean);
+  const totalPcs = selectedOrders.reduce((s, o) => s + (parseFloat(o.pcs) || 0), 0);
+  const costVal = parseFloat(document.getElementById('lg_lala_cost')?.value) || 0;
+  const splitRows = selectedOrders.map(o => {
+    const pcs = parseFloat(o.pcs) || 0;
+    const share = totalPcs > 0 ? (costVal * pcs / totalPcs) : 0;
+    return { o, pcs, share };
+  });
+  return `
+    ${selectedOrders.length ? `
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;">Preview Agihan (ikut nisbah pcs)</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+      ${splitRows.map(r => `<tr>
+        <td style="padding:4px 8px;font-size:11px;">${r.o.name_job || '—'}</td>
+        <td style="padding:4px 8px;font-size:11px;text-align:right;color:var(--textm);">${r.pcs} pcs</td>
+        <td style="padding:4px 8px;font-size:11px;text-align:right;font-weight:700;">RM ${r.share.toFixed(2)}</td>
+      </tr>`).join('')}
+    </table>` : `<div style="font-size:11px;color:var(--textm);margin-bottom:12px;">Pilih sekurang-kurangnya satu order untuk lihat preview agihan.</div>`}
+    <button onclick="submitLalamoveBatch()" style="font-size:12px;font-weight:700;padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">💾 Simpan</button>
+  `;
+}
+
+window.updateLalamoveOrderList = function updateLalamoveOrderList() {
+  window._lgLalaFilter = document.getElementById('lg_lala_search')?.value || '';
+  const el = document.getElementById('lgLalaOrderList');
+  if (el) el.innerHTML = buildLalamoveOrderListHtml();
+};
+window.updateLalamovePreview = function updateLalamovePreview() {
+  const el = document.getElementById('lgLalaPreview');
+  if (el) el.innerHTML = buildLalamovePreviewHtml();
+};
+
+window.submitLalamoveBatch = async function submitLalamoveBatch() {
+  const date   = document.getElementById('lg_lala_date')?.value || '';
+  const route  = document.getElementById('lg_lala_route')?.value || 'lain';
+  const cost   = parseFloat(document.getElementById('lg_lala_cost')?.value) || 0;
+  const note   = document.getElementById('lg_lala_note')?.value.trim() || '';
+  const selected = window._lgLalaSelected || {};
+  const selectedIds = Object.keys(selected).filter(k => selected[k]);
+  if (!date) { showToast('Sila isi tarikh', true); return; }
+  if (cost <= 0) { showToast('Sila isi kos sebenar', true); return; }
+  if (!selectedIds.length) { showToast('Pilih sekurang-kurangnya satu order', true); return; }
+
+  const orders = selectedIds.map(id => { const f = findRowById(id); return f ? f.row : null; }).filter(Boolean);
+  const totalPcs = orders.reduce((s, o) => s + (parseFloat(o.pcs) || 0), 0);
+  if (totalPcs <= 0) { showToast('Order yang dipilih tiada pcs — tak boleh agih', true); return; }
+
+  const items = orders.map(o => {
+    const pcs = parseFloat(o.pcs) || 0;
+    return { order_id: o.id, basis_value: pcs, allocated_cost: cost * pcs / totalPcs };
+  });
+
+  try {
+    await saveLogisticsBatch({ type: 'lalamove', route, batch_date: date, total_cost_actual: cost, note: note || null }, items);
+    showToast('✓ Log Lalamove disimpan');
+    window._lgLalaSelected = {};
+    ['lg_lala_date', 'lg_lala_cost', 'lg_lala_note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderLogisticsView();
+  } catch (e) {
+    showToast('⚠ Gagal simpan: ' + (e.message || '').slice(0, 80), true);
+  }
+};
+
+function renderLogPostageTab() {
+  const period = window._lgPostPeriod || '';
+  const pastBatches = logisticsBatches.filter(b => b.type === 'postage').sort((a, b) => (b.period_label || '').localeCompare(a.period_label || '')).reverse();
+
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;">➕ Reconciliation Bil Pos Malaysia Bulanan</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div class="form-field">
+          <label class="fl">Bulan (ikut tarikh hantar)</label>
+          <input class="fi" type="month" id="lg_post_period" value="${period}" onchange="window._lgPostPeriod=this.value;renderLogisticsView()">
+        </div>
+        <div class="form-field">
+          <label class="fl">Jumlah Bil Pos Malaysia (RM)</label>
+          <input class="fi" type="number" step="0.01" min="0" id="lg_post_bill" oninput="updatePostageBody()" placeholder="dari bil sebenar">
+        </div>
+        <div class="form-field">
+          <label class="fl">Jumlah Berat Dalam Bil (KG)</label>
+          <input class="fi" type="number" step="0.01" min="0" id="lg_post_weight" oninput="updatePostageBody()" placeholder="dari itemised bil">
+        </div>
+      </div>
+      <div id="lgPostBody">${buildPostageBodyHtml()}</div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">📜 Sejarah Reconciliation Postage</div>
+    ${pastBatches.length === 0 ? `<div style="font-size:12px;color:var(--textm);">Tiada rekod lagi</div>` : pastBatches.map(b => `
+      <div style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">${b.period_label || '—'} · ${(b.items || []).length} order</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:'Fira Code',monospace;font-size:13px;font-weight:700;color:var(--text);">RM ${(parseFloat(b.total_cost_actual) || 0).toFixed(2)}</div>
+            <button onclick="removeLogisticsBatch('${b.id}')" style="font-size:10px;padding:3px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:6px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function buildPostageBodyHtml() {
+  const period = window._lgPostPeriod || '';
+  if (!period) return `<div style="font-size:12px;color:var(--textm);">Pilih bulan dahulu untuk nampak order yang belum di-reconcile.</div>`;
+
+  const alreadyAllocatedIds = new Set();
+  logisticsBatches.filter(b => b.type === 'postage').forEach(b => (b.items || []).forEach(it => alreadyAllocatedIds.add(it.order_id)));
+  const allOrders = Object.values(sessionData).flat().filter(o => !o.is_deleted);
+  const candidates = allOrders.filter(o => {
+    if (!['pos_sm', 'pos_ss'].includes(o.delivery_method)) return false;
+    if (!o.postage_weight_kg) return false;
+    if (alreadyAllocatedIds.has(o.id)) return false;
+    if (!(o.postage_date_sent || '').startsWith(period)) return false;
+    return true;
+  });
+  const totalWeight = candidates.reduce((s, o) => s + (parseFloat(o.postage_weight_kg) || 0), 0);
+  const billAmount = parseFloat(document.getElementById('lg_post_bill')?.value) || 0;
+  const billWeight = parseFloat(document.getElementById('lg_post_weight')?.value) || 0;
+  const diff = (billWeight && totalWeight) ? (billWeight - totalWeight) : null;
+  const diffPct = (diff != null && totalWeight > 0) ? (diff / totalWeight * 100) : null;
+
+  return `
+    <div style="font-size:12px;color:var(--textd);margin-bottom:8px;">${candidates.length} order dalam bulan ni belum di-reconcile · jumlah berat direkod admin: <strong>${totalWeight.toFixed(2)} KG</strong></div>
+    ${diffPct !== null ? `<div style="font-size:12px;font-weight:700;color:${Math.abs(diffPct) > 5 ? 'var(--red)' : 'var(--green)'};margin-bottom:10px;">
+      ${Math.abs(diffPct) > 5 ? '⚠' : '✓'} Beza bil vs direkod: ${diff >= 0 ? '+' : ''}${diff.toFixed(2)} KG (${diffPct.toFixed(1)}%) ${Math.abs(diffPct) > 5 ? '— semak kemungkinan overcharge Pos Malaysia' : ''}
+    </div>` : ''}
+    <div style="max-height:200px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px;">
+      ${candidates.length === 0 ? `<div style="padding:12px;font-size:12px;color:var(--textm);">Tiada order dijumpai untuk bulan ni</div>` : candidates.map(o => {
+        const share = (totalWeight > 0 && billAmount > 0) ? (billAmount * (parseFloat(o.postage_weight_kg) || 0) / totalWeight) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,0.04);font-size:12px;">
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${o.name_job || '—'} <span style="color:var(--textm);">· ${o.cust_name || ''}</span></span>
+          <span style="font-family:'Fira Code',monospace;color:var(--textm);">${(parseFloat(o.postage_weight_kg) || 0).toFixed(2)} kg</span>
+          <span style="font-family:'Fira Code',monospace;font-weight:700;">RM ${share.toFixed(2)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <button onclick="submitPostageReconciliation()" style="font-size:12px;font-weight:700;padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;" ${(candidates.length === 0 || billAmount <= 0) ? 'disabled' : ''}>💾 Confirm &amp; Agih Kos</button>
+  `;
+}
+
+window.updatePostageBody = function updatePostageBody() {
+  const el = document.getElementById('lgPostBody');
+  if (el) el.innerHTML = buildPostageBodyHtml();
+}
+
+window.submitPostageReconciliation = async function submitPostageReconciliation() {
+  const period = window._lgPostPeriod || '';
+  const billAmount = parseFloat(document.getElementById('lg_post_bill')?.value) || 0;
+  const billWeight = parseFloat(document.getElementById('lg_post_weight')?.value) || null;
+  if (!period) { showToast('Sila pilih bulan', true); return; }
+  if (billAmount <= 0) { showToast('Sila isi jumlah bil', true); return; }
+
+  const alreadyAllocatedIds = new Set();
+  logisticsBatches.filter(b => b.type === 'postage').forEach(b => (b.items || []).forEach(it => alreadyAllocatedIds.add(it.order_id)));
+  const allOrders = Object.values(sessionData).flat().filter(o => !o.is_deleted);
+  const candidates = allOrders.filter(o => ['pos_sm', 'pos_ss'].includes(o.delivery_method) && o.postage_weight_kg && !alreadyAllocatedIds.has(o.id) && (o.postage_date_sent || '').startsWith(period));
+  const totalWeight = candidates.reduce((s, o) => s + (parseFloat(o.postage_weight_kg) || 0), 0);
+  if (!candidates.length || totalWeight <= 0) { showToast('Tiada order untuk diagih', true); return; }
+
+  const items = candidates.map(o => ({
+    order_id: o.id,
+    basis_value: parseFloat(o.postage_weight_kg) || 0,
+    allocated_cost: billAmount * (parseFloat(o.postage_weight_kg) || 0) / totalWeight,
+  }));
+
+  try {
+    await saveLogisticsBatch({ type: 'postage', period_label: period, batch_date: period + '-01', total_cost_actual: billAmount, total_weight_billed: billWeight }, items);
+    showToast('✓ Reconciliation Postage disimpan — ' + items.length + ' order diagih');
+    document.getElementById('lg_post_bill').value = '';
+    document.getElementById('lg_post_weight').value = '';
+    renderLogisticsView();
+  } catch (e) {
+    showToast('⚠ Gagal simpan: ' + (e.message || '').slice(0, 80), true);
+  }
+};
 
 function autoUpdateSupStatus() {
   const nohadAmt  = parseFloat(document.getElementById('f_nohad_amt')?.value) || 0;
