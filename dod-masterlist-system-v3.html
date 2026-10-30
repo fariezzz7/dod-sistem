@@ -2714,6 +2714,31 @@ tr:hover .row-actions{opacity:1;}
   </div>
 </div>
 
+<!-- BATAL QUOTATION MODAL (Pipeline Aktif — wajib sebab, notify top management) -->
+<div class="modal-bg" id="batalQModalBg">
+  <div class="del-modal" style="width:400px;">
+    <div class="del-modal-title">✕ Batalkan Quotation</div>
+    <div class="del-modal-desc" id="batalQDesc">Tindakan ini akan membuang order ke Bin dan menghantar notifikasi kepada semua top management.</div>
+    <label class="del-pw-label">Sebab Batal</label>
+    <select class="fi" id="batalQReasonPreset" style="width:100%;box-sizing:border-box;margin-bottom:10px;" onchange="clearBatalQError()">
+      <option value="">— Pilih sebab —</option>
+      <option value="Customer batalkan order">Customer batalkan order</option>
+      <option value="Customer tiada respons">Customer tiada respons (follow-up gagal)</option>
+      <option value="Duplicate / salah entry">Duplicate / salah masuk data</option>
+      <option value="Harga tidak sesuai">Harga tidak sesuai / nego gagal</option>
+      <option value="Tukar ke order lain">Tukar ke quotation/order lain</option>
+      <option value="Lain-lain">Lain-lain</option>
+    </select>
+    <label class="del-pw-label">Huraian / Catatan Tambahan</label>
+    <textarea class="fi" id="batalQReasonText" rows="3" style="width:100%;box-sizing:border-box;resize:vertical;margin-bottom:4px;" placeholder="Terangkan sebab batalkan quotation ini..." oninput="clearBatalQError()"></textarea>
+    <div class="del-pw-error" id="batalQError"></div>
+    <div class="del-btn-row">
+      <button class="btn-cancel" style="flex:1;" onclick="closeBatalQModal()">Batal</button>
+      <button style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;" onclick="confirmBatalQuotation()">✕ Hantar &amp; Batalkan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD MONTH MODAL -->
 <div id="monthModalBg">
   <div class="month-modal">
@@ -3303,6 +3328,16 @@ async function chatBgPoll(roomIds) {
         rows.forEach(r => {
           // Notify
           chatNotify(r, roomId);
+
+          // Quotation dibatalkan — DM khas untuk top management, tambah ke bell panel juga
+          if (r.attach_type === 'cancel_notice' && currentUser?.role === 'admin') {
+            mAddNotif({
+              icon: '🗑️',
+              title: 'Quotation dibatalkan — ' + (r.sender_name || 'Staff'),
+              sub: r.attach_label || r.body || '',
+              type: 'urgent',
+            });
+          }
 
           // Increment unread only if window not open and focused
           const winEl = _chatWindows[roomId]?.el;
@@ -10670,7 +10705,7 @@ function buildSupplierListHTML() {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
       ${rows.map(({s, totalOrders, totalPCS, totalKos, totalOS, lastDate, rework}) => `
         <div onclick="openSupplierDrill('${s.id}')"
-          style="background:var(--bg2);border:1px solid var(--line);border-left:3px solid ${s.color};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .12s;"
+          style="background:var(--bg2);border:1px solid var(--line);border-left:3px solid ${s.color};border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .12s;${s.active===false?'opacity:.6;':''}"
           onmouseover="this.style.borderColor='${s.color}';this.style.transform='translateY(-1px)';"
           onmouseout="this.style.borderColor='var(--line)';this.style.borderLeftColor='${s.color}';this.style.transform='none';">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
@@ -10679,6 +10714,7 @@ function buildSupplierListHTML() {
               <div style="font-size:14px;font-weight:700;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
               ${s.contact ? `<div style="font-size:11px;color:var(--textm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.contact}</div>` : ''}
             </div>
+            <button onclick="event.stopPropagation();toggleSupplierActive('${s.id}')" title="${s.active===false?'Aktifkan semula':'Nyahaktifkan — tak disyorkan untuk order baru'}" style="flex-shrink:0;font-size:9px;font-weight:700;padding:3px 8px;border-radius:5px;letter-spacing:.03em;cursor:pointer;background:${s.active===false?'var(--redbg)':'var(--greenbg)'};border:1px solid ${s.active===false?'var(--redb)':'var(--greenb)'};color:${s.active===false?'var(--red)':'var(--green)'};">${s.active===false?'NON-AKTIF':'AKTIF'}</button>
             <span style="font-size:18px;color:var(--textm);flex-shrink:0;">›</span>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
@@ -10806,12 +10842,16 @@ function buildSupplierDrillHTML(s) {
       <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
         <div style="width:46px;height:46px;flex-shrink:0;border-radius:11px;background:${s.color}22;border:1px solid ${s.color}44;display:flex;align-items:center;justify-content:center;font-size:20px;">🏭</div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:17px;font-weight:700;color:var(--text);">${s.name}</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;">
+            ${s.name}
+            ${s.active===false ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--redbg);color:var(--red);letter-spacing:.04em;">NON-AKTIF</span>` : ''}
+          </div>
           ${s.contact ? `<div style="font-size:12px;color:var(--textm);">${s.contact}</div>` : ''}
           ${s.tel || s.email ? `<div style="font-size:11px;color:var(--textd);margin-top:2px;">${s.tel?`📞 ${s.tel}`:''} ${s.email?`&nbsp;·&nbsp; ✉️ ${s.email}`:''}</div>` : ''}
         </div>
         <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;">
           <button onclick="copySupplierPortalLink('${s.id}')" style="font-size:10px;padding:5px 10px;background:var(--bluebg);border:1px solid var(--blueb);border-radius:6px;cursor:pointer;color:var(--blue);font-weight:600;">🔗 Portal Link</button>
+          <button onclick="toggleSupplierActive('${s.id}')" title="${s.active===false?'Aktifkan semula':'Nyahaktifkan — tak disyorkan untuk order baru'}" style="font-size:10px;padding:5px 10px;background:${s.active===false?'var(--greenbg)':'var(--bg3)'};border:1px solid ${s.active===false?'var(--greenb)':'var(--line)'};border-radius:6px;cursor:pointer;color:${s.active===false?'var(--green)':'var(--textd)'};font-weight:600;">${s.active===false?'✅ Aktifkan':'⛔ Nyahaktif'}</button>
           <button onclick="openSupModal('${s.id}')" style="font-size:10px;padding:5px 10px;background:var(--bg3);border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--textd);">✏️ Edit</button>
           <button onclick="deleteSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')" style="font-size:10px;padding:5px 10px;background:var(--redbg);border:1px solid var(--redb);border-radius:6px;cursor:pointer;color:var(--red);">🗑</button>
         </div>
@@ -11237,6 +11277,7 @@ async function loadSuppliers() {
         bank:    [{ bank: r.bank_name||'', acc: r.bank_acc||'', holder: r.bank_holder||'' }],
         products: Array.isArray(r.products) ? r.products : (r.products ? JSON.parse(r.products) : []),
         portal_key: r.portal_key || '',
+        active:  r.active !== false,
       }));
       localStorage.setItem('dod_suppliers_v1', JSON.stringify(SUPPLIERS));
       refreshSupplierDatalist();
@@ -11271,6 +11312,7 @@ async function saveSuppliers() {
     bank_holder:  s.bank[0]?.holder || '',
     products:     s.products || [],
     portal_key:   s.portal_key || '',
+    active:       s.active !== false,
     updated_at:   new Date().toISOString(),
   }));
   try {
@@ -11345,8 +11387,10 @@ function saveSupplier() {
 
   if (!name) { showToast('Sila isi nama syarikat', true); return; }
 
+  const existing = id ? SUPPLIERS.find(x => x.id === id) : null;
   const supObj = { id: id || 'sup_'+Date.now(), name, short: short||name, color,
-    contact, tel, email:'', addr, bank:[{bank, acc, holder}], products: prods };
+    contact, tel, email:'', addr, bank:[{bank, acc, holder}], products: prods,
+    active: existing ? existing.active !== false : true };
 
   if (id) {
     const idx = SUPPLIERS.findIndex(x => x.id === id);
@@ -11362,12 +11406,27 @@ function saveSupplier() {
   });
 }
 
+// ── Toggle supplier aktif / non-aktif ──
+// Supplier non-aktif tak hilang dari data/laporan sedia ada, cuma tak disyorkan lagi untuk order baru.
+async function toggleSupplierActive(supId) {
+  const s = SUPPLIERS.find(x => x.id === supId);
+  if (!s) return;
+  s.active = !(s.active !== false); // flip, treat undefined as true
+  await saveSuppliers();
+  renderSupplierDir();
+  refreshSupplierDatalist();
+  showToast(s.active ? `✅ ${s.short||s.name} diaktifkan semula` : `⛔ ${s.short||s.name} dinyahaktifkan — tak akan disyorkan untuk order baru`);
+}
+
 function refreshSupplierDatalist() {
+  // Supplier non-aktif tak disyorkan untuk order baru (tapi kekal dalam filter/laporan sedia ada)
+  const activeSuppliers = SUPPLIERS.filter(s => s.active !== false);
+
   // 1. Update datalist for order form autocomplete
   const dl = document.getElementById('supplierList');
   if (dl) {
     dl.innerHTML = '';
-    SUPPLIERS.forEach(s => {
+    activeSuppliers.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.name;
       dl.appendChild(opt);
@@ -11411,7 +11470,7 @@ function refreshSupplierDatalist() {
   const shortcutContainer = document.getElementById('supplierShortcuts');
   if (shortcutContainer) {
     shortcutContainer.innerHTML = '';
-    SUPPLIERS.forEach(s => {
+    activeSuppliers.forEach(s => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.style.cssText = 'font-size:10px;padding:4px 9px;background:var(--bg3);border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--textd);';
@@ -12780,7 +12839,7 @@ function renderHomePipeline(role) {
         + 'style="font-size:10px;padding:4px 10px;background:var(--green);color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:600;">✅ Confirm</button>'
         + ' <button onclick="openEditModalById(\''+o.id+'\',\''+o._month+'\')" '
         + 'style="font-size:10px;padding:4px 8px;background:var(--bg3);color:var(--textd);border:1px solid var(--line);border-radius:5px;cursor:pointer;">✏️</button>'
-        + ' <button onclick="window.batalQuotation(\''+o.id+'\',\''+o._month+'\')" '
+        + ' <button onclick="window.openBatalQuotationModal(\''+o.id+'\',\''+o._month+'\')" '
         + 'style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;font-weight:600;">✕ Batal</button>'
       + '</td>'
       + '</tr>';
@@ -12840,29 +12899,110 @@ async function savePipelineNote(orderId, month, value) {
 window.savePipelineNote = savePipelineNote;
 
 // ============
-// BATAL QUOTATION
+// BATAL QUOTATION — wajib sebab, notify semua top management (role admin)
 // ============
-function batalQuotation(orderId, month) {
-  const role = currentUser ? currentUser.role : '';
+let _batalQCtx = null;
+
+function openBatalQuotationModal(orderId, month) {
   const m = month || Object.keys(sessionData).find(k => (sessionData[k]||[]).some(r => r.id === orderId));
   const order = m ? (sessionData[m]||[]).find(r => r.id === orderId) : null;
   if (!order) { showToast('Order tidak dijumpai.', true); return; }
-  if (!confirm('Batalkan Quotation: ' + (order.name_job||'order ini') + '? Akan dibuang ke Bin.')) return;
-  if (!confirm('Confirm sekali lagi untuk teruskan.')) return;
+  _batalQCtx = { orderId, month: m, order };
+  document.getElementById('batalQReasonPreset').value = '';
+  document.getElementById('batalQReasonText').value = '';
+  clearBatalQError();
+  document.getElementById('batalQDesc').textContent =
+    'Batalkan "' + (order.name_job || 'order ini') + '"? Akan dibuang ke Bin dan notifikasi dihantar kepada semua top management.';
+  document.getElementById('batalQModalBg').classList.add('open');
+}
+window.openBatalQuotationModal = openBatalQuotationModal;
+
+function closeBatalQModal() {
+  document.getElementById('batalQModalBg').classList.remove('open');
+  _batalQCtx = null;
+}
+window.closeBatalQModal = closeBatalQModal;
+
+function clearBatalQError() {
+  const el = document.getElementById('batalQError');
+  if (el) el.textContent = '';
+}
+window.clearBatalQError = clearBatalQError;
+
+async function confirmBatalQuotation() {
+  if (!_batalQCtx) return;
+  const preset = document.getElementById('batalQReasonPreset').value.trim();
+  const detail = document.getElementById('batalQReasonText').value.trim();
+  const errEl = document.getElementById('batalQError');
+
+  if (!preset) { errEl.textContent = 'Sila pilih sebab batal.'; return; }
+  if (!detail) { errEl.textContent = 'Sila isi huraian/catatan sebelum teruskan.'; return; }
+
+  const { orderId, month: m, order } = _batalQCtx;
+  const reasonFull = preset + ' — ' + detail;
   const now = new Date().toISOString();
-  const deletedBy = (currentUser && currentUser.name) || role || 'unknown';
+  const deletedBy = (currentUser && currentUser.name) || (currentUser && currentUser.role) || 'unknown';
+
+  closeBatalQModal();
+
   const idx = (sessionData[m]||[]).findIndex(r => r.id === orderId);
   if (idx >= 0) sessionData[m].splice(idx, 1);
   renderAll();
   renderHomepage();
   showToast('Quotation dibatalkan dan dibuang ke Bin.');
-  supaPatch('orders', 'id=eq.' + encodeURIComponent(orderId), {
-    is_deleted: true, deleted_at: now, deleted_by: deletedBy
-  }).then(function() {
-    logAudit(orderId, 'delete', null, { name_job: order.name_job, pcs: order.pcs, total: order.total_customer, pic: order.pic });
-  }).catch(function(e) { console.warn('Batal sync failed:', e); });
+
+  try {
+    await supaPatch('orders', 'id=eq.' + encodeURIComponent(orderId), {
+      is_deleted: true, deleted_at: now, deleted_by: deletedBy, deleted_reason: reasonFull
+    });
+  } catch(e) { console.warn('Batal sync failed:', e); }
+
+  logAudit(orderId, 'delete', { deleted_reason: reasonFull },
+    { name_job: order.name_job, pcs: order.pcs, total: order.total_customer, pic: order.pic });
+
+  notifyTopManagementOnCancel(order, reasonFull, deletedBy);
 }
-window.batalQuotation = batalQuotation;
+window.confirmBatalQuotation = confirmBatalQuotation;
+
+// Hantar DM automatik ke semua staff role admin (top management) — guna sistem
+// chat sedia ada supaya sampai real-time walaupun mereka di sesi/peranti lain.
+async function notifyTopManagementOnCancel(order, reasonFull, deletedBy) {
+  try {
+    let store;
+    try { store = await loadUserStoreAsync(); } catch(e) { store = loadUserStore(); }
+    const topMgmt = Object.values(store || {}).filter(function(u) {
+      return u.role === 'admin' && u.active !== false && (!currentUser || u.id !== currentUser.id);
+    });
+    if (!topMgmt.length) return;
+
+    const body = '🗑️ QUOTATION DIBATALKAN\n'
+      + 'Job: ' + (order.name_job || '-') + '\n'
+      + 'Customer: ' + (order.cust_name || '-') + '\n'
+      + 'Nilai: ' + fmt(order.total_customer || 0) + '\n'
+      + 'PIC: ' + (order.pic || '-') + '\n'
+      + 'Dibatalkan oleh: ' + deletedBy + '\n'
+      + 'Sebab: ' + reasonFull;
+
+    const now = new Date().toISOString();
+    const rows = topMgmt.map(function(u) {
+      return {
+        room_id: chatDmId(currentUser.id, u.id),
+        sender_id: currentUser.id,
+        sender_name: currentUser.name || currentUser.id,
+        body: body,
+        attach_type: 'cancel_notice',
+        attach_id: order.id,
+        attach_label: order.name_job || null,
+        created_at: now,
+      };
+    });
+
+    await supaFetch('/rest/v1/chat_messages', {
+      method: 'POST', prefer: 'return=minimal', body: JSON.stringify(rows),
+    });
+  } catch(e) { console.warn('Top management notify failed:', e); }
+}
+window.notifyTopManagementOnCancel = notifyTopManagementOnCancel;
 
 // ============
 // BIN VIEW
@@ -12910,6 +13050,7 @@ async function renderBinView() {
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);">' + (o.month||'-') + '</td>'
       + '<td style="padding:8px 10px;font-size:11px;color:var(--red);">' + (o.deleted_by||'-') + '</td>'
       + '<td style="padding:8px 10px;font-size:11px;color:var(--textm);">' + delDate + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--textd);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (o.deleted_reason||'').replace(/"/g,'&quot;') + '">' + (o.deleted_reason||'-') + '</td>'
       + '<td style="padding:8px 10px;text-align:center;white-space:nowrap;">'
         + '<button onclick="window.recoverOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 10px;background:var(--greenbg);color:var(--green);border:1px solid var(--greenb);border-radius:5px;cursor:pointer;font-weight:600;">Recover</button>'
         + ' <button onclick="window.purgeBinOrder(\'' + safeId + '\')" style="font-size:10px;padding:4px 8px;background:var(--redbg);color:var(--red);border:1px solid var(--redb);border-radius:5px;cursor:pointer;">Purge</button>'
@@ -12955,6 +13096,7 @@ async function renderBinView() {
         + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Bulan</th>'
         + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Dipadam Oleh</th>'
         + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Tarikh Padam</th>'
+        + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);">Sebab</th>'
         + '<th style="padding:8px 10px;font-size:9px;text-transform:uppercase;color:var(--textm);text-align:center;">Tindakan</th>'
         + '</tr></thead><tbody>' + orderRows + '</tbody></table></div></div>'
       ) : '<div style="font-size:12px;color:var(--textm);margin-bottom:20px;padding:16px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;text-align:center;">Tiada order dalam Bin</div>')
