@@ -4287,7 +4287,9 @@ function setupNavForRole() {
     sbHide('sbMemo');
     sbHide('sbControlPanel');
     sbHide('sbBin');
-    sbHide('sbLogistics');
+    // Kos Delivery: Sales Admin (role=sales) boleh akses, Sales Executive tidak
+    const logBtn = document.getElementById('sbLogistics');
+    if (logBtn) logBtn.style.display = (role === 'sales') ? 'flex' : 'none';
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
