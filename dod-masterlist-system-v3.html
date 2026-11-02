@@ -2188,6 +2188,7 @@ tr:hover .row-actions{opacity:1;}
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="all"> Semua Staff</label>
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales"> Sales</label>
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="sales_executive"> Sales Executive</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="supervisor"> Supervisor</label>
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="designer"> Designer</label>
           <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="memo-role-check" value="admin"> Admin</label>
         </div>
@@ -2959,8 +2960,8 @@ const DODTweaks = () => null;
 // ══════════════════════════════════════════════════════════════
 
 const CHAT_ROOMS = {
-  all_staff:   { id:'all_staff',   name:'Semua Staff',   icon:'👥', type:'group', roles:['admin','sales','sales_executive','designer'] },
-  sales_mgmt:  { id:'sales_mgmt',  name:'Sales + Mgmt',  icon:'💼', type:'group', roles:['admin','sales','sales_executive'] },
+  all_staff:   { id:'all_staff',   name:'Semua Staff',   icon:'👥', type:'group', roles:['admin','sales','sales_executive','supervisor','designer'] },
+  sales_mgmt:  { id:'sales_mgmt',  name:'Sales + Mgmt',  icon:'💼', type:'group', roles:['admin','sales','sales_executive','supervisor'] },
 };
 
 let _chatOpen       = false;
@@ -3865,14 +3866,14 @@ function hideLoading() {
 const USERS = {
   'fariz':   { name:'FARIZ',   role:'admin',       color:'#1A5CC8', bg:'#EEF4FF' },
   'fathi':   { name:'FATHI',   role:'admin',       color:'#0F7A48', bg:'#EDFAF3' },
-  'anis':    { name:'ANIS',    role:'sales',       color:'#2470F0', bg:'#EEF4FF' },
+  'anis':    { name:'ANIS',    role:'supervisor',  color:'#2470F0', bg:'#EEF4FF' },
   'hakimah': { name:'HAKIMAH', role:'sales',       color:'#E89A10', bg:'#FFF8EC' },
   'daniel':  { name:'DANIEL',  role:'sales',       color:'#D4380D', bg:'#FFF2E8' },
   'zul':     { name:'ZUL',     role:'designer',    color:'#6E30C8', bg:'#F4EEFF' },
   'aidi':    { name:'AIDI',    role:'designer',    color:'#0E7A7A', bg:'#EDFAFA' },
 };
 
-const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', sales_executive:'Sales Executive', designer:'Designer' };
+const ROLE_LABELS = { admin:'Admin · Full Access', sales:'Sales Admin', sales_executive:'Sales Executive', supervisor:'Supervisor', designer:'Designer' };
 
 const PIC_COLORS = { 'ANIS':'#2470F0','HAKIMAH':'#E89A10','FATHI':'#12A060','FARIZ':'#1A5CC8',
   'NADIA':'#E03050','ZUL':'#6E30C8','AIDI':'#0E7A7A','DANIEL':'#D4380D','DANIAL':'#D4380D','SALES ADMIN 1':'#9AA0B8' };
@@ -4266,7 +4267,7 @@ function setupNavForRole() {
     // Katalog Harga: semua admin
     const khBtn = document.getElementById('sbKatalogHarga');
     if (khBtn) khBtn.style.display = 'flex';
-  } else if (role === 'sales' || role === 'sales_executive') {
+  } else if (role === 'sales' || role === 'sales_executive' || role === 'supervisor') {
     sbShow('sbMasterlist');
     sbShow('sbKpi');
     sbShow('sbCustomer');
@@ -4287,9 +4288,9 @@ function setupNavForRole() {
     sbHide('sbMemo');
     sbHide('sbControlPanel');
     sbHide('sbBin');
-    // Kos Delivery: Sales Admin (role=sales) boleh akses, Sales Executive tidak
+    // Kos Delivery: Sales Admin (role=sales) & Supervisor boleh akses, Sales Executive tidak
     const logBtn = document.getElementById('sbLogistics');
-    if (logBtn) logBtn.style.display = (role === 'sales') ? 'flex' : 'none';
+    if (logBtn) logBtn.style.display = (role === 'sales' || role === 'supervisor') ? 'flex' : 'none';
     sbShow('sbSalesKit');
     sbShow('sbDodAI');
     sbShow('sbChat');
@@ -5064,7 +5065,7 @@ function renderTable(rows) {
     const custOSCell = isCustOS ? `<span class="os-badge cust">⚠ ${fmt(r.balance_customer)}</span>` : `<span class="os-badge clear">✓</span>`;
     const supOSCell  = isSupOS  ? `<span class="os-badge sup">⚠ ${fmt(r.supplier_outstanding)}</span>` : `<span class="os-badge clear">✓</span>`;
     const dateDisp = r.order_date ? r.order_date.slice(5).replace('-','/') : '—';
-    const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
+    const canEdit = isAdmin || currentUser.role === 'supervisor' || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
     const canDel  = isAdmin;
     return `<tr class="${rowClass}">
       <td class="mono" style="color:var(--textm);font-size:10px">${i+1}</td>
@@ -5168,7 +5169,7 @@ function showDetail(id) {
   currentDetailRow = found.row;
   const r = found.row;
   const isAdmin = currentUser.role === 'admin';
-  const canEdit = isAdmin || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
+  const canEdit = isAdmin || currentUser.role === 'supervisor' || ((currentUser.role === 'sales' || currentUser.role === 'sales_executive') && r.pic === currentUser.name);
   const marginN = marginPct(r);
   const margin = marginN === null ? '—' : marginN.toFixed(1) + '%';
   const isCustOS = r.balance_customer > 0;
@@ -5328,7 +5329,7 @@ function populatePicSelect(keepValue) {
   const sel = document.getElementById('f_pic');
   if (!sel) return;
   const store = loadUserStore();
-  const order = { admin:0, sales:1, sales_executive:2 };
+  const order = { admin:0, supervisor:1, sales:2, sales_executive:3 };
   const users = Object.values(store)
     .filter(u => u.role !== 'designer' && u.active !== false)
     .sort((a,b) => (order[a.role]??9) - (order[b.role]??9) || a.name.localeCompare(b.name));
@@ -5348,7 +5349,7 @@ async function openAddModal() {
   document.getElementById('f_invdate').value = today;
   populatePicSelect();
   // Auto-set PIC to current user if sales role
-  if (currentUser.role === 'sales' || currentUser.role === 'sales_executive') {
+  if (currentUser.role === 'sales' || currentUser.role === 'sales_executive' || currentUser.role === 'supervisor') {
     const sel = document.getElementById('f_pic');
     for (let i=0;i<sel.options.length;i++) {
       if (sel.options[i].value === currentUser.name) { sel.selectedIndex = i; break; }
@@ -6989,7 +6990,7 @@ function renderHomepage() {
   renderHomePipeline(role);
 
   // Sales quick stats (sales role only)
-  if (role === 'sales' || role === 'sales_executive') renderSalesQuickStats();
+  if (role === 'sales' || role === 'sales_executive' || role === 'supervisor') renderSalesQuickStats();
 
   // Nav grid
   renderHomeNav(role);
@@ -9450,6 +9451,7 @@ const USER_STORE_KEY = 'dod_user_store_v1';
 // Role display config
 const ROLE_CONFIG = {
   admin:           { label:'Admin',           color:'#1A5CC8', bg:'#EEF4FF' },
+  supervisor:      { label:'Supervisor',       color:'#7C3AED', bg:'#F3EEFF' },
   sales:           { label:'Sales',           color:'#E89A10', bg:'#FFF8EC' },
   sales_executive: { label:'Sales Executive', color:'#D4380D', bg:'#FFF2E8' },
   designer:        { label:'Designer',        color:'#6E30C8', bg:'#F4EEFF' },
@@ -9647,6 +9649,7 @@ function renderUserEditForm(id) {
         <label>Role</label>
         <select id="uf_role" ${isOnlyAdmin?'disabled title="Mesti ada sekurang-kurang 1 Admin"':''}>
           <option value="admin"    ${u.role==='admin'   ?'selected':''}>Admin — Akses penuh</option>
+          <option value="supervisor"      ${u.role==='supervisor'      ?'selected':''}>Supervisor — Edit semua order</option>
           <option value="sales"           ${u.role==='sales'           ?'selected':''}>Sales Admin</option>
           <option value="sales_executive" ${u.role==='sales_executive'?'selected':''}>Sales Executive</option>
           <option value="designer"        ${u.role==='designer'        ?'selected':''}>Designer</option>
@@ -9704,6 +9707,7 @@ function openAddUserForm() {
         <select id="nuf_role">
           <option value="sales">Sales Admin</option>
           <option value="sales_executive">Sales Executive</option>
+          <option value="supervisor">Supervisor — Edit semua order</option>
           <option value="admin">Admin — Akses penuh</option>
           <option value="designer">Designer</option>
         </select>
@@ -12108,7 +12112,7 @@ function savePendingNote() {
 
   // Trigger pending alert if enabled
   const role = currentUser?.role;
-  if (role === 'admin' || role === 'sales' || role === 'sales_executive') {
+  if (role === 'admin' || role === 'sales' || role === 'sales_executive' || role === 'supervisor') {
     const cpSettings = window._cpSettings || {};
     if (cpSettings.alert_prod_pending !== false) {
       const delayMin = parseInt(cpSettings.alert_prod_pending_min || 0);
@@ -16850,6 +16854,7 @@ const MEMO_ROLES = {
   admin:            'Admin',
   sales:            'Sales',
   sales_executive:  'Sales Executive',
+  supervisor:       'Supervisor',
   designer:         'Designer'
 };
 
